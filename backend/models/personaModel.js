@@ -2,10 +2,28 @@ const db = require('../config/db');
 
 exports.obtenerPersonas = (callback) => {
   const query = `
-    SELECT id, nombres, apellido_paterno, apellido_materno
-    FROM personas
-    WHERE activo = 1
-  `;
+
+  SELECT
+
+    id,
+
+    rut,
+
+    nombres,
+
+    apellido_paterno,
+
+    apellido_materno,
+
+    email,
+
+    telefono
+
+  FROM personas
+
+  WHERE activo = 1
+
+`;
 
   db.query(query, callback);
 };
