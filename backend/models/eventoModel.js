@@ -2,10 +2,26 @@ const db = require('../config/db');
 
 exports.obtenerEventos = (callback) => {
   const query = `
-    SELECT id, nombre
-    FROM eventos
-    ORDER BY fecha DESC
-  `;
+
+  SELECT
+
+    id,
+
+    nombre,
+
+    tipo,
+
+    fecha,
+
+    ubicacion,
+
+    descripcion
+
+  FROM eventos
+
+  ORDER BY fecha DESC
+
+`;
 
   db.query(query, callback);
 };

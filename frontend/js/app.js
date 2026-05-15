@@ -1,4 +1,6 @@
 let pagoEditando = null;
+let chartMultas = null;
+let chartDeuda = null;
 let eventoEditando = null;
 let personaEditando = null;
 const API_URL = 'http://localhost:3000';
@@ -103,6 +105,8 @@ function cargarEventos() {
     .then(data => {
 
       const select = document.getElementById('evento_id');
+
+      select.innerHTML = '';
 
       data.forEach(evento => {
 
@@ -390,7 +394,19 @@ function cargarGraficos() {
     // GRÁFICO MULTAS
     // =========================
 
-    new Chart(
+if (chartMultas) {
+
+  chartMultas.destroy();
+
+}
+
+if (chartDeuda) {
+
+  chartDeuda.destroy();
+
+}
+
+    chartMultas = new Chart(
 
       document.getElementById(
         'graficoMultas'
@@ -422,7 +438,7 @@ function cargarGraficos() {
     // GRÁFICO DEUDA
     // =========================
 
-    new Chart(
+    chartDeuda = new Chart(
 
       document.getElementById(
         'graficoDeuda'
@@ -590,6 +606,28 @@ function aplicarRolesFrontend() {
     document.getElementById(
       'btn_guardar_persona'
     ).innerText = 'Guardar Persona';
+
+    document.getElementById('rut').value = '';
+
+document.getElementById(
+  'nombres'
+).value = '';
+
+document.getElementById(
+  'apellido_paterno'
+).value = '';
+
+document.getElementById(
+  'apellido_materno'
+).value = '';
+
+document.getElementById(
+  'email'
+).value = '';
+
+document.getElementById(
+  'telefono'
+).value = '';
 
     cargarPersonas();
 
@@ -831,6 +869,27 @@ function crearEvento() {
     document.getElementById(
       'btn_guardar_evento'
     ).innerText = 'Guardar Evento';
+
+    document.getElementById(
+  'evento_nombre'
+).value = '';
+
+document.getElementById(
+  'evento_tipo'
+).value =
+  'entrenamiento';
+
+document.getElementById(
+  'evento_fecha'
+).value = '';
+
+document.getElementById(
+  'evento_ubicacion'
+).value = '';
+
+document.getElementById(
+  'evento_descripcion'
+).value = '';
 
     cargarTablaEventos();
 
@@ -1100,6 +1159,15 @@ function crearPago() {
       'btn_guardar_pago'
     ).innerText =
       'Guardar Pago';
+
+      document.getElementById(
+  'pago_monto'
+).value = '';
+
+document.getElementById(
+  'pago_metodo'
+).value =
+  'efectivo';
 
     cargarTablaPagos();
 

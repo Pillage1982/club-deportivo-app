@@ -120,9 +120,14 @@ exports.eliminarPersona = (
 ) => {
 
   const query = `
-    DELETE FROM personas
-    WHERE id = ?
-  `;
+
+  UPDATE personas
+
+  SET activo = 0
+
+  WHERE id = ?
+
+`;
 
   db.query(
     query,
