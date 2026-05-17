@@ -46,4 +46,42 @@ router.post(
 
 );
 
+// =========================
+// ACTUALIZAR PAGO
+// =========================
+
+router.put(
+
+  '/:id',
+
+  authMiddleware,
+
+  roleMiddleware(
+    'admin',
+    'tesorero'
+  ),
+
+  controller.actualizar
+
+);
+
+// =========================
+// ELIMINAR PAGO
+// =========================
+
+router.delete(
+
+  '/:id',
+
+  authMiddleware,
+
+  roleMiddleware(
+    'admin',
+    'tesorero'
+  ),
+
+  controller.eliminar
+
+);
+
 module.exports = router;

@@ -76,3 +76,83 @@ exports.obtenerPagos = (
   );
 
 };
+
+// =========================
+// ACTUALIZAR PAGO
+// =========================
+
+exports.actualizarPago = (
+
+  id,
+
+  data,
+
+  callback
+
+) => {
+
+  const query = `
+
+    UPDATE pagos
+
+    SET
+
+      persona_id = ?,
+      monto_total = ?,
+      metodo = ?
+
+    WHERE id = ?
+
+  `;
+
+  db.query(
+
+    query,
+
+    [
+
+      data.persona_id,
+      data.monto_total,
+      data.metodo,
+
+      id
+
+    ],
+
+    callback
+
+  );
+
+};
+
+// =========================
+// ELIMINAR PAGO
+// =========================
+
+exports.eliminarPago = (
+
+  id,
+
+  callback
+
+) => {
+
+  const query = `
+
+    DELETE FROM pagos
+
+    WHERE id = ?
+
+  `;
+
+  db.query(
+
+    query,
+
+    [id],
+
+    callback
+
+  );
+
+};
