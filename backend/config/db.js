@@ -12,6 +12,8 @@ const connection = mysql.createConnection({
 
   database: process.env.DB_NAME
 
+  charset: 'utf8mb4'
+
 });
 
 module.exports = connection;
