@@ -10,7 +10,7 @@ const connection = mysql.createConnection({
 
   password: process.env.DB_PASSWORD,
 
-  database: process.env.DB_NAME
+  database: process.env.DB_NAME,
 
   charset: 'utf8mb4'
 
