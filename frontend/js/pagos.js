@@ -1,8 +1,12 @@
+// =====================================
+// VARIABLES GLOBALES PAGOS
+// =====================================
+
 let pagoEditando = null;
 
-// ==============================
-// CARGAR TABLA DE FINANZAS
-// ==============================
+// =====================================
+// CARGAR ESTADO FINANCIERO SOCIOS
+// =====================================
 
 function cargarFinanzas() {
 
@@ -21,6 +25,10 @@ function cargarFinanzas() {
 
       data.forEach(finanza => {
 
+        // Estado financiero dinámico:
+        // 0 = al día
+        // negativo = saldo a favor
+        // positivo = deuda pendiente
         tabla.innerHTML += `
           <tr>
             <td>${finanza.nombres} ${finanza.apellido_paterno} ${finanza.apellido_materno || ''}</td>
@@ -42,10 +50,7 @@ function cargarFinanzas() {
 
 }
 
-// ==============================
-// FUNCIÓN EDITAR PAGOS
-// ==============================
-
+// Activa modo edición de pago
 function editarPago(pago) {
 
   pagoEditando = pago.id;
@@ -72,9 +77,9 @@ function editarPago(pago) {
 
 }
 
-// ==============================
-// FUNCIÓN CREAR PAGOS
-// ==============================
+// =====================================
+// CREAR / ACTUALIZAR PAGOS
+// =====================================
 
 function crearPago() {
 
@@ -97,58 +102,60 @@ function crearPago() {
 
   };
 
-  // =========================
-// VALIDACIONES
-// =========================
+  // =====================================
+  // VALIDACIONES FRONTEND PAGOS
+  // =====================================
 
-if (!data.persona_id) {
+  if (!data.persona_id) {
 
-  mostrarAlerta(
-    'Seleccione una persona',
-    'warning'
-  );
+    mostrarAlerta(
+      'Seleccione una persona',
+      'warning'
+    );
 
   return;
 
-}
+  }
 
-if (!data.monto_total) {
+  if (!data.monto_total) {
 
-  mostrarAlerta(
+    mostrarAlerta(
     'Ingrese un monto',
     'warning'
-  );
+    );
 
-  return;
+    return;
 
-}
+  }
 
-if (Number(data.monto_total) <= 0) {
+  if (Number(data.monto_total) <= 0) {
 
-  mostrarAlerta(
-    'El monto debe ser mayor a 0',
-    'warning'
-  );
+    mostrarAlerta(
+      'El monto debe ser mayor a 0',
+      'warning'
+    );
 
-  return;
+    return;
 
-}
+  }
 
-if (!data.metodo) {
+  if (!data.metodo) {
 
-  mostrarAlerta(
-    'Seleccione un método de pago',
-    'warning'
-  );
+    mostrarAlerta(
+      'Seleccione un método de pago',
+      'warning'
+    );
 
-  return;
+    return;
 
-}
+  }
 
   let url = `${API_URL}/pagos`;
 
   let method = 'POST';
 
+  // Si existe pagoEditando,
+  // se actualiza el pago
   if (pagoEditando) {
 
     url =
@@ -190,6 +197,8 @@ document.getElementById(
 ).value =
   'efectivo';
 
+    // Refresca módulos financieros
+    // automáticamente sin F5
     cargarTablaPagos();
     cargarMultas();
     cargarFinanzas();
@@ -202,9 +211,9 @@ document.getElementById(
 
 }
 
-// ==============================
-// FUNCIÓN TABLA PAGOS
-// ==============================
+// =====================================
+// CARGAR TABLA PAGOS
+// =====================================
 
 function cargarTablaPagos() {
 
@@ -227,6 +236,7 @@ function cargarTablaPagos() {
 
     data.forEach(pago => {
 
+      // Acciones CRUD pagos
       tabla.innerHTML += `
 
         <tr>
@@ -297,12 +307,13 @@ function cargarTablaPagos() {
 
 }
 
-// ==============================
-// FUNCIÓN ELIMINAR PAGOS
-// ==============================
+// =====================================
+// ELIMINAR PAGOS
+// =====================================
 
 function eliminarPago(id) {
 
+  // Solicita confirmación antes de eliminar
   const confirmar = confirm(
     '¿Eliminar pago?'
   );
@@ -329,6 +340,8 @@ function eliminarPago(id) {
 
     mostrarAlerta(data.mensaje,'warning');
 
+    // Refresca automáticamente
+    // módulos financieros
     cargarTablaPagos();
 
     cargarDashboard();

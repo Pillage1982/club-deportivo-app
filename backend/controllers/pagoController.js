@@ -1,16 +1,22 @@
+// =====================================
+// MODELO PAGOS
+// =====================================
+
 const pagoModel =
   require('../models/pagoModel');
 
-// =========================
-// CREAR PAGO
-// =========================
+  // =====================================
+  // REGISTRAR PAGO
+  // =====================================
 
-exports.crear = (req, res) => {
+  exports.crear = (req, res) => {
 
-  pagoModel.crearPago(
+    // Inserta pago en base datos
+    pagoModel.crearPago(
 
     req.body,
 
+    // Manejo errores backend pagos
     (err, result) => {
 
       if (err) {
@@ -19,6 +25,7 @@ exports.crear = (req, res) => {
 
       }
 
+      // Respuesta exitosa frontend
       res.json({
         mensaje: 'Pago registrado'
       });
@@ -29,9 +36,9 @@ exports.crear = (req, res) => {
 
 };
 
-// =========================
-// OBTENER PAGOS
-// =========================
+// =====================================
+// LISTAR PAGOS
+// =====================================
 
 exports.obtener = (req, res) => {
 
@@ -45,6 +52,7 @@ exports.obtener = (req, res) => {
 
       }
 
+      // Devuelve historial pagos
       res.json(results);
 
     }
@@ -53,12 +61,13 @@ exports.obtener = (req, res) => {
 
 };
 
-// =========================
+// =====================================
 // ACTUALIZAR PAGO
-// =========================
+// =====================================
 
 exports.actualizar = (req, res) => {
 
+  // Actualiza registro pago existente
   pagoModel.actualizarPago(
 
     req.params.id,
@@ -73,6 +82,7 @@ exports.actualizar = (req, res) => {
 
       }
 
+      // Confirma actualización frontend
       res.json({
         mensaje: 'Pago actualizado'
       });
@@ -83,12 +93,13 @@ exports.actualizar = (req, res) => {
 
 };
 
-// =========================
+// =====================================
 // ELIMINAR PAGO
-// =========================
+// =====================================
 
 exports.eliminar = (req, res) => {
 
+  // Elimina pago desde base datos
   pagoModel.eliminarPago(
 
     req.params.id,
@@ -101,6 +112,7 @@ exports.eliminar = (req, res) => {
 
       }
 
+      // Confirma eliminación frontend
       res.json({
         mensaje: 'Pago eliminado'
       });

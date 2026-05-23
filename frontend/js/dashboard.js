@@ -1,12 +1,18 @@
+// =====================================
+// INSTANCIAS GRAFICOS CHART.JS
+// =====================================
+
 let chartMultas = null;
 let chartDeuda = null;
 
-// ==============================
-// FUNCION DASHBOARD
-// ==============================
+// =====================================
+// CARGAR RESUMEN GENERAL DASHBOARD
+// =====================================
 
 function cargarDashboard() {
 
+  // Obtiene datos generales
+  // en paralelo para optimizar carga
   Promise.all([
 
     fetch(`${API_URL}/personas`, {
@@ -33,11 +39,13 @@ function cargarDashboard() {
       'total_multas'
     ).innerText = multas.length;
 
+    // Variables acumuladoras financieras
     let totalPagado = 0;
     let deudaTotal = 0;
 
     finanzas.forEach(f => {
 
+      // Calcula pagos y deuda total sistema
       totalPagado +=
         Number(f.total_pagado);
 
@@ -46,6 +54,7 @@ function cargarDashboard() {
 
     });
 
+    // Actualiza tarjetas visuales dashboard
     document.getElementById(
       'total_pagado'
     ).innerText =
@@ -62,9 +71,9 @@ function cargarDashboard() {
 
 }
 
-// =========================
-// FUNCION GRAFICOS
-// =========================
+// =====================================
+// CARGAR GRAFICOS FINANCIEROS
+// =====================================
 
 function cargarGraficos() {
 
@@ -78,6 +87,7 @@ function cargarGraficos() {
 
   .then(data => {
 
+    // Prepara datos para Chart.js
     const nombres = data.map(
       f => `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`
     );
@@ -90,15 +100,13 @@ function cargarGraficos() {
       f => Number(f.deuda_actual)
     );
 
-    // =========================
-    // GRÁFICO MULTAS
-    // =========================
+    // Destruye gráficos anteriores
+    // para evitar duplicados visuales
+    if (chartMultas) {
 
-if (chartMultas) {
+      chartMultas.destroy();
 
-  chartMultas.destroy();
-
-}
+    } 
 
 if (chartDeuda) {
 
@@ -106,6 +114,7 @@ if (chartDeuda) {
 
 }
 
+// Grafico barras multas por socio
     chartMultas = new Chart(
 
       document.getElementById(
@@ -134,10 +143,7 @@ if (chartDeuda) {
 
     );
 
-    // =========================
-    // GRÁFICO DEUDA
-    // =========================
-
+    // Grafico circular deuda financiera
     chartDeuda = new Chart(
 
       document.getElementById(

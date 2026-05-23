@@ -1,19 +1,33 @@
+// =====================================
+// CONEXION BASE DATOS MYSQL
+// =====================================
+
 const db = require('../config/db');
+
+// =====================================
+// INSERTAR REGISTRO ASISTENCIA
+// =====================================
 
 exports.crearAsistencia = (data, callback) => {
 
+  // Registra asistencia evento
+  // incluyendo estado y atraso
   const query = `
     INSERT INTO asistencias
     (evento_id, persona_id, estado, minutos_atraso)
     VALUES (?, ?, ?, ?)
   `;
 
+  // Ejecuta inserción MySQL
   db.query(
     query,
     [
       data.evento_id,
       data.persona_id,
       data.estado,
+
+      // Minutos solo aplican
+      // cuando estado es atrasado
       data.minutos
     ],
     callback
@@ -21,8 +35,14 @@ exports.crearAsistencia = (data, callback) => {
 
 };
 
+// =====================================
+// OBTENER HISTORIAL ASISTENCIAS
+// =====================================
+
 exports.obtenerAsistencias = (callback) => {
 
+  // Consulta relacional:
+  // asistencias + personas + eventos
   const query = `
     SELECT
       a.id,
@@ -33,8 +53,11 @@ exports.obtenerAsistencias = (callback) => {
       a.estado,
       a.minutos_atraso
     FROM asistencias a
+    // Relaciona asistencia con persona
     JOIN personas p ON a.persona_id = p.id
+    // Relaciona asistencia con evento
     JOIN eventos e ON a.evento_id = e.id
+    // Muestra asistencias recientes primero
     ORDER BY a.id DESC
   `;
 

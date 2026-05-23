@@ -1,49 +1,344 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
 
-  <title>Login</title>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+  <title>Club Deportivo | Login</title>
+
+  <!-- Bootstrap -->
 
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
     rel="stylesheet">
 
+  <!-- Bootstrap Icons -->
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- Fuente -->
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+
+  <style>
+
+    * {
+
+      font-family: 'Poppins', sans-serif;
+
+    }
+
+    body {
+
+      margin: 0;
+
+      height: 100vh;
+
+      display: flex;
+
+      justify-content: center;
+
+      align-items: center;
+
+      background:
+        linear-gradient(
+          135deg,
+          #1b1f3b,
+          #2d5be3
+        );
+
+      overflow: hidden;
+
+    }
+
+    /* Fondo decorativo */
+
+    .background-shape {
+
+      position: absolute;
+
+      border-radius: 50%;
+
+      filter: blur(80px);
+
+      opacity: 0.35;
+
+    }
+
+    .shape1 {
+
+      width: 300px;
+
+      height: 300px;
+
+      background: #4cc9f0;
+
+      top: -100px;
+
+      left: -100px;
+
+    }
+
+    .shape2 {
+
+      width: 350px;
+
+      height: 350px;
+
+      background: #f72585;
+
+      bottom: -120px;
+
+      right: -120px;
+
+    }
+
+    /* Card Login */
+
+    .login-card {
+
+      position: relative;
+
+      z-index: 10;
+
+      width: 100%;
+
+      max-width: 420px;
+
+      padding: 45px;
+
+      border-radius: 28px;
+
+      background: rgba(255,255,255,0.12);
+
+      backdrop-filter: blur(18px);
+
+      box-shadow:
+
+        0 8px 32px rgba(0,0,0,0.25);
+
+      border:
+
+        1px solid rgba(255,255,255,0.15);
+
+      color: white;
+
+    }
+
+    .login-card h2 {
+
+      font-weight: 600;
+
+      margin-bottom: 10px;
+
+    }
+
+    .login-card p {
+
+      opacity: 0.8;
+
+      margin-bottom: 30px;
+
+    }
+
+    /* Inputs */
+
+    .form-control {
+
+      height: 52px;
+
+      border-radius: 14px;
+
+      border: none;
+
+      padding-left: 45px;
+
+      background: rgba(255,255,255,0.18);
+
+      color: white;
+
+    }
+
+    .form-control::placeholder {
+
+      color: rgba(255,255,255,0.7);
+
+    }
+
+    .form-control:focus {
+
+      background: rgba(255,255,255,0.25);
+
+      box-shadow: none;
+
+      color: white;
+
+    }
+
+    .input-group {
+
+      position: relative;
+
+    }
+
+    .input-group i {
+
+      position: absolute;
+
+      top: 50%;
+
+      left: 15px;
+
+      transform: translateY(-50%);
+
+      color: rgba(255,255,255,0.7);
+
+      z-index: 5;
+
+    }
+
+    /* Botón */
+
+    .btn-login {
+
+      width: 100%;
+
+      height: 52px;
+
+      border: none;
+
+      border-radius: 14px;
+
+      background: white;
+
+      color: #1b1f3b;
+
+      font-weight: 600;
+
+      transition: 0.3s;
+
+    }
+
+    .btn-login:hover {
+
+      transform: translateY(-2px);
+
+      background: #f1f1f1;
+
+    }
+
+    /* Texto respuesta */
+
+    #respuesta {
+
+      margin-top: 20px;
+
+      text-align: center;
+
+      font-size: 14px;
+
+    }
+
+    /* Logo */
+
+    .logo {
+
+      text-align: center;
+
+      margin-bottom: 25px;
+
+      font-size: 50px;
+
+    }
+
+  </style>
+
 </head>
 
 <body>
 
-<div class="container mt-5">
+  <!-- Formas decorativas -->
 
-  <h2>Login</h2>
+  <div class="background-shape shape1"></div>
 
-  <div class="mb-3">
-    <input
-      type="text"
-      id="usuario"
-      class="form-control"
-      placeholder="Usuario">
+  <div class="background-shape shape2"></div>
+
+  <!-- Login -->
+
+  <div class="login-card">
+
+    <div class="logo">
+
+      <i class="bi bi-shield-lock-fill"></i>
+
+    </div>
+
+    <h2 class="text-center">
+
+      Club Deportivo
+
+    </h2>
+
+    <p class="text-center">
+
+      Sistema Administrativo
+
+    </p>
+
+    <!-- Usuario -->
+
+    <div class="mb-3 input-group">
+
+      <i class="bi bi-person-fill"></i>
+
+      <input
+        type="text"
+        id="usuario"
+        class="form-control"
+        placeholder="Usuario">
+
+    </div>
+
+    <!-- Password -->
+
+    <div class="mb-4 input-group">
+
+      <i class="bi bi-lock-fill"></i>
+
+      <input
+        type="password"
+        id="password"
+        class="form-control"
+        placeholder="Contraseña">
+
+    </div>
+
+    <!-- Botón -->
+
+    <button
+      onclick="login()"
+      class="btn-login">
+
+      Ingresar
+
+    </button>
+
+    <!-- Respuesta -->
+
+    <p id="respuesta"></p>
+
   </div>
 
-  <div class="mb-3">
-    <input
-      type="password"
-      id="password"
-      class="form-control"
-      placeholder="Contraseña">
-  </div>
-
-  <button
-    onclick="login()"
-    class="btn btn-primary">
-    Ingresar
-  </button>
-
-  <p id="respuesta" class="mt-3"></p>
-
-</div>
-
-<script src="js/login.js"></script>
+  <script src="js/login.js"></script>
 
 </body>
 </html>

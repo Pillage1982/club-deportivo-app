@@ -1,6 +1,6 @@
-// ==============================
-// REGISTRAR ASISTENCIA
-// ==============================
+// =====================================
+// REGISTRAR ASISTENCIA EVENTO
+// =====================================
 
 function registrarAsistencia() {
 
@@ -10,102 +10,104 @@ function registrarAsistencia() {
   let minutos =
   document.getElementById('minutos').value;
 
-    // =========================
-    // SI NO ES ATRASO
-    // =========================
-
+    // Solo se solicitan minutos
+    // cuando el estado es atrasado
     if (estado !== 'atrasado') {
 
       minutos = 0;
 
     }
 
-  const data = {
-    persona_id,
-    evento_id,
-    estado,
-    minutos
-  };
+    // Datos enviados al backend
+    const data = {
+      persona_id,
+      evento_id,
+      estado,
+      minutos
+    };
 
-  // =========================
-// VALIDACIONES
-// =========================
+    // =====================================
+    // VALIDACIONES FRONTEND ASISTENCIA
+    // =====================================
 
-if (!data.persona_id) {
+    if (!data.persona_id) {
 
-  mostrarAlerta(
-    'Seleccione una persona',
-    'warning'
-  );
+      mostrarAlerta(
+        'Seleccione una persona',
+        'warning'
+      );
 
-  return;
+      return;
 
-}
+    }
 
-if (!data.evento_id) {
+    if (!data.evento_id) {
 
-  mostrarAlerta(
-    'Seleccione un evento',
-    'warning'
-  );
+      mostrarAlerta(
+        'Seleccione un evento',
+        'warning'
+      );
 
-  return;
+      return;
 
-}
+    }
 
-if (!data.estado) {
+    if (!data.estado) {
 
-  mostrarAlerta(
-    'Seleccione un estado',
-    'warning'
-  );
+      mostrarAlerta(
+        'Seleccione un estado',
+        'warning'
+      );
 
-  return;
+      return;
 
-}
+    }
 
-// =========================
-// VALIDAR ATRASO
-// =========================
+    // Validación exclusiva para atrasos
+    if (data.estado === 'atrasado' &&
 
-if (
+        (
+          !data.minutos ||
 
-  data.estado === 'atrasado' &&
+          Number(data.minutos) < 0
+        )
 
-  (
-    !data.minutos ||
+      ) {
 
-    Number(data.minutos) < 0
-  )
+        mostrarAlerta(
 
-) {
+          'Ingrese minutos de atraso válidos',
 
-  mostrarAlerta(
+          'warning'
 
-    'Ingrese minutos de atraso válidos',
+        );
 
-    'warning'
+        return;
 
-  );
+      }
 
-  return;
+      // Registra asistencia en backend
+      fetch(`${API_URL}/asistencia`, {
 
-}
+        method: 'POST',
 
-fetch(`${API_URL}/asistencia`, {
+        headers: getAuthHeaders(),
 
-  method: 'POST',
+        body: JSON.stringify(data)
 
-  headers: getAuthHeaders(),
+      })
 
-  body: JSON.stringify(data)
-
-})
-    .then(res => res.text())
-    .then(response => {
+      .then(res => res.text())
+      .then(response => {
 
       document.getElementById('respuesta').innerText = response;
 
+      // Refresca automáticamente:
+      // asistencias
+      // multas
+      // finanzas
+      // dashboard
+      // gráficos
       cargarAsistencias();
       cargarMultas();
       cargarFinanzas();
@@ -113,11 +115,14 @@ fetch(`${API_URL}/asistencia`, {
       cargarGraficos();
 
     })
+
     .catch(err => {
 
-  console.error(err);
+    console.error(err);
 
-  mostrarAlerta(
+    // Evita registros duplicados
+    // misma persona + mismo evento
+    mostrarAlerta(
 
     'No se puede registrar asistencia duplicada',
 
@@ -129,9 +134,9 @@ fetch(`${API_URL}/asistencia`, {
 
 }
 
-// ==============================
-// CARGAR TABLA DE ASISTENCIA
-// ==============================
+// =====================================
+// CARGAR HISTORIAL ASISTENCIAS
+// =====================================
 
 function cargarAsistencias() {
 
@@ -149,6 +154,7 @@ function cargarAsistencias() {
 
       data.forEach(asistencia => {
 
+        // Estado visual asistencia
         tabla.innerHTML += `
           <tr>
             <td>${asistencia.nombres} ${asistencia.apellido_paterno} ${asistencia.apellido_materno || ''}</td>
@@ -171,9 +177,9 @@ function cargarAsistencias() {
 
 }
 
-// ==============================
-// CARGAR TABLA DE MULTAS
-// ==============================
+// =====================================
+// CARGAR MULTAS AUTOMATICAS
+// =====================================
 
 function cargarMultas() {
 
@@ -191,7 +197,10 @@ function cargarMultas() {
 
       data.forEach(multa => {
 
+        // Multas generadas automáticamente
+        // desde registro de asistencia
         tabla.innerHTML += `
+
           <tr>
             <td>${multa.nombres} ${multa.apellido_paterno} ${multa.apellido_materno || ''}</td>
             <td>$${multa.monto}</td>

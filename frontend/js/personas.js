@@ -1,8 +1,12 @@
+// =====================================
+// VARIABLES GLOBALES PERSONAS
+// =====================================
+
 let personaEditando = null;
 
-// ==============================
-// CARGAR PERSONAS
-// ==============================
+// =====================================
+// CARGAR PERSONAS EN SELECTORES
+// =====================================
 
 function cargarPersonas() {
 
@@ -15,6 +19,7 @@ function cargarPersonas() {
     .then(res => res.json())
     .then(data => {
 
+      // Selectores asistencia y pagos
       const select = document.getElementById('persona_id');
       const selectPago = document.getElementById('pago_persona_id');
 
@@ -24,6 +29,8 @@ function cargarPersonas() {
 
       data.forEach(persona => {
 
+        // Clona opción para reutilizar
+        // en selector de pagos 
         const option = document.createElement('option');
 
         option.value = persona.id;
@@ -39,9 +46,9 @@ function cargarPersonas() {
 
 }
 
-// =========================
-// CREAR PERSONA
-// =========================
+// =====================================
+// CREAR / ACTUALIZAR PERSONAS
+// =====================================
 
   function crearPersona() {
 
@@ -73,9 +80,9 @@ function cargarPersonas() {
 
   };
 
-  // =========================
-// VALIDACIONES
-// =========================
+  // =====================================
+  // VALIDACIONES FRONTEND PERSONAS
+  // =====================================
 
 if (!data.rut.trim()) {
 
@@ -131,6 +138,8 @@ if (
 
   let method = 'POST';
 
+  // Si existe personaEditando,
+  // se actualiza registro existente
   if (personaEditando) {
 
     url =
@@ -164,6 +173,7 @@ if (
       'btn_guardar_persona'
     ).innerText = 'Guardar Persona';
 
+    // Limpia formulario después guardar
     document.getElementById('rut').value = '';
 
 document.getElementById(
@@ -186,6 +196,7 @@ document.getElementById(
   'telefono'
 ).value = '';
 
+// Refresca selectores y tabla personas
     cargarPersonas();
 
     cargarTablaPersonas();
@@ -196,9 +207,9 @@ document.getElementById(
 
 }
 
-  // =============================
-  // FUNCION CARGAR TABLA PERSONAS
-  // =============================
+  // =====================================
+  // CARGAR TABLA PERSONAS
+  // =====================================
 
   function cargarTablaPersonas() {
 
@@ -221,6 +232,7 @@ document.getElementById(
 
     data.forEach(persona => {
 
+      // Acciones CRUD personas
       tabla.innerHTML += `
 
         <tr>
@@ -279,12 +291,13 @@ document.getElementById(
 
 }
 
-// =============================
-// FUNCION EDITAR PERSONAS
-// =============================
+// =====================================
+// EDITAR PERSONAS
+// =====================================
 
 function editarPersona(persona) {
 
+  // Activa modo edición persona
   personaEditando = persona.id;
 
   document.getElementById('rut').value =
@@ -315,12 +328,13 @@ function editarPersona(persona) {
 
 }
 
-// =============================
-// FUNCION ELIMINAR PERSONAS
-// =============================
+// =====================================
+// ELIMINAR PERSONAS
+// =====================================
 
 function eliminarPersona(id) {
 
+  // Solicita confirmación antes eliminar
   const confirmar = confirm(
     '¿Eliminar persona?'
   );
@@ -347,6 +361,7 @@ function eliminarPersona(id) {
 
     mostrarAlerta(data.mensaje,'warning');
 
+    // Refresca tabla y selectores
     cargarTablaPersonas();
 
     cargarPersonas();

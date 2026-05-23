@@ -1,8 +1,12 @@
+// =====================================
+// VARIABLES GLOBALES EVENTOS
+// =====================================
+
 let eventoEditando = null;
 
-// ==============================
-// CARGAR EVENTOS
-// ==============================
+// =====================================
+// CARGAR EVENTOS EN SELECTOR
+// =====================================
 
 function cargarEventos() {
 
@@ -14,6 +18,7 @@ function cargarEventos() {
     .then(res => res.json())
     .then(data => {
 
+      // Selector utilizado en asistencias
       const select = document.getElementById('evento_id');
 
       select.innerHTML = '';
@@ -34,9 +39,9 @@ function cargarEventos() {
 
 }
 
-// ==============================
-// FUNCIÓN CREAR EVENTO
-// ==============================
+// =====================================
+// CREAR / ACTUALIZAR EVENTOS
+// =====================================
 
 function crearEvento() {
 
@@ -69,9 +74,9 @@ function crearEvento() {
 
   };
 
-  // =========================
-// VALIDACIONES
-// =========================
+  // =====================================
+  // VALIDACIONES FRONTEND EVENTOS
+  // =====================================
 
 if (!data.nombre.trim()) {
 
@@ -121,6 +126,8 @@ if (!data.ubicacion.trim()) {
 
   let method = 'POST';
 
+  // Si existe eventoEditando,
+  // se actualiza evento existente
   if (eventoEditando) {
 
     url =
@@ -152,6 +159,7 @@ if (!data.ubicacion.trim()) {
       'btn_guardar_evento'
     ).innerText = 'Guardar Evento';
 
+    // Limpia formulario después guardar
     document.getElementById(
   'evento_nombre'
 ).value = '';
@@ -173,6 +181,7 @@ document.getElementById(
   'evento_descripcion'
 ).value = '';
 
+// Refresca tabla y selector eventos
     cargarTablaEventos();
 
     cargarEventos();
@@ -183,9 +192,9 @@ document.getElementById(
 
 }
 
-// ==============================
-// FUNCIÓN TABLA EVENTOS
-// ==============================
+// =====================================
+// CARGAR TABLA EVENTOS
+// =====================================
 
 function cargarTablaEventos() {
 
@@ -208,6 +217,7 @@ function cargarTablaEventos() {
 
     data.forEach(evento => {
 
+      // Acciones CRUD eventos
       tabla.innerHTML += `
 
         <tr>
@@ -273,12 +283,13 @@ function cargarTablaEventos() {
 
 }
 
-// ==============================
-// FUNCIÓN EDITAR EVENTO
-// ==============================
+// =====================================
+// EDITAR EVENTOS
+// =====================================
 
 function editarEvento(evento) {
 
+  // Activa modo edición evento
   eventoEditando = evento.id;
 
   document.getElementById(
@@ -313,12 +324,13 @@ function editarEvento(evento) {
 
 }
 
-// ==============================
-// FUNCIÓN ELIMINAR EVENTOS
-// ==============================
+// =====================================
+// ELIMINAR EVENTOS
+// =====================================
 
 function eliminarEvento(id) {
 
+  // Solicita confirmación antes eliminar
   const confirmar = confirm(
     '¿Eliminar evento?'
   );
@@ -345,6 +357,7 @@ function eliminarEvento(id) {
 
     mostrarAlerta(data.mensaje,'warning');
 
+    // Refresca tabla y selector eventos
     cargarTablaEventos();
 
     cargarEventos();

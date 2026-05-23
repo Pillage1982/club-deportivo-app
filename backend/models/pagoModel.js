@@ -1,15 +1,20 @@
+// =====================================
+// CONEXION BASE DATOS MYSQL
+// =====================================
+
 const db =
   require('../config/db');
 
-// =========================
-// CREAR PAGO
-// =========================
+// =====================================
+// INSERTAR PAGO EN BASE DATOS
+// =====================================
 
 exports.crearPago = (
   data,
   callback
 ) => {
 
+  // Registra pago asociado a socio
   const query = `
 
     INSERT INTO pagos
@@ -23,6 +28,7 @@ exports.crearPago = (
 
   `;
 
+  // Ejecuta inserción MySQL
   db.query(
 
     query,
@@ -39,14 +45,16 @@ exports.crearPago = (
 
 };
 
-// =========================
-// OBTENER PAGOS
-// =========================
+// =====================================
+// OBTENER HISTORIAL PAGOS
+// =====================================
 
 exports.obtenerPagos = (
   callback
 ) => {
 
+  // Consulta relacional:
+  // pagos + personas
   const query = `
 
     SELECT
@@ -62,10 +70,10 @@ exports.obtenerPagos = (
       pa.fecha
 
     FROM pagos pa
-
+    // Relaciona pago con socio
     JOIN personas p
     ON pa.persona_id = p.id
-
+    // Muestra pagos recientes primero
     ORDER BY pa.fecha DESC
 
   `;
@@ -77,9 +85,9 @@ exports.obtenerPagos = (
 
 };
 
-// =========================
-// ACTUALIZAR PAGO
-// =========================
+// =====================================
+// ACTUALIZAR REGISTRO PAGO
+// =====================================
 
 exports.actualizarPago = (
 
@@ -91,6 +99,7 @@ exports.actualizarPago = (
 
 ) => {
 
+  // Actualiza datos financieros pago
   const query = `
 
     UPDATE pagos
@@ -105,6 +114,7 @@ exports.actualizarPago = (
 
   `;
 
+  // Ejecuta actualización MySQL
   db.query(
 
     query,
@@ -125,9 +135,9 @@ exports.actualizarPago = (
 
 };
 
-// =========================
-// ELIMINAR PAGO
-// =========================
+// =====================================
+// ELIMINAR REGISTRO PAGO
+// =====================================
 
 exports.eliminarPago = (
 
@@ -137,6 +147,7 @@ exports.eliminarPago = (
 
 ) => {
 
+  // Elimina pago desde sistema
   const query = `
 
     DELETE FROM pagos
@@ -145,6 +156,7 @@ exports.eliminarPago = (
 
   `;
 
+  // Ejecuta eliminación MySQL
   db.query(
 
     query,

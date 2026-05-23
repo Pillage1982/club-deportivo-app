@@ -1,9 +1,13 @@
+// =====================================
+// CONFIGURACION GLOBAL API BACKEND
+// =====================================
+
 const API_URL = 'http://localhost:3000';
 
 
-// =========================
-// ALERTAS VISUALES
-// =========================
+/// =====================================
+// ALERTAS VISUALES BOOTSTRAP
+// =====================================
 
 function mostrarAlerta(mensaje,tipo = 'success') {
 
@@ -33,8 +37,10 @@ function mostrarAlerta(mensaje,tipo = 'success') {
 
   `;
 
+  // Inserta alerta visual en pantalla
   container.appendChild(alerta);
 
+  // Elimina automáticamente la alerta
   setTimeout(() => {
 
     alerta.remove();
@@ -43,12 +49,13 @@ function mostrarAlerta(mensaje,tipo = 'success') {
 
 }
 
-// =========================
-// autenticacion headers
-// =========================
+// =====================================
+// HEADERS AUTENTICADOS JWT
+// =====================================
 
 function getAuthHeaders() {
 
+  // Envia token JWT para autenticar peticiones
   return {
 
     'Content-Type': 'application/json',
@@ -74,9 +81,9 @@ function logout() {
 
 }
 
-// =========================
-// MOSTRAR USUARIO
-// =========================
+// =====================================
+// MOSTRAR USUARIO AUTENTICADO
+// =====================================
 
 function mostrarUsuario() {
 
@@ -87,18 +94,19 @@ function mostrarUsuario() {
 
   if (usuario) {
 
+    // Muestra usuario y rol en interfaz
     document.getElementById(
       'usuario_logeado'
-    ).innerText =
+      ).innerText =
       `${usuario.usuario} (${usuario.rol})`;
 
   }
 
 }
 
-// =========================
-// FUNCION ROLES
-// =========================
+// =====================================
+// CONTROL VISUAL DE MODULOS POR ROL
+// =====================================
 
 function aplicarRolesFrontend() {
 
@@ -108,10 +116,7 @@ function aplicarRolesFrontend() {
 
   if (!usuario) return;
 
-  // =========================
-  // ENTRENADOR
-  // =========================
-
+  // Entrenador no puede acceder a finanzas ni multas
   if (usuario.rol === 'entrenador') {
 
     document.getElementById(
@@ -124,10 +129,7 @@ function aplicarRolesFrontend() {
 
   }
 
-  // =========================
-  // TESORERO
-  // =========================
-
+  // Tesorero no puede registrar asistencias
   if (usuario.rol === 'tesorero') {
 
     document.getElementById(
