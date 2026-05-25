@@ -33,6 +33,14 @@ body {
 
 }
 
+.chart-container {
+
+  position: relative;
+
+  min-height: 320px;
+
+}
+
 .sidebar-mobile {
 
   background:
@@ -88,7 +96,7 @@ body {
 
 .main-content {
 
-  padding-top: 35px !important;
+  width: 100%;
 
 }
 
@@ -105,6 +113,12 @@ body {
   transition: 0.3s;
 
   cursor: default;
+
+}
+
+.card-body {
+
+  padding: 24px;
 
 }
 
@@ -129,6 +143,12 @@ body {
   font-size: 15px;
 
   opacity: 0.85;
+
+}
+
+canvas {
+
+  max-width: 100% !important;
 
 }
 
@@ -173,6 +193,14 @@ body {
 
   border-color:
     rgba(0,0,0,0.05);
+
+}
+
+.table-responsive {
+
+  border-radius: 18px;
+
+  overflow-x: auto;
 
 }
 
@@ -245,6 +273,61 @@ h2 {
 
 }
 
+.module-section + .module-section {
+
+  margin-top: 40px;
+
+}
+
+.sidebar-desktop {
+
+  width: 250px;
+
+  min-width: 250px;
+
+}
+
+.offcanvas {
+
+  background:
+    linear-gradient(
+      180deg,
+      var(--primary),
+      #12162b
+    );
+
+  width: 260px;
+
+}
+
+.form-control,
+.form-select {
+
+  border-radius: 14px;
+
+  min-height: 48px;
+
+  border:
+    1px solid rgba(0,0,0,0.08);
+
+}
+
+.form-control:focus,
+.form-select:focus {
+
+  border-color: var(--secondary);
+
+  box-shadow:
+    0 0 0 0.2rem rgba(45,91,227,0.15);
+
+}
+
+html {
+
+  scroll-behavior: smooth;
+
+}
+
 @media (max-width: 768px) {
 
   .sidebar-mobile {
@@ -255,4 +338,46 @@ h2 {
 
   }
 
+  .btn-mobile-full {
+
+  width: 100%;
+
 }
+
+  .card-body h2 {
+
+    font-size: 28px;
+
+  }
+
+
+
+  .main-content {
+
+    width: 100% !important;
+
+    margin-left: 0 !important;
+
+    padding: 18px !important;
+
+  }
+
+  .module-section {
+
+    padding: 20px;
+
+    border-radius: 20px;
+
+  }
+
+  h2 {
+
+    font-size: 28px;
+
+  }
+
+
+
+}
+
+

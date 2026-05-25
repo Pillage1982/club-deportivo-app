@@ -20,6 +20,16 @@
 
   <div class="container-fluid">
 
+    <button
+    class="btn btn-outline-light d-lg-none me-2"
+    type="button"
+    data-bs-toggle="offcanvas"
+    data-bs-target="#sidebarMobile">
+
+    <i class="bi bi-list"></i>
+
+    </button>
+
     <span class="navbar-brand mb-0 h1">
       Club Deportivo
     </span>
@@ -45,87 +55,162 @@
 
 <div class="container-fluid">
 
-  <div class="row">
+  <div class="d-flex">
 
-    <!-- SIDEBAR -->
-    <div class="col-md-2 bg-dark text-white min-vh-100 p-3 sidebar-mobile">
+    <!-- SIDEBAR DESKTOP -->
 
-      <h4 class="mb-4">
-        Menú
-      </h4>
+<div
+  class="d-none d-lg-block sidebar-desktop">
 
-      <ul class="nav flex-column">
+  <div class="sidebar-mobile p-3 min-vh-100">
 
-        <li class="nav-item mb-2">
+    <ul class="nav flex-column">
 
-          <a
-            class="nav-link text-white"
-            href="#dashboard">
+      <li class="nav-item mb-2">
 
-            <i class="bi bi-speedometer2"></i>
-            Dashboard
+        <a
+          class="nav-link text-white"
+          href="#dashboard">
 
-          </a>
+          <i class="bi bi-speedometer2"></i>
+          Dashboard
 
-        </li>
+        </a>
 
-        <li class="nav-item mb-2">
+      </li>
 
-          <a
-            class="nav-link text-white"
-            href="#asistencias">
+      <li class="nav-item mb-2">
 
-            <i class="bi bi-check2-square"></i>
-            Asistencias
+        <a
+          class="nav-link text-white"
+          href="#asistencias">
 
-          </a>
+          <i class="bi bi-check2-square"></i>
+          Asistencias
 
-        </li>
+        </a>
 
-        <li class="nav-item mb-2">
+      </li>
 
-          <a
-            class="nav-link text-white"
-            href="#multas">
+      <li class="nav-item mb-2">
 
-            <i class="bi bi-currency-dollar"></i>
-            Multas
+        <a
+          class="nav-link text-white"
+          href="#multas">
 
-          </a>
+          <i class="bi bi-currency-dollar"></i>
+          Multas
 
-        </li>
+        </a>
 
-        <li class="nav-item mb-2">
+      </li>
 
-          <a
-            class="nav-link text-white"
-            href="#finanzas">
+      <li class="nav-item mb-2">
 
-            <i class="bi bi-graph-up"></i>
-            Finanzas
+        <a
+          class="nav-link text-white"
+          href="#finanzas">
 
-          </a>
+          <i class="bi bi-graph-up"></i>
+          Finanzas
 
-        </li>
+        </a>
 
-      </ul>
+      </li>
 
-    </div>
+    </ul>
 
-    <!-- CONTENIDO -->
-    <div class="col-md-10 p-4 main-content">
+  </div>
 
-  <div class="d-flex justify-content-end mb-3">
+</div>
 
-   <button
-     class="btn btn-danger"
-     onclick="logout()">
+<!-- SIDEBAR MOVIL -->
 
-     Cerrar Sesión
+<div
+  class="offcanvas offcanvas-start d-lg-none"
+  tabindex="-1"
+  id="sidebarMobile">
 
+  <div class="offcanvas-header">
+
+    <h5 class="offcanvas-title text-white">
+
+      Menú
+
+    </h5>
+
+    <button
+      type="button"
+      class="btn-close btn-close-white"
+      data-bs-dismiss="offcanvas">
     </button>
 
   </div>
+
+  <div class="offcanvas-body sidebar-mobile">
+
+    <ul class="nav flex-column">
+
+      <li class="nav-item mb-2">
+
+        <a
+          class="nav-link text-white"
+          href="#dashboard">
+
+          <i class="bi bi-speedometer2"></i>
+          Dashboard
+
+        </a>
+
+      </li>
+
+      <li class="nav-item mb-2">
+
+        <a
+          class="nav-link text-white"
+          href="#asistencias">
+
+          <i class="bi bi-check2-square"></i>
+          Asistencias
+
+        </a>
+
+      </li>
+
+      <li class="nav-item mb-2">
+
+        <a
+          class="nav-link text-white"
+          href="#multas">
+
+          <i class="bi bi-currency-dollar"></i>
+          Multas
+
+        </a>
+
+      </li>
+
+      <li class="nav-item mb-2">
+
+        <a
+          class="nav-link text-white"
+          href="#finanzas">
+
+          <i class="bi bi-graph-up"></i>
+          Finanzas
+
+        </a>
+
+      </li>
+
+    </ul>
+
+  </div>
+
+</div>
+
+    <!-- CONTENIDO -->
+    <div class="main-content flex-grow-1 p-4">
 
   <div id="modulo_asistencia" class="module-section">
 
@@ -170,7 +255,7 @@
 
 
 <div
-  class="container mt-4"
+  class="mt-4"
   id="dashboard">
 
   <h2 class="mb-4">
@@ -179,7 +264,7 @@
 
   <div class="row g-3">
 
-    <div class="col-12 col-md-3">
+    <div class="col-6 col-md-3">
 
       <div class="card text-bg-primary shadow-sm border-0">
 
@@ -203,7 +288,7 @@
 
     </div>
 
-    <div class="col-12 col-md-3">
+    <div class="col-6 col-md-3">
 
       <div class="card text-bg-danger shadow-sm border-0">
 
@@ -227,7 +312,7 @@
 
     </div>
 
-    <div class="col-12 col-md-3">
+    <div class="col-6 col-md-3">
 
       <div class="card text-bg-success shadow-sm border-0">
 
@@ -251,7 +336,7 @@
 
     </div>
 
-    <div class="col-12 col-md-3">
+    <div class="col-6 col-md-3">
 
       <div class="card text-bg-warning shadow-sm border-0">
 
@@ -279,7 +364,7 @@
 
 </div>
 
-<div class="container mt-5">
+<div class="mt-5">
 
   <div class="row">
 
@@ -291,7 +376,12 @@
           Multas por Persona
         </h5>
 
-        <canvas id="graficoMultas"></canvas>
+        <div class="chart-container">
+
+        
+          <canvas id="graficoMultas"></canvas>
+
+      </div>
 
       </div>
 
@@ -305,7 +395,11 @@
           Deuda Actual
         </h5>
 
-        <canvas id="graficoDeuda"></canvas>
+        <div class="chart-container">
+          
+          <canvas id="graficoDeuda"></canvas>
+        
+        </div>
 
       </div>
 
@@ -790,8 +884,7 @@
 <script src="js/dashboard.js"></script>
 <script src="js/main.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
-<div class="container mt-5"></div>
 
 </html>
