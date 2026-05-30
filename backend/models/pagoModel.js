@@ -55,6 +55,8 @@ exports.obtenerPagos = (
 
   // Consulta relacional:
   // pagos + personas
+  // Relaciona pago con socio
+  // Muestra pagos recientes primero
   const query = `
 
     SELECT
@@ -70,10 +72,8 @@ exports.obtenerPagos = (
       pa.fecha
 
     FROM pagos pa
-    // Relaciona pago con socio
     JOIN personas p
     ON pa.persona_id = p.id
-    // Muestra pagos recientes primero
     ORDER BY pa.fecha DESC
 
   `;

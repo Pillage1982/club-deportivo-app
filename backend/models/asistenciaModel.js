@@ -43,6 +43,9 @@ exports.obtenerAsistencias = (callback) => {
 
   // Consulta relacional:
   // asistencias + personas + eventos
+  // Relaciona asistencia con persona
+  // Relaciona asistencia con evento
+  // Muestra asistencias recientes primero
   const query = `
     SELECT
       a.id,
@@ -53,11 +56,8 @@ exports.obtenerAsistencias = (callback) => {
       a.estado,
       a.minutos_atraso
     FROM asistencias a
-    // Relaciona asistencia con persona
     JOIN personas p ON a.persona_id = p.id
-    // Relaciona asistencia con evento
     JOIN eventos e ON a.evento_id = e.id
-    // Muestra asistencias recientes primero
     ORDER BY a.id DESC
   `;
 

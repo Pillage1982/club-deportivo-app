@@ -227,14 +227,30 @@ function cargarTablaPagos() {
 
   .then(data => {
 
-    const tabla =
-      document.getElementById(
-        'tabla_pagos'
-      );
+  console.log(
+    'Respuesta pagos:',
+    data
+  );
 
-    tabla.innerHTML = '';
+  const tabla =
+    document.getElementById(
+      'tabla_pagos'
+    );
 
-    data.forEach(pago => {
+  tabla.innerHTML = '';
+
+  if (!Array.isArray(data)) {
+
+    console.error(
+      'No llegó un arreglo',
+      data
+    );
+
+    return;
+
+  }
+
+  data.forEach(pago => {
 
       // Acciones CRUD pagos
       tabla.innerHTML += `

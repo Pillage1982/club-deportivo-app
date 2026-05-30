@@ -14,9 +14,11 @@ module.exports = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   // Bloquea acceso sin token
-  if (!authHeader) {
-    return res.status(401)
-      .send('Token requerido');
+ if (!authHeader) {
+   return res.status(401).json({
+    mensaje: 'Token requerido'
+    });
+
   }
 
   // Extrae token JWT desde Bearer
@@ -39,10 +41,10 @@ module.exports = (req, res, next) => {
 
   } catch (err) {
 
-    // Token inválido o expirado
-    return res.status(401)
-      .send('Token inválido');
+  return res.status(401).json({
+    mensaje: 'Token inválido'
+  });
 
-  }
+}
 
 };
