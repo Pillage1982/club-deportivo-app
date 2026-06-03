@@ -75,10 +75,20 @@ function cargarPersonas() {
 
     telefono:
       document.getElementById(
-        'telefono'
-      ).value
+      'telefono'
+    ).value,
+
+    fecha_nacimiento:
+      document.getElementById(
+      'fecha_nacimiento'
+    ).value,
 
   };
+
+  console.log(
+  'Datos persona enviados:',
+  data
+  );
 
   // =====================================
   // VALIDACIONES FRONTEND PERSONAS
@@ -163,9 +173,10 @@ if (
 
   .then(data => {
 
-   document.getElementById(
+    document.getElementById(
       'respuesta_persona'
-    ).innerText = data.mensaje;
+    ).innerText =
+    data.mensaje || 'Persona guardada correctamente';
 
     personaEditando = null;
 
@@ -194,6 +205,10 @@ document.getElementById(
 
 document.getElementById(
   'telefono'
+).value = '';
+
+document.getElementById(
+  'fecha_nacimiento'
 ).value = '';
 
 // Refresca selectores y tabla personas
@@ -232,8 +247,14 @@ document.getElementById(
 
     data.forEach(persona => {
 
-      // Acciones CRUD personas
-      tabla.innerHTML += `
+    const edad =
+    calcularEdad(persona.fecha_nacimiento);
+
+    const categoria =
+    calcularCategoria(persona.fecha_nacimiento);
+
+    // Acciones CRUD personas
+    tabla.innerHTML += `
 
         <tr>
 
@@ -255,6 +276,14 @@ document.getElementById(
 
           <td>
             ${persona.telefono || ''}
+          </td>
+
+          <td>
+            ${edad}
+          </td>
+
+          <td>
+            ${categoria}
           </td>
 
           <td>
@@ -320,7 +349,14 @@ function editarPersona(persona) {
     persona.email || '';
 
   document.getElementById('telefono').value =
-    persona.telefono || '';
+  persona.telefono || '';
+
+  document.getElementById(
+    'fecha_nacimiento'
+    ).value =
+    persona.fecha_nacimiento
+    ? persona.fecha_nacimiento.split('T')[0]
+  : '';
 
   document.getElementById(
     'btn_guardar_persona'
@@ -369,5 +405,78 @@ function eliminarPersona(id) {
   })
 
   .catch(err => console.error(err));
+
+}
+
+// =====================================
+// CALCULAR EDAD
+// =====================================
+
+function calcularEdad(fechaNacimiento) {
+
+  if (!fechaNacimiento) {
+
+    return '';
+
+  }
+
+  const hoy =
+    new Date();
+
+  const nacimiento =
+    new Date(fechaNacimiento);
+
+  let edad =
+    hoy.getFullYear() -
+    nacimiento.getFullYear();
+
+  const mes =
+    hoy.getMonth() -
+    nacimiento.getMonth();
+
+  if (
+    mes < 0 ||
+    (
+      mes === 0 &&
+      hoy.getDate() < nacimiento.getDate()
+    )
+  ) {
+
+    edad--;
+
+  }
+
+  return edad;
+
+}
+
+// =====================================
+// CALCULAR CATEGORÍA
+// =====================================
+
+function calcularCategoria(fechaNacimiento) {
+
+  const edad =
+    calcularEdad(fechaNacimiento);
+
+  if (edad === '') {
+
+    return 'Sin fecha';
+
+  }
+
+  if (edad <= 8) return 'Sub-8';
+
+  if (edad <= 10) return 'Sub-10';
+
+  if (edad <= 12) return 'Sub-12';
+
+  if (edad <= 15) return 'Sub-15';
+
+  if (edad <= 18) return 'Sub-18';
+
+  if (edad <= 39) return 'Adulto';
+
+  return 'Senior';
 
 }

@@ -1,31 +1,35 @@
 const db = require('../config/db');
 
 exports.obtenerPersonas = (callback) => {
+
   const query = `
 
-  SELECT
+    SELECT
 
-    id,
+      id,
 
-    rut,
+      rut,
 
-    nombres,
+      nombres,
 
-    apellido_paterno,
+      apellido_paterno,
 
-    apellido_materno,
+      apellido_materno,
 
-    email,
+      email,
 
-    telefono
+      telefono,
 
-  FROM personas
+      fecha_nacimiento
 
-  WHERE activo = 1
+    FROM personas
 
-`;
+    WHERE activo = 1
+
+  `;
 
   db.query(query, callback);
+
 };
 
 exports.crearPersona = (
@@ -42,10 +46,11 @@ exports.crearPersona = (
       apellido_paterno,
       apellido_materno,
       email,
-      telefono
+      telefono,
+      fecha_nacimiento
     )
 
-    VALUES (?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
 
   `;
 
@@ -59,7 +64,8 @@ exports.crearPersona = (
       data.apellido_paterno,
       data.apellido_materno,
       data.email,
-      data.telefono
+      data.telefono,
+      data.fecha_nacimiento || null
     ],
 
     callback
@@ -85,7 +91,8 @@ exports.actualizarPersona = (
       apellido_paterno = ?,
       apellido_materno = ?,
       email = ?,
-      telefono = ?
+      telefono = ?,
+      fecha_nacimiento = ?
 
     WHERE id = ?
 
@@ -103,6 +110,7 @@ exports.actualizarPersona = (
       data.apellido_materno,
       data.email,
       data.telefono,
+      data.fecha_nacimiento || null,
 
       id
 
@@ -121,13 +129,13 @@ exports.eliminarPersona = (
 
   const query = `
 
-  UPDATE personas
+    UPDATE personas
 
-  SET activo = 0
+    SET activo = 0
 
-  WHERE id = ?
+    WHERE id = ?
 
-`;
+  `;
 
   db.query(
     query,
