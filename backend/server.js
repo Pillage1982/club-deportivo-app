@@ -15,6 +15,7 @@ app.use('/usuarios', require('./routes/usuarioRoutes'));
 app.use('/dashboard', require('./routes/dashboardRoutes'));
 app.use('/finanzas', require('./routes/finanzasRoutes'));
 app.use('/pagos', require('./routes/pagoRoutes'));
+app.use('/cuotas', require('./routes/cuotaRoutes'));
 
 const PORT = process.env.PORT || 3000;
 

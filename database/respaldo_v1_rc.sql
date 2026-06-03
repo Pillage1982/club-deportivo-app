@@ -211,6 +211,10 @@ CREATE TABLE cuotas (
 
     monto INT NOT NULL,
 
+    mes INT,
+
+    anio INT,
+
     fecha_vencimiento DATE,
 
     estado ENUM(
@@ -224,7 +228,15 @@ CREATE TABLE cuotas (
         'externo'
     ) DEFAULT 'interno',
 
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME
+    DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uq_cuota_mensual_persona (
+        persona_id,
+        tipo_cuota_id,
+        mes,
+        anio
+    ),
 
     FOREIGN KEY (persona_id)
         REFERENCES personas(id)
