@@ -231,7 +231,7 @@ function cargarTablaEventos() {
           </td>
 
           <td>
-            ${evento.fecha}
+            ${formatearFecha(evento.fecha)}
           </td>
 
           <td>

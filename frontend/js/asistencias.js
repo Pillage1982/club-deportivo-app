@@ -205,7 +205,7 @@ function cargarMultas() {
             <td>${multa.nombres} ${multa.apellido_paterno} ${multa.apellido_materno || ''}</td>
             <td>$${multa.monto}</td>
             <td>${multa.motivo}</td>
-            <td>${multa.fecha}</td>
+            <td>${formatearFecha(multa.fecha)}</td>
           </tr>
         `;
 

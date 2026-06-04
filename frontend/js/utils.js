@@ -139,3 +139,40 @@ function aplicarRolesFrontend() {
   }
 
 }
+
+// =====================================
+// FORMATEAR FECHAS
+// =====================================
+
+function formatearFecha(fecha) {
+
+  if (!fecha) {
+
+    return '';
+
+  }
+
+  const fechaLimpia =
+    fecha.split('T')[0];
+
+  const partes =
+    fechaLimpia.split('-');
+
+  if (partes.length !== 3) {
+
+    return fechaLimpia;
+
+  }
+
+  const anio =
+    partes[0];
+
+  const mes =
+    partes[1];
+
+  const dia =
+    partes[2];
+
+  return `${dia}-${mes}-${anio}`;
+
+}

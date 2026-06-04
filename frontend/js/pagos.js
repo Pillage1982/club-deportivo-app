@@ -279,7 +279,7 @@ function cargarTablaPagos() {
 
           <td>
 
-            ${pago.fecha}
+            ${formatearFecha(pago.fecha)}
 
           </td>
 

@@ -97,7 +97,7 @@ function cargarCuotas() {
           </td>
 
           <td>
-            ${cuota.fecha_vencimiento || ''}
+            ${formatearFecha(cuota.fecha_vencimiento)}
           </td>
 
           <td>
