@@ -15,6 +15,9 @@ backend/node_modules/
 # =========================
 
 .env
+backend/.env
+backend/.env.*
+!backend/.env.example
 
 # =========================
 # LOGS
@@ -103,7 +106,7 @@ logs/
 Desktop.ini
 
 # ===========================
-CERTIFICADOS LOCALES
+# CERTIFICADOS LOCALES
 # ===========================
 
 *.pem

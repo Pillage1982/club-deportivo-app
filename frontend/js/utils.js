@@ -137,15 +137,26 @@ function aplicarRolesFrontend() {
   // Entrenador no puede acceder a finanzas ni multas
   if (usuario.rol === 'entrenador') {
 
-    document.getElementById(
-      'modulo_multas'
-    ).style.display = 'none';
+  const modulosOcultar = [
+    'modulo_multas',
+    'modulo_finanzas',
+    'modulo_pagos'
+  ];
 
-    document.getElementById(
-      'modulo_finanzas'
-    ).style.display = 'none';
+  modulosOcultar.forEach(id => {
 
-  }
+    const modulo =
+      document.getElementById(id);
+
+    if (modulo) {
+
+      modulo.style.display = 'none';
+
+    }
+
+  });
+
+}
 
   // Tesorero no puede registrar asistencias
   if (usuario.rol === 'tesorero') {

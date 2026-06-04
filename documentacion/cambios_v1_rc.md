@@ -37,3 +37,10 @@
 - La deuda actual ahora considera multas pendientes + cuotas pendientes - pagos realizados.
 - Se agregó la columna Total Cuotas en la tabla financiera.
 - Se actualizó la vista vista_estado_financiero en MySQL.
+
+## Permisos por rol
+
+- Se restringió el acceso a módulos financieros para el rol entrenador.
+- Se protegieron rutas sensibles de pagos, multas, finanzas y cuotas.
+- La generación de cuotas queda disponible solo para admin y tesorero.
+- Se ajustó el control visual del frontend según el rol del usuario.

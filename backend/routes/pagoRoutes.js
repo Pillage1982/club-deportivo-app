@@ -26,14 +26,15 @@ const roleMiddleware =
 // =====================================
 
 router.get(
-
   '/',
 
   // Ruta protegida JWT
   authMiddleware,
-
+  roleMiddleware(
+    'admin',
+    'tesorero'
+  ),
   controller.obtener
-
 );
 
 // =====================================

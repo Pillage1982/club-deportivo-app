@@ -7,8 +7,11 @@ const roleMiddleware = require('../middleware/roleMiddleware');
 router.get(
   '/',
   authMiddleware,
-  roleMiddleware('admin', 'tesorero'),
-  controller.listar
+  roleMiddleware(
+    'admin',
+    'tesorero'
+  ),
+  controller.obtenerEstadoFinanciero
 );
 
 module.exports = router;

@@ -296,8 +296,14 @@ ON cuotas(persona_id);
 CREATE INDEX idx_asistencia_evento
 ON asistencias(evento_id);
 
+CREATE INDEX idx_pagos_persona
+ON pagos(persona_id);
+
+CREATE INDEX idx_cuotas_periodo
+ON cuotas(mes, anio);
+
 -- ==========================
--- VISTA DE DEUDA TOTAL
+-- VISTA ESTADO FINANCIERO
 -- ==========================
 
 CREATE VIEW vista_estado_financiero AS
