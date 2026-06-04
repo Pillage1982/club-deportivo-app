@@ -29,23 +29,46 @@ function cargarFinanzas() {
         // 0 = al día
         // negativo = saldo a favor
         // positivo = deuda pendiente
-        tabla.innerHTML += `
-          <tr>
-            <td>${finanza.nombres} ${finanza.apellido_paterno} ${finanza.apellido_materno || ''}</td>
-            <td>$${finanza.total_multas}</td>
-            <td>$${finanza.total_pagado}</td>
-            <td>${Number(finanza.deuda_actual) === 0 ? `<span class="badge bg-success">AL DÍA</span>`
-              : Number(finanza.deuda_actual) < 0 ? `<span class="badge bg-primary">
-                  $${Math.abs(finanza.deuda_actual)} (A FAVOR)
-                </span>`
-              : `<span class="badge bg-danger">Deuda: $${finanza.deuda_actual}</span>`}
-            </td>
-          </tr>
-        `;
+       tabla.innerHTML += `
+  <tr>
+    <td>
+      ${finanza.nombres}
+      ${finanza.apellido_paterno}
+      ${finanza.apellido_materno || ''}
+    </td>
+
+    <td>
+      $${finanza.total_multas || 0}
+    </td>
+
+    <td>
+      $${finanza.total_cuotas || 0}
+    </td>
+
+    <td>
+      $${finanza.total_pagado || 0}
+    </td>
+
+    <td>
+      ${
+        Number(finanza.deuda_actual) === 0
+          ? `<span class="badge bg-success">AL DÍA</span>`
+          : Number(finanza.deuda_actual) < 0
+            ? `<span class="badge bg-primary">
+                $${Math.abs(finanza.deuda_actual)} (A FAVOR)
+              </span>`
+            : `<span class="badge bg-danger">
+                Deuda: $${finanza.deuda_actual}
+              </span>`
+      }
+    </td>
+  </tr>
+`;
 
       });
 
     })
+
     .catch(err => console.error(err));
 
 }

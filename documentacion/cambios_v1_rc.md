@@ -23,3 +23,10 @@
 - El sistema genera cuotas mensuales para socios activos.
 - Se evita duplicar cuotas por persona, mes y año.
 - Se agregó consulta para listar cuotas generadas.
+
+## Cuotas mensuales
+
+- Se agregó botón para generar cuotas del mes.
+- Se agregó listado visual de cuotas.
+- Se validó que no se dupliquen cuotas del mismo mes.
+- Se aplicó formato de fecha reutilizable desde utils.js.
