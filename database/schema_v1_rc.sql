@@ -211,6 +211,10 @@ CREATE TABLE cuotas (
 
     monto INT NOT NULL,
 
+    mes INT,
+
+    anio INT,
+
     fecha_vencimiento DATE,
 
     estado ENUM(
@@ -225,6 +229,13 @@ CREATE TABLE cuotas (
     ) DEFAULT 'interno',
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uq_cuota_mensual_persona (
+        persona_id,
+        tipo_cuota_id,
+        mes,
+        anio
+    ),
 
     FOREIGN KEY (persona_id)
         REFERENCES personas(id)
@@ -289,47 +300,45 @@ ON asistencias(evento_id);
 -- VISTA DE DEUDA TOTAL
 -- ==========================
 
-CREATE VIEW vista_deuda_total AS
+CREATE VIEW vista_estado_financiero AS
 
 SELECT
 
-    p.id,
-    p.nombres,
-    p.apellido_paterno,
-    p.apellido_materno,
+  p.id,
 
-    COALESCE(
-        m.total_multas,
-        0
-    ) AS deuda_multas,
+  p.nombres,
 
-    COALESCE(
-        c.total_cuotas,
-        0
-    ) AS deuda_cuotas,
+  p.apellido_paterno,
 
-    COALESCE(
-        m.total_multas,
-        0
-    ) +
-    COALESCE(
-        c.total_cuotas,
-        0
-    ) AS deuda_total
+  p.apellido_materno,
+
+  COALESCE(m.total_multas, 0) AS total_multas,
+
+  COALESCE(c.total_cuotas, 0) AS total_cuotas,
+
+  COALESCE(pg.total_pagado, 0) AS total_pagado,
+
+  (
+    COALESCE(m.total_multas, 0)
+    +
+    COALESCE(c.total_cuotas, 0)
+    -
+    COALESCE(pg.total_pagado, 0)
+  ) AS deuda_actual
 
 FROM personas p
 
 LEFT JOIN (
 
-    SELECT
-        persona_id,
-        SUM(monto) AS total_multas
+  SELECT
+    persona_id,
+    SUM(monto) AS total_multas
 
-    FROM multas
+  FROM multas
 
-    WHERE estado = 'pendiente'
+  WHERE estado = 'pendiente'
 
-    GROUP BY persona_id
+  GROUP BY persona_id
 
 ) m
 
@@ -337,16 +346,35 @@ ON p.id = m.persona_id
 
 LEFT JOIN (
 
-    SELECT
-        persona_id,
-        SUM(monto) AS total_cuotas
+  SELECT
+    persona_id,
+    SUM(monto) AS total_cuotas
 
-    FROM cuotas
+  FROM cuotas
 
-    WHERE estado = 'pendiente'
+  WHERE estado IN (
+    'pendiente',
+    'vencido'
+  )
 
-    GROUP BY persona_id
+  GROUP BY persona_id
 
 ) c
 
-ON p.id = c.persona_id;
+ON p.id = c.persona_id
+
+LEFT JOIN (
+
+  SELECT
+    persona_id,
+    SUM(monto_total) AS total_pagado
+
+  FROM pagos
+
+  GROUP BY persona_id
+
+) pg
+
+ON p.id = pg.persona_id
+
+WHERE p.activo = 1;

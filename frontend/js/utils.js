@@ -104,7 +104,7 @@ function mostrarUsuario() {
 
 }
 
-// =====================================
+/// =====================================
 // CONTROL VISUAL DE MODULOS POR ROL
 // =====================================
 
@@ -115,6 +115,24 @@ function aplicarRolesFrontend() {
   );
 
   if (!usuario) return;
+
+  const btnGenerarCuotas =
+    document.getElementById(
+      'btn_generar_cuotas'
+    );
+
+  if (btnGenerarCuotas) {
+
+    if (
+      usuario.rol !== 'admin' &&
+      usuario.rol !== 'tesorero'
+    ) {
+
+      btnGenerarCuotas.style.display = 'none';
+
+    }
+
+  }
 
   // Entrenador no puede acceder a finanzas ni multas
   if (usuario.rol === 'entrenador') {

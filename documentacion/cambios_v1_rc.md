@@ -30,3 +30,10 @@
 - Se agregó listado visual de cuotas.
 - Se validó que no se dupliquen cuotas del mismo mes.
 - Se aplicó formato de fecha reutilizable desde utils.js.
+
+## Estado financiero consolidado
+
+- Se integraron las cuotas mensuales al estado financiero.
+- La deuda actual ahora considera multas pendientes + cuotas pendientes - pagos realizados.
+- Se agregó la columna Total Cuotas en la tabla financiera.
+- Se actualizó la vista vista_estado_financiero en MySQL.

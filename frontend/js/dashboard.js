@@ -39,20 +39,34 @@ function cargarDashboard() {
       'total_multas'
     ).innerText = multas.length;
 
-    // Variables acumuladoras financieras
-    let totalPagado = 0;
-    let deudaTotal = 0;
+// Variables acumuladoras financieras
+let totalPagado = 0;
+let deudaTotal = 0;
+let totalCuotas = 0;
+let totalMultasPendientes = 0;
+let sociosConDeuda = 0;
 
-    finanzas.forEach(f => {
+finanzas.forEach(f => {
 
-      // Calcula pagos y deuda total sistema
-      totalPagado +=
-        Number(f.total_pagado);
+  totalPagado +=
+    Number(f.total_pagado || 0);
 
-      deudaTotal +=
-        Number(f.deuda_actual);
+  deudaTotal +=
+    Number(f.deuda_actual || 0);
 
-    });
+  totalCuotas +=
+    Number(f.total_cuotas || 0);
+
+  totalMultasPendientes +=
+    Number(f.total_multas || 0);
+
+  if (Number(f.deuda_actual || 0) > 0) {
+
+    sociosConDeuda++;
+
+  }
+
+});
 
     // Actualiza tarjetas visuales dashboard
     document.getElementById(
@@ -96,6 +110,10 @@ function cargarGraficos() {
       f => Number(f.total_multas)
     );
 
+    const cuotas = data.map(
+      f => Number(f.total_cuotas || 0)
+    );
+
     const deuda = data.map(
       f => Number(f.deuda_actual)
     );
@@ -129,13 +147,22 @@ if (chartDeuda) {
 
           labels: nombres,
 
-          datasets: [{
+          datasets: [
+  {
 
-            label: 'Multas',
+    label: 'Multas',
 
-            data: multas
+    data: multas
 
-          }]
+  },
+  {
+
+    label: 'Cuotas',
+
+    data: cuotas
+
+  }
+]
 
         }
 
