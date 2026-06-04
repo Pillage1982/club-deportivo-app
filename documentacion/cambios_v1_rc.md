@@ -14,7 +14,12 @@
 - Creado respaldo_v1_rc.sql.
 
 ### Git
-- Commit oficial:
-  c5adf92
+- Commit oficial: c5adf92 Version 1.0 RC - Base estable.
 
-  Version 1.0 RC - Base estable.
+ ## Cuotas automáticas
+
+- Se creó el módulo backend de cuotas.
+- Se agregó la ruta POST /cuotas/generar.
+- El sistema genera cuotas mensuales para socios activos.
+- Se evita duplicar cuotas por persona, mes y año.
+- Se agregó consulta para listar cuotas generadas.
