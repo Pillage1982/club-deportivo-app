@@ -11,7 +11,7 @@ router.get(
     'admin',
     'tesorero'
   ),
-  controller.obtenerEstadoFinanciero
+  controller.listar
 );
 
 module.exports = router;
