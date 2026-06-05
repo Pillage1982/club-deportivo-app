@@ -1,7 +1,7 @@
-{
+{{
   "scripts": {
     "build": "cd backend && npm install",
-    "start": "cd backend && npm start"
+    "start": "node backend/server.js"
   },
   "dependencies": {
     "cors": "^2.8.6"

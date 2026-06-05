@@ -1,3 +1,13 @@
+console.log('Iniciando backend club deportivo...');
+
+process.on('uncaughtException', (err) => {
+  console.error('uncaughtException:', err);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('unhandledRejection:', err);
+});
+
 require('dotenv').config();
 
 const path = require('path');
@@ -30,6 +40,6 @@ app.use(express.static(frontendPath));
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });
