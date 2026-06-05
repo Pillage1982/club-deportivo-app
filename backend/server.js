@@ -1,17 +1,18 @@
 require('dotenv').config();
 
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 
 const app = express();
 
+const allowedOrigin = process.env.FRONTEND_URL;
+
 app.use(cors());
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.json({
-    mensaje: 'API Club Deportivo funcionando'
-  });
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
 });
 
 app.use('/asistencia', require('./routes/asistenciaRoutes'));
@@ -24,11 +25,11 @@ app.use('/finanzas', require('./routes/finanzasRoutes'));
 app.use('/pagos', require('./routes/pagoRoutes'));
 app.use('/cuotas', require('./routes/cuotaRoutes'));
 
+const frontendPath = path.join(__dirname, '..', 'frontend');
+app.use(express.static(frontendPath));
+
 const PORT = process.env.PORT || 3000;
 
-console.log('Iniciando API Club Deportivo...');
-console.log('PORT usado:', PORT);
-
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });

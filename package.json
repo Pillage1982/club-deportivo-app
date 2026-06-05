@@ -1,18 +1,9 @@
 {
-  "name": "club-deportivo-app",
-  "version": "1.0.0",
-  "description": "Sistema administrativo para club deportivo",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "build": "cd backend && npm install && cd .."
+    "build": "cd backend && npm install",
+    "start": "cd backend && npm start"
   },
   "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.14.1"
+    "cors": "^2.8.6"
   }
 }
