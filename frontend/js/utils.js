@@ -110,70 +110,59 @@ function mostrarUsuario() {
 // CONTROL VISUAL DE MODULOS POR ROL
 // =====================================
 
-function aplicarRolesFrontend() {
+function ocultarSelector(selector) {
+  document
+    .querySelectorAll(selector)
+    .forEach(elemento => {
+      elemento.style.display = 'none';
+    });
+}
 
+function ocultarElemento(id) {
+  const elemento = document.getElementById(id);
+
+  if (elemento) {
+    elemento.style.display = 'none';
+  }
+}
+
+function aplicarRolesFrontend() {
   const usuario = JSON.parse(
     localStorage.getItem('usuario')
   );
 
   if (!usuario) return;
 
+  const rol = usuario.rol;
+
+  if (rol === 'admin') {
+    return;
+  }
+
+  if (rol === 'tesorero') {
+    ocultarSelector('.nav-asistencias');
+    ocultarElemento('modulo_asistencia');
+    ocultarElemento('modulo_eventos');
+  }
+
+  if (rol === 'entrenador') {
+    ocultarSelector('.nav-multas');
+    ocultarSelector('.nav-finanzas');
+    ocultarElemento('modulo_multas');
+    ocultarElemento('modulo_finanzas');
+    ocultarElemento('modulo_pagos');
+  }
+
   const btnGenerarCuotas =
-    document.getElementById(
-      'btn_generar_cuotas'
-    );
+    document.getElementById('btn_generar_cuotas');
 
-  if (btnGenerarCuotas) {
-
-    if (
-      usuario.rol !== 'admin' &&
-      usuario.rol !== 'tesorero'
-    ) {
-
-      btnGenerarCuotas.style.display = 'none';
-
-    }
-
+  if (
+    btnGenerarCuotas &&
+    rol !== 'admin' &&
+    rol !== 'tesorero'
+  ) {
+    btnGenerarCuotas.style.display = 'none';
   }
-
-  // Entrenador no puede acceder a finanzas ni multas
-  if (usuario.rol === 'entrenador') {
-
-  const modulosOcultar = [
-    'modulo_multas',
-    'modulo_finanzas',
-    'modulo_pagos'
-  ];
-
-  modulosOcultar.forEach(id => {
-
-    const modulo =
-      document.getElementById(id);
-
-    if (modulo) {
-
-      modulo.style.display = 'none';
-
-    }
-
-  });
-
-}
-
-  // Tesorero no puede registrar asistencias
-  if (usuario.rol === 'tesorero') {
-
-    const moduloAsistencia =
-  document.getElementById(
-    'modulo_asistencia'
-  );
-
-if (moduloAsistencia) {
-  moduloAsistencia.style.display = 'none';
-}
-
-  }
-
 }
 
 // =====================================
