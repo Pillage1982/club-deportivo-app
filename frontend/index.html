@@ -1,8 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Control de Asistencia</title>
   <meta charset="UTF-8">
+  <script>
+    if (!localStorage.getItem('token')) {
+      window.location.replace('login.html');
+    }
+  </script>
+  <title>Administra tu Club</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
