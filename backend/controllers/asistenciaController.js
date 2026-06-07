@@ -12,14 +12,22 @@ exports.registrar = (req, res) => {
 
   asistenciaModel.crearAsistencia(req.body, (err, result) => {
 
-    // Manejo errores backend
     if (err) {
-      console.error(err);
-      return res.status(500).send(err);
-    }
+  if (err.code === 'ER_DUP_ENTRY') {
+    return res.status(409).json({
+      mensaje: 'La asistencia ya fue registrada para esta persona en este evento.'
+    });
+  }
 
-    // Respuesta exitosa frontend
-    res.send('Asistencia registrada');
+  console.error('Error registrando asistencia:', err);
+  return res.status(500).json({
+    mensaje: 'Error al registrar asistencia'
+  });
+}
+
+res.json({
+  mensaje: 'Asistencia registrada'
+});
 
   });
 

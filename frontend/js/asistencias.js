@@ -97,10 +97,29 @@ function registrarAsistencia() {
 
       })
 
-      .then(res => res.text())
-      .then(response => {
+      .then(async res => {
+  const contentType = res.headers.get('content-type') || '';
+  const data = contentType.includes('application/json')
+    ? await res.json()
+    : { mensaje: await res.text() };
 
-      document.getElementById('respuesta').innerText = response;
+  if (!res.ok) {
+    throw new Error(
+      data.mensaje || 'No se pudo registrar la asistencia'
+    );
+  }
+
+  return data;
+})
+.then(response => {
+
+document.getElementById('respuesta').innerText =
+  response.mensaje || 'Asistencia registrada';
+
+mostrarAlerta(
+  response.mensaje || 'Asistencia registrada',
+  'success'
+);
 
       // Refresca automáticamente:
       // asistencias
@@ -123,12 +142,9 @@ function registrarAsistencia() {
     // Evita registros duplicados
     // misma persona + mismo evento
     mostrarAlerta(
-
-    'No se puede registrar asistencia duplicada',
-
-    'danger'
-
-  );
+  err.message,
+  'danger'
+);
 
 });
 

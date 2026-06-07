@@ -94,54 +94,11 @@ function cargarPersonas() {
   // VALIDACIONES FRONTEND PERSONAS
   // =====================================
 
-if (!data.rut.trim()) {
+const errorValidacion = validarPersonaFrontend(data);
 
-  mostrarAlerta(
-    'Ingrese el RUT',
-    'warning'
-  );
-
+if (errorValidacion) {
+  mostrarAlerta(errorValidacion, 'warning');
   return;
-
-}
-
-if (!data.nombres.trim()) {
-
-  mostrarAlerta(
-    'Ingrese los nombres',
-    'warning'
-  );
-
-  return;
-
-}
-
-if (!data.apellido_paterno.trim()) {
-
-  mostrarAlerta(
-    'Ingrese el apellido paterno',
-    'warning'
-  );
-
-  return;
-
-}
-
-if (
-
-  data.email &&
-
-  !data.email.includes('@')
-
-) {
-
-  mostrarAlerta(
-    'Ingrese un email válido',
-    'warning'
-  );
-
-  return;
-
 }
 
   let url = `${API_URL}/personas`;
@@ -169,9 +126,18 @@ if (
 
   })
 
-  .then(res => res.json())
+  .then(async res => {
+  const data = await res.json().catch(() => ({}));
 
-  .then(data => {
+  if (!res.ok) {
+    throw new Error(
+      data.mensaje || 'No se pudo guardar la persona'
+    );
+  }
+
+  return data;
+})
+.then(data => {
 
     document.getElementById(
       'respuesta_persona'
@@ -218,7 +184,13 @@ document.getElementById(
 
   })
 
-  .catch(err => console.error(err));
+  .catch(err => {
+  console.error(err);
+  mostrarAlerta(
+    err.message || 'No se pudo guardar la persona',
+    'danger'
+  );
+});
 
 }
 
@@ -461,7 +433,7 @@ function calcularCategoria(fechaNacimiento) {
 
   if (edad === '') {
 
-    return 'Sin fecha';
+    return 'Fecha requerida';
 
   }
 
@@ -479,4 +451,94 @@ function calcularCategoria(fechaNacimiento) {
 
   return 'Senior';
 
+}
+
+function limpiarRutFrontend(rut) {
+  return String(rut || '').replace(/\./g, '').replace(/-/g, '').trim().toUpperCase();
+}
+
+function validarRutFrontend(rut) {
+  const limpio = limpiarRutFrontend(rut);
+
+  if (!/^[0-9]{7,8}[0-9K]$/.test(limpio)) {
+    return false;
+  }
+
+  const cuerpo = limpio.slice(0, -1);
+  const dv = limpio.slice(-1);
+  let suma = 0;
+  let multiplicador = 2;
+
+  for (let i = cuerpo.length - 1; i >= 0; i--) {
+    suma += Number(cuerpo[i]) * multiplicador;
+    multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
+  }
+
+  const resto = 11 - (suma % 11);
+  const dvEsperado = resto === 11 ? '0' : resto === 10 ? 'K' : String(resto);
+
+  return dv === dvEsperado;
+}
+
+function validarNombreFrontend(valor) {
+  const texto = String(valor || '').trim().replace(/\s+/g, ' ');
+  return texto.length >= 2 && /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]+$/.test(texto);
+}
+
+function validarEmailFrontend(email) {
+  if (!email) return true;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validarTelefonoFrontend(telefono) {
+  const limpio = String(telefono || '').replace(/\s+/g, '');
+  return /^(\+?56)?9?[0-9]{8}$/.test(limpio);
+}
+
+function validarFechaNacimientoFrontend(fecha) {
+  if (!fecha) return false;
+
+  const nacimiento = new Date(fecha);
+  const hoy = new Date();
+
+  if (Number.isNaN(nacimiento.getTime())) {
+    return false;
+  }
+
+  return nacimiento <= hoy;
+}
+
+function validarPersonaFrontend(data) {
+  if (!validarRutFrontend(data.rut)) {
+    return 'Ingrese un RUT chileno válido';
+  }
+
+  if (!validarNombreFrontend(data.nombres)) {
+    return 'Ingrese nombres válidos';
+  }
+
+  if (!validarNombreFrontend(data.apellido_paterno)) {
+    return 'Ingrese un apellido paterno válido';
+  }
+
+  if (
+    data.apellido_materno &&
+    !validarNombreFrontend(data.apellido_materno)
+  ) {
+    return 'Ingrese un apellido materno válido';
+  }
+
+  if (!validarEmailFrontend(data.email)) {
+    return 'Ingrese un email válido';
+  }
+
+  if (!validarTelefonoFrontend(data.telefono)) {
+    return 'Ingrese un teléfono chileno válido';
+  }
+
+  if (!validarFechaNacimientoFrontend(data.fecha_nacimiento)) {
+    return 'Ingrese una fecha de nacimiento válida';
+  }
+
+  return null;
 }
