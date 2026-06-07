@@ -44,3 +44,48 @@
 - Se protegieron rutas sensibles de pagos, multas, finanzas y cuotas.
 - La generación de cuotas queda disponible solo para admin y tesorero.
 - Se ajustó el control visual del frontend según el rol del usuario.
+
+# Registro de cambios - Despliegue Hostinger
+
+## Contexto
+
+La app `club-deportivo-app` fue desplegada en Hostinger desde GitHub para el subdominio:
+
+`https://club.pillageweb.cl`
+
+Durante el despliegue inicial se presentó error `503 Service Unavailable`.
+
+## Problemas encontrados
+
+- Hostinger desplegaba correctamente desde GitHub, pero la app Node no quedaba levantada.
+- El backend real estaba dentro de `backend/`, mientras Hostinger estaba usando la raíz del repositorio.
+- El frontend apuntaba a `http://localhost:3000`, lo que no funciona en producción.
+- Faltaban dependencias runtime en el `package.json` raíz, especialmente `bcrypt`.
+- Faltaban variables de entorno para MySQL.
+- MySQL rechazaba conexión por usuario/host incorrecto.
+- La ruta `finanzasRoutes.js` apuntaba a un handler inexistente.
+- La conexión MySQL única (`createConnection`) se cortaba con `ECONNRESET` en Hostinger.
+
+## Cambios realizados
+
+### Backend
+
+Se actualizó `backend/server.js` para:
+
+- Agregar endpoint de salud:
+  `/health`
+- Servir archivos estáticos del frontend desde `../frontend`.
+- Escuchar en `0.0.0.0`.
+- Agregar logs temporales de arranque para diagnosticar Hostinger.
+
+### Frontend
+
+Se actualizaron:
+
+- `frontend/js/login.js`
+- `frontend/js/utils.js`
+
+Cambio aplicado:
+
+```js
+const API_URL = window.API_URL || window.location.origin;
