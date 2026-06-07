@@ -12,12 +12,14 @@ const API_URL = window.API_URL || window.location.origin;
 function mostrarAlerta(mensaje,tipo = 'success') {
 
   const container =
-    document.getElementById(
-      'alert_container'
-    );
+  document.getElementById(
+    'alert_container'
+  );
 
-  const alerta =
-    document.createElement('div');
+if (!container) return;
+
+const alerta =
+  document.createElement('div');
 
   alerta.className =
 
@@ -161,9 +163,14 @@ function aplicarRolesFrontend() {
   // Tesorero no puede registrar asistencias
   if (usuario.rol === 'tesorero') {
 
-    document.getElementById(
-      'modulo_asistencia'
-    ).style.display = 'none';
+    const moduloAsistencia =
+  document.getElementById(
+    'modulo_asistencia'
+  );
+
+if (moduloAsistencia) {
+  moduloAsistencia.style.display = 'none';
+}
 
   }
 
