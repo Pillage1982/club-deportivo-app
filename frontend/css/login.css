@@ -277,11 +277,17 @@
 
 }
 
-.app-footer {
-  background: #000;
-  color: #dc3545;
-  font-size: 0.9rem;
-  font-weight: 600;
+.login-credit {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  margin: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
 @media (max-width: 576px) {
