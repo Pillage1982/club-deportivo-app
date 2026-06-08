@@ -1,21 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
+
   <script>
     if (!localStorage.getItem('token')) {
       window.location.replace('login.html');
     }
   </script>
+
   <title>Administra tu Club</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 
 <body>
-
   <div
     id="alert_container"
     class="position-fixed top-0 end-0 p-3"
@@ -23,932 +32,642 @@
   </div>
 
   <nav class="navbar navbar-dark bg-dark">
-
-  <div class="container-fluid">
-
-    <button
-    class="btn btn-outline-light d-lg-none me-2"
-    type="button"
-    data-bs-toggle="offcanvas"
-    data-bs-target="#sidebarMobile">
-
-    <i class="bi bi-list"></i>
-
-    </button>
-
-    <span class="navbar-brand mb-0 h1">
-      Club Deportivo
-    </span>
-
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-
-      <span class="text-white" id="usuario_logeado">
-      </span>
-
+    <div class="container-fluid">
       <button
-        class="btn btn-danger btn-sm"
-        onclick="logout()">
+        class="btn btn-outline-light d-lg-none me-2"
+        type="button"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#sidebarMobile">
 
-        Cerrar Sesión
-
+        <i class="bi bi-list"></i>
       </button>
 
+      <span class="navbar-brand mb-0 h1">
+        Club Deportivo
+      </span>
+
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="text-white" id="usuario_logeado"></span>
+
+        <button
+          class="btn btn-danger btn-sm"
+          onclick="logout()">
+
+          Cerrar Sesión
+        </button>
+      </div>
     </div>
-
-  </div>
-
-</nav>
-
-<div class="container-fluid">
-
-  <div class="d-flex">
-
-    <!-- SIDEBAR DESKTOP -->
-
-<div
-  class="d-none d-lg-block sidebar-desktop">
-
-  <div class="sidebar-mobile p-3 min-vh-100">
-
-    <ul class="nav flex-column">
-
-      <li class="nav-item mb-2 nav-dashboard">
-
-        <a
-          class="nav-link text-white"
-          href="#dashboard">
-
-          <i class="bi bi-speedometer2"></i>
-          Dashboard
-
-        </a>
-
-      </li>
-
-      <li class="nav-item mb-2 nav-asistencias">
-
-        <a
-          class="nav-link text-white"
-          href="#asistencias">
-
-          <i class="bi bi-check2-square"></i>
-          Asistencias
-
-        </a>
-
-      </li>
-
-      <li class="nav-item mb-2 nav-multas">
-
-        <a
-          class="nav-link text-white"
-          href="#multas">
-
-          <i class="bi bi-currency-dollar"></i>
-          Multas
-
-        </a>
-
-      </li>
-
-      <li class="nav-item mb-2 nav-finanzas">
-
-        <a
-          class="nav-link text-white"
-          href="#finanzas">
-
-          <i class="bi bi-graph-up"></i>
-          Finanzas
-
-        </a>
-
-      </li>
-
-    </ul>
-
-  </div>
-
-</div>
-
-<!-- SIDEBAR MOVIL -->
-
-<div
-  class="offcanvas offcanvas-start d-lg-none"
-  tabindex="-1"
-  id="sidebarMobile">
-
-  <div class="offcanvas-header">
-
-    <h5 class="offcanvas-title text-white">
-
-      Menú
-
-    </h5>
-
-    <button
-      type="button"
-      class="btn-close btn-close-white"
-      data-bs-dismiss="offcanvas">
-    </button>
-
-  </div>
-
-  <div class="offcanvas-body sidebar-mobile">
-
-    <ul class="nav flex-column">
-
-      <li class="nav-item mb-2 nav-dashboard">
-
-        <a
-          class="nav-link text-white"
-          href="#dashboard">
-
-          <i class="bi bi-speedometer2"></i>
-          Dashboard
-
-        </a>
-
-      </li>
-
-      <li class="nav-item mb-2 nav-asistencias">
-
-        <a
-          class="nav-link text-white"
-          href="#asistencias">
-
-          <i class="bi bi-check2-square"></i>
-          Asistencias
-
-        </a>
-
-      </li>
-
-      <li class="nav-item mb-2 nav-multas">
-
-        <a
-          class="nav-link text-white"
-          href="#multas">
-
-          <i class="bi bi-currency-dollar"></i>
-          Multas
-
-        </a>
-
-      </li>
-
-      <li class="nav-item mb-2 nav-finanzas">
-
-        <a
-          class="nav-link text-white"
-          href="#finanzas">
-
-          <i class="bi bi-graph-up"></i>
-          Finanzas
-
-        </a>
-
-      </li>
-
-    </ul>
-
-  </div>
-
-</div>
-
-    <!-- CONTENIDO -->
-    <div class="main-content flex-grow-1 p-4">
-
-  <div id="modulo_asistencia" class="module-section">
-
-<h2 class="mb-4">Registrar Asistencia</h2>
-
-<div class="mb-3 px-2">
-  <label class="form-label">Nombre Completo</label>
-  <select id="persona_id" class="form-select"></select>
-</div>
-
-<div class="mb-3 px-2">
-  <label class="form-label">Evento</label>
-  <select id="evento_id" class="form-select"></select>
-</div>
-
-<div class="mb-3 px-2">
-  <label class="form-label">Estado</label>
-  <select id="estado" class="form-select">
-    <option value="presente">Presente</option>
-    <option value="atrasado">Atrasado</option>
-    <option value="ausente">Ausente</option>
-  </select>
-</div>
-
-<div class="mb-3 px-2">
-  <label class="form-label">Minutos atraso</label>
-  <input
-    type="number"
-    id="minutos"
-    class="form-control"
-    value="0">
-</div>
-
-<button
-  onclick="registrarAsistencia()"
-  class="btn btn-primary">
-  Registrar
-</button>
-
-<p id="respuesta" class="mt-3"></p>
-
-</div>
-
-<div
-  class="mt-4"
-  id="dashboard">
-
-  <h2 class="mb-4">
-    Dashboard Club Deportivo
-  </h2>
-
-  <div class="row g-3">
-
-    <div class="col-6 col-md-3">
-
-      <div class="card text-bg-primary shadow-sm border-0">
-
-        <div class="card-body shadow-sm border-0">
-
-          <h5 class="card-title shadow-sm border-0">
-
-           <i class="bi bi-people-fill"></i>
-
-           Personas
-
+  </nav>
+
+  <div class="container-fluid">
+    <div class="d-flex">
+
+      <!-- SIDEBAR DESKTOP -->
+      <div class="d-none d-lg-block sidebar-desktop">
+        <div class="sidebar-mobile p-3 min-vh-100">
+          <ul class="nav flex-column">
+            <li class="nav-item mb-2 nav-dashboard">
+              <a class="nav-link text-white" href="#dashboard">
+                <i class="bi bi-speedometer2"></i>
+                Dashboard
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-asistencias">
+              <a class="nav-link text-white" href="#asistencias">
+                <i class="bi bi-check2-square"></i>
+                Asistencias
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-multas">
+              <a class="nav-link text-white" href="#multas">
+                <i class="bi bi-currency-dollar"></i>
+                Multas
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-finanzas">
+              <a class="nav-link text-white" href="#finanzas">
+                <i class="bi bi-graph-up"></i>
+                Finanzas
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- SIDEBAR MOVIL -->
+      <div
+        class="offcanvas offcanvas-start d-lg-none"
+        tabindex="-1"
+        id="sidebarMobile">
+
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title text-white">
+            Menú
           </h5>
 
-          <h2 id="total_personas">
-            0
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="offcanvas">
+          </button>
+        </div>
+
+        <div class="offcanvas-body sidebar-mobile">
+          <ul class="nav flex-column">
+            <li class="nav-item mb-2 nav-dashboard">
+              <a class="nav-link text-white" href="#dashboard">
+                <i class="bi bi-speedometer2"></i>
+                Dashboard
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-asistencias">
+              <a class="nav-link text-white" href="#asistencias">
+                <i class="bi bi-check2-square"></i>
+                Asistencias
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-multas">
+              <a class="nav-link text-white" href="#multas">
+                <i class="bi bi-currency-dollar"></i>
+                Multas
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-finanzas">
+              <a class="nav-link text-white" href="#finanzas">
+                <i class="bi bi-graph-up"></i>
+                Finanzas
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- CONTENIDO -->
+      <main class="main-content flex-grow-1 p-4">
+
+        <!-- REGISTRAR ASISTENCIA -->
+        <section id="modulo_asistencia" class="module-section">
+          <h2 id="titulo_registrar_asistencia" class="mb-4">
+            Registrar Asistencia
           </h2>
 
-        </div>
+          <div class="mb-3 px-2">
+            <label class="form-label">Nombre Completo</label>
+            <select id="persona_id" class="form-select"></select>
+          </div>
 
-      </div>
+          <div class="mb-3 px-2">
+            <label class="form-label">Evento</label>
+            <select id="evento_id" class="form-select"></select>
+          </div>
 
-    </div>
+          <div class="mb-3 px-2">
+            <label class="form-label">Estado</label>
+            <select id="estado" class="form-select">
+              <option value="presente">Presente</option>
+              <option value="atrasado">Atrasado</option>
+              <option value="ausente">Ausente</option>
+            </select>
+          </div>
 
-    <div id="card_dashboard_multas" class="col-6 col-md-3">
+          <div class="mb-3 px-2">
+            <label class="form-label">Minutos atraso</label>
 
-      <div class="card text-bg-danger shadow-sm border-0">
+            <input
+              type="number"
+              id="minutos"
+              class="form-control"
+              value="0">
+          </div>
 
-        <div class="card-body shadow-sm border-0">
+          <button
+            onclick="registrarAsistencia()"
+            class="btn btn-primary">
 
-          <h5 class="card-title shadow-sm border-0">
+            Registrar
+          </button>
 
-            <i class="bi bi-exclamation-triangle-fill"></i>
+          <p id="respuesta" class="mt-3"></p>
+        </section>
 
-            Multas
-
-          </h5>
-
-          <h2 id="total_multas">
-            0
+        <!-- DASHBOARD -->
+        <section id="dashboard" class="mt-4">
+          <h2 class="mb-4">
+            Dashboard Club Deportivo
           </h2>
 
-        </div>
+          <div class="row g-3">
+            <div class="col-6 col-md-3">
+              <div class="card text-bg-primary shadow-sm border-0">
+                <div class="card-body shadow-sm border-0">
+                  <h5 class="card-title shadow-sm border-0">
+                    <i class="bi bi-people-fill"></i>
+                    Personas
+                  </h5>
 
-      </div>
+                  <h2 id="total_personas">
+                    0
+                  </h2>
+                </div>
+              </div>
+            </div>
 
-    </div>
+            <div id="card_dashboard_multas" class="col-6 col-md-3">
+              <div class="card text-bg-danger shadow-sm border-0">
+                <div class="card-body shadow-sm border-0">
+                  <h5 class="card-title shadow-sm border-0">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    Multas
+                  </h5>
 
-    <div id="card_dashboard_pagado" class="col-6 col-md-3">
+                  <h2 id="total_multas">
+                    0
+                  </h2>
+                </div>
+              </div>
+            </div>
 
-      <div class="card text-bg-success shadow-sm border-0">
+            <div id="card_dashboard_pagado" class="col-6 col-md-3">
+              <div class="card text-bg-success shadow-sm border-0">
+                <div class="card-body shadow-sm border-0">
+                  <h5 class="card-title shadow-sm border-0">
+                    <i class="bi bi-cash-stack"></i>
+                    Pagado
+                  </h5>
 
-        <div class="card-body shadow-sm border-0">
+                  <h2 id="total_pagado">
+                    $0
+                  </h2>
+                </div>
+              </div>
+            </div>
 
-          <h5 class="card-title shadow-sm border-0">
+            <div id="card_dashboard_deuda" class="col-6 col-md-3">
+              <div class="card text-bg-warning shadow-sm border-0">
+                <div class="card-body shadow-sm border-0">
+                  <h5 class="card-title shadow-sm border-0">
+                    <i class="bi bi-wallet2"></i>
+                    Deuda
+                  </h5>
 
-            <i class="bi bi-cash-stack"></i>
+                  <h2 id="deuda_total">
+                    $0
+                  </h2>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            Pagado
+        <!-- GRAFICOS -->
+        <section class="mt-5">
+          <div class="row">
+            <div id="grafico_multas_wrapper" class="col-12 col-md-6 mb-3">
+              <div class="card p-3 shadow-sm border-0">
+                <h5>Multas por Persona</h5>
 
-          </h5>
+                <div class="chart-container">
+                  <canvas id="graficoMultas"></canvas>
+                </div>
+              </div>
+            </div>
 
-          <h2 id="total_pagado">
-            $0
+            <div id="grafico_deuda_wrapper" class="col-12 col-md-6 mb-3">
+              <div class="card p-3 shadow-sm border-0">
+                <h5>Deuda Actual</h5>
+
+                <div class="chart-container">
+                  <canvas id="graficoDeuda"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PERSONAS -->
+        <section id="modulo_personas" class="module-section">
+          <h2 id="titulo_personas" class="mt-5 mb-4">
+            Gestión de Personas
           </h2>
 
-        </div>
+          <div id="form_personas" class="card p-4 shadow-sm border-0">
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Nombres</label>
 
-      </div>
+                <input
+                  type="text"
+                  id="nombres"
+                  class="form-control">
+              </div>
 
-    </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Apellido Paterno</label>
 
-    <div id="card_dashboard_deuda" class="col-6 col-md-3">
+                <input
+                  type="text"
+                  id="apellido_paterno"
+                  class="form-control">
+              </div>
 
-      <div class="card text-bg-warning shadow-sm border-0">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Apellido Materno</label>
 
-        <div class="card-body shadow-sm border-0">
+                <input
+                  type="text"
+                  id="apellido_materno"
+                  class="form-control">
+              </div>
 
-          <h5 class="card-title shadow-sm border-0">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">RUT</label>
 
-           <i class="bi bi-wallet2"></i>
+                <input
+                  type="text"
+                  id="rut"
+                  class="form-control">
+              </div>
 
-           Deuda
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Email</label>
 
-          </h5>
+                <input
+                  type="email"
+                  id="email"
+                  class="form-control">
+              </div>
 
-          <h2 id="deuda_total">
-            $0
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Teléfono</label>
+
+                <input
+                  type="text"
+                  id="telefono"
+                  class="form-control">
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Fecha de nacimiento</label>
+
+                <input
+                  type="date"
+                  id="fecha_nacimiento"
+                  class="form-control">
+              </div>
+            </div>
+
+            <button
+              id="btn_guardar_persona"
+              class="btn btn-success"
+              onclick="crearPersona()">
+
+              Guardar Persona
+            </button>
+
+            <p id="respuesta_persona" class="mt-3"></p>
+          </div>
+        </section>
+
+        <!-- EVENTOS -->
+        <section id="eventos" class="module-section">
+          <div id="modulo_eventos">
+            <h2 id="titulo_eventos" class="mt-5 mb-4">
+              Gestión de Eventos
+            </h2>
+
+            <div class="card p-4 shadow-sm border-0">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Nombre Evento</label>
+
+                  <input
+                    type="text"
+                    id="evento_nombre"
+                    class="form-control">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Tipo</label>
+
+                  <select id="evento_tipo" class="form-select">
+                    <option value="entrenamiento">
+                      Entrenamiento
+                    </option>
+
+                    <option value="partido">
+                      Partido
+                    </option>
+
+                    <option value="reunion">
+                      Reunión
+                    </option>
+                  </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Fecha</label>
+
+                  <input
+                    type="datetime-local"
+                    id="evento_fecha"
+                    class="form-control">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Ubicación</label>
+
+                  <input
+                    type="text"
+                    id="evento_ubicacion"
+                    class="form-control">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Descripción</label>
+
+                  <input
+                    type="text"
+                    id="evento_descripcion"
+                    class="form-control">
+                </div>
+              </div>
+
+              <button
+                id="btn_guardar_evento"
+                class="btn btn-primary"
+                onclick="crearEvento()">
+
+                Guardar Evento
+              </button>
+            </div>
+          </div>
+
+          <div id="tabla_eventos_wrapper" class="table-responsive mt-4">
+            <table class="table table-bordered table-striped">
+              <thead class="table-dark">
+                <tr>
+                  <th>Nombre</th>
+                  <th>Tipo</th>
+                  <th>Fecha</th>
+                  <th>Ubicación</th>
+                  <th>Acciones</th>
+                  <th>Descripción</th>
+                </tr>
+              </thead>
+
+              <tbody id="tabla_eventos"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- PAGOS -->
+        <section id="modulo_pagos" class="module-section">
+          <h2 id="titulo_pagos" class="mt-5 mb-4">
+            Gestión de Pagos
           </h2>
 
+          <div class="card p-4 shadow-sm border-0">
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Persona</label>
+                <select id="pago_persona_id" class="form-select"></select>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Monto</label>
+
+                <input
+                  type="number"
+                  id="pago_monto"
+                  class="form-control">
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Método Pago</label>
+
+                <select id="pago_metodo" class="form-select">
+                  <option value="efectivo">
+                    Efectivo
+                  </option>
+
+                  <option value="transferencia">
+                    Transferencia
+                  </option>
+
+                  <option value="debito">
+                    Débito
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              id="btn_guardar_pago"
+              class="btn btn-success"
+              onclick="crearPago()">
+
+              Guardar Pago
+            </button>
+          </div>
+        </section>
+
+        <div id="tabla_pagos_wrapper" class="table-responsive mt-4">
+          <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+              <tr>
+                <th>Persona</th>
+                <th>Monto</th>
+                <th>Método</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody id="tabla_pagos"></tbody>
+          </table>
         </div>
 
-      </div>
+        <div id="tabla_personas_wrapper" class="table-responsive mt-4">
+          <table class="table table-bordered table-striped table-hover align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>Nombre Completo</th>
+                <th>RUT</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Edad</th>
+                <th>Categoría</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
 
-    </div>
-
-  </div>
-
-</div>
-
-<div class="mt-5">
-
-  <div class="row">
-
-    <div id="grafico_multas_wrapper" class="col-12 col-md-6 mb-3">
-
-      <div class="card p-3 shadow-sm border-0">
-
-        <h5>Multas por Persona</h5>
-
-        <div class="chart-container">
-
-        
-          <canvas id="graficoMultas"></canvas>
-
-      </div>
-
-      </div>
-
-    </div>
-
-    <div id="grafico_deuda_wrapper" class="col-12 col-md-6 mb-3">
-
-      <div class="card p-3 shadow-sm border-0">
-
-        <h5>
-          Deuda Actual
-        </h5>
-
-        <div class="chart-container">
-          
-          <canvas id="graficoDeuda"></canvas>
-        
+            <tbody id="tabla_personas"></tbody>
+          </table>
         </div>
 
-      </div>
+        <!-- ASISTENCIAS -->
+        <section id="asistencias">
+          <h2 id="titulo_asistencias" class="mt-5 mb-3">
+            Asistencias
+          </h2>
 
+          <div id="tabla_asistencias_wrapper" class="table-responsive">
+            <table class="table table-striped table-bordered">
+              <thead class="table-dark">
+                <tr>
+                  <th>Nombre Completo</th>
+                  <th>Evento</th>
+                  <th>Estado</th>
+                  <th>Minutos</th>
+                </tr>
+              </thead>
+
+              <tbody id="tabla_asistencias"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- MULTAS -->
+        <section id="multas">
+          <div id="modulo_multas" class="module-section">
+            <h2 id="titulo_multas" class="mt-5 mb-3">
+              Multas
+            </h2>
+
+            <div id="tabla_multas_wrapper" class="table-responsive">
+              <table class="table table-bordered table-striped">
+                <thead class="table-danger">
+                  <tr>
+                    <th>Nombre Completo</th>
+                    <th>Monto</th>
+                    <th>Motivo</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+
+                <tbody id="tabla_multas"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- FINANZAS -->
+        <section id="finanzas">
+          <div id="modulo_finanzas" class="module-section">
+            <h2 id="titulo_finanzas" class="mt-5 mb-3">
+              Estado Financiero
+            </h2>
+
+            <div class="mb-3">
+              <button
+                id="btn_generar_cuotas"
+                class="btn btn-success"
+                onclick="generarCuotasMensuales()">
+
+                <i class="bi bi-cash-coin"></i>
+                Generar cuotas del mes
+              </button>
+
+              <div id="tabla_cuotas_wrapper" class="table-responsive mt-4">
+                <table class="table table-hover align-middle">
+                  <thead>
+                    <tr>
+                      <th>Socio</th>
+                      <th>Monto</th>
+                      <th>Mes</th>
+                      <th>Año</th>
+                      <th>Vencimiento</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+
+                  <tbody id="tabla_cuotas"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="tabla_finanzas_wrapper" class="table-responsive">
+              <table class="table table-bordered">
+                <thead class="table-dark">
+                  <tr>
+                    <th>Nombre Completo</th>
+                    <th>Total Multas</th>
+                    <th>Total Cuotas</th>
+                    <th>Total Pagado</th>
+                    <th>Deuda Actual</th>
+                  </tr>
+                </thead>
+
+                <tbody id="tabla_finanzas"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
-
   </div>
 
-</div>
-
-<div id="modulo_personas" class="module-section">
-
-  <h2 class="mt-5 mb-4">
-    Gestión de Personas
-  </h2>
-
-  <div id="form_personas" class="card p-4 shadow-sm border-0">
-
-    <div class="row">
-
-      <div class="col-md-4 mb-3">
-
-        <label class="form-label">
-          Nombres
-        </label>
-
-        <input
-          type="text"
-          id="nombres"
-          class="form-control">
-
-      </div>
-
-      <div class="col-md-4 mb-3">
-
-        <label class="form-label">
-          Apellido Paterno
-        </label>
-
-        <input
-          type="text"
-          id="apellido_paterno"
-          class="form-control">
-
-      </div>
-
-      <div class="col-md-4 mb-3">
-
-        <label class="form-label">
-          Apellido Materno
-        </label>
-
-        <input
-          type="text"
-          id="apellido_materno"
-          class="form-control">
-
-      </div>
-
-      <div class="col-md-4 mb-3">
-
-        <label class="form-label">
-          RUT
-        </label>
-
-        <input
-          type="text"
-          id="rut"
-          class="form-control">
-
-      </div>
-
-      <div class="col-md-4 mb-3">
-
-        <label class="form-label">
-          Email
-        </label>
-
-        <input
-          type="email"
-          id="email"
-          class="form-control">
-
-      </div>
-
-      <div class="col-md-4 mb-3">
-
-        <label class="form-label">
-          Teléfono
-        </label>
-
-        <input
-          type="text"
-          id="telefono"
-          class="form-control">
-
-      </div>
-
-      <div class="col-md-4 mb-3">
-
-        <label class="form-label">
-          Fecha de nacimiento
-        </label>
-
-        <input type="date"
-          id="fecha_nacimiento"
-        class="form-control">
-
-      </div>
-
-    </div>
-
-    <button
-      id="btn_guardar_persona"
-      class="btn btn-success"
-      onclick="crearPersona()">
-
-      Guardar Persona
-
-    </button>
-
-    <p
-      id="respuesta_persona"
-      class="mt-3">
-    </p>
-
-  </div>
-
-</div>
-
-<div id="modulo_eventos" class="module-section">
-
-  <h2 class="mt-5 mb-4">
-    Gestión de Eventos
-  </h2>
-
-  <div class="card p-4 shadow-sm border-0">
-
-    <div class="row">
-
-      <div class="col-md-4 mb-3">
-
-        <label class="form-label">
-          Nombre Evento
-        </label>
-
-        <input
-          type="text"
-          id="evento_nombre"
-          class="form-control">
-
-      </div>
-
-      <div class="col-md-4 mb-3">
-
-        <label class="form-label">
-          Tipo
-        </label>
-
-        <select
-          id="evento_tipo"
-          class="form-select">
-
-          <option value="entrenamiento">
-            Entrenamiento
-          </option>
-
-          <option value="partido">
-            Partido
-          </option>
-
-          <option value="reunion">
-            Reunión
-          </option>
-
-        </select>
-
-      </div>
-
-      <div class="col-md-4 mb-3">
-
-        <label class="form-label">
-          Fecha
-        </label>
-
-        <input
-          type="datetime-local"
-          id="evento_fecha"
-          class="form-control">
-
-      </div>
-
-      <div class="col-md-6 mb-3">
-
-        <label class="form-label">
-          Ubicación
-        </label>
-
-        <input
-          type="text"
-          id="evento_ubicacion"
-          class="form-control">
-
-      </div>
-
-      <div class="col-md-6 mb-3">
-
-        <label class="form-label">
-          Descripción
-        </label>
-
-        <input
-          type="text"
-          id="evento_descripcion"
-          class="form-control">
-
-      </div>
-
-    </div>
-
-    <button
-      id="btn_guardar_evento"
-      class="btn btn-primary"
-      onclick="crearEvento()">
-
-      Guardar Evento
-
-    </button>
-
-  </div>
-
-</div>
-
-<div class="table-responsive mt-4">
-
-  <table
-    class="table table-bordered table-striped">
-
-    <thead class="table-dark">
-
-      <tr>
-
-        <th>Nombre</th>
-        <th>Tipo</th>
-        <th>Fecha</th>
-        <th>Ubicación</th>
-        <th>Acciones</th>
-        <th>Descripción</th>
-
-      </tr>
-
-    </thead>
-
-    <tbody id="tabla_eventos">
-
-    </tbody>
-
-  </table>
-
-</div>
-
-<div id="modulo_pagos" class="module-section">
-
-  <h2 class="mt-5 mb-4">
-    Gestión de Pagos
-  </h2>
-
-  <div class="card p-4 shadow-sm border-0">
-
-    <div class="row">
-
-      <div class="col-md-4 mb-3">
-
-        <label class="form-label">
-          Persona
-        </label>
-
-        <select
-          id="pago_persona_id"
-          class="form-select">
-
-        </select>
-
-      </div>
-
-      <div class="col-md-4 mb-3">
-
-        <label class="form-label">
-          Monto
-        </label>
-
-        <input
-          type="number"
-          id="pago_monto"
-          class="form-control">
-
-      </div>
-
-      <div class="col-md-4 mb-3">
-
-        <label class="form-label">
-          Método Pago
-        </label>
-
-        <select
-          id="pago_metodo"
-          class="form-select">
-
-          <option value="efectivo">
-            Efectivo
-          </option>
-
-          <option value="transferencia">
-            Transferencia
-          </option>
-
-          <option value="debito">
-            Débito
-          </option>
-
-        </select>
-
-      </div>
-
-    </div>
-
-    <button
-      id="btn_guardar_pago"
-      class="btn btn-success"
-      onclick="crearPago()">
-
-      Guardar Pago
-
-    </button>
-
-  </div>
-
-</div>
-
-<div class="table-responsive mt-4">
-
-  <table
-    class="table table-bordered table-striped">
-
-    <thead class="table-dark">
-
-      <tr>
-
-        <th>Persona</th>
-        <th>Monto</th>
-        <th>Método</th>
-        <th>Fecha</th>
-        <th>Acciones</th>
-
-      </tr>
-
-    </thead>
-
-    <tbody id="tabla_pagos">
-
-    </tbody>
-
-  </table>
-
-</div>
-
-<div class="table-responsive mt-4">
-
-  <table
-    class="table table-bordered table-striped table-hover align-middle">
-
-    <thead class="table-dark">
-
-      <tr>
-
-        <th>Nombre Completo</th>
-        <th>RUT</th>
-        <th>Email</th>
-        <th>Teléfono</th>
-        <th>Edad</th>
-        <th>Categoría</th>
-        <th>Acciones</th>
-
-      </tr>
-
-    </thead>
-
-    <tbody id="tabla_personas">
-
-    </tbody>
-
-  </table>
-
-</div>
-
-<h2
-  class="mt-5 mb-3"
-  id="asistencias">
-
-  Asistencias
-
-</h2>
-
-<div class="table-responsive">
-<table class="table table-striped table-bordered">
-
-  <thead class="table-dark">
-    <tr>
-      <th>Nombre Completo</th>
-      <th>Evento</th>
-      <th>Estado</th>
-      <th>Minutos</th>
-    </tr>
-  </thead>
-
-  <tbody id="tabla_asistencias">
-
-  </tbody>
-
-</table></div>
-
-<div id="modulo_multas" class="module-section">
-<h2
-  class="mt-5 mb-3"
-  id="multas">
-
-  Multas
-
-</h2>
-
-<div class="table-responsive">
-<table class="table table-bordered table-striped">
-
-  <thead class="table-danger">
-
-    <tr>
-      <th>Nombre Completo</th>
-      <th>Monto</th>
-      <th>Motivo</th>
-      <th>Fecha</th>
-    </tr>
-
-  </thead>
-
-  <tbody id="tabla_multas">
-
-  </tbody>
-
-</table></div>
-</div>
-
-<div id="modulo_finanzas" class="module-section">
-<h2
-  class="mt-5 mb-3"
-  id="finanzas">
-
-  Estado Financiero
-
-</h2>
-
-<div class="mb-3">
-
-  <button
-  id="btn_generar_cuotas"
-  class="btn btn-success"
-  onclick="generarCuotasMensuales()">
-
-  <i class="bi bi-cash-coin"></i>
-  Generar cuotas del mes
-
-</button>
-
-  <div class="table-responsive mt-4">
-
-  <table class="table table-hover align-middle">
-
-    <thead>
-
-      <tr>
-
-        <th>Socio</th>
-
-        <th>Monto</th>
-
-        <th>Mes</th>
-
-        <th>Año</th>
-
-        <th>Vencimiento</th>
-
-        <th>Estado</th>
-
-      </tr>
-
-    </thead>
-
-    <tbody id="tabla_cuotas">
-
-    </tbody>
-
-  </table>
-
-</div>
-
-</div>
-
-<div class="table-responsive">
-<table class="table table-bordered">
-
-  <thead class="table-dark">
-
-    <tr>
-      <th>Nombre Completo</th>
-      <th>Total Multas</th>
-      <th>Total Cuotas</th>
-      <th>Total Pagado</th>
-      <th>Deuda Actual</th>
-    </tr>
-
-  </thead>
-
-  <tbody id="tabla_finanzas">
-
-  </tbody>
-
-</table></div>
-</div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
-
-<script src="js/utils.js"></script>
-<script src="js/personas.js"></script>
-<script src="js/eventos.js"></script>
-<script src="js/pagos.js"></script>
-<script src="js/asistencias.js"></script>
-<script src="js/dashboard.js"></script>
-<script src="js/cuotas.js"></script>
-<script src="js/main.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+  <footer class="app-footer text-center py-3 mt-5">
+    <small>
+      Diseño de Mario Riquelme · Potenciado por OpenAI
+    </small>
+  </footer>
+
+  <script src="js/utils.js"></script>
+  <script src="js/personas.js"></script>
+  <script src="js/eventos.js"></script>
+  <script src="js/pagos.js"></script>
+  <script src="js/asistencias.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/cuotas.js"></script>
+  <script src="js/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>
