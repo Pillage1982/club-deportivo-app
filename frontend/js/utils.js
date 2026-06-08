@@ -161,12 +161,27 @@ function aplicarRolesFrontend() {
   }
 
   if (rol === 'entrenador') {
-    ocultarSelector('.nav-multas');
-    ocultarSelector('.nav-finanzas');
-    ocultarElemento('modulo_multas');
-    ocultarElemento('modulo_finanzas');
-    ocultarElemento('modulo_pagos');
-  }
+  ocultarSelector('.nav-multas');
+  ocultarSelector('.nav-finanzas');
+
+  [
+    'form_personas',
+    'modulo_multas',
+    'modulo_finanzas',
+    'modulo_pagos',
+    'card_dashboard_multas',
+    'card_dashboard_pagado',
+    'card_dashboard_deuda',
+    'grafico_multas_wrapper',
+    'grafico_deuda_wrapper'
+  ].forEach(ocultarElemento);
+
+  document
+    .querySelectorAll('#tabla_personas button')
+    .forEach(btn => {
+      btn.style.display = 'none';
+    });
+}
 
   const btnGenerarCuotas =
     document.getElementById('btn_generar_cuotas');
