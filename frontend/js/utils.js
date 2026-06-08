@@ -153,18 +153,24 @@ function aplicarRolesFrontend() {
 
   if (rol === 'tesorero') {
     ocultarSelector('.nav-asistencias');
+
     ocultarElemento('modulo_asistencia');
     ocultarElemento('modulo_eventos');
+    ocultarElemento('tabla_eventos_wrapper');
     ocultarElemento('form_personas');
-    ocultarPorTitulo('Asistencias');
-    ocultarPorTitulo('Gestión de Eventos');
+
+    document
+    .querySelectorAll('#tabla_personas button')
+    .forEach(btn => {
+      btn.style.display = 'none';
+    });
   }
 
   if (rol === 'entrenador') {
-  ocultarSelector('.nav-multas');
-  ocultarSelector('.nav-finanzas');
+    ocultarSelector('.nav-multas');
+    ocultarSelector('.nav-finanzas');
 
-  [
+    [
     'form_personas',
     'modulo_multas',
     'modulo_finanzas',
@@ -174,14 +180,14 @@ function aplicarRolesFrontend() {
     'card_dashboard_deuda',
     'grafico_multas_wrapper',
     'grafico_deuda_wrapper'
-  ].forEach(ocultarElemento);
+    ].forEach(ocultarElemento);
 
-  document
+    document
     .querySelectorAll('#tabla_personas button')
     .forEach(btn => {
       btn.style.display = 'none';
     });
-}
+  }
 
   const btnGenerarCuotas =
     document.getElementById('btn_generar_cuotas');
