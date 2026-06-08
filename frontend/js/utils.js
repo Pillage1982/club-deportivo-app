@@ -110,6 +110,18 @@ function mostrarUsuario() {
 // CONTROL VISUAL DE MODULOS POR ROL
 // =====================================
 
+function ocultarPorTitulo(texto) {
+  document.querySelectorAll('h2').forEach(titulo => {
+    if (titulo.textContent.trim() === texto) {
+      const contenedor = titulo.closest('.module-section') || titulo.parentElement;
+
+      if (contenedor) {
+        contenedor.style.display = 'none';
+      }
+    }
+  });
+}
+
 function ocultarSelector(selector) {
   document
     .querySelectorAll(selector)
@@ -143,6 +155,9 @@ function aplicarRolesFrontend() {
     ocultarSelector('.nav-asistencias');
     ocultarElemento('modulo_asistencia');
     ocultarElemento('modulo_eventos');
+    ocultarElemento('form_personas');
+    ocultarPorTitulo('Asistencias');
+    ocultarPorTitulo('Gestión de Eventos');
   }
 
   if (rol === 'entrenador') {
@@ -163,6 +178,15 @@ function aplicarRolesFrontend() {
   ) {
     btnGenerarCuotas.style.display = 'none';
   }
+
+  if (rol === 'tesorero' || rol === 'entrenador') {
+  document
+    .querySelectorAll('#tabla_personas button')
+    .forEach(btn => {
+      btn.style.display = 'none';
+    });
+  }
+
 }
 
 // =====================================
