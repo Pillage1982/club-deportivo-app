@@ -1,101 +1,35 @@
-// =====================================
-// ROUTES PERSONAS API
-// =====================================
-
-const express =
-  require('express');
-
-  // Router Express módulo personas
-const router =
-  express.Router();
-
-  // Controlador lógica personas
-const controller =
-  require('../controllers/personaController');
-
-  // Middleware autenticación JWT
-const authMiddleware =
-  require('../middleware/authMiddleware');
-
-  // Middleware autorización roles
-const roleMiddleware =
-  require('../middleware/roleMiddleware');
-
-// =====================================
-// LISTAR PERSONAS
-// =====================================
+const express = require('express');
+const router = express.Router();
+const controller = require('../controllers/personaController');
+const authMiddleware = require('../middleware/authMiddleware');
+const roleMiddleware = require('../middleware/roleMiddleware');
 
 router.get(
-
   '/',
-
-  // Ruta protegida JWT
   authMiddleware,
-
-  // Devuelve listado socios
+  roleMiddleware('admin', 'tesorero', 'entrenador'),
   controller.listar
-
 );
-
-// =====================================
-// REGISTRAR PERSONA
-// =====================================
 
 router.post(
-
   '/',
-
   authMiddleware,
-
-  // Solo administrador
-  // puede registrar socios
-  roleMiddleware(
-    'admin'
-  ),
-
+  roleMiddleware('admin'),
   controller.crear
-
 );
-
-// =====================================
-// ACTUALIZAR PERSONA
-// =====================================
 
 router.put(
-
   '/:id',
-
   authMiddleware,
-
-  // Solo administrador
-  // puede actualizar socios
-  roleMiddleware(
-    'admin'
-  ),
-
+  roleMiddleware('admin'),
   controller.actualizar
-
 );
-
-// =====================================
-// ELIMINAR PERSONA
-// =====================================
 
 router.delete(
-
   '/:id',
-
   authMiddleware,
-
-  // Solo administrador
-  // puede eliminar socios
-  roleMiddleware(
-    'admin'
-  ),
-
+  roleMiddleware('admin'),
   controller.eliminar
-
 );
 
-// Exporta rutas módulo personas
 module.exports = router;

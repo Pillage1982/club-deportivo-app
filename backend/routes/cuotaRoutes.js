@@ -1,44 +1,21 @@
-const express =
-  require('express');
-
-const router =
-  express.Router();
-
-const controller =
-  require('../controllers/cuotaController');
-
-const authMiddleware =
-  require('../middleware/authMiddleware');
-
-const roleMiddleware =
-  require('../middleware/roleMiddleware');
-
-// =====================================
-// LISTAR CUOTAS
-// =====================================
+const express = require('express');
+const router = express.Router();
+const controller = require('../controllers/cuotaController');
+const authMiddleware = require('../middleware/authMiddleware');
+const roleMiddleware = require('../middleware/roleMiddleware');
 
 router.get(
   '/',
   authMiddleware,
-  roleMiddleware(
-    'admin',
-    'tesorero'
-  ),
+  roleMiddleware('admin', 'tesorero'),
   controller.listar
 );
 
-// =====================================
-// GENERAR CUOTAS MENSUALES
-// =====================================
-
 router.post(
-  '/generar',
+  '/generar-mes',
   authMiddleware,
-  roleMiddleware(
-    'admin',
-    'tesorero'
-  ),
-  controller.generarMensualidad
+  roleMiddleware('admin', 'tesorero'),
+  controller.generarCuotasMensuales
 );
 
 module.exports = router;

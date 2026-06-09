@@ -1,84 +1,35 @@
-const express =
-  require('express');
-
-const router =
-  express.Router();
-
-const controller =
-  require('../controllers/eventoController');
-
-const authMiddleware =
-  require('../middleware/authMiddleware');
-
-const roleMiddleware =
-  require('../middleware/roleMiddleware');
-
-// =========================
-// OBTENER EVENTOS
-// =========================
+const express = require('express');
+const router = express.Router();
+const controller = require('../controllers/eventoController');
+const authMiddleware = require('../middleware/authMiddleware');
+const roleMiddleware = require('../middleware/roleMiddleware');
 
 router.get(
-
   '/',
-
   authMiddleware,
-
+  roleMiddleware('admin', 'entrenador'),
   controller.listar
-
 );
-
-// =========================
-// CREAR EVENTO
-// =========================
 
 router.post(
-
   '/',
-
   authMiddleware,
-
-  roleMiddleware(
-    'admin'
-  ),
-
+  roleMiddleware('admin', 'entrenador'),
   controller.crear
-
 );
-
-// =========================
-// ACTUALIZAR EVENTO
-// =========================
 
 router.put(
-
   '/:id',
-
   authMiddleware,
-
-  roleMiddleware(
-    'admin'
-  ),
-
+  roleMiddleware('admin'),
   controller.actualizar
-
 );
 
-// =========================
-// ELIMINAR EVENTO
-// =========================
-
 router.delete(
-
   '/:id',
-
   authMiddleware,
-
-  roleMiddleware(
-    'admin'
-  ),
-
+  roleMiddleware('admin'),
   controller.eliminar
-
 );
 
 module.exports = router;
