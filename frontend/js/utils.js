@@ -152,19 +152,27 @@ function aplicarRolesFrontend() {
   }
 
   if (rol === 'tesorero') {
-    ocultarSelector('.nav-asistencias');
+  ocultarSelector('.nav-asistencias');
 
-    ocultarElemento('modulo_asistencia');
-    ocultarElemento('modulo_eventos');
-    ocultarElemento('tabla_eventos_wrapper');
-    ocultarElemento('form_personas');
+  ocultarElemento('modulo_asistencia');
+  ocultarElemento('modulo_eventos');
+  ocultarElemento('tabla_eventos_wrapper');
+  ocultarElemento('form_personas');
+  ocultarElemento('titulo_personas');
+  ocultarElemento('asistencias');
 
-    document
+  ocultarElementos([
+    'titulo_registrar_asistencia',
+    'titulo_asistencias',
+    'titulo_eventos'
+  ]);
+
+  document
     .querySelectorAll('#tabla_personas button')
     .forEach(btn => {
       btn.style.display = 'none';
     });
-  }
+}
 
   if (rol === 'entrenador') {
     ocultarSelector('.nav-multas');
