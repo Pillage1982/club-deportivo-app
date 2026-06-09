@@ -15,7 +15,7 @@ router.post(
   '/',
   authMiddleware,
   roleMiddleware('admin', 'entrenador'),
-  controller.crear
+  controller.registrar
 );
 
 module.exports = router;
