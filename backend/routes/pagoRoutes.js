@@ -8,7 +8,7 @@ router.get(
   '/',
   authMiddleware,
   roleMiddleware('admin', 'tesorero'),
-  controller.listar
+  controller.obtener
 );
 
 router.post(

@@ -15,7 +15,7 @@ router.post(
   '/generar-mes',
   authMiddleware,
   roleMiddleware('admin', 'tesorero'),
-  controller.generarCuotasMensuales
+  controller.generarMensualidad
 );
 
 module.exports = router;
