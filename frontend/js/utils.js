@@ -170,21 +170,24 @@ function aplicarRolesFrontend() {
     ocultarSelector('.nav-multas');
     ocultarSelector('.nav-finanzas');
 
-    [
-    'form_personas',
-    'modulo_multas',
-    'modulo_finanzas',
-    'modulo_pagos',
-    'card_dashboard_multas',
-    'card_dashboard_pagado',
-    'card_dashboard_deuda',
-    'grafico_multas_wrapper',
-    'grafico_deuda_wrapper'
+    ['modulo_personas',
+      'modulo_multas',
+      'modulo_finanzas',
+      'modulo_pagos',
+      'tabla_pagos_wrapper',
+      'card_dashboard_multas',
+      'card_dashboard_pagado',
+      'card_dashboard_deuda',
+      'grafico_multas_wrapper',
+      'grafico_deuda_wrapper',
+      'titulo_multas',
+      'titulo_finanzas',
+      'titulo_pagos'
     ].forEach(ocultarElemento);
 
     document
-    .querySelectorAll('#tabla_personas button')
-    .forEach(btn => {
+      .querySelectorAll('#tabla_personas button')
+      .forEach(btn => {
       btn.style.display = 'none';
     });
   }
