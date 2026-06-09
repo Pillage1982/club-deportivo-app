@@ -8,7 +8,7 @@ router.get(
   '/',
   authMiddleware,
   roleMiddleware('admin', 'tesorero', 'entrenador'),
-  controller.obtenerResumen
+  controller.resumen
 );
 
 module.exports = router;
