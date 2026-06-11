@@ -1,5 +1,54 @@
 const eventoModel = require('../models/eventoModel');
 
+const tiposPermitidos = [
+  'entrenamiento',
+  'partido',
+  'reunion'
+];
+
+function textoValido(valor, minimo = 3) {
+  if (typeof valor !== 'string') return false;
+
+  const texto = valor.trim();
+
+  if (texto.length < minimo) return false;
+
+  const tieneLetrasONumeros = /[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/.test(texto);
+  const caracteresPermitidos = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,#°-]+$/.test(texto);
+
+  return tieneLetrasONumeros && caracteresPermitidos;
+}
+
+function validarEvento(body) {
+  const nombre = body.nombre ? body.nombre.trim() : '';
+  const tipo = body.tipo ? body.tipo.trim() : '';
+  const fecha = body.fecha ? body.fecha.trim() : '';
+  const ubicacion = body.ubicacion ? body.ubicacion.trim() : '';
+  const descripcion = body.descripcion ? body.descripcion.trim() : '';
+
+  if (!textoValido(nombre)) {
+    return 'Ingrese un nombre de evento valido';
+  }
+
+  if (!tiposPermitidos.includes(tipo)) {
+    return 'Seleccione un tipo de evento valido';
+  }
+
+  if (!fecha || Number.isNaN(Date.parse(fecha))) {
+    return 'Seleccione una fecha valida';
+  }
+
+  if (!textoValido(ubicacion)) {
+    return 'Ingrese una ubicacion valida';
+  }
+
+  if (descripcion && !textoValido(descripcion)) {
+    return 'Ingrese una descripcion valida';
+  }
+
+  return null;
+}
+
 exports.listar = (req, res) => {
   eventoModel.obtenerEventos((err, results) => {
     if (err) {
@@ -11,6 +60,14 @@ exports.listar = (req, res) => {
 };
 
 exports.crear = (req, res) => {
+
+    const errorValidacion = validarEvento(req.body);
+
+  if (errorValidacion) {
+    return res.status(400).json({
+      mensaje: errorValidacion
+    });
+  }
 
   eventoModel.crearEvento(
 
@@ -35,6 +92,14 @@ exports.crear = (req, res) => {
 };
 
 exports.actualizar = (req, res) => {
+
+  const errorValidacion = validarEvento(req.body);
+
+  if (errorValidacion) {
+    return res.status(400).json({
+      mensaje: errorValidacion
+    });
+  }
 
   eventoModel.actualizarEvento(
 

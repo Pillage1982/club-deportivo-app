@@ -78,49 +78,48 @@ function crearEvento() {
   // VALIDACIONES FRONTEND EVENTOS
   // =====================================
 
-if (!data.nombre.trim()) {
+  data.nombre = data.nombre.trim();
+  data.ubicacion = data.ubicacion.trim();
+  data.descripcion = data.descripcion.trim();
 
-  mostrarAlerta(
-    'Ingrese el nombre del evento',
-    'warning'
-  );
+  const tiposPermitidos = [
+    'entrenamiento',
+    'partido',
+    'reunion'
+  ];
 
-  return;
+  const textoValido = valor => {
+    return (
+      valor.length >= 3 &&
+      /[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/.test(valor) &&
+      /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,#°-]+$/.test(valor)
+    );
+  };
 
-}
+  if (!textoValido(data.nombre)) {
+    mostrarAlerta('Ingrese un nombre de evento valido', 'warning');
+    return;
+  }
 
-if (!data.tipo) {
+  if (!tiposPermitidos.includes(data.tipo)) {
+    mostrarAlerta('Seleccione un tipo de evento valido', 'warning');
+    return;
+  }
 
-  mostrarAlerta(
-    'Seleccione el tipo de evento',
-    'warning'
-  );
+  if (!data.fecha) {
+    mostrarAlerta('Seleccione una fecha valida', 'warning');
+    return;
+  }
 
-  return;
+  if (!textoValido(data.ubicacion)) {
+    mostrarAlerta('Ingrese una ubicacion valida', 'warning');
+    return;
+  }
 
-}
-
-if (!data.fecha) {
-
-  mostrarAlerta(
-    'Seleccione una fecha',
-    'warning'
-  );
-
-  return;
-
-}
-
-if (!data.ubicacion.trim()) {
-
-  mostrarAlerta(
-    'Ingrese una ubicación',
-    'warning'
-  );
-
-  return;
-
-}
+  if (data.descripcion && !textoValido(data.descripcion)) {
+    mostrarAlerta('Ingrese una descripcion valida', 'warning');
+    return;
+  }
 
   let url = `${API_URL}/eventos`;
 
@@ -147,7 +146,15 @@ if (!data.ubicacion.trim()) {
 
   })
 
-  .then(res => res.json())
+    .then(async res => {
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.mensaje || 'Error al guardar evento');
+    }
+
+    return data;
+  })
 
   .then(data => {
 
@@ -188,7 +195,9 @@ document.getElementById(
 
   })
 
-  .catch(err => console.error(err));
+  .catch(err => {
+  mostrarAlerta(err.message, 'danger');
+  });
 
 }
 
