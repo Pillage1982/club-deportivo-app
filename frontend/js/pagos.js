@@ -1,4 +1,4 @@
-// =====================================
+/// =====================================
 // VARIABLES GLOBALES PAGOS
 // =====================================
 
@@ -125,52 +125,33 @@ function crearPago() {
 
   };
 
+  data.monto_total = Number(data.monto_total);
+    const metodosPermitidos = [
+    'efectivo',
+    'transferencia',
+    'debito'
+  ];
+
   // =====================================
   // VALIDACIONES FRONTEND PAGOS
   // =====================================
 
-  if (!data.persona_id) {
-
-    mostrarAlerta(
-      'Seleccione una persona',
-      'warning'
-    );
-
-  return;
-
-  }
-
-  if (!data.monto_total) {
-
-    mostrarAlerta(
-    'Ingrese un monto',
-    'warning'
-    );
-
-    return;
-
-  }
-
-  if (Number(data.monto_total) <= 0) {
-
+      if (!Number.isFinite(data.monto_total) || data.monto_total <= 0) {
     mostrarAlerta(
       'El monto debe ser mayor a 0',
       'warning'
     );
 
     return;
-
   }
 
-  if (!data.metodo) {
-
+  if (!metodosPermitidos.includes(data.metodo)) {
     mostrarAlerta(
-      'Seleccione un método de pago',
+      'Seleccione un metodo de pago valido',
       'warning'
     );
 
     return;
-
   }
 
   let url = `${API_URL}/pagos`;
@@ -198,7 +179,15 @@ function crearPago() {
 
   })
 
-  .then(res => res.json())
+  .  .then(async res => {
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.mensaje || 'Error al guardar pago');
+    }
+
+    return data;
+  })
 
   .then(data => {
 
@@ -230,7 +219,9 @@ document.getElementById(
 
   })
 
-  .catch(err => console.error(err));
+    .catch(err => {
+    mostrarAlerta(err.message, 'danger');
+  });
 
 }
 

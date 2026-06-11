@@ -5,11 +5,45 @@
 const pagoModel =
   require('../models/pagoModel');
 
+  const metodosPermitidos = [
+  'efectivo',
+  'transferencia',
+  'debito'
+];
+
+function validarPago(body) {
+  const personaId = Number(body.persona_id);
+  const monto = Number(body.monto_total);
+  const metodo = body.metodo ? body.metodo.trim() : '';
+
+  if (!Number.isInteger(personaId) || personaId <= 0) {
+    return 'Seleccione una persona valida';
+  }
+
+  if (!Number.isFinite(monto) || monto <= 0) {
+    return 'Ingrese un monto mayor a 0';
+  }
+
+  if (!metodosPermitidos.includes(metodo)) {
+    return 'Seleccione un metodo de pago valido';
+  }
+
+  return null;
+}
+
   // =====================================
   // REGISTRAR PAGO
   // =====================================
 
   exports.crear = (req, res) => {
+
+      const errorValidacion = validarPago(req.body);
+
+  if (errorValidacion) {
+    return res.status(400).json({
+      mensaje: errorValidacion
+    });
+  }
 
     // Inserta pago en base datos
     pagoModel.crearPago(
@@ -66,6 +100,14 @@ exports.obtener = (req, res) => {
 // =====================================
 
 exports.actualizar = (req, res) => {
+
+  const errorValidacion = validarPago(req.body);
+
+  if (errorValidacion) {
+    return res.status(400).json({
+      mensaje: errorValidacion
+    });
+  }
 
   // Actualiza registro pago existente
   pagoModel.actualizarPago(
