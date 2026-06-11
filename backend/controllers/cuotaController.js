@@ -84,7 +84,10 @@ exports.generarMensualidad = (req, res) => {
                 if (procesados === socios.length) {
 
                   return res.json({
-                    mensaje: 'Proceso de cuotas finalizado',
+                    mensaje:
+                    creadas > 0
+                    ? 'Proceso de cuotas finalizado'
+                    : 'Las cuotas de este mes ya estaban generadas',
                     mes,
                     anio,
                     socios_procesados: socios.length,

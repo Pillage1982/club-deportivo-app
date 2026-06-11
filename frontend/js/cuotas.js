@@ -10,7 +10,7 @@ function generarCuotasMensuales() {
 
   if (!confirmar) return;
 
-  fetch(`${API_URL}/cuotas/generar`, {
+  fetch(`${API_URL}/cuotas/generar-mes`, {
 
     method: 'POST',
 
@@ -18,14 +18,24 @@ function generarCuotasMensuales() {
 
   })
 
-  .then(res => res.json())
+  .then(async res => {
+  const data = await res.json();
 
-  .then(data => {
+  if (!res.ok) {
+    throw new Error(data.mensaje || 'Error al generar cuotas');
+  }
 
-    mostrarAlerta(
-      `${data.mensaje}. Cuotas creadas: ${data.cuotas_creadas}`,
-      'success'
-    );
+  return data;
+})
+
+.then(data => {
+  const tipoAlerta =
+    data.cuotas_creadas > 0 ? 'success' : 'warning';
+
+  mostrarAlerta(
+    `${data.mensaje}. Cuotas creadas: ${data.cuotas_creadas || 0}`,
+    tipoAlerta
+  );
 
     cargarFinanzas();
     cargarDashboard();
