@@ -88,22 +88,26 @@ function logout() {
 // =====================================
 
 function mostrarUsuario() {
-
   const usuario =
     JSON.parse(
       localStorage.getItem('usuario')
     );
 
   if (usuario) {
+    const rolesVisuales = {
+      admin: 'admin',
+      tesorero: 'tesorero',
+      entrenador: 'encargado'
+    };
 
-    // Muestra usuario y rol en interfaz
+    const rolVisual =
+      rolesVisuales[usuario.rol] || usuario.rol;
+
     document.getElementById(
       'usuario_logeado'
-      ).innerText =
-      `${usuario.usuario} (${usuario.rol})`;
-
+    ).innerText =
+      `${usuario.usuario} (${rolVisual})`;
   }
-
 }
 
 /// =====================================
