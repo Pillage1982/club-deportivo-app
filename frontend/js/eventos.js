@@ -97,12 +97,12 @@ function crearEvento() {
   };
 
   if (!textoValido(data.nombre)) {
-    mostrarAlerta('Ingrese un nombre de evento valido', 'warning');
+    mostrarAlerta('Ingrese un nombre de actividad valida', 'warning');
     return;
   }
 
   if (!tiposPermitidos.includes(data.tipo)) {
-    mostrarAlerta('Seleccione un tipo de evento valido', 'warning');
+    mostrarAlerta('Seleccione un tipo de actividad valida', 'warning');
     return;
   }
 
@@ -150,7 +150,7 @@ function crearEvento() {
     const data = await res.json();
 
     if (!res.ok) {
-      throw new Error(data.mensaje || 'Error al guardar evento');
+      throw new Error(data.mensaje || 'Error al guardar actividad');
     }
 
     return data;
@@ -164,7 +164,7 @@ function crearEvento() {
 
     document.getElementById(
       'btn_guardar_evento'
-    ).innerText = 'Guardar Evento';
+    ).innerText = 'Guardar Actividad';
 
     // Limpia formulario después guardar
     document.getElementById(
@@ -329,7 +329,7 @@ function editarEvento(evento) {
   document.getElementById(
     'btn_guardar_evento'
   ).innerText =
-    'Actualizar Evento';
+    'Actualizar Actividad';
 
 }
 
@@ -341,7 +341,7 @@ function eliminarEvento(id) {
 
   // Solicita confirmación antes eliminar
   const confirmar = confirm(
-    '¿Eliminar evento?'
+    '¿Eliminar actividad?'
   );
 
   if (!confirmar) return;
