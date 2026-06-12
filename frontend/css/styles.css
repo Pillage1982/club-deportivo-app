@@ -335,6 +335,53 @@ html {
   font-weight: 600;
 }
 
+:root {
+  --brand-black: #050505;
+  --brand-orange: #f47a22;
+  --brand-orange-dark: #c95712;
+  --brand-gold: #f3b84a;
+  --brand-cream: #fff7ec;
+  --brand-wine: #7a1f2b;
+}
+
+.navbar {
+  background: linear-gradient(135deg, var(--brand-black), #1c120b) !important;
+  border-bottom: 3px solid var(--brand-orange);
+}
+
+.navbar-logo {
+  width: 42px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid var(--brand-orange);
+}
+
+.sidebar-mobile {
+  background: linear-gradient(180deg, var(--brand-black), #17110d);
+}
+
+.btn-primary,
+.btn-success {
+  background-color: var(--brand-orange) !important;
+  border-color: var(--brand-orange) !important;
+}
+
+.btn-primary:hover,
+.btn-success:hover {
+  background-color: var(--brand-orange-dark) !important;
+  border-color: var(--brand-orange-dark) !important;
+}
+
+h2 {
+  color: #1d130c;
+}
+
+.app-footer {
+  background: var(--brand-black);
+  color: var(--brand-orange);
+}
+
 @media (max-width: 768px) {
 
   .sidebar-mobile {

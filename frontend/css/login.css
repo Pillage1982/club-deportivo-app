@@ -290,6 +290,27 @@
   letter-spacing: 0;
 }
 
+.login-logo {
+  width: 92px;
+  height: 92px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #f47a22;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+.login-card {
+  border: 1px solid rgba(244, 122, 34, 0.35);
+}
+
+.btn-login {
+  background: linear-gradient(135deg, #f47a22, #c95712);
+}
+
+.login-credit {
+  color: rgba(244, 122, 34, 0.9);
+}
+
 @media (max-width: 576px) {
 
   .login-card {
