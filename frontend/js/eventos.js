@@ -4,6 +4,16 @@
 
 let eventoEditando = null;
 
+function obtenerTipoActividad(tipo) {
+  const tipos = {
+    entrenamiento: 'Ensayo',
+    partido: 'Presentacion',
+    reunion: 'Reunion'
+  };
+
+  return tipos[tipo] || tipo;
+}
+
 // =====================================
 // CARGAR EVENTOS EN SELECTOR
 // =====================================
@@ -236,7 +246,7 @@ function cargarTablaEventos() {
           </td>
 
           <td>
-            ${evento.tipo}
+            ${obtenerTipoActividad(evento.tipo)}
           </td>
 
           <td>
