@@ -139,10 +139,20 @@ if (errorValidacion) {
 })
 .then(data => {
 
-    document.getElementById(
-      'respuesta_persona'
-    ).innerText =
-    data.mensaje || 'Persona guardada correctamente';
+    const mensaje =
+  data.mensaje || 'Integrante guardado correctamente';
+
+mostrarAlerta(
+  mensaje,
+  'success'
+);
+
+const respuestaPersona =
+  document.getElementById('respuesta_persona');
+
+if (respuestaPersona) {
+  respuestaPersona.innerText = mensaje;
+}
 
     personaEditando = null;
 
