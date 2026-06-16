@@ -88,26 +88,39 @@ function logout() {
 // =====================================
 
 function mostrarUsuario() {
+
   const usuario =
     JSON.parse(
       localStorage.getItem('usuario')
     );
 
-  if (usuario) {
-    const rolesVisuales = {
-      admin: 'admin',
-      tesorero: 'tesorero',
-      entrenador: 'encargado'
+  if (!usuario) {
+    return;
+  }
+
+  const config =
+    window.APP_CONFIG || {};
+
+  const rolesVisuales =
+    config.rolesVisuales || {
+      admin: 'Administrador',
+      tesorero: 'Tesorero',
+      entrenador: 'Encargado'
     };
 
-    const rolVisual =
-      rolesVisuales[usuario.rol] || usuario.rol;
+  const rolVisual =
+    rolesVisuales[usuario.rol] || usuario.rol;
 
-    document.getElementById(
-      'usuario_logeado'
-    ).innerText =
+  const usuarioLogeado =
+    document.getElementById('usuario_logeado');
+
+  if (usuarioLogeado) {
+
+    usuarioLogeado.innerText =
       `${usuario.usuario} (${rolVisual})`;
+
   }
+
 }
 
 /// =====================================
