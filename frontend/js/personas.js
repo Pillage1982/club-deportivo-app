@@ -85,11 +85,6 @@ function cargarPersonas() {
 
   };
 
-  console.log(
-  'Datos persona enviados:',
-  data
-  );
-
   // =====================================
   // VALIDACIONES FRONTEND PERSONAS
   // =====================================
@@ -158,7 +153,7 @@ if (respuestaPersona) {
 
     document.getElementById(
       'btn_guardar_persona'
-    ).innerText = 'Guardar Persona';
+    ).innerText = 'Guardar Integrante';
 
     // Limpia formulario después guardar
     document.getElementById('rut').value = '';
@@ -342,7 +337,7 @@ function editarPersona(persona) {
 
   document.getElementById(
     'btn_guardar_persona'
-  ).innerText = 'Actualizar Persona';
+  ).innerText = 'Actualizar Integrante';
 
 }
 

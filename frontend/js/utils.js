@@ -83,6 +83,10 @@ function logout() {
 
 }
 
+function cerrarSesion() {
+  logout();
+}
+
 // =====================================
 // MOSTRAR USUARIO AUTENTICADO
 // =====================================

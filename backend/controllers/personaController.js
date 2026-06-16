@@ -129,12 +129,6 @@ personaModel.crearPersona(
 
     (err, result) => {
 
-      console.log('CALLBACK MYSQL');
-
-      console.log(err);
-
-      console.log(result);
-
       if (err) {
   if (err.code === 'ER_DUP_ENTRY') {
     return res.status(409).json({
