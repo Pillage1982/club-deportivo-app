@@ -298,4 +298,15 @@ function aplicarConfiguracionVisual() {
       elemento.innerText = nombreCliente;
     });
 
+      document.querySelectorAll('[data-config-img="cliente.logo"]')
+    .forEach(elemento => {
+      if (cliente.logo) {
+        elemento.src = cliente.logo;
+        elemento.alt = nombreCliente;
+      }
+    });
+
+      document.title =
+    `${nombreCliente} | ${nombreSistema}`;
+
 }
