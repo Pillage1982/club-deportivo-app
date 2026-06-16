@@ -5,13 +5,19 @@
 let eventoEditando = null;
 
 function obtenerTipoActividad(tipo) {
-  const tipos = {
-    entrenamiento: 'Ensayo',
-    partido: 'Presentacion',
-    reunion: 'Reunion'
-  };
+
+  const config =
+    window.APP_CONFIG || {};
+
+  const tipos =
+    config.tiposActividad || {
+      entrenamiento: 'Ensayo',
+      partido: 'Presentacion',
+      reunion: 'Reunion'
+    };
 
   return tipos[tipo] || tipo;
+
 }
 
 // =====================================
@@ -24,7 +30,7 @@ function cargarEventos() {
 
   headers: getAuthHeaders()
 
-})
+/})
     .then(res => res.json())
     .then(data => {
 
