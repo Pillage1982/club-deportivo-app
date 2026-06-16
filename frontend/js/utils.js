@@ -266,3 +266,36 @@ function formatearFecha(fecha) {
   return `${dia}-${mes}-${anio}`;
 
 }
+
+// =====================================
+// APLICAR CONFIGURACION VISUAL
+// =====================================
+
+function aplicarConfiguracionVisual() {
+
+  const config =
+    window.APP_CONFIG || {};
+
+  const producto =
+    config.producto || {};
+
+  const cliente =
+    config.cliente || {};
+
+  const nombreSistema =
+    producto.nombre || 'NexoComunidad';
+
+  const nombreCliente =
+    cliente.nombre || nombreSistema;
+
+  document.querySelectorAll('[data-config="producto.nombre"]')
+    .forEach(elemento => {
+      elemento.innerText = nombreSistema;
+    });
+
+  document.querySelectorAll('[data-config="cliente.nombre"]')
+    .forEach(elemento => {
+      elemento.innerText = nombreCliente;
+    });
+
+}
