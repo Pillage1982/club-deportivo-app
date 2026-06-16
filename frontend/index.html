@@ -60,7 +60,9 @@
         <span class="text-white" id="usuario_logeado"></span>
 
         <button
-        ...
+        type="button"
+        class="btn btn-danger"
+        onclick="cerrarSesion()"
         data-config-text="etiquetas.botones.cerrarSesion">
           Cerrar Sesión
         </button>
@@ -196,7 +198,9 @@
           </div>
 
           <button
-          ...
+          type="button"
+          class="btn btn-primary"
+          onclick="registrarAsistencia()"
           data-config-text="etiquetas.botones.registrar">
             Registrar
           </button>
@@ -371,7 +375,9 @@
             </div>
 
             <button
-            ...
+            type="button"
+            class="btn btn-success w-100"
+            onclick="guardarPersona()"
             data-config-text="etiquetas.botones.guardarIntegrante">
               Guardar Integrante
             </button>
@@ -445,8 +451,10 @@
               </div>
 
               <button
-              ...
+              type="button"
               id="btn_guardar_evento"
+              class="btn btn-primary w-100"
+              onclick="crearEvento()"
               data-config-text="etiquetas.botones.guardarActividad">
                 Guardar Actividad
               </button>
@@ -513,7 +521,9 @@
             </div>
 
             <button
-            ...
+            type="button"
+            class="btn btn-success w-100"
+            onclick="crearPago()"
             data-config-text="etiquetas.botones.guardarPago">
               Guardar Pago
             </button>
@@ -609,9 +619,11 @@
 
             <div class="mb-3">
               <button
-              ...
-              data-config-text="etiquetas.botones.guardarPago">
-                Guardar Pago
+              type="button"
+              class="btn btn-success"
+              onclick="generarCuotasMes()"
+              data-config-text="etiquetas.botones.generarCuotas">
+                Generar cuotas del mes
               </button>
 
               <div id="tabla_cuotas_wrapper" class="table-responsive mt-4">
