@@ -309,4 +309,43 @@ function aplicarConfiguracionVisual() {
       document.title =
     `${nombreCliente} | ${nombreSistema}`;
 
+      const obtenerValorConfig = ruta => {
+
+    return ruta
+      .split('.')
+      .reduce(
+        (actual, clave) => actual && actual[clave],
+        config
+      );
+
+  };
+
+  document.querySelectorAll('[data-config-text]')
+    .forEach(elemento => {
+
+      const texto =
+        obtenerValorConfig(
+          elemento.dataset.configText
+        );
+
+      if (texto) {
+        elemento.innerText = texto;
+      }
+
+    });
+
+  document.querySelectorAll('[data-config-placeholder]')
+    .forEach(elemento => {
+
+      const texto =
+        obtenerValorConfig(
+          elemento.dataset.configPlaceholder
+        );
+
+      if (texto) {
+        elemento.placeholder = texto;
+      }
+
+    });
+
 }
