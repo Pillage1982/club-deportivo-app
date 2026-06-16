@@ -30,7 +30,7 @@ function cargarEventos() {
 
   headers: getAuthHeaders()
 
-/})
+})
     .then(res => res.json())
     .then(data => {
 
