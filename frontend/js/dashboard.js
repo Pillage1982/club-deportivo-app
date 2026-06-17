@@ -46,6 +46,14 @@ let totalCuotas = 0;
 let totalMultasPendientes = 0;
 let sociosConDeuda = 0;
 
+if (!Array.isArray(finanzas)) {
+  mostrarAlerta(
+    finanzas.mensaje || 'No se pudo cargar el dashboard',
+    'warning'
+  );
+  return;
+}
+
 finanzas.forEach(f => {
 
   totalPagado +=
@@ -102,6 +110,14 @@ function cargarGraficos() {
   .then(data => {
 
     // Prepara datos para Chart.js
+    if (!Array.isArray(data)) {
+      mostrarAlerta(
+      data.mensaje || 'No se pudieron cargar los gráficos',
+      'warning'
+      );
+      return;
+    }
+
     const nombres = data.map(
       f => `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`
     );
