@@ -81,7 +81,7 @@ function crearPago() {
   ];
 
   if (!data.persona_id) {
-    mostrarAlerta('Seleccione una persona', 'warning');
+    mostrarAlerta('Seleccione un integrante', 'warning');
     return;
   }
 
