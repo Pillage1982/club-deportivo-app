@@ -134,7 +134,7 @@ if (errorValidacion) {
 
   if (!res.ok) {
     throw new Error(
-      data.mensaje || 'No se pudo guardar la persona'
+      data.mensaje || 'No se pudo guardar el integrante'
     );
   }
 
@@ -200,7 +200,7 @@ document.getElementById(
   .catch(err => {
   console.error(err);
   mostrarAlerta(
-    err.message || 'No se pudo guardar la persona',
+    err.message || 'No se pudo guardar el integrante',
     'danger'
   );
 });
