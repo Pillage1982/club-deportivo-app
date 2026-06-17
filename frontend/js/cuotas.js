@@ -82,6 +82,14 @@ function cargarCuotas() {
 
     tabla.innerHTML = '';
 
+    if (!Array.isArray(data)) {
+  mostrarAlerta(
+    data.mensaje || 'No se pudo cargar la tabla de cuotas',
+    'warning'
+  );
+  return;
+}
+
     data.forEach(cuota => {
 
       tabla.innerHTML += `
