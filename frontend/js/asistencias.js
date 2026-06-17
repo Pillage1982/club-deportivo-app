@@ -33,7 +33,7 @@ function registrarAsistencia() {
     if (!data.persona_id) {
 
       mostrarAlerta(
-        'Seleccione una persona',
+        'Seleccione un integrante',
         'warning'
       );
 
@@ -44,7 +44,7 @@ function registrarAsistencia() {
     if (!data.evento_id) {
 
       mostrarAlerta(
-        'Seleccione un evento',
+        'Seleccione una actividad',
         'warning'
       );
 

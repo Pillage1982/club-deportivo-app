@@ -121,27 +121,27 @@ function crearEvento() {
   };
 
   if (!textoValido(data.nombre)) {
-    mostrarAlerta('Ingrese un nombre de actividad valida', 'warning');
+    mostrarAlerta('Ingrese un nombre de actividad valido', 'warning');
     return;
   }
 
   if (!tiposPermitidos.includes(data.tipo)) {
-    mostrarAlerta('Seleccione un tipo de actividad valida', 'warning');
+    mostrarAlerta('Seleccione un tipo de actividad valido', 'warning');
     return;
   }
 
   if (!data.fecha) {
-    mostrarAlerta('Seleccione una fecha valida', 'warning');
+    mostrarAlerta('Seleccione una fecha válida', 'warning');
     return;
   }
 
   if (!textoValido(data.ubicacion)) {
-    mostrarAlerta('Ingrese una ubicacion valida', 'warning');
+    mostrarAlerta('Ingrese una ubicacion válida', 'warning');
     return;
   }
 
   if (data.descripcion && !textoValido(data.descripcion)) {
-    mostrarAlerta('Ingrese una descripcion valida', 'warning');
+    mostrarAlerta('Ingrese una descripcion válida', 'warning');
     return;
   }
 
