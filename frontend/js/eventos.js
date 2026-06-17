@@ -355,36 +355,30 @@ function editarEvento(evento) {
 
 function eliminarEvento(id) {
 
-  // Solicita confirmación antes eliminar
-  const confirmar = confirm(
-    '¿Eliminar actividad?'
+  mostrarConfirmacion(
+    'Esta acción eliminará la actividad seleccionada. ¿Deseas continuar?',
+    () => ejecutarEliminarEvento(id)
   );
 
-  if (!confirmar) return;
+}
+
+function ejecutarEliminarEvento(id) {
 
   fetch(
-
     `${API_URL}/eventos/${id}`,
-
     {
-
       method: 'DELETE',
-
       headers: getAuthHeaders()
-
     }
-
   )
 
   .then(res => res.json())
 
   .then(data => {
 
-    mostrarAlerta(data.mensaje,'warning');
+    mostrarAlerta(data.mensaje, 'warning');
 
-    // Refresca tabla y selector eventos
     cargarTablaEventos();
-
     cargarEventos();
 
   })

@@ -347,36 +347,30 @@ function editarPersona(persona) {
 
 function eliminarPersona(id) {
 
-  // Solicita confirmación antes eliminar
-  const confirmar = confirm(
-    '¿Eliminar persona?'
+  mostrarConfirmacion(
+    'Esta acción eliminará el integrante seleccionado. ¿Deseas continuar?',
+    () => ejecutarEliminarPersona(id)
   );
 
-  if (!confirmar) return;
+}
+
+function ejecutarEliminarPersona(id) {
 
   fetch(
-
     `${API_URL}/personas/${id}`,
-
     {
-
       method: 'DELETE',
-
       headers: getAuthHeaders()
-
     }
-
   )
 
   .then(res => res.json())
 
   .then(data => {
 
-    mostrarAlerta(data.mensaje,'warning');
+    mostrarAlerta(data.mensaje, 'warning');
 
-    // Refresca tabla y selectores
     cargarTablaPersonas();
-
     cargarPersonas();
 
   })

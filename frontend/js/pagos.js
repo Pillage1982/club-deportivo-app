@@ -180,21 +180,31 @@ function cargarTablaPagos() {
 }
 
 function eliminarPago(id) {
-  const confirmar = confirm('Eliminar pago?');
 
-  if (!confirmar) return;
+  mostrarConfirmacion(
+    'Esta acción eliminará el pago seleccionado. ¿Deseas continuar?',
+    () => ejecutarEliminarPago(id)
+  );
+
+}
+
+function ejecutarEliminarPago(id) {
 
   fetch(`${API_URL}/pagos/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders()
   })
-    .then(res => res.json())
-    .then(data => {
-      mostrarAlerta(data.mensaje, 'warning');
 
-      cargarTablaPagos();
-      cargarDashboard();
-      cargarFinanzas();
-    })
-    .catch(err => console.error(err));
+  .then(res => res.json())
+
+  .then(data => {
+    mostrarAlerta(data.mensaje, 'warning');
+
+    cargarTablaPagos();
+    cargarDashboard();
+    cargarFinanzas();
+  })
+
+  .catch(err => console.error(err));
+
 }
