@@ -52,6 +52,96 @@ const alerta =
 }
 
 // =====================================
+// CONFIRMACION VISUAL BOOTSTRAP
+// =====================================
+
+function mostrarConfirmacion(mensaje, onConfirmar) {
+
+  const idModal = 'modal_confirmacion_app';
+
+  const modalAnterior =
+    document.getElementById(idModal);
+
+  if (modalAnterior) {
+    modalAnterior.remove();
+  }
+
+  const modal =
+    document.createElement('div');
+
+  modal.className = 'modal fade';
+  modal.id = idModal;
+  modal.tabIndex = -1;
+
+  modal.innerHTML = `
+
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title">
+            Confirmar acción
+          </h5>
+
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal">
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <p class="mb-0">
+            ${mensaje}
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal">
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-success"
+            id="btn_confirmar_accion">
+            Confirmar
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  `;
+
+  document.body.appendChild(modal);
+
+  const modalBootstrap =
+    new bootstrap.Modal(modal);
+
+  modal.querySelector('#btn_confirmar_accion')
+    .addEventListener('click', () => {
+
+      modalBootstrap.hide();
+
+      if (typeof onConfirmar === 'function') {
+        onConfirmar();
+      }
+
+    });
+
+  modal.addEventListener('hidden.bs.modal', () => {
+    modal.remove();
+  });
+
+  modalBootstrap.show();
+
+}
+
+// =====================================
 // HEADERS AUTENTICADOS JWT
 // =====================================
 
