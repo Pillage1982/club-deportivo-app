@@ -10,6 +10,14 @@ function cargarFinanzas() {
 
       tabla.innerHTML = '';
 
+      if (!Array.isArray(data)) {
+  mostrarAlerta(
+    data.mensaje || 'No se pudo cargar el estado financiero',
+    'warning'
+  );
+  return;
+}
+
       data.forEach(finanza => {
         tabla.innerHTML += `
           <tr>
