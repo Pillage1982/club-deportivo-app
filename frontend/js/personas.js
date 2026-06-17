@@ -27,6 +27,14 @@ function cargarPersonas() {
 
       selectPago.innerHTML = '';
 
+      if (!Array.isArray(data)) {
+        mostrarAlerta(
+        data.mensaje || 'No se pudieron cargar los integrantes',
+        'warning'
+        );
+        return;
+      }
+
       data.forEach(persona => {
 
         // Clona opción para reutilizar
@@ -221,6 +229,14 @@ document.getElementById(
       );
 
     tabla.innerHTML = '';
+
+    if (!Array.isArray(data)) {
+      mostrarAlerta(
+      data.mensaje || 'No se pudo cargar la tabla de integrantes',
+      'warning'
+      );
+      return;
+    }
 
     data.forEach(persona => {
 
