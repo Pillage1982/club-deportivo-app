@@ -39,6 +39,14 @@ function cargarEventos() {
 
       select.innerHTML = '';
 
+      if (!Array.isArray(data)) {
+        mostrarAlerta(
+        data.mensaje || 'No se pudieron cargar las actividades',
+        'warning'
+        );
+        return;
+      }
+
       data.forEach(evento => {
 
         const option = document.createElement('option');
@@ -239,6 +247,14 @@ function cargarTablaEventos() {
       );
 
     tabla.innerHTML = '';
+
+    if (!Array.isArray(data)) {
+      mostrarAlerta(
+        data.mensaje || 'No se pudo cargar la tabla de actividades',
+        'warning'
+      );
+      return;
+    }
 
     data.forEach(evento => {
 
