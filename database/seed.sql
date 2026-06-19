@@ -34,9 +34,9 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 INSERT INTO usuarios (usuario, password, rol)
 VALUES
-('admin', '123456', 'admin'),
-('tesorero', '123456', 'tesorero'),
-('entrenador', '123456', 'entrenador');
+('admin', '$2b$10$lMiSrir3d9zKZUve/WZkS.wp/rVdvx.ZOvMEgF/UWudPr/nnoKmbO', 'admin'),
+('tesorero', '$2b$10$lMiSrir3d9zKZUve/WZkS.wp/rVdvx.ZOvMEgF/UWudPr/nnoKmbO', 'tesorero'),
+('entrenador', '$2b$10$lMiSrir3d9zKZUve/WZkS.wp/rVdvx.ZOvMEgF/UWudPr/nnoKmbO', 'entrenador');
 
 -- =====================================
 -- PERSONAS
