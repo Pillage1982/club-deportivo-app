@@ -4,21 +4,21 @@
 
 El proyecto comenzo como una aplicacion administrativa para un club deportivo. Durante el desarrollo se estabilizo una version funcional con login, roles, integrantes/personas, actividades/eventos, asistencias, multas, cuotas, pagos, dashboard y estado financiero.
 
-Posteriormente se valido que la misma base tecnica tambien sirve para una agrupacion de baile religioso y potencialmente para otros tipos de organizaciones.
+Posteriormente se valido que la misma base tecnica tambien sirve para agrupaciones culturales, comunitarias y potencialmente otros tipos de organizaciones.
 
 ## Decision
 
 El proyecto deja de pensarse como una aplicacion exclusiva para un club deportivo y pasa a evolucionar como una plataforma adaptable para organizaciones.
 
-Nombre conceptual:
+Nombre de producto base:
 
 ```text
-Gestion de Agrupaciones
+NexoComunidad
 ```
 
 La aplicacion debe poder adaptarse a:
 
-- agrupaciones de baile religioso,
+- agrupaciones culturales,
 - clubes deportivos,
 - academias,
 - talleres,
@@ -48,9 +48,9 @@ La interfaz puede mostrar otros conceptos segun el cliente:
 
 - personas -> integrantes,
 - eventos -> actividades,
-- entrenamiento -> ensayo,
-- partido -> presentacion,
-- entrenador -> encargado o caporal.
+- entrenamiento -> actividad,
+- partido -> encuentro,
+- entrenador -> encargado.
 
 ## Estrategia Tecnica
 
@@ -87,4 +87,3 @@ v1.1-dev
 ## Objetivo de la Decision
 
 Permitir que el producto evolucione hacia una solucion comercial reutilizable, sin perder la estabilidad ya alcanzada.
-

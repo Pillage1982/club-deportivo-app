@@ -1,28 +1,36 @@
-# 🏆 Club Deportivo App
+# NexoComunidad
 
-Sistema administrativo web para gestión de clubes deportivos.
+Sistema administrativo web adaptable para organizaciones comunitarias.
 
----
+## Descripcion
 
-# 🚀 Descripción
+NexoComunidad permite administrar organizaciones con una base tecnica comun y una capa de personalizacion por cliente.
 
-Club Deportivo App es una plataforma web desarrollada para administrar:
+La aplicacion cubre:
 
-- socios
-- eventos
+- integrantes o personas
+- actividades o eventos
 - asistencias
 - multas
+- cuotas
 - pagos
 - estados financieros
 - dashboard administrativo
+- roles y permisos
 
-El sistema fue construido utilizando arquitectura modular frontend/backend y autenticación JWT.
+## Enfoque de Producto
 
----
+La rama `v1.1-dev` funciona como base neutral del producto. Las personalizaciones de clientes concretos deben vivir en ramas separadas, por ejemplo:
 
-# 🛠 Tecnologías Utilizadas
+```text
+cliente/nombre-cliente
+```
 
-## Frontend
+Esto permite conservar una base reutilizable sin perder trabajos especificos de clientes.
+
+## Tecnologias
+
+### Frontend
 
 - HTML5
 - CSS3
@@ -30,239 +38,73 @@ El sistema fue construido utilizando arquitectura modular frontend/backend y aut
 - JavaScript Vanilla
 - Chart.js
 
-## Backend
+### Backend
 
 - Node.js
 - Express.js
 - JWT Authentication
-- Middleware personalizado
+- Middleware de autenticacion y roles
 
-## Base de Datos
+### Base de Datos
 
 - MySQL
 - UTF8MB4
 
----
-
-# 📁 Arquitectura Proyecto
+## Arquitectura
 
 ```plaintext
 club-deportivo-app/
-│
-├── backend/
-│   ├── config/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   └── server.js
-│
-├── frontend/
-│   ├── js/
-│   │   ├── utils.js
-│   │   ├── personas.js
-│   │   ├── eventos.js
-│   │   ├── pagos.js
-│   │   ├── asistencias.js
-│   │   ├── dashboard.js
-│   │   └── main.js
-│   │
-│   ├── index.html
-│   └── login.html
-│
-└── README.md
+|-- backend/
+|   |-- config/
+|   |-- controllers/
+|   |-- middleware/
+|   |-- models/
+|   |-- routes/
+|   `-- server.js
+|-- frontend/
+|   |-- css/
+|   |-- img/
+|   |-- js/
+|   |-- index.html
+|   `-- login.html
+|-- database/
+`-- documentacion/
 ```
 
----
+## Roles
 
-# 🔐 Roles del Sistema
+### Administrador
 
-## 👑 Administrador
+Puede gestionar personas, actividades, asistencias, pagos, multas, finanzas y dashboard.
 
-Puede:
+### Tesorero
 
-- gestionar personas
-- gestionar eventos
-- registrar asistencias
-- gestionar pagos
-- visualizar dashboard
-- visualizar multas
-- visualizar finanzas
+Puede gestionar pagos y revisar finanzas, multas y dashboard.
 
----
+### Encargado
 
-## 💰 Tesorero
+Puede registrar asistencias y revisar actividades/asistencias.
 
-Puede:
+## Personalizacion
 
-- gestionar pagos
-- visualizar finanzas
-- visualizar multas
-- visualizar dashboard
+La personalizacion base se concentra en:
 
-No puede:
-
-- registrar asistencias
-
----
-
-## 🏃 Entrenador
-
-Puede:
-
-- registrar asistencias
-- visualizar asistencias
-- visualizar eventos
-
-No puede:
-
-- acceder a finanzas
-- acceder a multas
-
----
-
-# 📌 Funcionalidades Principales
-
-## 👥 Gestión Personas
-
-- crear socios
-- editar socios
-- eliminar socios
-- validaciones frontend
-- actualización automática tablas
-
----
-
-## 📅 Gestión Eventos
-
-- crear eventos
-- editar eventos
-- eliminar eventos
-- entrenamientos
-- reuniones
-- actividades deportivas
-
----
-
-## ✅ Registro Asistencias
-
-- presente
-- atrasado
-- ausente
-- control minutos atraso
-- validación duplicados
-
----
-
-## ⚠ Sistema Multas
-
-Las multas se generan automáticamente desde asistencias.
-
-Ejemplos:
-
-- atraso
-- ausencia
-
----
-
-## 💰 Gestión Financiera
-
-- registro pagos
-- edición pagos
-- eliminación pagos
-- saldo a favor
-- estado al día
-- deuda pendiente
-
----
-
-## 📊 Dashboard Administrativo
-
-Incluye:
-
-- total socios
-- total multas
-- deuda total
-- pagos totales
-- gráficos dinámicos
-
----
-
-# 🔐 Seguridad
-
-El sistema utiliza:
-
-- autenticación JWT
-- middleware autenticación
-- middleware autorización roles
-- rutas protegidas
-- control permisos frontend y backend
-
----
-
-# ⚡ Características Técnicas
-
-## ✅ Frontend Modular
-
-El frontend fue modularizado para mejorar:
-
-- mantenibilidad
-- escalabilidad
-- legibilidad
-- reutilización código
-
----
-
-## ✅ Backend Organizado
-
-Separación por capas:
-
-- controllers
-- models
-- routes
-- middleware
-
----
-
-## ✅ Base Datos UTF8
-
-Soporte completo para:
-
-- Ñ
-- tildes
-- caracteres especiales
-- internacionalización
-
----
-
-# 🚀 Instalación
-
-## 1️⃣ Clonar repositorio
-
-```bash
-git clone URL_REPOSITORIO
+```text
+frontend/js/config.js
 ```
 
----
+Desde ahi se definen nombre del producto, nombre de organizacion, logos, textos visibles, roles y tipos de actividad.
 
-## 2️⃣ Instalar dependencias backend
+## Instalacion
+
+Instalar dependencias del backend:
 
 ```bash
 cd backend
 npm install
 ```
 
----
-
-## 3️⃣ Configurar variables entorno
-
-Crear archivo:
-
-```plaintext
-.env
-```
-
-Ejemplo:
+Crear archivo `.env`:
 
 ```env
 DB_HOST=localhost
@@ -272,68 +114,14 @@ DB_NAME=club_deportivo
 JWT_SECRET=secret123
 ```
 
----
-
-## 4️⃣ Ejecutar backend
+Ejecutar backend:
 
 ```bash
 node server.js
 ```
 
----
+Abrir el frontend desde `frontend/index.html` o usar un servidor local.
 
-## 5️⃣ Ejecutar frontend
+## Estado
 
-Abrir:
-
-```plaintext
-frontend/index.html
-```
-
-O utilizar Live Server.
-
----
-
-# 📊 Estado Proyecto
-
-## ✅ Implementado
-
-- autenticación JWT
-- roles
-- CRUD personas
-- CRUD eventos
-- CRUD pagos
-- asistencias
-- multas automáticas
-- dashboard
-- gráficos
-- finanzas
-- frontend modular
-- validaciones
-- documentación
-
----
-
-# 🚧 Mejoras Futuras
-
-- responsive móvil avanzado
-- modales Bootstrap
-- sistema auditoría
-- exportación Excel/PDF
-- notificaciones
-- deploy producción
-- backups automáticos
-- recuperación contraseña
-
----
-
-# 👨‍💻 Autor
-
-Mario Rodrigo Riquelme Cabello
-
----
-
-# 📄 Licencia
-
-Proyecto desarrollado con fines educativos y administrativos.
-
+Base v1.1 en desarrollo, orientada a producto adaptable y personalizable por cliente.

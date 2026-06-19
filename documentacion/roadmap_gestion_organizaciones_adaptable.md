@@ -6,7 +6,7 @@ El proyecto debe evolucionar desde una aplicacion especifica para un club deport
 
 La idea central es que una misma base tecnica pueda configurarse para distintos contextos:
 
-- Agrupaciones de baile religioso.
+- Agrupaciones culturales.
 - Clubes deportivos.
 - Academias o talleres.
 - Agrupaciones culturales.
@@ -60,7 +60,7 @@ Pero visualmente se muestran segun el cliente:
 - Actividades.
 - Aportes o cuotas.
 - Sanciones o multas.
-- Encargado, caporal o entrenador.
+- Encargado o entrenador.
 
 ### 4. Desarrollo por capas
 
@@ -104,14 +104,14 @@ v1.1-dev
 
 Estado:
 
-- Adaptacion visual para agrupacion religiosa.
-- Logo y paleta Calamena aplicados.
-- Textos deportivos corregidos.
+- Base visual neutral de NexoComunidad.
+- Logo y paleta generica aplicados.
+- Textos especificos de rubro corregidos.
 - Actividades reemplazan eventos visualmente.
 - Integrantes reemplazan personas visualmente.
 - Tipos visuales adaptados:
-  - Entrenamiento -> Ensayo.
-  - Partido -> Presentacion.
+  - Entrenamiento -> Actividad.
+  - Partido -> Encuentro.
   - Reunion -> Reunion.
 
 ---
@@ -123,7 +123,7 @@ Convertir la aplicacion en una demo neutral y adaptable para organizaciones.
 Nombre conceptual recomendado:
 
 ```text
-Gestion de Agrupaciones
+NexoComunidad
 ```
 
 Alternativas:
@@ -150,14 +150,14 @@ frontend/js/config.js
 
 ```js
 const APP_CONFIG = {
-  nombreSistema: 'Gestion de Agrupaciones',
-  nombreOrganizacion: 'Gran Diablada Calamena',
-  logo: 'img/logo-calamena.jpeg',
+  nombreSistema: 'NexoComunidad',
+  nombreOrganizacion: 'Organizacion Demo',
+  logo: 'img/logo-nexocomunidad.svg',
   tema: {
-    primario: '#050505',
-    secundario: '#1c120b',
-    acento: '#f47a22',
-    acentoOscuro: '#c95712'
+    primario: '#172033',
+    secundario: '#24344d',
+    acento: '#2f80ed',
+    acentoOscuro: '#1f5fb5'
   },
   labels: {
     personas: 'Integrantes',
@@ -169,8 +169,8 @@ const APP_CONFIG = {
     encargado: 'Encargado'
   },
   tiposActividad: {
-    entrenamiento: 'Ensayo',
-    partido: 'Presentacion',
+    entrenamiento: 'Actividad',
+    partido: 'Encuentro',
     reunion: 'Reunion'
   }
 };
@@ -262,7 +262,7 @@ Que cada rol vea un resumen util para su trabajo.
 - Cuotas generadas.
 - Pagos recientes.
 
-### Encargado / Caporal / Entrenador
+### Encargado / Entrenador
 
 - Proximas actividades.
 - Asistencias recientes.
@@ -369,12 +369,12 @@ Entregar informacion lista para directiva o reuniones.
 
 ## Fase 8 - Modulos Opcionales por Tipo de Organizacion
 
-### Baile religioso
+### Agrupacion cultural
 
-- Vestimenta / trajes.
+- Inventario o materiales.
 - Instrumentos.
 - Citaciones.
-- Festividades.
+- Actividades especiales.
 - Aportes extraordinarios.
 - Viajes.
 
@@ -478,7 +478,7 @@ Crear la primera capa de configuracion para que la app deje de depender de texto
 3. Crear funcion `aplicarConfiguracionVisual()`.
 4. Reemplazar logo y nombre desde configuracion.
 5. Reemplazar etiquetas principales desde configuracion.
-6. Probar que Calamena siga funcionando.
+6. Probar que la base neutral siga funcionando.
 7. Hacer commit en `v1.1-dev`.
 
 ---
@@ -489,7 +489,7 @@ La version `v1.1` se considera lista cuando:
 
 - Se puede cambiar nombre/logo/colores desde un archivo.
 - La app no contiene textos duros de un rubro especifico en la interfaz principal.
-- Calamena funciona como demo de agrupacion religiosa.
+- Las demos de clientes funcionan desde ramas `cliente/...`.
 - La version generica funciona como demo para organizaciones.
 - Produccion `main` sigue estable.
 - Desarrollo `v1.1-dev` esta documentado.
@@ -499,4 +499,3 @@ La version `v1.1` se considera lista cuando:
 ## Frase Guia del Proyecto
 
 > Una plataforma adaptable para que cualquier organizacion pueda ordenar integrantes, actividades, asistencias y finanzas sin depender de planillas dispersas.
-

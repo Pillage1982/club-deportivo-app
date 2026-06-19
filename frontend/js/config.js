@@ -1,15 +1,15 @@
 window.APP_CONFIG = {
   producto: {
     nombre: 'NexoComunidad',
-    descripcion: 'Sistema administrativo adaptable para organizaciones'
+    descripcion: 'Sistema administrativo adaptable para organizaciones comunitarias'
   },
 
   cliente: {
-    nombre: 'Gran Diablada Calameña',
-    nombreCorto: 'Diablada Calameña',
-    fundacion: 'Fundada el 22 de octubre de 1961',
-    logo: 'img/logo-calamena.jpeg',
-    logoOscuro: 'img/logo-calamena-black.jpeg'
+    nombre: 'Organizacion Demo',
+    nombreCorto: 'Demo',
+    fundacion: '',
+    logo: 'img/logo-nexocomunidad.svg',
+    logoOscuro: 'img/logo-nexocomunidad.svg'
   },
 
   textos: {
@@ -28,8 +28,8 @@ window.APP_CONFIG = {
   },
 
   tiposActividad: {
-    entrenamiento: 'Ensayo',
-    partido: 'Presentacion',
+    entrenamiento: 'Actividad',
+    partido: 'Encuentro',
     reunion: 'Reunion'
   },
 

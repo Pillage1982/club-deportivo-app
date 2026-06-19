@@ -1,13 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
 
 :root {
-  --primary: #050505;
-  --secondary: #1c120b;
-  --accent: #f47a22;
-  --accent-dark: #c95712;
+  --primary: #172033;
+  --secondary: #24344d;
+  --accent: #2f80ed;
+  --accent-dark: #1f5fb5;
   --gold: #f3b84a;
-  --cream: #fff7ec;
-  --wine: #7a1f2b;
+  --cream: #f8fafc;
+  --wine: #7b3f8c;
 
   --bg: #f4f7fb;
   --card: #ffffff;
@@ -66,7 +66,7 @@ body {
 ===================================== */
 
 .sidebar-mobile {
-  background: linear-gradient(180deg, var(--primary), #17110d);
+  background: linear-gradient(180deg, var(--primary), #111827);
   box-shadow: var(--shadow);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -99,7 +99,7 @@ body {
 }
 
 .offcanvas {
-  background: linear-gradient(180deg, var(--primary), #17110d);
+  background: linear-gradient(180deg, var(--primary), #111827);
   width: 260px;
 }
 
@@ -191,7 +191,7 @@ body {
 h2 {
   font-size: 34px;
   font-weight: 700;
-  color: #1d130c;
+  color: #172033;
   margin-bottom: 28px;
 }
 

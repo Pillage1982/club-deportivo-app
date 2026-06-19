@@ -29,7 +29,7 @@ Ejemplos:
 Ejemplo:
 
 ```text
-Gran Diablada Calamena
+Organizacion Demo
 ```
 
 ### Logo
@@ -43,32 +43,32 @@ frontend/img/
 Ejemplo:
 
 ```text
-frontend/img/logo-calamena.jpeg
+frontend/img/logo-cliente.svg
 ```
 
 ### Paleta de colores
 
 Debe aplicarse desde CSS o, en una fase posterior, desde configuracion.
 
-Ejemplo Calamena:
+Ejemplo base neutral:
 
 ```css
---primary: #050505;
---secondary: #1c120b;
---accent: #f47a22;
---accent-dark: #c95712;
+--primary: #172033;
+--secondary: #24344d;
+--accent: #2f80ed;
+--accent-dark: #1f5fb5;
 ```
 
 ### Textos visibles
 
 Ejemplos:
 
-| Interno | Visible generico | Visible Calamena |
+| Interno | Visible generico | Visible cliente alternativo |
 |---|---|---|
 | personas | Integrantes | Integrantes |
 | eventos | Actividades | Actividades |
-| entrenamiento | Ensayo | Ensayo |
-| partido | Presentacion | Presentacion |
+| entrenamiento | Actividad | Taller |
+| partido | Encuentro | Jornada |
 | reunion | Reunion | Reunion |
 | entrenador | Encargado | Encargado |
 
@@ -109,8 +109,8 @@ reunion
 Pero la interfaz puede mostrarlos como:
 
 ```text
-Ensayo
-Presentacion
+Actividad
+Encuentro
 Reunion
 ```
 
@@ -128,9 +128,9 @@ Ejemplo:
 
 ```js
 const APP_CONFIG = {
-  nombreSistema: 'Gestion de Agrupaciones',
-  nombreOrganizacion: 'Gran Diablada Calamena',
-  logo: 'img/logo-calamena.jpeg',
+  nombreSistema: 'NexoComunidad',
+  nombreOrganizacion: 'Organizacion Demo',
+  logo: 'img/logo-cliente.svg',
   labels: {
     personas: 'Integrantes',
     persona: 'Integrante',
@@ -139,8 +139,8 @@ const APP_CONFIG = {
     encargado: 'Encargado'
   },
   tiposActividad: {
-    entrenamiento: 'Ensayo',
-    partido: 'Presentacion',
+    entrenamiento: 'Actividad',
+    partido: 'Encuentro',
     reunion: 'Reunion'
   }
 };
@@ -158,15 +158,12 @@ const APP_CONFIG = {
 8. Probar responsive.
 9. Documentar personalizacion.
 
-## Caso Calamena
+## Personalizaciones por Cliente
 
-Personalizacion aplicada:
+Las personalizaciones concretas deben vivir en ramas de cliente, por ejemplo:
 
-- Logo de la agrupacion.
-- Paleta negro/naranjo.
-- Personas visibles como integrantes.
-- Eventos visibles como actividades.
-- Entrenamiento visible como ensayo.
-- Partido visible como presentacion.
-- Entrenador visible como encargado.
+```text
+cliente/nombre-cliente
+```
 
+La rama `v1.1-dev` debe mantenerse como base neutral de NexoComunidad.

@@ -1,4 +1,4 @@
-console.log('Iniciando backend club deportivo...');
+console.log('Iniciando backend NexoComunidad...');
 
 process.on('uncaughtException', (err) => {
   console.error('uncaughtException:', err);

@@ -11,8 +11,8 @@ function obtenerTipoActividad(tipo) {
 
   const tipos =
     config.tiposActividad || {
-      entrenamiento: 'Ensayo',
-      partido: 'Presentacion',
+      entrenamiento: 'Actividad',
+      partido: 'Encuentro',
       reunion: 'Reunion'
     };
 

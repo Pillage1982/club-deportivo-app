@@ -32,14 +32,14 @@ VALUES
 INSERT INTO personas
 (rut, nombres, apellido_paterno, apellido_materno, email, telefono, fecha_nacimiento)
 VALUES
-('11.111.111-1', 'Juan', 'Pérez', 'juan@test.cl', '999111111', '2000-01-01'),
-('22.222.222-2', 'Pedro', 'González', 'pedro@test.cl', '999222222', '1999-02-10'),
-('33.333.333-3', 'Luis', 'Rojas', 'luis@test.cl', '999333333', '2001-03-15'),
-('44.444.444-4', 'Carlos', 'Muñoz', 'carlos@test.cl', '999444444', '1998-05-20'),
-('55.555.555-5', 'Matías', 'Araya', 'matias@test.cl', '999555555', '2002-07-11'),
-('66.666.666-6', 'Sebastián', 'Contreras', 'seba@test.cl', '999666666', '1997-08-30'),
-('77.777.777-7', 'Diego', 'Torres', 'diego@test.cl', '999777777', '2000-09-09'),
-('88.888.888-8', 'Felipe', 'Castillo', 'felipe@test.cl', '999888888', '1996-11-14');
+('11.111.111-1', 'Ana', 'Morales', '', 'ana.demo@test.cl', '999111111', '2000-01-01'),
+('22.222.222-2', 'Pedro', 'Gonzalez', '', 'pedro.demo@test.cl', '999222222', '1999-02-10'),
+('33.333.333-3', 'Lucia', 'Rojas', '', 'lucia.demo@test.cl', '999333333', '2001-03-15'),
+('44.444.444-4', 'Carlos', 'Munoz', '', 'carlos.demo@test.cl', '999444444', '1998-05-20'),
+('55.555.555-5', 'Matias', 'Araya', '', 'matias.demo@test.cl', '999555555', '2002-07-11'),
+('66.666.666-6', 'Sofia', 'Contreras', '', 'sofia.demo@test.cl', '999666666', '1997-08-30'),
+('77.777.777-7', 'Diego', 'Torres', '', 'diego.demo@test.cl', '999777777', '2000-09-09'),
+('88.888.888-8', 'Camila', 'Castillo', '', 'camila.demo@test.cl', '999888888', '1996-11-14');
 
 -- =====================================
 -- EVENTOS
@@ -48,10 +48,10 @@ VALUES
 INSERT INTO eventos
 (nombre, tipo, fecha, ubicacion, descripcion)
 VALUES
-('Entrenamiento Lunes', 'entrenamiento', NOW(), 'Cancha Norte', 'Entrenamiento semanal'),
-('Entrenamiento Miércoles', 'entrenamiento', NOW(), 'Cancha Norte', 'Trabajo físico'),
-('Partido Apertura', 'partido', NOW(), 'Estadio Municipal', 'Primer partido temporada'),
-('Reunión Directiva', 'reunion', NOW(), 'Sede Club', 'Reunión mensual');
+('Actividad Semanal', 'entrenamiento', NOW(), 'Sede Comunitaria', 'Actividad regular de la organizacion'),
+('Taller de Coordinacion', 'entrenamiento', NOW(), 'Sala Multiuso', 'Trabajo colaborativo del equipo'),
+('Encuentro Comunitario', 'partido', NOW(), 'Centro Comunitario', 'Encuentro abierto de la organizacion'),
+('Reunion Directiva', 'reunion', NOW(), 'Oficina Administrativa', 'Reunion mensual');
 
 -- =====================================
 -- ASISTENCIAS

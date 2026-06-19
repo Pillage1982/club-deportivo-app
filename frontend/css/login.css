@@ -11,9 +11,9 @@ body {
   background:
     linear-gradient(
       135deg,
-      #050505,
-      #2b1608,
-      #f47a22
+      #172033,
+      #24344d,
+      #2f80ed
     );
   overflow: hidden;
 }
@@ -30,7 +30,7 @@ body {
 .shape1 {
   width: 300px;
   height: 300px;
-  background: #f47a22;
+  background: #2f80ed;
   top: -100px;
   left: -100px;
 }
@@ -38,7 +38,7 @@ body {
 .shape2 {
   width: 350px;
   height: 350px;
-  background: #7a1f2b;
+  background: #7b3f8c;
   bottom: -120px;
   right: -120px;
 }
@@ -52,10 +52,10 @@ body {
   max-width: 420px;
   padding: 45px;
   border-radius: 28px;
-  background: rgba(5, 5, 5, 0.58);
+  background: rgba(23, 32, 51, 0.68);
   backdrop-filter: blur(24px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(244, 122, 34, 0.35);
+  border: 1px solid rgba(47, 128, 237, 0.35);
   color: white;
 }
 
@@ -82,7 +82,7 @@ body {
   height: 92px;
   object-fit: cover;
   border-radius: 50%;
-  border: 3px solid #f47a22;
+  border: 3px solid #2f80ed;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
 }
 
@@ -134,7 +134,7 @@ body {
   height: 52px;
   border: none;
   border-radius: 14px;
-  background: linear-gradient(135deg, #f47a22, #c95712);
+  background: linear-gradient(135deg, #2f80ed, #1f5fb5);
   color: white;
   font-weight: 600;
   transition: 0.3s;
@@ -142,7 +142,7 @@ body {
 
 .btn-login:hover {
   transform: translateY(-2px);
-  background: linear-gradient(135deg, #ff8a35, #c95712);
+  background: linear-gradient(135deg, #4f9cff, #1f5fb5);
 }
 
 .btn-login:active {
@@ -184,7 +184,7 @@ body {
   bottom: 18px;
   margin: 0;
   text-align: center;
-  color: rgba(244, 122, 34, 0.9);
+  color: rgba(190, 214, 247, 0.9);
   font-size: 0.78rem;
   font-weight: 400;
   letter-spacing: 0;

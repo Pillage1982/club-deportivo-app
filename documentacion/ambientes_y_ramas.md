@@ -31,10 +31,25 @@ v1.1-dev
 Uso:
 
 - nuevas mejoras,
-- personalizacion por cliente,
+- base adaptable neutral,
+- personalizacion preparada para ramas de cliente,
 - pruebas de interfaz,
 - ajustes de roadmap,
 - cambios que aun no deben llegar a produccion.
+
+### Clientes
+
+Ramas:
+
+```text
+cliente/nombre-cliente
+```
+
+Uso:
+
+- personalizaciones visuales y documentacion comercial de un cliente concreto,
+- logos, colores, textos y pautas de demo especificas,
+- no mezclar estos cambios en `v1.1-dev` salvo que sean mejoras reutilizables.
 
 ## Ambientes Hostinger
 
@@ -135,4 +150,3 @@ git push origin main
 - No hay errores rojos en consola.
 - La rama `v1.1-dev` esta pushada.
 - La documentacion esta actualizada.
-

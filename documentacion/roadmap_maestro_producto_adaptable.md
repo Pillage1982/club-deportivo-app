@@ -6,7 +6,7 @@ Construir una plataforma adaptable para administrar organizaciones, agrupaciones
 
 La aplicacion debe poder ajustarse a distintos tipos de cliente sin rehacer el sistema:
 
-- Agrupaciones de baile religioso.
+- Agrupaciones culturales.
 - Clubes deportivos.
 - Academias.
 - Talleres.
@@ -68,14 +68,14 @@ v1.1-dev
 
 Estado:
 
-- Adaptacion visual para agrupacion religiosa.
-- Logo y paleta de cliente aplicados.
+- Base visual neutral de NexoComunidad.
+- Logo y paleta generica aplicados.
 - Textos deportivos eliminados de la demo.
 - Personas visibles como integrantes.
 - Eventos visibles como actividades.
 - Tipos visibles adaptados:
-  - entrenamiento -> ensayo.
-  - partido -> presentacion.
+  - entrenamiento -> actividad.
+  - partido -> encuentro.
   - reunion -> reunion.
 - Navbar y sidebar fijos.
 - Seed demo contextualizado.
@@ -135,7 +135,7 @@ Pero visualmente pueden mostrarse como:
 - actividades,
 - aportes/cuotas,
 - sanciones/multas,
-- encargado/caporal/entrenador.
+- encargado/entrenador.
 
 ### 4. Avances chicos y reversibles
 
@@ -232,18 +232,18 @@ Tareas:
 Crear una configuracion base:
 
 ```text
-Gestion de Agrupaciones
+NexoComunidad
 ```
 
-Y una configuracion cliente:
+Y configuraciones de cliente en ramas separadas:
 
 ```text
-Gran Diablada Calamena
+cliente/nombre-cliente
 ```
 
 Criterio de exito:
 
-La misma app puede presentarse como demo generica o como demo de cliente.
+La misma app puede presentarse como demo generica o como demo de cliente sin mezclar marcas en `v1.1-dev`.
 
 ---
 
@@ -352,12 +352,12 @@ Objetivo:
 
 Agregar modulos segun rubro, sin obligar a todos los clientes a usarlos.
 
-### Baile religioso
+### Agrupacion cultural
 
-- trajes / vestimenta,
+- inventario o materiales,
 - instrumentos,
 - citaciones,
-- festividades,
+- actividades especiales,
 - viajes,
 - aportes extraordinarios.
 
@@ -485,7 +485,7 @@ Tareas:
 3. Crear `aplicarConfiguracionVisual()`.
 4. Mover nombre/logo/roles visuales a config.
 5. Mover tipos de actividad visibles a config.
-6. Probar Calamena.
+6. Probar la base neutral.
 7. Commit en `v1.1-dev`.
 
 ### Despues
@@ -541,4 +541,3 @@ El producto alcanza su objetivo cuando:
 ## Frase Guia
 
 > Una misma plataforma, adaptable a cada organizacion, para ordenar personas, actividades, asistencias y finanzas sin depender de planillas dispersas.
-
