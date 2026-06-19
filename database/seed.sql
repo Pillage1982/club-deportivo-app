@@ -6,12 +6,25 @@ USE club_deportivo;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
-TRUNCATE TABLE multas;
-TRUNCATE TABLE asistencias;
-TRUNCATE TABLE pagos;
-TRUNCATE TABLE eventos;
-TRUNCATE TABLE personas;
-TRUNCATE TABLE usuarios;
+DELETE FROM pago_detalle;
+DELETE FROM pagos;
+DELETE FROM multas;
+DELETE FROM asistencias;
+DELETE FROM cuotas;
+DELETE FROM evento_participantes;
+DELETE FROM persona_rol;
+DELETE FROM eventos;
+DELETE FROM personas;
+DELETE FROM usuarios;
+
+ALTER TABLE pago_detalle AUTO_INCREMENT = 1;
+ALTER TABLE pagos AUTO_INCREMENT = 1;
+ALTER TABLE multas AUTO_INCREMENT = 1;
+ALTER TABLE asistencias AUTO_INCREMENT = 1;
+ALTER TABLE cuotas AUTO_INCREMENT = 1;
+ALTER TABLE eventos AUTO_INCREMENT = 1;
+ALTER TABLE personas AUTO_INCREMENT = 1;
+ALTER TABLE usuarios AUTO_INCREMENT = 1;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
