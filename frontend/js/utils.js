@@ -443,3 +443,35 @@ function aplicarConfiguracionVisual() {
     });
 
 }
+
+function formatearFechaHora(fecha) {
+
+  if (!fecha) {
+    return '';
+  }
+
+  const fechaObjeto =
+    new Date(fecha);
+
+  if (Number.isNaN(fechaObjeto.getTime())) {
+    return formatearFecha(fecha);
+  }
+
+  const dia =
+    String(fechaObjeto.getDate()).padStart(2, '0');
+
+  const mes =
+    String(fechaObjeto.getMonth() + 1).padStart(2, '0');
+
+  const anio =
+    fechaObjeto.getFullYear();
+
+  const hora =
+    String(fechaObjeto.getHours()).padStart(2, '0');
+
+  const minutos =
+    String(fechaObjeto.getMinutes()).padStart(2, '0');
+
+  return `${dia}-${mes}-${anio} ${hora}:${minutos}`;
+
+}
