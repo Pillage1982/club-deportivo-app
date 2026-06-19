@@ -17,7 +17,7 @@ function validarPago(body) {
   const metodo = body.metodo ? body.metodo.trim() : '';
 
   if (!Number.isInteger(personaId) || personaId <= 0) {
-    return 'Seleccione una persona valida';
+    return 'Seleccione un integrante valido';
   }
 
   if (!Number.isFinite(monto) || monto <= 0) {

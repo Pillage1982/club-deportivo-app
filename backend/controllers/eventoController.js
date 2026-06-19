@@ -27,11 +27,11 @@ function validarEvento(body) {
   const descripcion = body.descripcion ? body.descripcion.trim() : '';
 
   if (!textoValido(nombre)) {
-    return 'Ingrese un nombre de evento valido';
+    return 'Ingrese un nombre de actividad valida';
   }
 
   if (!tiposPermitidos.includes(tipo)) {
-    return 'Seleccione un tipo de evento valido';
+    return 'Seleccione un tipo de actividad valida';
   }
 
   if (!fecha || Number.isNaN(Date.parse(fecha))) {
@@ -82,7 +82,7 @@ exports.crear = (req, res) => {
       }
 
       res.json({
-        mensaje: 'Evento creado'
+        mensaje: 'Actividad creada'
       });
 
     }
@@ -116,7 +116,7 @@ exports.actualizar = (req, res) => {
       }
 
       res.json({
-        mensaje: 'Evento actualizado'
+        mensaje: 'Actividad actualizada'
       });
 
     }
@@ -140,7 +140,7 @@ exports.eliminar = (req, res) => {
       }
 
       res.json({
-        mensaje: 'Evento eliminado'
+        mensaje: 'Actividad eliminada'
       });
 
     }

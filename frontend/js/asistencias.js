@@ -33,7 +33,7 @@ function registrarAsistencia() {
     if (!data.persona_id) {
 
       mostrarAlerta(
-        'Seleccione una persona',
+        'Seleccione un integrante',
         'warning'
       );
 
@@ -44,7 +44,7 @@ function registrarAsistencia() {
     if (!data.evento_id) {
 
       mostrarAlerta(
-        'Seleccione un evento',
+        'Seleccione una actividad',
         'warning'
       );
 
@@ -168,6 +168,14 @@ function cargarAsistencias() {
 
       tabla.innerHTML = '';
 
+      if (!Array.isArray(data)) {
+  mostrarAlerta(
+    data.mensaje || 'No se pudo cargar la tabla de asistencias',
+    'warning'
+  );
+  return;
+}
+
       data.forEach(asistencia => {
 
         // Estado visual asistencia
@@ -210,6 +218,14 @@ function cargarMultas() {
       const tabla = document.getElementById('tabla_multas');
 
       tabla.innerHTML = '';
+
+      if (!Array.isArray(data)) {
+  mostrarAlerta(
+    data.mensaje || 'No se pudo cargar la tabla de multas',
+    'warning'
+  );
+  return;
+}
 
       data.forEach(multa => {
 

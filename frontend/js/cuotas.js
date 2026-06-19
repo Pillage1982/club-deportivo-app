@@ -4,11 +4,14 @@
 
 function generarCuotasMensuales() {
 
-  const confirmar = confirm(
-    '¿Deseas generar las cuotas mensuales para todos los socios activos?'
+  mostrarConfirmacion(
+    'Esta acción generará las cuotas mensuales para todos los integrantes activos. ¿Deseas continuar?',
+    ejecutarGeneracionCuotas
   );
 
-  if (!confirmar) return;
+}
+
+function ejecutarGeneracionCuotas() {
 
   fetch(`${API_URL}/cuotas/generar-mes`, {
 
@@ -19,40 +22,37 @@ function generarCuotasMensuales() {
   })
 
   .then(async res => {
-  const data = await res.json();
+    const data = await res.json();
 
-  if (!res.ok) {
-    throw new Error(data.mensaje || 'Error al generar cuotas');
-  }
+    if (!res.ok) {
+      throw new Error(data.mensaje || 'Error al generar cuotas');
+    }
 
-  return data;
-})
+    return data;
+  })
 
-.then(data => {
-  const tipoAlerta =
-    data.cuotas_creadas > 0 ? 'success' : 'warning';
+  .then(data => {
+    const tipoAlerta =
+      data.cuotas_creadas > 0 ? 'success' : 'warning';
 
-  mostrarAlerta(
-    `${data.mensaje}. Cuotas creadas: ${data.cuotas_creadas || 0}`,
-    tipoAlerta
-  );
+    mostrarAlerta(
+      `${data.mensaje}. Cuotas creadas: ${data.cuotas_creadas || 0}`,
+      tipoAlerta
+    );
 
     cargarFinanzas();
     cargarDashboard();
     cargarGraficos();
     cargarCuotas();
-
   })
 
   .catch(err => {
-
     console.error(err);
 
     mostrarAlerta(
-      'Error al generar cuotas',
+      err.message || 'No se pudieron generar las cuotas. Intenta nuevamente.',
       'danger'
     );
-
   });
 
 }
@@ -81,6 +81,14 @@ function cargarCuotas() {
     if (!tabla) return;
 
     tabla.innerHTML = '';
+
+    if (!Array.isArray(data)) {
+  mostrarAlerta(
+    data.mensaje || 'No se pudo cargar la tabla de cuotas',
+    'warning'
+  );
+  return;
+}
 
     data.forEach(cuota => {
 

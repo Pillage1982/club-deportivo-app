@@ -129,27 +129,21 @@ personaModel.crearPersona(
 
     (err, result) => {
 
-      console.log('CALLBACK MYSQL');
-
-      console.log(err);
-
-      console.log(result);
-
       if (err) {
   if (err.code === 'ER_DUP_ENTRY') {
     return res.status(409).json({
-      mensaje: 'Ya existe una persona registrada con ese RUT'
+      mensaje: 'Ya existe un integrante registrado con ese RUT'
     });
   }
 
   console.error('Error creando persona:', err);
   return res.status(500).json({
-    mensaje: 'Error al crear persona'
+    mensaje: 'Error al crear integrante'
   });
 }
 
       res.json({
-        mensaje: 'Persona creada'
+        mensaje: 'Integrante creado correctamente'
       });
 
     }
@@ -173,7 +167,7 @@ exports.eliminar = (req, res) => {
       }
 
       res.json({
-        mensaje: 'Persona eliminada'
+        mensaje: 'Integrante eliminado correctamente'
       });
 
     }
@@ -204,18 +198,18 @@ if (errorValidacion) {
       if (err) {
   if (err.code === 'ER_DUP_ENTRY') {
     return res.status(409).json({
-      mensaje: 'Ya existe una persona registrada con ese RUT'
+      mensaje: 'Ya existe un integrante registrado con ese RUT'
     });
   }
 
   console.error('Error actualizando persona:', err);
   return res.status(500).json({
-    mensaje: 'Error al actualizar persona'
+    mensaje: 'Error al actualizar integrante'
   });
 }
 
       res.json({
-        mensaje: 'Persona actualizada'
+        mensaje: 'Integrante actualizado correctamente'
       });
 
     }

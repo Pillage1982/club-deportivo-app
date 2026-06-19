@@ -5,8 +5,6 @@ const jwt = require('jsonwebtoken');
 exports.login = (req, res) => {
   const { usuario, password } = req.body;
 
-  console.log('Intento login:', usuario);
-
   usuarioModel.buscarUsuario(usuario, (err, results) => {
     if (err) {
       console.error('Error buscando usuario:', err);
@@ -21,13 +19,6 @@ exports.login = (req, res) => {
     }
 
     const user = results[0];
-
-    console.log('Usuario encontrado:', {
-      id: user.id,
-      usuario: user.usuario,
-      rol: user.rol,
-      passwordLength: user.password ? user.password.length : null
-    });
 
     bcrypt.compare(password, user.password, (err, result) => {
       if (err) {

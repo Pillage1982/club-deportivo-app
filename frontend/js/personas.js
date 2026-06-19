@@ -27,6 +27,14 @@ function cargarPersonas() {
 
       selectPago.innerHTML = '';
 
+      if (!Array.isArray(data)) {
+        mostrarAlerta(
+        data.mensaje || 'No se pudieron cargar los integrantes',
+        'warning'
+        );
+        return;
+      }
+
       data.forEach(persona => {
 
         // Clona opción para reutilizar
@@ -85,11 +93,6 @@ function cargarPersonas() {
 
   };
 
-  console.log(
-  'Datos persona enviados:',
-  data
-  );
-
   // =====================================
   // VALIDACIONES FRONTEND PERSONAS
   // =====================================
@@ -131,7 +134,7 @@ if (errorValidacion) {
 
   if (!res.ok) {
     throw new Error(
-      data.mensaje || 'No se pudo guardar la persona'
+      data.mensaje || 'No se pudo guardar el integrante'
     );
   }
 
@@ -139,16 +142,26 @@ if (errorValidacion) {
 })
 .then(data => {
 
-    document.getElementById(
-      'respuesta_persona'
-    ).innerText =
-    data.mensaje || 'Persona guardada correctamente';
+    const mensaje =
+  data.mensaje || 'Integrante guardado correctamente';
+
+mostrarAlerta(
+  mensaje,
+  'success'
+);
+
+const respuestaPersona =
+  document.getElementById('respuesta_persona');
+
+if (respuestaPersona) {
+  respuestaPersona.innerText = mensaje;
+}
 
     personaEditando = null;
 
     document.getElementById(
       'btn_guardar_persona'
-    ).innerText = 'Guardar Persona';
+    ).innerText = 'Guardar Integrante';
 
     // Limpia formulario después guardar
     document.getElementById('rut').value = '';
@@ -187,7 +200,7 @@ document.getElementById(
   .catch(err => {
   console.error(err);
   mostrarAlerta(
-    err.message || 'No se pudo guardar la persona',
+    err.message || 'No se pudo guardar el integrante',
     'danger'
   );
 });
@@ -216,6 +229,14 @@ document.getElementById(
       );
 
     tabla.innerHTML = '';
+
+    if (!Array.isArray(data)) {
+      mostrarAlerta(
+      data.mensaje || 'No se pudo cargar la tabla de integrantes',
+      'warning'
+      );
+      return;
+    }
 
     data.forEach(persona => {
 
@@ -332,7 +353,7 @@ function editarPersona(persona) {
 
   document.getElementById(
     'btn_guardar_persona'
-  ).innerText = 'Actualizar Persona';
+  ).innerText = 'Actualizar Integrante';
 
 }
 
@@ -342,36 +363,30 @@ function editarPersona(persona) {
 
 function eliminarPersona(id) {
 
-  // Solicita confirmación antes eliminar
-  const confirmar = confirm(
-    '¿Eliminar persona?'
+  mostrarConfirmacion(
+    'Esta acción eliminará el integrante seleccionado. ¿Deseas continuar?',
+    () => ejecutarEliminarPersona(id)
   );
 
-  if (!confirmar) return;
+}
+
+function ejecutarEliminarPersona(id) {
 
   fetch(
-
     `${API_URL}/personas/${id}`,
-
     {
-
       method: 'DELETE',
-
       headers: getAuthHeaders()
-
     }
-
   )
 
   .then(res => res.json())
 
   .then(data => {
 
-    mostrarAlerta(data.mensaje,'warning');
+    mostrarAlerta(data.mensaje, 'warning');
 
-    // Refresca tabla y selectores
     cargarTablaPersonas();
-
     cargarPersonas();
 
   })

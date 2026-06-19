@@ -14,6 +14,7 @@ window.onload = () => {
 
   }
 
+  aplicarConfiguracionVisual();
   cargarPersonas();
   cargarEventos();
   cargarAsistencias();

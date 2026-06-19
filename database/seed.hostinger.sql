@@ -1,41 +1,52 @@
-USE u193403304_club_deportivo;
-
 SET FOREIGN_KEY_CHECKS = 0;
 
-TRUNCATE TABLE multas;
-TRUNCATE TABLE asistencias;
-TRUNCATE TABLE pagos;
-TRUNCATE TABLE eventos;
-TRUNCATE TABLE personas;
-TRUNCATE TABLE usuarios;
+DELETE FROM pago_detalle;
+DELETE FROM pagos;
+DELETE FROM multas;
+DELETE FROM asistencias;
+DELETE FROM cuotas;
+DELETE FROM evento_participantes;
+DELETE FROM persona_rol;
+DELETE FROM eventos;
+DELETE FROM personas;
+DELETE FROM usuarios;
+
+ALTER TABLE pago_detalle AUTO_INCREMENT = 1;
+ALTER TABLE pagos AUTO_INCREMENT = 1;
+ALTER TABLE multas AUTO_INCREMENT = 1;
+ALTER TABLE asistencias AUTO_INCREMENT = 1;
+ALTER TABLE cuotas AUTO_INCREMENT = 1;
+ALTER TABLE eventos AUTO_INCREMENT = 1;
+ALTER TABLE personas AUTO_INCREMENT = 1;
+ALTER TABLE usuarios AUTO_INCREMENT = 1;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
 INSERT INTO usuarios (usuario, password, rol)
 VALUES
-('admin', '$2b$10$2qQw6abE62sB2E.FiGLhnOYLVLbi4JlzSl8VDE1DP9D.B6DtkLwry', 'admin'),
-('tesorero', '$2b$10$2qQw6abE62sB2E.FiGLhnOYLVLbi4JlzSl8VDE1DP9D.B6DtkLwry', 'tesorero'),
-('entrenador', '$2b$10$2qQw6abE62sB2E.FiGLhnOYLVLbi4JlzSl8VDE1DP9D.B6DtkLwry', 'entrenador');
+('admin', '$2b$10$lMiSrir3d9zKZUve/WZkS.wp/rVdvx.ZOvMEgF/UWudPr/nnoKmbO', 'admin'),
+('tesorero', '$2b$10$lMiSrir3d9zKZUve/WZkS.wp/rVdvx.ZOvMEgF/UWudPr/nnoKmbO', 'tesorero'),
+('entrenador', '$2b$10$lMiSrir3d9zKZUve/WZkS.wp/rVdvx.ZOvMEgF/UWudPr/nnoKmbO', 'entrenador');
 
 INSERT INTO personas
 (rut, nombres, apellido_paterno, apellido_materno, email, telefono, fecha_nacimiento)
 VALUES
-('11.111.111-1', 'Juan', 'Perez', '', 'juan@test.cl', '999111111', '2000-01-01'),
-('22.222.222-2', 'Pedro', 'Gonzalez', '', 'pedro@test.cl', '999222222', '1999-02-10'),
-('33.333.333-3', 'Luis', 'Rojas', '', 'luis@test.cl', '999333333', '2001-03-15'),
-('44.444.444-4', 'Carlos', 'Munoz', '', 'carlos@test.cl', '999444444', '1998-05-20'),
-('55.555.555-5', 'Matias', 'Araya', '', 'matias@test.cl', '999555555', '2002-07-11'),
-('66.666.666-6', 'Sebastian', 'Contreras', '', 'seba@test.cl', '999666666', '1997-08-30'),
-('77.777.777-7', 'Diego', 'Torres', '', 'diego@test.cl', '999777777', '2000-09-09'),
-('88.888.888-8', 'Felipe', 'Castillo', '', 'felipe@test.cl', '999888888', '1996-11-14');
+('11.111.111-1', 'Ana', 'Morales', '', 'ana.demo@test.cl', '999111111', '2000-01-01'),
+('22.222.222-2', 'Pedro', 'Gonzalez', '', 'pedro.demo@test.cl', '999222222', '1999-02-10'),
+('33.333.333-3', 'Lucia', 'Rojas', '', 'lucia.demo@test.cl', '999333333', '2001-03-15'),
+('44.444.444-4', 'Carlos', 'Munoz', '', 'carlos.demo@test.cl', '999444444', '1998-05-20'),
+('55.555.555-5', 'Matias', 'Araya', '', 'matias.demo@test.cl', '999555555', '2002-07-11'),
+('66.666.666-6', 'Sofia', 'Contreras', '', 'sofia.demo@test.cl', '999666666', '1997-08-30'),
+('77.777.777-7', 'Diego', 'Torres', '', 'diego.demo@test.cl', '999777777', '2000-09-09'),
+('88.888.888-8', 'Camila', 'Castillo', '', 'camila.demo@test.cl', '999888888', '1996-11-14');
 
 INSERT INTO eventos
 (nombre, tipo, fecha, ubicacion, descripcion)
 VALUES
-('Entrenamiento Lunes', 'entrenamiento', NOW(), 'Cancha Norte', 'Entrenamiento semanal'),
-('Entrenamiento Miercoles', 'entrenamiento', NOW(), 'Cancha Norte', 'Trabajo fisico'),
-('Partido Apertura', 'partido', NOW(), 'Estadio Municipal', 'Primer partido temporada'),
-('Reunion Directiva', 'reunion', NOW(), 'Sede Club', 'Reunion mensual');
+('Actividad Semanal', 'entrenamiento', NOW(), 'Sede Comunitaria', 'Actividad regular de la organizacion'),
+('Taller de Coordinacion', 'entrenamiento', NOW(), 'Sala Multiuso', 'Trabajo colaborativo del equipo'),
+('Encuentro Comunitario', 'partido', NOW(), 'Centro Comunitario', 'Encuentro abierto de la organizacion'),
+('Reunion Directiva', 'reunion', NOW(), 'Oficina Administrativa', 'Reunion mensual');
 
 INSERT INTO asistencias
 (evento_id, persona_id, estado, minutos_atraso)

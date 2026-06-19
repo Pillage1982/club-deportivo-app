@@ -4,6 +4,22 @@
 
 let eventoEditando = null;
 
+function obtenerTipoActividad(tipo) {
+
+  const config =
+    window.APP_CONFIG || {};
+
+  const tipos =
+    config.tiposActividad || {
+      entrenamiento: 'Actividad',
+      partido: 'Encuentro',
+      reunion: 'Reunion'
+    };
+
+  return tipos[tipo] || tipo;
+
+}
+
 // =====================================
 // CARGAR EVENTOS EN SELECTOR
 // =====================================
@@ -22,6 +38,14 @@ function cargarEventos() {
       const select = document.getElementById('evento_id');
 
       select.innerHTML = '';
+
+      if (!Array.isArray(data)) {
+        mostrarAlerta(
+        data.mensaje || 'No se pudieron cargar las actividades',
+        'warning'
+        );
+        return;
+      }
 
       data.forEach(evento => {
 
@@ -97,27 +121,27 @@ function crearEvento() {
   };
 
   if (!textoValido(data.nombre)) {
-    mostrarAlerta('Ingrese un nombre de evento valido', 'warning');
+    mostrarAlerta('Ingrese un nombre de actividad valido', 'warning');
     return;
   }
 
   if (!tiposPermitidos.includes(data.tipo)) {
-    mostrarAlerta('Seleccione un tipo de evento valido', 'warning');
+    mostrarAlerta('Seleccione un tipo de actividad valido', 'warning');
     return;
   }
 
   if (!data.fecha) {
-    mostrarAlerta('Seleccione una fecha valida', 'warning');
+    mostrarAlerta('Seleccione una fecha válida', 'warning');
     return;
   }
 
   if (!textoValido(data.ubicacion)) {
-    mostrarAlerta('Ingrese una ubicacion valida', 'warning');
+    mostrarAlerta('Ingrese una ubicacion válida', 'warning');
     return;
   }
 
   if (data.descripcion && !textoValido(data.descripcion)) {
-    mostrarAlerta('Ingrese una descripcion valida', 'warning');
+    mostrarAlerta('Ingrese una descripcion válida', 'warning');
     return;
   }
 
@@ -150,7 +174,7 @@ function crearEvento() {
     const data = await res.json();
 
     if (!res.ok) {
-      throw new Error(data.mensaje || 'Error al guardar evento');
+      throw new Error(data.mensaje || 'Error al guardar actividad');
     }
 
     return data;
@@ -164,7 +188,7 @@ function crearEvento() {
 
     document.getElementById(
       'btn_guardar_evento'
-    ).innerText = 'Guardar Evento';
+    ).innerText = 'Guardar Actividad';
 
     // Limpia formulario después guardar
     document.getElementById(
@@ -224,6 +248,14 @@ function cargarTablaEventos() {
 
     tabla.innerHTML = '';
 
+    if (!Array.isArray(data)) {
+      mostrarAlerta(
+        data.mensaje || 'No se pudo cargar la tabla de actividades',
+        'warning'
+      );
+      return;
+    }
+
     data.forEach(evento => {
 
       // Acciones CRUD eventos
@@ -236,11 +268,11 @@ function cargarTablaEventos() {
           </td>
 
           <td>
-            ${evento.tipo}
+            ${obtenerTipoActividad(evento.tipo)}
           </td>
 
           <td>
-            ${formatearFecha(evento.fecha)}
+            ${formatearFechaHora(evento.fecha)}
           </td>
 
           <td>
@@ -329,7 +361,7 @@ function editarEvento(evento) {
   document.getElementById(
     'btn_guardar_evento'
   ).innerText =
-    'Actualizar Evento';
+    'Actualizar Actividad';
 
 }
 
@@ -339,36 +371,30 @@ function editarEvento(evento) {
 
 function eliminarEvento(id) {
 
-  // Solicita confirmación antes eliminar
-  const confirmar = confirm(
-    '¿Eliminar evento?'
+  mostrarConfirmacion(
+    'Esta acción eliminará la actividad seleccionada. ¿Deseas continuar?',
+    () => ejecutarEliminarEvento(id)
   );
 
-  if (!confirmar) return;
+}
+
+function ejecutarEliminarEvento(id) {
 
   fetch(
-
     `${API_URL}/eventos/${id}`,
-
     {
-
       method: 'DELETE',
-
       headers: getAuthHeaders()
-
     }
-
   )
 
   .then(res => res.json())
 
   .then(data => {
 
-    mostrarAlerta(data.mensaje,'warning');
+    mostrarAlerta(data.mensaje, 'warning');
 
-    // Refresca tabla y selector eventos
     cargarTablaEventos();
-
     cargarEventos();
 
   })

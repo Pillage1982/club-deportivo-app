@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">NexoComunidad</title>
+  <desc id="desc">Logo generico de NexoComunidad</desc>
+  <rect width="160" height="160" rx="32" fill="#172033"/>
+  <circle cx="80" cy="80" r="46" fill="#2f80ed"/>
+  <circle cx="56" cy="70" r="10" fill="#ffffff"/>
+  <circle cx="104" cy="70" r="10" fill="#ffffff"/>
+  <circle cx="80" cy="104" r="10" fill="#ffffff"/>
+  <path d="M62 74 L80 100 L98 74" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

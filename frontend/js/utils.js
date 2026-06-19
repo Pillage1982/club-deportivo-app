@@ -52,6 +52,96 @@ const alerta =
 }
 
 // =====================================
+// CONFIRMACION VISUAL BOOTSTRAP
+// =====================================
+
+function mostrarConfirmacion(mensaje, onConfirmar) {
+
+  const idModal = 'modal_confirmacion_app';
+
+  const modalAnterior =
+    document.getElementById(idModal);
+
+  if (modalAnterior) {
+    modalAnterior.remove();
+  }
+
+  const modal =
+    document.createElement('div');
+
+  modal.className = 'modal fade';
+  modal.id = idModal;
+  modal.tabIndex = -1;
+
+  modal.innerHTML = `
+
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title">
+            Confirmar acción
+          </h5>
+
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal">
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <p class="mb-0">
+            ${mensaje}
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal">
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-success"
+            id="btn_confirmar_accion">
+            Confirmar
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  `;
+
+  document.body.appendChild(modal);
+
+  const modalBootstrap =
+    new bootstrap.Modal(modal);
+
+  modal.querySelector('#btn_confirmar_accion')
+    .addEventListener('click', () => {
+
+      modalBootstrap.hide();
+
+      if (typeof onConfirmar === 'function') {
+        onConfirmar();
+      }
+
+    });
+
+  modal.addEventListener('hidden.bs.modal', () => {
+    modal.remove();
+  });
+
+  modalBootstrap.show();
+
+}
+
+// =====================================
 // HEADERS AUTENTICADOS JWT
 // =====================================
 
@@ -83,6 +173,10 @@ function logout() {
 
 }
 
+function cerrarSesion() {
+  logout();
+}
+
 // =====================================
 // MOSTRAR USUARIO AUTENTICADO
 // =====================================
@@ -94,13 +188,30 @@ function mostrarUsuario() {
       localStorage.getItem('usuario')
     );
 
-  if (usuario) {
+  if (!usuario) {
+    return;
+  }
 
-    // Muestra usuario y rol en interfaz
-    document.getElementById(
-      'usuario_logeado'
-      ).innerText =
-      `${usuario.usuario} (${usuario.rol})`;
+  const config =
+    window.APP_CONFIG || {};
+
+  const rolesVisuales =
+    config.rolesVisuales || {
+      admin: 'Administrador',
+      tesorero: 'Tesorero',
+      entrenador: 'Encargado'
+    };
+
+  const rolVisual =
+    rolesVisuales[usuario.rol] || usuario.rol;
+
+  const usuarioLogeado =
+    document.getElementById('usuario_logeado');
+
+  if (usuarioLogeado) {
+
+    usuarioLogeado.innerText =
+      `${usuario.usuario} (${rolVisual})`;
 
   }
 
@@ -247,5 +358,120 @@ function formatearFecha(fecha) {
     partes[2];
 
   return `${dia}-${mes}-${anio}`;
+
+}
+
+// =====================================
+// APLICAR CONFIGURACION VISUAL
+// =====================================
+
+function aplicarConfiguracionVisual() {
+
+  const config =
+    window.APP_CONFIG || {};
+
+  const producto =
+    config.producto || {};
+
+  const cliente =
+    config.cliente || {};
+
+  const nombreSistema =
+    producto.nombre || 'NexoComunidad';
+
+  const nombreCliente =
+    cliente.nombre || nombreSistema;
+
+  document.querySelectorAll('[data-config="producto.nombre"]')
+    .forEach(elemento => {
+      elemento.innerText = nombreSistema;
+    });
+
+  document.querySelectorAll('[data-config="cliente.nombre"]')
+    .forEach(elemento => {
+      elemento.innerText = nombreCliente;
+    });
+
+      document.querySelectorAll('[data-config-img="cliente.logo"]')
+    .forEach(elemento => {
+      if (cliente.logo) {
+        elemento.src = cliente.logo;
+        elemento.alt = nombreCliente;
+      }
+    });
+
+      document.title =
+    `${nombreCliente} | ${nombreSistema}`;
+
+      const obtenerValorConfig = ruta => {
+
+    return ruta
+      .split('.')
+      .reduce(
+        (actual, clave) => actual && actual[clave],
+        config
+      );
+
+  };
+
+  document.querySelectorAll('[data-config-text]')
+    .forEach(elemento => {
+
+      const texto =
+        obtenerValorConfig(
+          elemento.dataset.configText
+        );
+
+      if (texto) {
+        elemento.innerText = texto;
+      }
+
+    });
+
+  document.querySelectorAll('[data-config-placeholder]')
+    .forEach(elemento => {
+
+      const texto =
+        obtenerValorConfig(
+          elemento.dataset.configPlaceholder
+        );
+
+      if (texto) {
+        elemento.placeholder = texto;
+      }
+
+    });
+
+}
+
+function formatearFechaHora(fecha) {
+
+  if (!fecha) {
+    return '';
+  }
+
+  const fechaObjeto =
+    new Date(fecha);
+
+  if (Number.isNaN(fechaObjeto.getTime())) {
+    return formatearFecha(fecha);
+  }
+
+  const dia =
+    String(fechaObjeto.getDate()).padStart(2, '0');
+
+  const mes =
+    String(fechaObjeto.getMonth() + 1).padStart(2, '0');
+
+  const anio =
+    fechaObjeto.getFullYear();
+
+  const hora =
+    String(fechaObjeto.getHours()).padStart(2, '0');
+
+  const minutos =
+    String(fechaObjeto.getMinutes()).padStart(2, '0');
+
+  return `${dia}-${mes}-${anio} ${hora}:${minutos}`;
 
 }

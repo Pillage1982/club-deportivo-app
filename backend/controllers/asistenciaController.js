@@ -15,7 +15,7 @@ exports.registrar = (req, res) => {
     if (err) {
   if (err.code === 'ER_DUP_ENTRY') {
     return res.status(409).json({
-      mensaje: 'La asistencia ya fue registrada para esta persona en este evento.'
+      mensaje: 'La asistencia ya fue registrada para este integrante en esta actividad.'
     });
   }
 
