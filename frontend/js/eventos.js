@@ -272,7 +272,7 @@ function cargarTablaEventos() {
           </td>
 
           <td>
-            ${formatearFecha(evento.fecha)}
+            ${formatearFechaHora(evento.fecha)}
           </td>
 
           <td>
