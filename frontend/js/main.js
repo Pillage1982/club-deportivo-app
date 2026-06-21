@@ -26,6 +26,7 @@ window.onload = () => {
   aplicarRolesFrontend();
   cargarTablaPersonas();
   configurarBuscadorPersonas();
+  configurarFiltrosEventos();
   cargarTablaEventos();
   cargarTablaPagos();
   cargarCuotas();

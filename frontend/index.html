@@ -496,6 +496,56 @@
             </div>
           </div>
 
+          <div
+            id="filtros_eventos_wrapper"
+            class="row g-3 mt-2 mb-3">
+            <div class="col-md-4">
+              <label for="buscar_eventos" class="form-label">
+                Buscar Actividades
+              </label>
+
+              <input
+                type="search"
+                id="buscar_eventos"
+                class="form-control"
+                placeholder="Buscar por nombre, ubicacion o descripcion">
+            </div>
+
+            <div class="col-md-3">
+              <label for="filtro_evento_tipo" class="form-label">
+                Tipo
+              </label>
+
+              <select id="filtro_evento_tipo" class="form-select">
+                <option value="">Todos</option>
+                <option value="entrenamiento">Actividad</option>
+                <option value="partido">Encuentro</option>
+                <option value="reunion">Reunión</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label for="filtro_evento_fecha" class="form-label">
+                Fecha
+              </label>
+
+              <input
+                type="date"
+                id="filtro_evento_fecha"
+                class="form-control">
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+              <button
+                type="button"
+                id="btn_limpiar_filtros_eventos"
+                class="btn btn-outline-secondary w-100"
+                onclick="limpiarFiltrosEventos()">
+                Limpiar
+              </button>
+            </div>
+          </div>
+
           <div id="tabla_eventos_wrapper" class="table-responsive mt-4">
             <table class="table table-bordered table-striped">
               <thead class="table-dark">
@@ -504,8 +554,8 @@
                   <th>Tipo</th>
                   <th>Fecha</th>
                   <th>Ubicación</th>
-                  <th>Acciones</th>
                   <th>Descripción</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
 
