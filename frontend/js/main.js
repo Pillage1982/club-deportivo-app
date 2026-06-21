@@ -27,6 +27,8 @@ window.onload = () => {
   cargarTablaPersonas();
   configurarBuscadorPersonas();
   configurarFiltrosEventos();
+  configurarFiltrosPagos();
+  configurarFiltrosCuotas();
   cargarTablaEventos();
   cargarTablaPagos();
   cargarCuotas();

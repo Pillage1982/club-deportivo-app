@@ -615,6 +615,45 @@
             </button>
           </div>
 
+          <div
+            id="filtros_pagos_wrapper"
+            class="row g-3 mt-2 mb-3">
+            <div class="col-md-5">
+              <label for="buscar_pagos" class="form-label">
+                Buscar Pagos
+              </label>
+
+              <input
+                type="search"
+                id="buscar_pagos"
+                class="form-control"
+                placeholder="Buscar por integrante">
+            </div>
+
+            <div class="col-md-4">
+              <label for="filtro_pago_metodo" class="form-label">
+                Método
+              </label>
+
+              <select id="filtro_pago_metodo" class="form-select">
+                <option value="">Todos</option>
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="debito">Débito</option>
+              </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+              <button
+                type="button"
+                id="btn_limpiar_filtros_pagos"
+                class="btn btn-outline-secondary w-100"
+                onclick="limpiarFiltrosPagos()">
+                Limpiar
+              </button>
+            </div>
+          </div>
+
           <div id="tabla_pagos_wrapper" class="table-responsive mt-4">
             <table class="table table-bordered table-striped">
               <thead class="table-dark">
@@ -694,6 +733,72 @@
               data-config-text="etiquetas.botones.generarCuotas">
                 Generar cuotas del mes
               </button>
+
+              <div
+                id="filtros_cuotas_wrapper"
+                class="row g-3 mt-2 mb-3">
+                <div class="col-md-3">
+                  <label for="buscar_cuotas" class="form-label">
+                    Buscar Cuotas
+                  </label>
+
+                  <input
+                    type="search"
+                    id="buscar_cuotas"
+                    class="form-control"
+                    placeholder="Buscar por integrante">
+                </div>
+
+                <div class="col-md-3">
+                  <label for="filtro_cuota_estado" class="form-label">
+                    Estado
+                  </label>
+
+                  <select id="filtro_cuota_estado" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="pagado">Pagado</option>
+                    <option value="vencido">Vencido</option>
+                  </select>
+                </div>
+
+                <div class="col-md-2">
+                  <label for="filtro_cuota_mes" class="form-label">
+                    Mes
+                  </label>
+
+                  <input
+                    type="number"
+                    id="filtro_cuota_mes"
+                    class="form-control"
+                    min="1"
+                    max="12"
+                    placeholder="Mes">
+                </div>
+
+                <div class="col-md-2">
+                  <label for="filtro_cuota_anio" class="form-label">
+                    Año
+                  </label>
+
+                  <input
+                    type="number"
+                    id="filtro_cuota_anio"
+                    class="form-control"
+                    min="2000"
+                    placeholder="Año">
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                  <button
+                    type="button"
+                    id="btn_limpiar_filtros_cuotas"
+                    class="btn btn-outline-secondary w-100"
+                    onclick="limpiarFiltrosCuotas()">
+                    Limpiar
+                  </button>
+                </div>
+              </div>
 
               <div id="tabla_cuotas_wrapper" class="table-responsive mt-4">
                 <table class="table table-hover align-middle">

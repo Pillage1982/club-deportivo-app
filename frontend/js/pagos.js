@@ -1,4 +1,13 @@
 let pagoEditando = null;
+let pagosCargados = [];
+
+function normalizarTextoPago(valor) {
+  return String(valor || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
 
 function cargarFinanzas() {
   fetch(`${API_URL}/finanzas`, {
@@ -156,35 +165,127 @@ function cargarTablaPagos() {
         return;
       }
 
-      data.forEach(pago => {
-        tabla.innerHTML += `
-          <tr>
-            <td>
-              ${pago.nombres}
-              ${pago.apellido_paterno}
-              ${pago.apellido_materno || ''}
-            </td>
-            <td>$${pago.monto_total}</td>
-            <td>${pago.metodo}</td>
-            <td>${formatearFecha(pago.fecha)}</td>
-            <td>
-              <button
-                class="btn btn-warning btn-sm"
-                onclick='editarPago(${JSON.stringify(pago)})'>
-                Editar
-              </button>
-
-              <button
-                class="btn btn-danger btn-sm"
-                onclick='eliminarPago(${pago.id})'>
-                Eliminar
-              </button>
-            </td>
-          </tr>
-        `;
-      });
+      pagosCargados = data;
+      renderizarTablaPagos(
+        filtrarPagos(data)
+      );
     })
     .catch(err => console.error(err));
+}
+
+function filtrarPagos(pagos) {
+  const busqueda =
+    normalizarTextoPago(
+      document.getElementById('buscar_pagos')?.value
+    );
+
+  const metodo =
+    document.getElementById('filtro_pago_metodo')?.value || '';
+
+  return pagos.filter(pago => {
+    const nombreCompleto = normalizarTextoPago([
+      pago.nombres,
+      pago.apellido_paterno,
+      pago.apellido_materno
+    ].join(' '));
+
+    const coincideBusqueda =
+      !busqueda || nombreCompleto.includes(busqueda);
+
+    const coincideMetodo =
+      !metodo || pago.metodo === metodo;
+
+    return coincideBusqueda && coincideMetodo;
+  });
+}
+
+function renderizarTablaPagos(pagos) {
+  const tabla = document.getElementById('tabla_pagos');
+
+  tabla.innerHTML = '';
+
+  if (!pagos.length) {
+    tabla.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center text-muted">
+          No hay pagos para los filtros seleccionados
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+  pagos.forEach(pago => {
+    tabla.innerHTML += `
+      <tr>
+        <td>
+          ${pago.nombres}
+          ${pago.apellido_paterno}
+          ${pago.apellido_materno || ''}
+        </td>
+        <td>$${pago.monto_total}</td>
+        <td>${pago.metodo}</td>
+        <td>${formatearFecha(pago.fecha)}</td>
+        <td>
+          <button
+            class="btn btn-warning btn-sm"
+            onclick='editarPago(${JSON.stringify(pago)})'>
+            Editar
+          </button>
+
+          <button
+            class="btn btn-danger btn-sm"
+            onclick='eliminarPago(${pago.id})'>
+            Eliminar
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function aplicarFiltrosPagos() {
+  renderizarTablaPagos(
+    filtrarPagos(pagosCargados)
+  );
+}
+
+function limpiarFiltrosPagos() {
+  const buscar =
+    document.getElementById('buscar_pagos');
+
+  const metodo =
+    document.getElementById('filtro_pago_metodo');
+
+  if (buscar) buscar.value = '';
+  if (metodo) metodo.value = '';
+
+  aplicarFiltrosPagos();
+}
+
+function configurarFiltrosPagos() {
+  [
+    'buscar_pagos',
+    'filtro_pago_metodo'
+  ].forEach(id => {
+    const elemento =
+      document.getElementById(id);
+
+    if (!elemento) {
+      return;
+    }
+
+    const evento =
+      elemento.tagName === 'INPUT'
+        ? 'input'
+        : 'change';
+
+    elemento.addEventListener(
+      evento,
+      aplicarFiltrosPagos
+    );
+  });
 }
 
 function eliminarPago(id) {
