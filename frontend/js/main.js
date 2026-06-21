@@ -14,24 +14,42 @@ window.onload = () => {
 
   }
 
+  const rol =
+    obtenerRolActual();
+
+  const puedeVerOperacion =
+    rol === 'admin' || rol === 'entrenador';
+
+  const puedeVerFinanzas =
+    rol === 'admin' || rol === 'tesorero';
+
   aplicarConfiguracionVisual();
-  cargarPersonas();
-  cargarEventos();
-  cargarAsistencias();
-  cargarMultas();
-  cargarFinanzas();
-  cargarDashboard();
-  cargarGraficos();
   mostrarUsuario();
   aplicarRolesFrontend();
+
+  cargarPersonas();
   cargarTablaPersonas();
+
   configurarBuscadorPersonas();
   configurarFiltrosEventos();
   configurarFiltrosPagos();
   configurarFiltrosCuotas();
   configurarFiltrosFinanzas();
-  cargarTablaEventos();
-  cargarTablaPagos();
-  cargarCuotas();
+
+  if (puedeVerOperacion) {
+    cargarEventos();
+    cargarAsistencias();
+    cargarTablaEventos();
+  }
+
+  if (puedeVerFinanzas) {
+    cargarMultas();
+    cargarFinanzas();
+    cargarGraficos();
+    cargarTablaPagos();
+    cargarCuotas();
+  }
+
+  cargarDashboard();
 
 };

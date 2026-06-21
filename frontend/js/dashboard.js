@@ -11,68 +11,99 @@ let chartDeuda = null;
 
 function cargarDashboard() {
 
-  // Obtiene datos generales
-  // en paralelo para optimizar carga
-  Promise.all([
+  const rol =
+    obtenerRolActual();
 
-    fetch(`${API_URL}/personas`, {
-      headers: getAuthHeaders()
-    }).then(res => res.json()),
+  const solicitudes =
+    obtenerSolicitudesDashboard(rol);
 
-    fetch(`${API_URL}/multas`, {
-      headers: getAuthHeaders()
-    }).then(res => res.json()),
+  Promise.all(
+    Object.values(solicitudes)
+  )
 
-    fetch(`${API_URL}/finanzas`, {
-      headers: getAuthHeaders()
-    }).then(res => res.json()),
+  .then(resultados => {
+    const claves =
+      Object.keys(solicitudes);
 
-    fetch(`${API_URL}/eventos`, {
-      headers: getAuthHeaders()
-    }).then(res => res.json()),
-
-    fetch(`${API_URL}/asistencia`, {
-      headers: getAuthHeaders()
-    }).then(res => res.json()),
-
-    fetch(`${API_URL}/cuotas`, {
-      headers: getAuthHeaders()
-    }).then(res => res.json())
-
-  ])
-
-  .then(([
-    personas,
-    multas,
-    finanzas,
-    eventos,
-    asistencias,
-    cuotas
-  ]) => {
-
-    if (!Array.isArray(finanzas)) {
-      mostrarAlerta(
-        finanzas.mensaje || 'No se pudo cargar el dashboard',
-        'warning'
-      );
-      return;
-    }
+    const data =
+      claves.reduce((acumulado, clave, index) => {
+        acumulado[clave] = resultados[index];
+        return acumulado;
+      }, {});
 
     const datos = prepararDatosDashboard({
-      personas,
-      multas,
-      finanzas,
-      eventos,
-      asistencias,
-      cuotas
+      personas: data.personas,
+      multas: data.multas,
+      finanzas: data.finanzas,
+      eventos: data.eventos,
+      asistencias: data.asistencias,
+      cuotas: data.cuotas
     });
 
     aplicarDashboardPorRol(datos);
 
   })
 
-  .catch(err => console.error(err));
+  .catch(err => {
+    console.error(err);
+    mostrarAlerta(
+      obtenerMensajeError(
+        err,
+        'No se pudo cargar el dashboard'
+      ),
+      'warning'
+    );
+  });
 
+}
+
+function obtenerJsonDashboard(ruta) {
+  return fetch(`${API_URL}${ruta}`, {
+    headers: getAuthHeaders()
+  })
+    .then(async res => {
+      const data = await leerRespuestaJson(res);
+
+      if (!res.ok) {
+        throw new Error(
+          data.mensaje || `No se pudo cargar ${ruta}`
+        );
+      }
+
+      return data;
+    });
+}
+
+function obtenerSolicitudesDashboard(rol) {
+  const solicitudes = {
+    personas: obtenerJsonDashboard('/personas'),
+    multas: Promise.resolve([]),
+    finanzas: Promise.resolve([]),
+    eventos: Promise.resolve([]),
+    asistencias: Promise.resolve([]),
+    cuotas: Promise.resolve([])
+  };
+
+  if (rol === 'admin' || rol === 'tesorero') {
+    solicitudes.multas =
+      obtenerJsonDashboard('/multas');
+
+    solicitudes.finanzas =
+      obtenerJsonDashboard('/finanzas');
+
+    solicitudes.cuotas =
+      obtenerJsonDashboard('/cuotas');
+  }
+
+  if (rol === 'admin' || rol === 'entrenador') {
+    solicitudes.eventos =
+      obtenerJsonDashboard('/eventos');
+
+    solicitudes.asistencias =
+      obtenerJsonDashboard('/asistencia');
+  }
+
+  return solicitudes;
 }
 
 function obtenerRolActual() {
