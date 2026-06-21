@@ -25,72 +25,280 @@ function cargarDashboard() {
 
     fetch(`${API_URL}/finanzas`, {
       headers: getAuthHeaders()
+    }).then(res => res.json()),
+
+    fetch(`${API_URL}/eventos`, {
+      headers: getAuthHeaders()
+    }).then(res => res.json()),
+
+    fetch(`${API_URL}/asistencia`, {
+      headers: getAuthHeaders()
+    }).then(res => res.json()),
+
+    fetch(`${API_URL}/cuotas`, {
+      headers: getAuthHeaders()
     }).then(res => res.json())
 
   ])
 
-  .then(([personas, multas, finanzas]) => {
+  .then(([
+    personas,
+    multas,
+    finanzas,
+    eventos,
+    asistencias,
+    cuotas
+  ]) => {
 
-    document.getElementById(
-      'total_personas'
-    ).innerText = personas.length;
+    if (!Array.isArray(finanzas)) {
+      mostrarAlerta(
+        finanzas.mensaje || 'No se pudo cargar el dashboard',
+        'warning'
+      );
+      return;
+    }
 
-    document.getElementById(
-      'total_multas'
-    ).innerText = multas.length;
+    const datos = prepararDatosDashboard({
+      personas,
+      multas,
+      finanzas,
+      eventos,
+      asistencias,
+      cuotas
+    });
 
-// Variables acumuladoras financieras
-let totalPagado = 0;
-let deudaTotal = 0;
-let totalCuotas = 0;
-let totalMultasPendientes = 0;
-let sociosConDeuda = 0;
-
-if (!Array.isArray(finanzas)) {
-  mostrarAlerta(
-    finanzas.mensaje || 'No se pudo cargar el dashboard',
-    'warning'
-  );
-  return;
-}
-
-finanzas.forEach(f => {
-
-  totalPagado +=
-    Number(f.total_pagado || 0);
-
-  deudaTotal +=
-    Number(f.deuda_actual || 0);
-
-  totalCuotas +=
-    Number(f.total_cuotas || 0);
-
-  totalMultasPendientes +=
-    Number(f.total_multas || 0);
-
-  if (Number(f.deuda_actual || 0) > 0) {
-
-    sociosConDeuda++;
-
-  }
-
-});
-
-    // Actualiza tarjetas visuales dashboard
-    document.getElementById(
-      'total_pagado'
-    ).innerText =
-      formatearMonto(totalPagado);
-
-    document.getElementById(
-      'deuda_total'
-    ).innerText =
-      formatearMonto(deudaTotal);
+    aplicarDashboardPorRol(datos);
 
   })
 
   .catch(err => console.error(err));
 
+}
+
+function obtenerRolActual() {
+  const usuario = JSON.parse(
+    localStorage.getItem('usuario')
+  );
+
+  return usuario?.rol || 'admin';
+}
+
+function prepararDatosDashboard(data) {
+  const personas =
+    Array.isArray(data.personas) ? data.personas : [];
+
+  const multas =
+    Array.isArray(data.multas) ? data.multas : [];
+
+  const eventos =
+    Array.isArray(data.eventos) ? data.eventos : [];
+
+  const asistencias =
+    Array.isArray(data.asistencias) ? data.asistencias : [];
+
+  const cuotas =
+    Array.isArray(data.cuotas) ? data.cuotas : [];
+
+  const finanzas =
+    Array.isArray(data.finanzas) ? data.finanzas : [];
+
+  let totalPagado = 0;
+  let deudaTotal = 0;
+
+  finanzas.forEach(finanza => {
+    const deuda =
+      Number(finanza.deuda_actual || 0);
+
+    totalPagado +=
+      Number(finanza.total_pagado || 0);
+
+    deudaTotal += deuda;
+  });
+
+  const fechaActual =
+    new Date();
+
+  const proximasActividades =
+    eventos.filter(evento => {
+      const fechaEvento =
+        new Date(evento.fecha);
+
+      return (
+        !Number.isNaN(fechaEvento.getTime()) &&
+        fechaEvento >= fechaActual
+      );
+    }).length;
+
+  const asistenciasConProblema =
+    asistencias.filter(asistencia => {
+      return [
+        'ausente',
+        'atrasado'
+      ].includes(asistencia.estado);
+    }).length;
+
+  const cuotasPendientes =
+    cuotas.filter(cuota => {
+      return cuota.estado === 'pendiente' ||
+        cuota.estado === 'vencido';
+    }).length;
+
+  return {
+    totalPersonas: personas.length,
+    totalMultas: multas.length,
+    totalPagado,
+    deudaTotal,
+    totalEventos: eventos.length,
+    proximasActividades,
+    totalAsistencias: asistencias.length,
+    asistenciasConProblema,
+    cuotasPendientes
+  };
+}
+
+function actualizarTarjetaDashboard(config) {
+  const card =
+    document.querySelector(
+      `#${config.cardId} .card`
+    );
+
+  if (card) {
+    card.classList.remove(
+      'text-bg-primary',
+      'text-bg-danger',
+      'text-bg-success',
+      'text-bg-warning',
+      'text-bg-info',
+      'text-bg-secondary'
+    );
+
+    card.classList.add(config.color);
+  }
+
+  document.getElementById(
+    config.labelId
+  ).innerHTML = config.label;
+
+  document.getElementById(
+    config.valueId
+  ).innerText = config.value;
+}
+
+function aplicarDashboardPorRol(datos) {
+  const rol =
+    obtenerRolActual();
+
+  const configuraciones = {
+    admin: [
+      {
+        cardId: 'card_dashboard_integrantes',
+        labelId: 'label_dashboard_integrantes',
+        valueId: 'total_personas',
+        label: '<i class="bi bi-people-fill"></i> Integrantes',
+        value: datos.totalPersonas,
+        color: 'text-bg-primary'
+      },
+      {
+        cardId: 'card_dashboard_multas',
+        labelId: 'label_dashboard_multas',
+        valueId: 'total_multas',
+        label: '<i class="bi bi-calendar-event"></i> Actividades',
+        value: datos.totalEventos,
+        color: 'text-bg-info'
+      },
+      {
+        cardId: 'card_dashboard_pagado',
+        labelId: 'label_dashboard_pagado',
+        valueId: 'total_pagado',
+        label: '<i class="bi bi-check2-square"></i> Asistencias',
+        value: datos.totalAsistencias,
+        color: 'text-bg-success'
+      },
+      {
+        cardId: 'card_dashboard_deuda',
+        labelId: 'label_dashboard_deuda',
+        valueId: 'deuda_total',
+        label: '<i class="bi bi-wallet2"></i> Deuda',
+        value: formatearMonto(datos.deudaTotal),
+        color: 'text-bg-warning'
+      }
+    ],
+
+    tesorero: [
+      {
+        cardId: 'card_dashboard_integrantes',
+        labelId: 'label_dashboard_integrantes',
+        valueId: 'total_personas',
+        label: '<i class="bi bi-cash-stack"></i> Pagado',
+        value: formatearMonto(datos.totalPagado),
+        color: 'text-bg-success'
+      },
+      {
+        cardId: 'card_dashboard_multas',
+        labelId: 'label_dashboard_multas',
+        valueId: 'total_multas',
+        label: '<i class="bi bi-wallet2"></i> Deuda',
+        value: formatearMonto(datos.deudaTotal),
+        color: 'text-bg-warning'
+      },
+      {
+        cardId: 'card_dashboard_pagado',
+        labelId: 'label_dashboard_pagado',
+        valueId: 'total_pagado',
+        label: '<i class="bi bi-receipt"></i> Cuotas pendientes',
+        value: datos.cuotasPendientes,
+        color: 'text-bg-warning'
+      },
+      {
+        cardId: 'card_dashboard_deuda',
+        labelId: 'label_dashboard_deuda',
+        valueId: 'deuda_total',
+        label: '<i class="bi bi-exclamation-triangle-fill"></i> Multas',
+        value: datos.totalMultas,
+        color: 'text-bg-danger'
+      }
+    ],
+
+    entrenador: [
+      {
+        cardId: 'card_dashboard_integrantes',
+        labelId: 'label_dashboard_integrantes',
+        valueId: 'total_personas',
+        label: '<i class="bi bi-people-fill"></i> Integrantes',
+        value: datos.totalPersonas,
+        color: 'text-bg-primary'
+      },
+      {
+        cardId: 'card_dashboard_multas',
+        labelId: 'label_dashboard_multas',
+        valueId: 'total_multas',
+        label: '<i class="bi bi-calendar-event"></i> Próximas',
+        value: datos.proximasActividades,
+        color: 'text-bg-info'
+      },
+      {
+        cardId: 'card_dashboard_pagado',
+        labelId: 'label_dashboard_pagado',
+        valueId: 'total_pagado',
+        label: '<i class="bi bi-check2-square"></i> Asistencias',
+        value: datos.totalAsistencias,
+        color: 'text-bg-success'
+      },
+      {
+        cardId: 'card_dashboard_deuda',
+        labelId: 'label_dashboard_deuda',
+        valueId: 'deuda_total',
+        label: '<i class="bi bi-exclamation-triangle-fill"></i> Ausentes/atrasados',
+        value: datos.asistenciasConProblema,
+        color: 'text-bg-warning'
+      }
+    ]
+  };
+
+  const tarjetas =
+    configuraciones[rol] || configuraciones.admin;
+
+  tarjetas.forEach(actualizarTarjetaDashboard);
 }
 
 // =====================================
