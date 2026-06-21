@@ -457,8 +457,15 @@ Objetivo:
 
 Convertir el sistema en producto escalable.
 
+La landing publica para clientes potenciales vive en:
+
+```text
+nexocomunidad.pillageweb.cl
+```
+
 Incluye:
 
+- sitio comercial publico,
 - panel administrador global,
 - planes de suscripcion,
 - modulos activables,

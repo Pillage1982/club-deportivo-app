@@ -87,3 +87,13 @@ v1.1-dev
 ## Objetivo de la Decision
 
 Permitir que el producto evolucione hacia una solucion comercial reutilizable, sin perder la estabilidad ya alcanzada.
+
+## Landing Comercial
+
+La presentacion publica del producto vive en:
+
+```text
+nexocomunidad.pillageweb.cl
+```
+
+Este sitio funciona como landing para clientes potenciales: comunica la propuesta de valor, los modulos principales y la posibilidad de adaptar NexoComunidad a distintos tipos de organizacion. No debe usarse como ambiente operativo ni contener datos reales de clientes.
