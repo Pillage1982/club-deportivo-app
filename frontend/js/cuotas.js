@@ -23,6 +23,14 @@ function generarCuotasMensuales() {
 
 function ejecutarGeneracionCuotas() {
 
+  const estadoBoton =
+    bloquearBoton(
+      'btn_generar_cuotas',
+      'Generando...'
+    );
+
+  if (!estadoBoton) return;
+
   fetch(`${API_URL}/cuotas/generar-mes`, {
 
     method: 'POST',
@@ -62,6 +70,12 @@ function ejecutarGeneracionCuotas() {
     mostrarAlerta(
       err.message || 'No se pudieron generar las cuotas. Intenta nuevamente.',
       'danger'
+    );
+  })
+  .finally(() => {
+    restaurarBoton(
+      estadoBoton,
+      'Generar cuotas del mes'
     );
   });
 

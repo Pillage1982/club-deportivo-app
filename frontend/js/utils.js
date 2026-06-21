@@ -417,6 +417,36 @@ function obtenerBadgeFinanciero(deudaActual) {
   );
 }
 
+function bloquearBoton(id, textoCarga = 'Guardando...') {
+  const boton =
+    document.getElementById(id);
+
+  if (!boton || boton.disabled) {
+    return null;
+  }
+
+  const textoOriginal =
+    boton.innerText;
+
+  boton.disabled = true;
+  boton.innerText = textoCarga;
+
+  return {
+    boton,
+    textoOriginal
+  };
+}
+
+function restaurarBoton(estadoBoton, textoFinal) {
+  if (!estadoBoton) {
+    return;
+  }
+
+  estadoBoton.boton.disabled = false;
+  estadoBoton.boton.innerText =
+    textoFinal || estadoBoton.textoOriginal;
+}
+
 // =====================================
 // APLICAR CONFIGURACION VISUAL
 // =====================================

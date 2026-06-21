@@ -201,6 +201,14 @@ function crearPago() {
     method = 'PUT';
   }
 
+  const estadoBoton =
+    bloquearBoton(
+      'btn_guardar_pago',
+      'Guardando...'
+    );
+
+  if (!estadoBoton) return;
+
   fetch(url, {
     method: method,
     headers: getAuthHeaders(),
@@ -236,6 +244,14 @@ function crearPago() {
     })
     .catch(err => {
       mostrarAlerta(err.message, 'danger');
+    })
+    .finally(() => {
+      restaurarBoton(
+        estadoBoton,
+        pagoEditando
+          ? 'Actualizar Pago'
+          : 'Guardar Pago'
+      );
     });
 }
 

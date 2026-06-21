@@ -120,6 +120,14 @@ if (errorValidacion) {
 
   }
 
+  const estadoBoton =
+    bloquearBoton(
+      'btn_guardar_persona',
+      'Guardando...'
+    );
+
+  if (!estadoBoton) return;
+
   fetch(url, {
 
     method: method,
@@ -204,7 +212,15 @@ document.getElementById(
     err.message || 'No se pudo guardar el integrante',
     'danger'
   );
-});
+})
+  .finally(() => {
+    restaurarBoton(
+      estadoBoton,
+      personaEditando
+        ? 'Actualizar Integrante'
+        : 'Guardar Integrante'
+    );
+  });
 
 }
 

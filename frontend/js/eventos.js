@@ -177,6 +177,14 @@ function crearEvento() {
 
   }
 
+  const estadoBoton =
+    bloquearBoton(
+      'btn_guardar_evento',
+      'Guardando...'
+    );
+
+  if (!estadoBoton) return;
+
   fetch(url, {
 
     method: method,
@@ -238,6 +246,14 @@ document.getElementById(
 
   .catch(err => {
   mostrarAlerta(err.message, 'danger');
+  })
+  .finally(() => {
+    restaurarBoton(
+      estadoBoton,
+      eventoEditando
+        ? 'Actualizar Actividad'
+        : 'Guardar Actividad'
+    );
   });
 
 }

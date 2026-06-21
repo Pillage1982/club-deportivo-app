@@ -86,6 +86,14 @@ function registrarAsistencia() {
 
       }
 
+      const estadoBoton =
+        bloquearBoton(
+          'btn_registrar_asistencia',
+          'Registrando...'
+        );
+
+      if (!estadoBoton) return;
+
       // Registra asistencia en backend
       fetch(`${API_URL}/asistencia`, {
 
@@ -146,7 +154,13 @@ mostrarAlerta(
   'danger'
 );
 
-});
+})
+  .finally(() => {
+    restaurarBoton(
+      estadoBoton,
+      'Registrar'
+    );
+  });
 
 }
 
