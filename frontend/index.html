@@ -818,6 +818,45 @@
               </div>
             </div>
 
+            <div
+              id="filtros_finanzas_wrapper"
+              class="row g-3 mt-2 mb-3">
+              <div class="col-md-5">
+                <label for="buscar_finanzas" class="form-label">
+                  Buscar Estado Financiero
+                </label>
+
+                <input
+                  type="search"
+                  id="buscar_finanzas"
+                  class="form-control"
+                  placeholder="Buscar por integrante">
+              </div>
+
+              <div class="col-md-4">
+                <label for="filtro_finanzas_estado" class="form-label">
+                  Estado
+                </label>
+
+                <select id="filtro_finanzas_estado" class="form-select">
+                  <option value="">Todos</option>
+                  <option value="con_deuda">Con deuda</option>
+                  <option value="al_dia">Al día</option>
+                  <option value="a_favor">A favor</option>
+                </select>
+              </div>
+
+              <div class="col-md-3 d-flex align-items-end">
+                <button
+                  type="button"
+                  id="btn_limpiar_filtros_finanzas"
+                  class="btn btn-outline-secondary w-100"
+                  onclick="limpiarFiltrosFinanzas()">
+                  Limpiar
+                </button>
+              </div>
+            </div>
+
             <div id="tabla_finanzas_wrapper" class="table-responsive">
               <table class="table table-bordered">
                 <thead class="table-dark">

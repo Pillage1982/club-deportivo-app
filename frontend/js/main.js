@@ -29,6 +29,7 @@ window.onload = () => {
   configurarFiltrosEventos();
   configurarFiltrosPagos();
   configurarFiltrosCuotas();
+  configurarFiltrosFinanzas();
   cargarTablaEventos();
   cargarTablaPagos();
   cargarCuotas();
