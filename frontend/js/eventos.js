@@ -196,10 +196,10 @@ function crearEvento() {
   })
 
     .then(async res => {
-    const data = await res.json();
+    const data = await leerRespuestaJson(res);
 
     if (!res.ok) {
-      throw new Error(data.mensaje || 'Error al guardar actividad');
+      throw new Error(data.mensaje || 'No se pudo guardar la actividad');
     }
 
     return data;
@@ -245,7 +245,13 @@ document.getElementById(
   })
 
   .catch(err => {
-  mostrarAlerta(err.message, 'danger');
+  mostrarAlerta(
+    obtenerMensajeError(
+      err,
+      'No se pudo guardar la actividad'
+    ),
+    'danger'
+  );
   })
   .finally(() => {
     restaurarBoton(
@@ -270,7 +276,17 @@ function cargarTablaEventos() {
 
   })
 
-  .then(res => res.json())
+  .then(async res => {
+    const data = await leerRespuestaJson(res);
+
+    if (!res.ok) {
+      throw new Error(
+        data.mensaje || 'No se pudo eliminar la actividad'
+      );
+    }
+
+    return data;
+  })
 
   .then(data => {
 
@@ -549,13 +565,25 @@ function ejecutarEliminarEvento(id) {
 
   .then(data => {
 
-    mostrarAlerta(data.mensaje, 'warning');
+    mostrarAlerta(
+      data.mensaje || 'Actividad eliminada correctamente',
+      'warning'
+    );
 
     cargarTablaEventos();
     cargarEventos();
 
   })
 
-  .catch(err => console.error(err));
+  .catch(err => {
+    console.error(err);
+    mostrarAlerta(
+      obtenerMensajeError(
+        err,
+        'No se pudo eliminar la actividad'
+      ),
+      'danger'
+    );
+  });
 
 }

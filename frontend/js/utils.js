@@ -51,6 +51,18 @@ const alerta =
 
 }
 
+function obtenerMensajeError(error, mensajeDefecto) {
+  if (error && error.message) {
+    return error.message;
+  }
+
+  return mensajeDefecto || 'No se pudo completar la operación';
+}
+
+async function leerRespuestaJson(res) {
+  return res.json().catch(() => ({}));
+}
+
 // =====================================
 // CONFIRMACION VISUAL BOOTSTRAP
 // =====================================

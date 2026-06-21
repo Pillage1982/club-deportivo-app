@@ -215,11 +215,11 @@ function crearPago() {
     body: JSON.stringify(data)
   })
     .then(async res => {
-      const respuesta = await res.json();
+      const respuesta = await leerRespuestaJson(res);
 
       if (!res.ok) {
         throw new Error(
-          respuesta.mensaje || 'Error al guardar pago'
+          respuesta.mensaje || 'No se pudo guardar el pago'
         );
       }
 
@@ -243,7 +243,13 @@ function crearPago() {
       cargarGraficos();
     })
     .catch(err => {
-      mostrarAlerta(err.message, 'danger');
+      mostrarAlerta(
+        obtenerMensajeError(
+          err,
+          'No se pudo guardar el pago'
+        ),
+        'danger'
+      );
     })
     .finally(() => {
       restaurarBoton(
@@ -417,16 +423,38 @@ function ejecutarEliminarPago(id) {
     headers: getAuthHeaders()
   })
 
-  .then(res => res.json())
+  .then(async res => {
+    const data = await leerRespuestaJson(res);
+
+    if (!res.ok) {
+      throw new Error(
+        data.mensaje || 'No se pudo eliminar el pago'
+      );
+    }
+
+    return data;
+  })
 
   .then(data => {
-    mostrarAlerta(data.mensaje, 'warning');
+    mostrarAlerta(
+      data.mensaje || 'Pago eliminado correctamente',
+      'warning'
+    );
 
     cargarTablaPagos();
     cargarDashboard();
     cargarFinanzas();
   })
 
-  .catch(err => console.error(err));
+  .catch(err => {
+    console.error(err);
+    mostrarAlerta(
+      obtenerMensajeError(
+        err,
+        'No se pudo eliminar el pago'
+      ),
+      'danger'
+    );
+  });
 
 }

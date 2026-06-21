@@ -141,6 +141,8 @@ mostrarAlerta(
       cargarDashboard();
       cargarGraficos();
 
+      document.getElementById('minutos').value = 0;
+
     })
 
     .catch(err => {

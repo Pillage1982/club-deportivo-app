@@ -139,7 +139,7 @@ if (errorValidacion) {
   })
 
   .then(async res => {
-  const data = await res.json().catch(() => ({}));
+  const data = await leerRespuestaJson(res);
 
   if (!res.ok) {
     throw new Error(
@@ -209,7 +209,10 @@ document.getElementById(
   .catch(err => {
   console.error(err);
   mostrarAlerta(
-    err.message || 'No se pudo guardar el integrante',
+    obtenerMensajeError(
+      err,
+      'No se pudo guardar el integrante'
+    ),
     'danger'
   );
 })
@@ -236,7 +239,17 @@ document.getElementById(
 
   })
 
-  .then(res => res.json())
+  .then(async res => {
+    const data = await leerRespuestaJson(res);
+
+    if (!res.ok) {
+      throw new Error(
+        data.mensaje || 'No se pudo eliminar el integrante'
+      );
+    }
+
+    return data;
+  })
 
   .then(data => {
 
@@ -492,14 +505,26 @@ function ejecutarEliminarPersona(id) {
 
   .then(data => {
 
-    mostrarAlerta(data.mensaje, 'warning');
+    mostrarAlerta(
+      data.mensaje || 'Integrante eliminado correctamente',
+      'warning'
+    );
 
     cargarTablaPersonas();
     cargarPersonas();
 
   })
 
-  .catch(err => console.error(err));
+  .catch(err => {
+    console.error(err);
+    mostrarAlerta(
+      obtenerMensajeError(
+        err,
+        'No se pudo eliminar el integrante'
+      ),
+      'danger'
+    );
+  });
 
 }
 
