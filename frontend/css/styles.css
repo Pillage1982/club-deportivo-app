@@ -217,6 +217,7 @@ canvas {
   border-radius: 18px;
   overflow: hidden;
   margin-bottom: 0;
+  min-width: 720px;
 }
 
 .table thead {
@@ -235,11 +236,76 @@ canvas {
 .table td,
 .table th {
   border-color: rgba(0, 0, 0, 0.05);
+  vertical-align: middle;
+}
+
+.table th,
+.table .badge {
+  white-space: nowrap;
 }
 
 .table-responsive {
   border-radius: 18px;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.table .btn-group-sm .btn {
+  min-width: 2.1rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.45rem;
+  line-height: 1;
+}
+
+#tabla_personas_wrapper .table {
+  min-width: 900px;
+}
+
+#tabla_eventos_wrapper .table {
+  min-width: 920px;
+}
+
+#tabla_pagos_wrapper .table,
+#tabla_cuotas_wrapper .table,
+#tabla_finanzas_wrapper .table {
+  min-width: 760px;
+}
+
+#tabla_asistencias_wrapper .table,
+#tabla_multas_wrapper .table {
+  min-width: 640px;
+}
+
+#tabla_eventos_wrapper td:nth-child(5) {
+  min-width: 220px;
+  white-space: normal;
+}
+
+#tabla_personas_wrapper th:last-child,
+#tabla_personas_wrapper td:last-child,
+#tabla_eventos_wrapper th:last-child,
+#tabla_eventos_wrapper td:last-child,
+#tabla_pagos_wrapper th:last-child,
+#tabla_pagos_wrapper td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -8px 0 12px rgba(15, 23, 42, 0.06);
+}
+
+#tabla_personas_wrapper td:last-child,
+#tabla_eventos_wrapper td:last-child,
+#tabla_pagos_wrapper td:last-child {
+  background: white;
+}
+
+#tabla_personas_wrapper th:last-child,
+#tabla_eventos_wrapper th:last-child,
+#tabla_pagos_wrapper th:last-child {
+  background: var(--primary);
+  color: white;
+  z-index: 3;
 }
 
 /* =====================================
@@ -339,6 +405,20 @@ img[data-config-img="cliente.logo"] {
 
   h2 {
     font-size: 28px;
+  }
+
+  .table {
+    font-size: 0.86rem;
+  }
+
+  .table td,
+  .table th {
+    padding: 0.6rem 0.7rem;
+  }
+
+  .table .btn-group-sm .btn {
+    min-width: 2rem;
+    min-height: 1.9rem;
   }
 
   /* =====================================
