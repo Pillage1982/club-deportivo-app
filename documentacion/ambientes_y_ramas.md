@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Mantener produccion estable mientras se desarrolla una version adaptable y configurable del sistema.
+Mantener produccion estable, separar la base neutral de NexoComunidad y aislar las personalizaciones por cliente.
 
 ## Ramas Git
 
@@ -18,7 +18,8 @@ Uso:
 
 - version estable,
 - conectada al despliegue principal,
-- no se trabaja directamente sobre ella para nuevas funciones.
+- contiene la base neutral de NexoComunidad,
+- solo recibe cambios ya probados.
 
 ### Desarrollo
 
@@ -32,7 +33,6 @@ Uso:
 
 - nuevas mejoras,
 - base adaptable neutral,
-- personalizacion preparada para ramas de cliente,
 - pruebas de interfaz,
 - ajustes de roadmap,
 - cambios que aun no deben llegar a produccion.
@@ -75,14 +75,14 @@ BD de produccion
 
 Regla:
 
-No cargar seed de pruebas en esta base.
+No usar esta base para pruebas destructivas.
 
-### Desarrollo
+### Desarrollo NexoComunidad
 
-Sitio sugerido:
+Sitio:
 
 ```text
-clubdev.pillageweb.cl
+devnexo.pillageweb.cl
 ```
 
 Rama conectada:
@@ -100,6 +100,30 @@ BD dev separada
 Regla:
 
 En esta base si se pueden cargar seeds, borrar datos y probar cambios.
+
+### Cliente Calamena
+
+Sitio:
+
+```text
+devclub.pillageweb.cl
+```
+
+Rama conectada:
+
+```text
+cliente/calamena
+```
+
+Base de datos:
+
+```text
+BD cliente/dev separada
+```
+
+Regla:
+
+Mantener aqui logo, colores, textos, documentos y datos demo especificos de Calamena.
 
 ## Flujo de Trabajo
 
@@ -129,14 +153,24 @@ git merge v1.1-dev
 git push origin main
 ```
 
+Aplicar una mejora reutilizable tambien a un cliente:
+
+```bash
+git checkout cliente/calamena
+git pull origin cliente/calamena
+git cherry-pick <commit_reutilizable>
+git push origin cliente/calamena
+```
+
 ## Reglas de Seguridad
 
 - No subir `.env`.
 - No subir `node_modules`.
 - No usar la BD de produccion para pruebas.
-- No cargar seeds dev en produccion.
+- No cargar seeds demo en bases reales sin confirmacion.
 - No cambiar Hostinger produccion para apuntar a ramas dev.
 - Probar roles antes de promover cambios.
+- Rotar secretos si fueron expuestos en capturas o logs.
 
 ## Checklist Antes de Merge a Main
 
@@ -150,3 +184,25 @@ git push origin main
 - No hay errores rojos en consola.
 - La rama `v1.1-dev` esta pushada.
 - La documentacion esta actualizada.
+
+## Checklist de Ambientes
+
+### Main / Produccion
+
+- `club.pillageweb.cl` despliega desde `main`.
+- Logo y textos son NexoComunidad neutral.
+- Dashboard y graficos aparecen al inicio.
+- Actividades muestran fecha y hora.
+
+### Dev Nexo
+
+- `devnexo.pillageweb.cl` despliega desde `v1.1-dev`.
+- Usa BD dev separada.
+- Permite cargar seeds y probar cambios.
+- No contiene Calamena.
+
+### Cliente Calamena
+
+- `devclub.pillageweb.cl` despliega desde `cliente/calamena`.
+- Mantiene logo, paleta y textos Calamena.
+- Recibe solo mejoras reutilizables seleccionadas.

@@ -124,4 +124,12 @@ Abrir el frontend desde `frontend/index.html` o usar un servidor local.
 
 ## Estado
 
-Base v1.1 en desarrollo, orientada a producto adaptable y personalizable por cliente.
+Base v1.1 estabilizada como NexoComunidad neutral.
+
+Ambientes principales:
+
+- `club.pillageweb.cl` -> `main`
+- `devnexo.pillageweb.cl` -> `v1.1-dev`
+- `devclub.pillageweb.cl` -> `cliente/calamena`
+
+Ver detalles en `documentacion/release_v1.1.md` y `documentacion/ambientes_y_ramas.md`.
