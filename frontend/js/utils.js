@@ -266,7 +266,7 @@ function aplicarRolesFrontend() {
   ocultarSelector('.nav-asistencias');
 
   ocultarElemento('modulo_asistencia');
-  ocultarElemento('modulo_personas');
+  ocultarElemento('form_personas');
   ocultarElemento('eventos');
   ocultarElemento('asistencias');
 
@@ -281,7 +281,7 @@ function aplicarRolesFrontend() {
     ocultarSelector('.nav-multas');
     ocultarSelector('.nav-finanzas');
 
-    ['modulo_personas',
+    ['form_personas',
       'modulo_multas',
       'modulo_finanzas',
       'modulo_pagos',
