@@ -316,18 +316,26 @@ function renderizarTablaPagos(pagos) {
         <td>${formatearMonto(pago.monto_total)}</td>
         <td>${pago.metodo}</td>
         <td>${formatearFecha(pago.fecha)}</td>
-        <td>
-          <button
-            class="btn btn-warning btn-sm"
-            onclick='editarPago(${JSON.stringify(pago)})'>
-            Editar
-          </button>
+        <td class="text-nowrap">
+          <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
+            <button
+              type="button"
+              class="btn btn-outline-warning"
+              title="Editar"
+              aria-label="Editar"
+              onclick='editarPago(${JSON.stringify(pago)})'>
+              &#9998;
+            </button>
 
-          <button
-            class="btn btn-danger btn-sm"
-            onclick='eliminarPago(${pago.id})'>
-            Eliminar
-          </button>
+            <button
+              type="button"
+              class="btn btn-outline-danger"
+              title="Eliminar"
+              aria-label="Eliminar"
+              onclick='eliminarPago(${pago.id})'>
+              &times;
+            </button>
+          </div>
         </td>
       </tr>
     `;

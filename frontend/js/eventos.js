@@ -367,31 +367,45 @@ function renderizarTablaEventos(eventos) {
           ${evento.descripcion || ''}
         </td>
 
-        <td>
+        <td class="text-nowrap">
 
-          <button
+          <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
+            <button
 
-            class="btn btn-warning btn-sm"
+              type="button"
 
-            onclick='editarEvento(
-              ${JSON.stringify(evento)}
-            )'>
+              class="btn btn-outline-warning"
 
-            Editar
+              title="Editar"
 
-          </button>
+              aria-label="Editar"
 
-          <button
+              onclick='editarEvento(
+                ${JSON.stringify(evento)}
+              )'>
 
-            class="btn btn-danger btn-sm"
+              &#9998;
 
-            onclick='eliminarEvento(
-              ${evento.id}
-            )'>
+            </button>
 
-            Eliminar
+            <button
 
-          </button>
+              type="button"
+
+              class="btn btn-outline-danger"
+
+              title="Eliminar"
+
+              aria-label="Eliminar"
+
+              onclick='eliminarEvento(
+                ${evento.id}
+              )'>
+
+              &times;
+
+            </button>
+          </div>
 
         </td>
 
