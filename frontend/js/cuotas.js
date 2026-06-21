@@ -205,13 +205,7 @@ function renderizarTablaCuotas(cuotas) {
         </td>
 
         <td>
-          ${
-            cuota.estado === 'pagado'
-            ? '<span class="badge bg-success">Pagado</span>'
-            : cuota.estado === 'vencido'
-            ? '<span class="badge bg-danger">Vencido</span>'
-            : '<span class="badge bg-warning text-dark">Pendiente</span>'
-          }
+          ${obtenerBadgeCuota(cuota.estado)}
         </td>
 
       </tr>

@@ -375,6 +375,51 @@ function formatearMonto(valor) {
   ).format(monto);
 }
 
+function crearBadge(texto, clase) {
+  return `<span class="badge ${clase}">${texto}</span>`;
+}
+
+function obtenerBadgeAsistencia(estado) {
+  const badges = {
+    presente: crearBadge('Presente', 'bg-success'),
+    atrasado: crearBadge('Atrasado', 'bg-warning text-dark'),
+    ausente: crearBadge('Ausente', 'bg-danger')
+  };
+
+  return badges[estado] || crearBadge('Sin estado', 'bg-secondary');
+}
+
+function obtenerBadgeCuota(estado) {
+  const badges = {
+    pagado: crearBadge('Pagado', 'bg-success'),
+    vencido: crearBadge('Vencido', 'bg-danger'),
+    pendiente: crearBadge('Pendiente', 'bg-warning text-dark')
+  };
+
+  return badges[estado] || crearBadge('Sin estado', 'bg-secondary');
+}
+
+function obtenerBadgeFinanciero(deudaActual) {
+  const deuda =
+    Number(deudaActual || 0);
+
+  if (deuda === 0) {
+    return crearBadge('AL DIA', 'bg-success');
+  }
+
+  if (deuda < 0) {
+    return crearBadge(
+      `${formatearMonto(Math.abs(deuda))} (A FAVOR)`,
+      'bg-primary'
+    );
+  }
+
+  return crearBadge(
+    `Deuda: ${formatearMonto(deuda)}`,
+    'bg-danger'
+  );
+}
+
 // =====================================
 // APLICAR CONFIGURACION VISUAL
 // =====================================

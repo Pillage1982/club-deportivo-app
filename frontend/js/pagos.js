@@ -97,17 +97,7 @@ function renderizarTablaFinanzas(finanzas) {
         <td>${formatearMonto(finanza.total_cuotas)}</td>
         <td>${formatearMonto(finanza.total_pagado)}</td>
         <td>
-          ${
-            Number(finanza.deuda_actual) === 0
-              ? `<span class="badge bg-success">AL DIA</span>`
-              : Number(finanza.deuda_actual) < 0
-                ? `<span class="badge bg-primary">
-                    ${formatearMonto(Math.abs(finanza.deuda_actual))} (A FAVOR)
-                  </span>`
-                : `<span class="badge bg-danger">
-                    Deuda: ${formatearMonto(finanza.deuda_actual)}
-                  </span>`
-          }
+          ${obtenerBadgeFinanciero(finanza.deuda_actual)}
         </td>
       </tr>
     `;

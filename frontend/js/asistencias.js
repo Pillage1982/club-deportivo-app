@@ -183,13 +183,7 @@ function cargarAsistencias() {
           <tr>
             <td>${asistencia.nombres} ${asistencia.apellido_paterno} ${asistencia.apellido_materno || ''}</td>
             <td>${asistencia.evento}</td>
-            <td>${
-              asistencia.estado === 'presente'
-              ? '<span class="badge bg-success">Presente</span>'
-              : asistencia.estado === 'atrasado'
-              ? '<span class="badge bg-warning text-dark">Atrasado</span>'
-              : '<span class="badge bg-danger">Ausente</span>'
-            }</td>
+            <td>${obtenerBadgeAsistencia(asistencia.estado)}</td>
             <td>${asistencia.minutos_atraso}</td>
           </tr>
         `;
