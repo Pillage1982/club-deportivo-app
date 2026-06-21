@@ -189,7 +189,7 @@ function renderizarTablaCuotas(cuotas) {
         </td>
 
         <td>
-          $${cuota.monto}
+          ${formatearMonto(cuota.monto)}
         </td>
 
         <td>

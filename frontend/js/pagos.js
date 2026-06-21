@@ -93,19 +93,19 @@ function renderizarTablaFinanzas(finanzas) {
           ${finanza.apellido_paterno}
           ${finanza.apellido_materno || ''}
         </td>
-        <td>$${finanza.total_multas || 0}</td>
-        <td>$${finanza.total_cuotas || 0}</td>
-        <td>$${finanza.total_pagado || 0}</td>
+        <td>${formatearMonto(finanza.total_multas)}</td>
+        <td>${formatearMonto(finanza.total_cuotas)}</td>
+        <td>${formatearMonto(finanza.total_pagado)}</td>
         <td>
           ${
             Number(finanza.deuda_actual) === 0
               ? `<span class="badge bg-success">AL DIA</span>`
               : Number(finanza.deuda_actual) < 0
                 ? `<span class="badge bg-primary">
-                    $${Math.abs(finanza.deuda_actual)} (A FAVOR)
+                    ${formatearMonto(Math.abs(finanza.deuda_actual))} (A FAVOR)
                   </span>`
                 : `<span class="badge bg-danger">
-                    Deuda: $${finanza.deuda_actual}
+                    Deuda: ${formatearMonto(finanza.deuda_actual)}
                   </span>`
           }
         </td>
@@ -323,7 +323,7 @@ function renderizarTablaPagos(pagos) {
           ${pago.apellido_paterno}
           ${pago.apellido_materno || ''}
         </td>
-        <td>$${pago.monto_total}</td>
+        <td>${formatearMonto(pago.monto_total)}</td>
         <td>${pago.metodo}</td>
         <td>${formatearFecha(pago.fecha)}</td>
         <td>

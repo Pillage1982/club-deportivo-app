@@ -80,12 +80,12 @@ finanzas.forEach(f => {
     document.getElementById(
       'total_pagado'
     ).innerText =
-      `$${totalPagado}`;
+      formatearMonto(totalPagado);
 
     document.getElementById(
       'deuda_total'
     ).innerText =
-      `$${deudaTotal}`;
+      formatearMonto(deudaTotal);
 
   })
 

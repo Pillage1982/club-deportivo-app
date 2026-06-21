@@ -361,6 +361,20 @@ function formatearFecha(fecha) {
 
 }
 
+function formatearMonto(valor) {
+  const monto =
+    Number(valor || 0);
+
+  return new Intl.NumberFormat(
+    'es-CL',
+    {
+      style: 'currency',
+      currency: 'CLP',
+      maximumFractionDigits: 0
+    }
+  ).format(monto);
+}
+
 // =====================================
 // APLICAR CONFIGURACION VISUAL
 // =====================================
