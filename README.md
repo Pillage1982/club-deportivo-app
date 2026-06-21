@@ -128,6 +128,7 @@ Base v1.1 estabilizada como NexoComunidad neutral.
 
 Ambientes principales:
 
+- `nexocomunidad.pillageweb.cl` -> landing publica para clientes potenciales
 - `club.pillageweb.cl` -> `main`
 - `devnexo.pillageweb.cl` -> `v1.1-dev`
 - `devclub.pillageweb.cl` -> `cliente/calamena`

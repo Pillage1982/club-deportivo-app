@@ -28,6 +28,7 @@ Adaptacion especifica de Gran Diablada Calamena, con logo, paleta, textos y docu
 
 | Ambiente | URL | Rama | Objetivo |
 |---|---|---|---|
+| Landing Comercial | nexocomunidad.pillageweb.cl | sitio publico | Captacion de clientes potenciales |
 | Produccion | club.pillageweb.cl | main | Base estable |
 | Desarrollo Nexo | devnexo.pillageweb.cl | v1.1-dev | Pruebas neutrales |
 | Cliente Calamena | devclub.pillageweb.cl | cliente/calamena | Validacion cliente |
@@ -47,6 +48,7 @@ Adaptacion especifica de Gran Diablada Calamena, con logo, paleta, textos y docu
 - Roles y visibilidad por perfil conservados.
 - Modales Bootstrap de confirmacion conservados.
 - Correcciones de backend y conexion MySQL conservadas.
+- Landing comercial definida en `nexocomunidad.pillageweb.cl` para publicitar el proyecto.
 
 ## Credenciales Demo
 
@@ -75,6 +77,7 @@ Usar solo en ambientes de prueba o despues de cargar seeds demo.
 - Consola del navegador sin errores rojos.
 - `devnexo` no muestra marcas de Calamena.
 - `devclub` mantiene la personalizacion Calamena.
+- `nexocomunidad.pillageweb.cl` presenta el producto a clientes potenciales sin datos reales.
 
 ## Reglas de Promocion
 

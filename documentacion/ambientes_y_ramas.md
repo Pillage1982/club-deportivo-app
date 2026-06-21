@@ -53,6 +53,21 @@ Uso:
 
 ## Ambientes Hostinger
 
+### Landing Comercial
+
+Sitio:
+
+```text
+nexocomunidad.pillageweb.cl
+```
+
+Uso:
+
+- publicar la propuesta comercial de NexoComunidad,
+- presentar beneficios, modulos y casos de uso a clientes potenciales,
+- orientar contactos o solicitudes de demo,
+- no usar como ambiente operativo ni como backend de clientes.
+
 ### Produccion
 
 Sitio:
@@ -186,6 +201,13 @@ git push origin cliente/calamena
 - La documentacion esta actualizada.
 
 ## Checklist de Ambientes
+
+### Landing Comercial
+
+- `nexocomunidad.pillageweb.cl` muestra la propuesta comercial.
+- Explica que NexoComunidad es adaptable por organizacion.
+- No expone datos reales ni accesos internos.
+- Deriva a contacto/demo cuando corresponda.
 
 ### Main / Produccion
 

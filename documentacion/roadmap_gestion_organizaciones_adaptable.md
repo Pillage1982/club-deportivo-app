@@ -440,6 +440,12 @@ Cada cliente ve solo sus datos.
 
 Convertir el sistema en producto comercial.
 
+La landing publica para presentar el producto a clientes potenciales es:
+
+```text
+nexocomunidad.pillageweb.cl
+```
+
 ### Posibles modelos
 
 - Instalacion unica.
@@ -452,6 +458,7 @@ Convertir el sistema en producto comercial.
 ### Infraestructura futura
 
 - Subdominios por cliente.
+- Landing comercial publica.
 - Panel de administracion global.
 - Backup automatico.
 - Monitoreo.
