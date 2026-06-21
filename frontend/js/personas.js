@@ -3,6 +3,7 @@
 // =====================================
 
 let personaEditando = null;
+let personasTabla = [];
 
 // =====================================
 // CARGAR PERSONAS EN SELECTORES
@@ -238,7 +239,83 @@ document.getElementById(
       return;
     }
 
-    data.forEach(persona => {
+    personasTabla = data;
+
+    renderizarTablaPersonas(
+      filtrarPersonas(
+        obtenerTerminoBusquedaPersonas()
+      )
+    );
+
+  })
+
+  .catch(err => console.error(err));
+
+}
+
+function obtenerTerminoBusquedaPersonas() {
+  const input =
+    document.getElementById('buscar_personas');
+
+  return input ? input.value : '';
+}
+
+function normalizarTextoBusqueda(valor) {
+  return String(valor || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+function filtrarPersonas(termino) {
+  const busqueda =
+    normalizarTextoBusqueda(termino);
+
+  if (!busqueda) {
+    return personasTabla;
+  }
+
+  return personasTabla.filter(persona => {
+    const nombreCompleto = [
+      persona.nombres,
+      persona.apellido_paterno,
+      persona.apellido_materno
+    ].join(' ');
+
+    const textoBusqueda = [
+      nombreCompleto,
+      persona.rut,
+      persona.email,
+      persona.telefono
+    ].map(normalizarTextoBusqueda).join(' ');
+
+    return textoBusqueda.includes(busqueda);
+  });
+}
+
+function renderizarTablaPersonas(personas) {
+  const tabla =
+    document.getElementById(
+      'tabla_personas'
+    );
+
+  tabla.innerHTML = '';
+
+  if (personas.length === 0) {
+    tabla.innerHTML = `
+
+      <tr>
+        <td colspan="7" class="text-center text-muted">
+          No se encontraron integrantes
+        </td>
+      </tr>
+
+    `;
+    return;
+  }
+
+  personas.forEach(persona => {
 
     const edad =
     calcularEdad(persona.fecha_nacimiento);
@@ -305,12 +382,23 @@ document.getElementById(
 
       `;
 
-    });
+  });
 
-  })
+}
 
-  .catch(err => console.error(err));
+function configurarBuscadorPersonas() {
+  const input =
+    document.getElementById('buscar_personas');
 
+  if (!input) {
+    return;
+  }
+
+  input.addEventListener('input', () => {
+    renderizarTablaPersonas(
+      filtrarPersonas(input.value)
+    );
+  });
 }
 
 // =====================================
