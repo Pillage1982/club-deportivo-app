@@ -3,6 +3,7 @@
 // =====================================
 
 let personaEditando = null;
+let personasTabla = [];
 
 // =====================================
 // CARGAR PERSONAS EN SELECTORES
@@ -119,6 +120,14 @@ if (errorValidacion) {
 
   }
 
+  const estadoBoton =
+    bloquearBoton(
+      'btn_guardar_persona',
+      'Guardando...'
+    );
+
+  if (!estadoBoton) return;
+
   fetch(url, {
 
     method: method,
@@ -130,7 +139,7 @@ if (errorValidacion) {
   })
 
   .then(async res => {
-  const data = await res.json().catch(() => ({}));
+  const data = await leerRespuestaJson(res);
 
   if (!res.ok) {
     throw new Error(
@@ -200,10 +209,21 @@ document.getElementById(
   .catch(err => {
   console.error(err);
   mostrarAlerta(
-    err.message || 'No se pudo guardar el integrante',
+    obtenerMensajeError(
+      err,
+      'No se pudo guardar el integrante'
+    ),
     'danger'
   );
-});
+})
+  .finally(() => {
+    restaurarBoton(
+      estadoBoton,
+      personaEditando
+        ? 'Actualizar Integrante'
+        : 'Guardar Integrante'
+    );
+  });
 
 }
 
@@ -219,7 +239,17 @@ document.getElementById(
 
   })
 
-  .then(res => res.json())
+  .then(async res => {
+    const data = await leerRespuestaJson(res);
+
+    if (!res.ok) {
+      throw new Error(
+        data.mensaje || 'No se pudo eliminar el integrante'
+      );
+    }
+
+    return data;
+  })
 
   .then(data => {
 
@@ -238,7 +268,83 @@ document.getElementById(
       return;
     }
 
-    data.forEach(persona => {
+    personasTabla = data;
+
+    renderizarTablaPersonas(
+      filtrarPersonas(
+        obtenerTerminoBusquedaPersonas()
+      )
+    );
+
+  })
+
+  .catch(err => console.error(err));
+
+}
+
+function obtenerTerminoBusquedaPersonas() {
+  const input =
+    document.getElementById('buscar_personas');
+
+  return input ? input.value : '';
+}
+
+function normalizarTextoBusqueda(valor) {
+  return String(valor || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+function filtrarPersonas(termino) {
+  const busqueda =
+    normalizarTextoBusqueda(termino);
+
+  if (!busqueda) {
+    return personasTabla;
+  }
+
+  return personasTabla.filter(persona => {
+    const nombreCompleto = [
+      persona.nombres,
+      persona.apellido_paterno,
+      persona.apellido_materno
+    ].join(' ');
+
+    const textoBusqueda = [
+      nombreCompleto,
+      persona.rut,
+      persona.email,
+      persona.telefono
+    ].map(normalizarTextoBusqueda).join(' ');
+
+    return textoBusqueda.includes(busqueda);
+  });
+}
+
+function renderizarTablaPersonas(personas) {
+  const tabla =
+    document.getElementById(
+      'tabla_personas'
+    );
+
+  tabla.innerHTML = '';
+
+  if (personas.length === 0) {
+    tabla.innerHTML = `
+
+      <tr>
+        <td colspan="7" class="text-center text-muted">
+          No se encontraron integrantes
+        </td>
+      </tr>
+
+    `;
+    return;
+  }
+
+  personas.forEach(persona => {
 
     const edad =
     calcularEdad(persona.fecha_nacimiento);
@@ -279,25 +385,29 @@ document.getElementById(
             ${categoria}
           </td>
 
-          <td>
+          <td class="text-nowrap">
 
-            <button
-              class="btn btn-warning btn-sm"
-              onclick='editarPersona(${JSON.stringify(persona)}
-            )'>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
+              <button
+                type="button"
+                class="btn btn-outline-warning"
+                title="Editar"
+                aria-label="Editar"
+                onclick='editarPersona(${JSON.stringify(persona)}
+              )'>
+                &#9998;
+              </button>
 
-              Editar
-
-            </button>
-
-            <button
-              class="btn btn-danger btn-sm"
-              onclick='eliminarPersona(${persona.id}
-            )'>
-
-              Eliminar
-
-            </button>
+              <button
+                type="button"
+                class="btn btn-outline-danger"
+                title="Eliminar"
+                aria-label="Eliminar"
+                onclick='eliminarPersona(${persona.id}
+              )'>
+                &times;
+              </button>
+            </div>
 
           </td>
 
@@ -305,12 +415,23 @@ document.getElementById(
 
       `;
 
-    });
+  });
 
-  })
+}
 
-  .catch(err => console.error(err));
+function configurarBuscadorPersonas() {
+  const input =
+    document.getElementById('buscar_personas');
 
+  if (!input) {
+    return;
+  }
+
+  input.addEventListener('input', () => {
+    renderizarTablaPersonas(
+      filtrarPersonas(input.value)
+    );
+  });
 }
 
 // =====================================
@@ -384,14 +505,26 @@ function ejecutarEliminarPersona(id) {
 
   .then(data => {
 
-    mostrarAlerta(data.mensaje, 'warning');
+    mostrarAlerta(
+      data.mensaje || 'Integrante eliminado correctamente',
+      'warning'
+    );
 
     cargarTablaPersonas();
     cargarPersonas();
 
   })
 
-  .catch(err => console.error(err));
+  .catch(err => {
+    console.error(err);
+    mostrarAlerta(
+      obtenerMensajeError(
+        err,
+        'No se pudo eliminar el integrante'
+      ),
+      'danger'
+    );
+  });
 
 }
 

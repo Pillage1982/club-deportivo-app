@@ -1,4 +1,14 @@
 let pagoEditando = null;
+let pagosCargados = [];
+let finanzasCargadas = [];
+
+function normalizarTextoPago(valor) {
+  return String(valor || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
 
 function cargarFinanzas() {
   fetch(`${API_URL}/finanzas`, {
@@ -18,35 +28,123 @@ function cargarFinanzas() {
   return;
 }
 
-      data.forEach(finanza => {
-        tabla.innerHTML += `
-          <tr>
-            <td>
-              ${finanza.nombres}
-              ${finanza.apellido_paterno}
-              ${finanza.apellido_materno || ''}
-            </td>
-            <td>$${finanza.total_multas || 0}</td>
-            <td>$${finanza.total_cuotas || 0}</td>
-            <td>$${finanza.total_pagado || 0}</td>
-            <td>
-              ${
-                Number(finanza.deuda_actual) === 0
-                  ? `<span class="badge bg-success">AL DIA</span>`
-                  : Number(finanza.deuda_actual) < 0
-                    ? `<span class="badge bg-primary">
-                        $${Math.abs(finanza.deuda_actual)} (A FAVOR)
-                      </span>`
-                    : `<span class="badge bg-danger">
-                        Deuda: $${finanza.deuda_actual}
-                      </span>`
-              }
-            </td>
-          </tr>
-        `;
-      });
+      finanzasCargadas = data;
+      renderizarTablaFinanzas(
+        filtrarFinanzas(data)
+      );
     })
     .catch(err => console.error(err));
+}
+
+function filtrarFinanzas(finanzas) {
+  const busqueda =
+    normalizarTextoPago(
+      document.getElementById('buscar_finanzas')?.value
+    );
+
+  const estado =
+    document.getElementById('filtro_finanzas_estado')?.value || '';
+
+  return finanzas.filter(finanza => {
+    const nombreCompleto = normalizarTextoPago([
+      finanza.nombres,
+      finanza.apellido_paterno,
+      finanza.apellido_materno
+    ].join(' '));
+
+    const deudaActual =
+      Number(finanza.deuda_actual || 0);
+
+    const coincideBusqueda =
+      !busqueda || nombreCompleto.includes(busqueda);
+
+    const coincideEstado =
+      !estado ||
+      (estado === 'con_deuda' && deudaActual > 0) ||
+      (estado === 'al_dia' && deudaActual === 0) ||
+      (estado === 'a_favor' && deudaActual < 0);
+
+    return coincideBusqueda && coincideEstado;
+  });
+}
+
+function renderizarTablaFinanzas(finanzas) {
+  const tabla = document.getElementById('tabla_finanzas');
+
+  tabla.innerHTML = '';
+
+  if (!finanzas.length) {
+    tabla.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center text-muted">
+          No hay integrantes para los filtros seleccionados
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+  finanzas.forEach(finanza => {
+    tabla.innerHTML += `
+      <tr>
+        <td>
+          ${finanza.nombres}
+          ${finanza.apellido_paterno}
+          ${finanza.apellido_materno || ''}
+        </td>
+        <td>${formatearMonto(finanza.total_multas)}</td>
+        <td>${formatearMonto(finanza.total_cuotas)}</td>
+        <td>${formatearMonto(finanza.total_pagado)}</td>
+        <td>
+          ${obtenerBadgeFinanciero(finanza.deuda_actual)}
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function aplicarFiltrosFinanzas() {
+  renderizarTablaFinanzas(
+    filtrarFinanzas(finanzasCargadas)
+  );
+}
+
+function limpiarFiltrosFinanzas() {
+  const buscar =
+    document.getElementById('buscar_finanzas');
+
+  const estado =
+    document.getElementById('filtro_finanzas_estado');
+
+  if (buscar) buscar.value = '';
+  if (estado) estado.value = '';
+
+  aplicarFiltrosFinanzas();
+}
+
+function configurarFiltrosFinanzas() {
+  [
+    'buscar_finanzas',
+    'filtro_finanzas_estado'
+  ].forEach(id => {
+    const elemento =
+      document.getElementById(id);
+
+    if (!elemento) {
+      return;
+    }
+
+    const evento =
+      elemento.tagName === 'INPUT'
+        ? 'input'
+        : 'change';
+
+    elemento.addEventListener(
+      evento,
+      aplicarFiltrosFinanzas
+    );
+  });
 }
 
 function editarPago(pago) {
@@ -103,17 +201,25 @@ function crearPago() {
     method = 'PUT';
   }
 
+  const estadoBoton =
+    bloquearBoton(
+      'btn_guardar_pago',
+      'Guardando...'
+    );
+
+  if (!estadoBoton) return;
+
   fetch(url, {
     method: method,
     headers: getAuthHeaders(),
     body: JSON.stringify(data)
   })
     .then(async res => {
-      const respuesta = await res.json();
+      const respuesta = await leerRespuestaJson(res);
 
       if (!res.ok) {
         throw new Error(
-          respuesta.mensaje || 'Error al guardar pago'
+          respuesta.mensaje || 'No se pudo guardar el pago'
         );
       }
 
@@ -137,7 +243,21 @@ function crearPago() {
       cargarGraficos();
     })
     .catch(err => {
-      mostrarAlerta(err.message, 'danger');
+      mostrarAlerta(
+        obtenerMensajeError(
+          err,
+          'No se pudo guardar el pago'
+        ),
+        'danger'
+      );
+    })
+    .finally(() => {
+      restaurarBoton(
+        estadoBoton,
+        pagoEditando
+          ? 'Actualizar Pago'
+          : 'Guardar Pago'
+      );
     });
 }
 
@@ -156,35 +276,135 @@ function cargarTablaPagos() {
         return;
       }
 
-      data.forEach(pago => {
-        tabla.innerHTML += `
-          <tr>
-            <td>
-              ${pago.nombres}
-              ${pago.apellido_paterno}
-              ${pago.apellido_materno || ''}
-            </td>
-            <td>$${pago.monto_total}</td>
-            <td>${pago.metodo}</td>
-            <td>${formatearFecha(pago.fecha)}</td>
-            <td>
-              <button
-                class="btn btn-warning btn-sm"
-                onclick='editarPago(${JSON.stringify(pago)})'>
-                Editar
-              </button>
-
-              <button
-                class="btn btn-danger btn-sm"
-                onclick='eliminarPago(${pago.id})'>
-                Eliminar
-              </button>
-            </td>
-          </tr>
-        `;
-      });
+      pagosCargados = data;
+      renderizarTablaPagos(
+        filtrarPagos(data)
+      );
     })
     .catch(err => console.error(err));
+}
+
+function filtrarPagos(pagos) {
+  const busqueda =
+    normalizarTextoPago(
+      document.getElementById('buscar_pagos')?.value
+    );
+
+  const metodo =
+    document.getElementById('filtro_pago_metodo')?.value || '';
+
+  return pagos.filter(pago => {
+    const nombreCompleto = normalizarTextoPago([
+      pago.nombres,
+      pago.apellido_paterno,
+      pago.apellido_materno
+    ].join(' '));
+
+    const coincideBusqueda =
+      !busqueda || nombreCompleto.includes(busqueda);
+
+    const coincideMetodo =
+      !metodo || pago.metodo === metodo;
+
+    return coincideBusqueda && coincideMetodo;
+  });
+}
+
+function renderizarTablaPagos(pagos) {
+  const tabla = document.getElementById('tabla_pagos');
+
+  tabla.innerHTML = '';
+
+  if (!pagos.length) {
+    tabla.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center text-muted">
+          No hay pagos para los filtros seleccionados
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+  pagos.forEach(pago => {
+    tabla.innerHTML += `
+      <tr>
+        <td>
+          ${pago.nombres}
+          ${pago.apellido_paterno}
+          ${pago.apellido_materno || ''}
+        </td>
+        <td>${formatearMonto(pago.monto_total)}</td>
+        <td>${pago.metodo}</td>
+        <td>${formatearFecha(pago.fecha)}</td>
+        <td class="text-nowrap">
+          <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
+            <button
+              type="button"
+              class="btn btn-outline-warning"
+              title="Editar"
+              aria-label="Editar"
+              onclick='editarPago(${JSON.stringify(pago)})'>
+              &#9998;
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-outline-danger"
+              title="Eliminar"
+              aria-label="Eliminar"
+              onclick='eliminarPago(${pago.id})'>
+              &times;
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function aplicarFiltrosPagos() {
+  renderizarTablaPagos(
+    filtrarPagos(pagosCargados)
+  );
+}
+
+function limpiarFiltrosPagos() {
+  const buscar =
+    document.getElementById('buscar_pagos');
+
+  const metodo =
+    document.getElementById('filtro_pago_metodo');
+
+  if (buscar) buscar.value = '';
+  if (metodo) metodo.value = '';
+
+  aplicarFiltrosPagos();
+}
+
+function configurarFiltrosPagos() {
+  [
+    'buscar_pagos',
+    'filtro_pago_metodo'
+  ].forEach(id => {
+    const elemento =
+      document.getElementById(id);
+
+    if (!elemento) {
+      return;
+    }
+
+    const evento =
+      elemento.tagName === 'INPUT'
+        ? 'input'
+        : 'change';
+
+    elemento.addEventListener(
+      evento,
+      aplicarFiltrosPagos
+    );
+  });
 }
 
 function eliminarPago(id) {
@@ -203,16 +423,38 @@ function ejecutarEliminarPago(id) {
     headers: getAuthHeaders()
   })
 
-  .then(res => res.json())
+  .then(async res => {
+    const data = await leerRespuestaJson(res);
+
+    if (!res.ok) {
+      throw new Error(
+        data.mensaje || 'No se pudo eliminar el pago'
+      );
+    }
+
+    return data;
+  })
 
   .then(data => {
-    mostrarAlerta(data.mensaje, 'warning');
+    mostrarAlerta(
+      data.mensaje || 'Pago eliminado correctamente',
+      'warning'
+    );
 
     cargarTablaPagos();
     cargarDashboard();
     cargarFinanzas();
   })
 
-  .catch(err => console.error(err));
+  .catch(err => {
+    console.error(err);
+    mostrarAlerta(
+      obtenerMensajeError(
+        err,
+        'No se pudo eliminar el pago'
+      ),
+      'danger'
+    );
+  });
 
 }

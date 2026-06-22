@@ -188,6 +188,63 @@ body {
   opacity: 0.85;
 }
 
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dashboard-grid > [class*="col-"] {
+  width: auto;
+  max-width: none;
+  padding: 0;
+}
+
+.dashboard-grid .card {
+  height: 100%;
+  min-height: 124px;
+}
+
+.dashboard-grid .card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 124px;
+  padding: 18px;
+}
+
+.dashboard-grid .card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 2.3em;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-grid .card-body h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 3vw, 2.1rem);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.dashboard-chart-grid > [class*="col-"] {
+  width: auto;
+  max-width: none;
+  padding: 0;
+  margin: 0 !important;
+}
+
 h2 {
   font-size: 34px;
   font-weight: 700;
@@ -217,6 +274,7 @@ canvas {
   border-radius: 18px;
   overflow: hidden;
   margin-bottom: 0;
+  min-width: 720px;
 }
 
 .table thead {
@@ -235,11 +293,76 @@ canvas {
 .table td,
 .table th {
   border-color: rgba(0, 0, 0, 0.05);
+  vertical-align: middle;
+}
+
+.table th,
+.table .badge {
+  white-space: nowrap;
 }
 
 .table-responsive {
   border-radius: 18px;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.table .btn-group-sm .btn {
+  min-width: 2.1rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.45rem;
+  line-height: 1;
+}
+
+#tabla_personas_wrapper .table {
+  min-width: 900px;
+}
+
+#tabla_eventos_wrapper .table {
+  min-width: 920px;
+}
+
+#tabla_pagos_wrapper .table,
+#tabla_cuotas_wrapper .table,
+#tabla_finanzas_wrapper .table {
+  min-width: 760px;
+}
+
+#tabla_asistencias_wrapper .table,
+#tabla_multas_wrapper .table {
+  min-width: 640px;
+}
+
+#tabla_eventos_wrapper td:nth-child(5) {
+  min-width: 220px;
+  white-space: normal;
+}
+
+#tabla_personas_wrapper th:last-child,
+#tabla_personas_wrapper td:last-child,
+#tabla_eventos_wrapper th:last-child,
+#tabla_eventos_wrapper td:last-child,
+#tabla_pagos_wrapper th:last-child,
+#tabla_pagos_wrapper td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -8px 0 12px rgba(15, 23, 42, 0.06);
+}
+
+#tabla_personas_wrapper td:last-child,
+#tabla_eventos_wrapper td:last-child,
+#tabla_pagos_wrapper td:last-child {
+  background: white;
+}
+
+#tabla_personas_wrapper th:last-child,
+#tabla_eventos_wrapper th:last-child,
+#tabla_pagos_wrapper th:last-child {
+  background: var(--primary);
+  color: white;
+  z-index: 3;
 }
 
 /* =====================================
@@ -339,6 +462,53 @@ img[data-config-img="cliente.logo"] {
 
   h2 {
     font-size: 28px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .dashboard-grid .card {
+    min-height: 104px;
+    border-radius: 16px;
+  }
+
+  .dashboard-grid .card-body {
+    min-height: 104px;
+    padding: 14px;
+  }
+
+  .dashboard-grid .card-title {
+    min-height: 2.4em;
+    font-size: 0.72rem;
+  }
+
+  .dashboard-grid .card-body h2 {
+    font-size: clamp(1.35rem, 7vw, 1.8rem);
+  }
+
+  .dashboard-chart-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .chart-container {
+    min-height: 280px;
+  }
+
+  .table {
+    font-size: 0.86rem;
+  }
+
+  .table td,
+  .table th {
+    padding: 0.6rem 0.7rem;
+  }
+
+  .table .btn-group-sm .btn {
+    min-width: 2rem;
+    min-height: 1.9rem;
   }
 
   /* =====================================

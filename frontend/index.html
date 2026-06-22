@@ -167,11 +167,11 @@
             Dashboard
           </h2>
 
-          <div class="row g-3">
-            <div class="col-6 col-md-3">
+          <div id="dashboard_cards" class="dashboard-grid">
+            <div id="card_dashboard_integrantes" class="col-6 col-md-3">
               <div class="card text-bg-primary shadow-sm border-0">
                 <div class="card-body shadow-sm border-0">
-                  <h5 class="card-title shadow-sm border-0">
+                  <h5 id="label_dashboard_integrantes" class="card-title shadow-sm border-0">
                     <i class="bi bi-people-fill"></i>
                     Integrantes
                   </h5>
@@ -186,7 +186,7 @@
             <div id="card_dashboard_multas" class="col-6 col-md-3">
               <div class="card text-bg-danger shadow-sm border-0">
                 <div class="card-body shadow-sm border-0">
-                  <h5 class="card-title shadow-sm border-0">
+                  <h5 id="label_dashboard_multas" class="card-title shadow-sm border-0">
                     <i class="bi bi-exclamation-triangle-fill"></i>
                     Multas
                   </h5>
@@ -201,7 +201,7 @@
             <div id="card_dashboard_pagado" class="col-6 col-md-3">
               <div class="card text-bg-success shadow-sm border-0">
                 <div class="card-body shadow-sm border-0">
-                  <h5 class="card-title shadow-sm border-0">
+                  <h5 id="label_dashboard_pagado" class="card-title shadow-sm border-0">
                     <i class="bi bi-cash-stack"></i>
                     Pagado
                   </h5>
@@ -216,7 +216,7 @@
             <div id="card_dashboard_deuda" class="col-6 col-md-3">
               <div class="card text-bg-warning shadow-sm border-0">
                 <div class="card-body shadow-sm border-0">
-                  <h5 class="card-title shadow-sm border-0">
+                  <h5 id="label_dashboard_deuda" class="card-title shadow-sm border-0">
                     <i class="bi bi-wallet2"></i>
                     Deuda
                   </h5>
@@ -232,7 +232,7 @@
 
         <!-- GRAFICOS -->
         <section class="mt-5">
-          <div class="row">
+          <div id="dashboard_charts" class="dashboard-chart-grid">
             <div id="grafico_multas_wrapper" class="col-12 col-md-6 mb-3">
               <div class="card p-3 shadow-sm border-0">
                 <h5>Multas por Integrante</h5>
@@ -292,6 +292,7 @@
 
           <button
           type="button"
+          id="btn_registrar_asistencia"
           class="btn btn-primary"
           onclick="registrarAsistencia()"
           data-config-text="etiquetas.botones.registrar">
@@ -384,6 +385,41 @@
 
             <p id="respuesta_persona" class="mt-3"></p>
           </div>
+
+          <div
+            id="buscador_personas_wrapper"
+            class="mt-4 mb-3">
+
+            <label
+              for="buscar_personas"
+              class="form-label">
+              Buscar Integrantes
+            </label>
+
+            <input
+              type="search"
+              id="buscar_personas"
+              class="form-control"
+              placeholder="Buscar por nombre, RUT, email o telefono">
+          </div>
+
+          <div id="tabla_personas_wrapper" class="table-responsive mt-4">
+            <table class="table table-bordered table-striped table-hover align-middle">
+              <thead class="table-dark">
+                <tr>
+                  <th>Nombre Completo</th>
+                  <th>RUT</th>
+                  <th>Email</th>
+                  <th>Teléfono</th>
+                  <th>Edad</th>
+                  <th>Categoría</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody id="tabla_personas"></tbody>
+            </table>
+          </div>
         </section>
 
         <!-- EVENTOS -->
@@ -461,6 +497,56 @@
             </div>
           </div>
 
+          <div
+            id="filtros_eventos_wrapper"
+            class="row g-3 mt-2 mb-3">
+            <div class="col-md-4">
+              <label for="buscar_eventos" class="form-label">
+                Buscar Actividades
+              </label>
+
+              <input
+                type="search"
+                id="buscar_eventos"
+                class="form-control"
+                placeholder="Buscar por nombre, ubicacion o descripcion">
+            </div>
+
+            <div class="col-md-3">
+              <label for="filtro_evento_tipo" class="form-label">
+                Tipo
+              </label>
+
+              <select id="filtro_evento_tipo" class="form-select">
+                <option value="">Todos</option>
+                <option value="entrenamiento">Actividad</option>
+                <option value="partido">Encuentro</option>
+                <option value="reunion">Reunión</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label for="filtro_evento_fecha" class="form-label">
+                Fecha
+              </label>
+
+              <input
+                type="date"
+                id="filtro_evento_fecha"
+                class="form-control">
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+              <button
+                type="button"
+                id="btn_limpiar_filtros_eventos"
+                class="btn btn-outline-secondary w-100"
+                onclick="limpiarFiltrosEventos()">
+                Limpiar
+              </button>
+            </div>
+          </div>
+
           <div id="tabla_eventos_wrapper" class="table-responsive mt-4">
             <table class="table table-bordered table-striped">
               <thead class="table-dark">
@@ -469,8 +555,8 @@
                   <th>Tipo</th>
                   <th>Fecha</th>
                   <th>Ubicación</th>
-                  <th>Acciones</th>
                   <th>Descripción</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
 
@@ -529,41 +615,62 @@
               Guardar Pago
             </button>
           </div>
+
+          <div
+            id="filtros_pagos_wrapper"
+            class="row g-3 mt-2 mb-3">
+            <div class="col-md-5">
+              <label for="buscar_pagos" class="form-label">
+                Buscar Pagos
+              </label>
+
+              <input
+                type="search"
+                id="buscar_pagos"
+                class="form-control"
+                placeholder="Buscar por integrante">
+            </div>
+
+            <div class="col-md-4">
+              <label for="filtro_pago_metodo" class="form-label">
+                Método
+              </label>
+
+              <select id="filtro_pago_metodo" class="form-select">
+                <option value="">Todos</option>
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="debito">Débito</option>
+              </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
+              <button
+                type="button"
+                id="btn_limpiar_filtros_pagos"
+                class="btn btn-outline-secondary w-100"
+                onclick="limpiarFiltrosPagos()">
+                Limpiar
+              </button>
+            </div>
+          </div>
+
+          <div id="tabla_pagos_wrapper" class="table-responsive mt-4">
+            <table class="table table-bordered table-striped">
+              <thead class="table-dark">
+                <tr>
+                  <th>Integrante</th>
+                  <th>Monto</th>
+                  <th>Método</th>
+                  <th>Fecha</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody id="tabla_pagos"></tbody>
+            </table>
+          </div>
         </section>
-
-        <div id="tabla_pagos_wrapper" class="table-responsive mt-4">
-          <table class="table table-bordered table-striped">
-            <thead class="table-dark">
-              <tr>
-                <th>Integrante</th>
-                <th>Monto</th>
-                <th>Método</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-
-            <tbody id="tabla_pagos"></tbody>
-          </table>
-        </div>
-
-        <div id="tabla_personas_wrapper" class="table-responsive mt-4">
-          <table class="table table-bordered table-striped table-hover align-middle">
-            <thead class="table-dark">
-              <tr>
-                <th>Nombre Completo</th>
-                <th>RUT</th>
-                <th>Email</th>
-                <th>Teléfono</th>
-                <th>Edad</th>
-                <th>Categoría</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-
-            <tbody id="tabla_personas"></tbody>
-          </table>
-        </div>
 
         <!-- ASISTENCIAS -->
         <section id="asistencias">
@@ -628,6 +735,72 @@
                 Generar cuotas del mes
               </button>
 
+              <div
+                id="filtros_cuotas_wrapper"
+                class="row g-3 mt-2 mb-3">
+                <div class="col-md-3">
+                  <label for="buscar_cuotas" class="form-label">
+                    Buscar Cuotas
+                  </label>
+
+                  <input
+                    type="search"
+                    id="buscar_cuotas"
+                    class="form-control"
+                    placeholder="Buscar por integrante">
+                </div>
+
+                <div class="col-md-3">
+                  <label for="filtro_cuota_estado" class="form-label">
+                    Estado
+                  </label>
+
+                  <select id="filtro_cuota_estado" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="pagado">Pagado</option>
+                    <option value="vencido">Vencido</option>
+                  </select>
+                </div>
+
+                <div class="col-md-2">
+                  <label for="filtro_cuota_mes" class="form-label">
+                    Mes
+                  </label>
+
+                  <input
+                    type="number"
+                    id="filtro_cuota_mes"
+                    class="form-control"
+                    min="1"
+                    max="12"
+                    placeholder="Mes">
+                </div>
+
+                <div class="col-md-2">
+                  <label for="filtro_cuota_anio" class="form-label">
+                    Año
+                  </label>
+
+                  <input
+                    type="number"
+                    id="filtro_cuota_anio"
+                    class="form-control"
+                    min="2000"
+                    placeholder="Año">
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                  <button
+                    type="button"
+                    id="btn_limpiar_filtros_cuotas"
+                    class="btn btn-outline-secondary w-100"
+                    onclick="limpiarFiltrosCuotas()">
+                    Limpiar
+                  </button>
+                </div>
+              </div>
+
               <div id="tabla_cuotas_wrapper" class="table-responsive mt-4">
                 <table class="table table-hover align-middle">
                   <thead>
@@ -643,6 +816,45 @@
 
                   <tbody id="tabla_cuotas"></tbody>
                 </table>
+              </div>
+            </div>
+
+            <div
+              id="filtros_finanzas_wrapper"
+              class="row g-3 mt-2 mb-3">
+              <div class="col-md-5">
+                <label for="buscar_finanzas" class="form-label">
+                  Buscar Estado Financiero
+                </label>
+
+                <input
+                  type="search"
+                  id="buscar_finanzas"
+                  class="form-control"
+                  placeholder="Buscar por integrante">
+              </div>
+
+              <div class="col-md-4">
+                <label for="filtro_finanzas_estado" class="form-label">
+                  Estado
+                </label>
+
+                <select id="filtro_finanzas_estado" class="form-select">
+                  <option value="">Todos</option>
+                  <option value="con_deuda">Con deuda</option>
+                  <option value="al_dia">Al día</option>
+                  <option value="a_favor">A favor</option>
+                </select>
+              </div>
+
+              <div class="col-md-3 d-flex align-items-end">
+                <button
+                  type="button"
+                  id="btn_limpiar_filtros_finanzas"
+                  class="btn btn-outline-secondary w-100"
+                  onclick="limpiarFiltrosFinanzas()">
+                  Limpiar
+                </button>
               </div>
             </div>
 

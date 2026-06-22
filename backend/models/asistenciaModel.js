@@ -35,6 +35,108 @@ exports.crearAsistencia = (data, callback) => {
 
 };
 
+function calcularMulta(data) {
+  if (data.estado === 'ausente') {
+    return {
+      monto: 5000,
+      motivo: 'Inasistencia'
+    };
+  }
+
+  if (data.estado !== 'atrasado') {
+    return null;
+  }
+
+  const minutos =
+    Number(data.minutos || 0);
+
+  if (minutos <= 10) {
+    return {
+      monto: 1000,
+      motivo: 'Atraso leve'
+    };
+  }
+
+  if (minutos <= 20) {
+    return {
+      monto: 2000,
+      motivo: 'Atraso medio'
+    };
+  }
+
+  return {
+    monto: 3000,
+    motivo: 'Atraso grave'
+  };
+}
+
+exports.crearMultaSiCorresponde = (
+  data,
+  asistenciaId,
+  callback
+) => {
+  const multa =
+    calcularMulta(data);
+
+  if (!multa) {
+    db.query(
+      'DELETE FROM multas WHERE asistencia_id = ?',
+      [asistenciaId],
+      err => {
+        if (err) {
+          callback(err);
+          return;
+        }
+
+        callback(null, {
+          multaGenerada: false
+        });
+      }
+    );
+
+    return;
+  }
+
+  db.query(
+    'DELETE FROM multas WHERE asistencia_id = ?',
+    [asistenciaId],
+    err => {
+      if (err) {
+        callback(err);
+        return;
+      }
+
+      const query = `
+        INSERT INTO multas
+        (persona_id, asistencia_id, monto, motivo)
+        VALUES (?, ?, ?, ?)
+      `;
+
+      db.query(
+        query,
+        [
+          data.persona_id,
+          asistenciaId,
+          multa.monto,
+          multa.motivo
+        ],
+        (errInsert, result) => {
+          if (errInsert) {
+            callback(errInsert);
+            return;
+          }
+
+          callback(null, {
+            multaGenerada: result.affectedRows > 0,
+            monto: multa.monto,
+            motivo: multa.motivo
+          });
+        }
+      );
+    }
+  );
+};
+
 // =====================================
 // OBTENER HISTORIAL ASISTENCIAS
 // =====================================

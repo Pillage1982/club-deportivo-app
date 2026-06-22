@@ -86,6 +86,14 @@ function registrarAsistencia() {
 
       }
 
+      const estadoBoton =
+        bloquearBoton(
+          'btn_registrar_asistencia',
+          'Registrando...'
+        );
+
+      if (!estadoBoton) return;
+
       // Registra asistencia en backend
       fetch(`${API_URL}/asistencia`, {
 
@@ -128,10 +136,10 @@ mostrarAlerta(
       // dashboard
       // gráficos
       cargarAsistencias();
-      cargarMultas();
-      cargarFinanzas();
       cargarDashboard();
-      cargarGraficos();
+      refrescarFinanzasPorAsistencia();
+
+      document.getElementById('minutos').value = 0;
 
     })
 
@@ -146,8 +154,30 @@ mostrarAlerta(
   'danger'
 );
 
-});
+})
+  .finally(() => {
+    restaurarBoton(
+      estadoBoton,
+      'Registrar'
+    );
+  });
 
+}
+
+function refrescarFinanzasPorAsistencia() {
+  const rol =
+    obtenerRolActual();
+
+  if (rol !== 'admin' && rol !== 'tesorero') {
+    return;
+  }
+
+  setTimeout(() => {
+    cargarMultas();
+    cargarFinanzas();
+    cargarDashboard();
+    cargarGraficos();
+  }, 300);
 }
 
 // =====================================
@@ -183,13 +213,7 @@ function cargarAsistencias() {
           <tr>
             <td>${asistencia.nombres} ${asistencia.apellido_paterno} ${asistencia.apellido_materno || ''}</td>
             <td>${asistencia.evento}</td>
-            <td>${
-              asistencia.estado === 'presente'
-              ? '<span class="badge bg-success">Presente</span>'
-              : asistencia.estado === 'atrasado'
-              ? '<span class="badge bg-warning text-dark">Atrasado</span>'
-              : '<span class="badge bg-danger">Ausente</span>'
-            }</td>
+            <td>${obtenerBadgeAsistencia(asistencia.estado)}</td>
             <td>${asistencia.minutos_atraso}</td>
           </tr>
         `;
@@ -235,7 +259,7 @@ function cargarMultas() {
 
           <tr>
             <td>${multa.nombres} ${multa.apellido_paterno} ${multa.apellido_materno || ''}</td>
-            <td>$${multa.monto}</td>
+            <td>${formatearMonto(multa.monto)}</td>
             <td>${multa.motivo}</td>
             <td>${formatearFecha(multa.fecha)}</td>
           </tr>
