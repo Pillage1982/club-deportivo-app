@@ -373,6 +373,22 @@ function cargarGraficos() {
       f => Number(f.deuda_actual)
     );
 
+    const opcionesGraficos = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            boxWidth: 10,
+            font: {
+              size: 10
+            }
+          }
+        }
+      }
+    };
+
     // Destruye gráficos anteriores
     // para evitar duplicados visuales
     if (chartMultas) {
@@ -419,6 +435,29 @@ if (chartDeuda) {
   }
 ]
 
+        },
+
+        options: {
+          ...opcionesGraficos,
+          scales: {
+            x: {
+              ticks: {
+                maxRotation: 45,
+                minRotation: 25,
+                font: {
+                  size: 10
+                }
+              }
+            },
+            y: {
+              ticks: {
+                precision: 0,
+                font: {
+                  size: 10
+                }
+              }
+            }
+          }
         }
 
       }
@@ -448,7 +487,9 @@ if (chartDeuda) {
 
           }]
 
-        }
+        },
+
+        options: opcionesGraficos
 
       }
 

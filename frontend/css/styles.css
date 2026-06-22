@@ -188,6 +188,63 @@ body {
   opacity: 0.85;
 }
 
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dashboard-grid > [class*="col-"] {
+  width: auto;
+  max-width: none;
+  padding: 0;
+}
+
+.dashboard-grid .card {
+  height: 100%;
+  min-height: 124px;
+}
+
+.dashboard-grid .card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 124px;
+  padding: 18px;
+}
+
+.dashboard-grid .card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 2.3em;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-grid .card-body h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 3vw, 2.1rem);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.dashboard-chart-grid > [class*="col-"] {
+  width: auto;
+  max-width: none;
+  padding: 0;
+  margin: 0 !important;
+}
+
 h2 {
   font-size: 34px;
   font-weight: 700;
@@ -405,6 +462,39 @@ img[data-config-img="cliente.logo"] {
 
   h2 {
     font-size: 28px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .dashboard-grid .card {
+    min-height: 104px;
+    border-radius: 16px;
+  }
+
+  .dashboard-grid .card-body {
+    min-height: 104px;
+    padding: 14px;
+  }
+
+  .dashboard-grid .card-title {
+    min-height: 2.4em;
+    font-size: 0.72rem;
+  }
+
+  .dashboard-grid .card-body h2 {
+    font-size: clamp(1.35rem, 7vw, 1.8rem);
+  }
+
+  .dashboard-chart-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .chart-container {
+    min-height: 280px;
   }
 
   .table {
