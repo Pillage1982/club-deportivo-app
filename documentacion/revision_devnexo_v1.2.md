@@ -46,8 +46,17 @@ Rama esperada: `v1.2-dev`
 
 ## Cierre
 
-- Probar flujo admin completo.
-- Probar flujo tesorero completo.
-- Probar flujo encargado completo.
-- Confirmar que no hay referencias de clientes especificos.
-- Confirmar que el ambiente queda estable para preparar merge posterior.
+- Flujo admin completo: validado.
+- Flujo tesorero completo: validado.
+- Flujo encargado completo: validado.
+- Accesos: validado.
+- Dashboard por rol: validado.
+- Formularios: validado.
+- Busquedas y filtros: validado.
+- Tablas desktop/movil: validado.
+- Consola sin errores rojos: validado.
+- Multas por asistencia: validado.
+- Confirmar que no hay referencias de clientes especificos: validado durante limpieza de base neutral.
+- Ambiente estable para preparar merge posterior: validado.
+
+Resultado: `v1.2-dev` queda validada en `devnexo.pillageweb.cl` como version candidata para promover a `main`, pendiente solo de confirmacion explicita antes del merge.
