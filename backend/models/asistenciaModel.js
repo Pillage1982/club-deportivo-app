@@ -79,41 +79,60 @@ exports.crearMultaSiCorresponde = (
     calcularMulta(data);
 
   if (!multa) {
-    callback(null, {
-      multaGenerada: false
-    });
+    db.query(
+      'DELETE FROM multas WHERE asistencia_id = ?',
+      [asistenciaId],
+      err => {
+        if (err) {
+          callback(err);
+          return;
+        }
+
+        callback(null, {
+          multaGenerada: false
+        });
+      }
+    );
+
     return;
   }
 
-  const query = `
-    INSERT INTO multas
-    (persona_id, asistencia_id, monto, motivo)
-    SELECT ?, ?, ?, ?
-    WHERE NOT EXISTS (
-      SELECT 1
-      FROM multas
-      WHERE asistencia_id = ?
-    )
-  `;
-
   db.query(
-    query,
-    [
-      data.persona_id,
-      asistenciaId,
-      multa.monto,
-      multa.motivo,
-      asistenciaId
-    ],
-    (err, result) => {
+    'DELETE FROM multas WHERE asistencia_id = ?',
+    [asistenciaId],
+    err => {
       if (err) {
         callback(err);
         return;
       }
 
-      callback(null, {
-        multaGenerada: result.affectedRows > 0
-      });
+      const query = `
+        INSERT INTO multas
+        (persona_id, asistencia_id, monto, motivo)
+        VALUES (?, ?, ?, ?)
+      `;
+
+      db.query(
+        query,
+        [
+          data.persona_id,
+          asistenciaId,
+          multa.monto,
+          multa.motivo
+        ],
+        (errInsert, result) => {
+          if (errInsert) {
+            callback(errInsert);
+            return;
+          }
+
+          callback(null, {
+            multaGenerada: result.affectedRows > 0,
+            monto: multa.monto,
+            motivo: multa.motivo
+          });
+        }
+      );
     }
   );
 };

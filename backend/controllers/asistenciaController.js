@@ -38,7 +38,7 @@ exports.registrar = (req, res) => {
 
         res.json({
           mensaje: resultadoMulta.multaGenerada
-            ? 'Asistencia registrada. Multa generada'
+            ? `Asistencia registrada. Multa generada: ${resultadoMulta.motivo}`
             : 'Asistencia registrada'
         });
       }
