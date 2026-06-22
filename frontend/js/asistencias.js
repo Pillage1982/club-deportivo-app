@@ -136,10 +136,8 @@ mostrarAlerta(
       // dashboard
       // gráficos
       cargarAsistencias();
-      cargarMultas();
-      cargarFinanzas();
       cargarDashboard();
-      cargarGraficos();
+      refrescarFinanzasPorAsistencia();
 
       document.getElementById('minutos').value = 0;
 
@@ -164,6 +162,22 @@ mostrarAlerta(
     );
   });
 
+}
+
+function refrescarFinanzasPorAsistencia() {
+  const rol =
+    obtenerRolActual();
+
+  if (rol !== 'admin' && rol !== 'tesorero') {
+    return;
+  }
+
+  setTimeout(() => {
+    cargarMultas();
+    cargarFinanzas();
+    cargarDashboard();
+    cargarGraficos();
+  }, 300);
 }
 
 // =====================================
