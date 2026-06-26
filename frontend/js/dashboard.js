@@ -25,11 +25,15 @@ function cargarDashboard() {
 
     fetch(`${API_URL}/finanzas`, {
       headers: getAuthHeaders()
+    }).then(res => res.json()),
+
+    fetch(`${API_URL}/asistencia`, {
+      headers: getAuthHeaders()
     }).then(res => res.json())
 
   ])
 
-  .then(([personas, multas, finanzas]) => {
+  .then(([personas, multas, finanzas, asistencias]) => {
 
     document.getElementById(
       'total_personas'
@@ -87,10 +91,87 @@ finanzas.forEach(f => {
     ).innerText =
       `$${deudaTotal}`;
 
+    actualizarEstadisticasAsistenciaDashboard(
+      Array.isArray(asistencias) ? asistencias : []
+    );
+
   })
 
   .catch(err => console.error(err));
 
+}
+
+function calcularResumenAsistenciaPorTipo(asistencias, tipos) {
+  const registros =
+    asistencias.filter(asistencia => {
+      return tipos.includes(asistencia.tipo_evento);
+    });
+
+  const presentes =
+    registros.filter(asistencia => {
+      return [
+        'presente',
+        'atrasado'
+      ].includes(asistencia.estado);
+    }).length;
+
+  const total =
+    registros.length;
+
+  return {
+    presentes,
+    total,
+    porcentaje: total > 0
+      ? Math.round((presentes / total) * 100)
+      : 0
+  };
+}
+
+function actualizarEstadisticasAsistenciaDashboard(asistencias) {
+  const ensayos =
+    calcularResumenAsistenciaPorTipo(
+      asistencias,
+      ['entrenamiento']
+    );
+
+  const presentaciones =
+    calcularResumenAsistenciaPorTipo(
+      asistencias,
+      ['partido']
+    );
+
+  const ensayosPorcentaje =
+    document.getElementById('asistencia_ensayos_porcentaje');
+
+  const ensayosDetalle =
+    document.getElementById('asistencia_ensayos_detalle');
+
+  const presentacionesPorcentaje =
+    document.getElementById('asistencia_presentaciones_porcentaje');
+
+  const presentacionesDetalle =
+    document.getElementById('asistencia_presentaciones_detalle');
+
+  if (
+    !ensayosPorcentaje ||
+    !ensayosDetalle ||
+    !presentacionesPorcentaje ||
+    !presentacionesDetalle
+  ) {
+    return;
+  }
+
+  ensayosPorcentaje.innerText =
+    `${ensayos.porcentaje}%`;
+
+  ensayosDetalle.innerText =
+    `${ensayos.presentes} presentes de ${ensayos.total} registros`;
+
+  presentacionesPorcentaje.innerText =
+    `${presentaciones.porcentaje}%`;
+
+  presentacionesDetalle.innerText =
+    `${presentaciones.presentes} presentes de ${presentaciones.total} registros`;
 }
 
 // =====================================

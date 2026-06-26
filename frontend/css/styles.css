@@ -109,6 +109,44 @@ body {
 
 .main-content {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#dashboard {
+  order: 10;
+}
+
+#dashboard_graficos {
+  order: 20;
+}
+
+#modulo_asistencia {
+  order: 30;
+}
+
+#asistencias {
+  order: 40;
+}
+
+#finanzas {
+  order: 50;
+}
+
+#multas {
+  order: 60;
+}
+
+#modulo_personas {
+  order: 70;
+}
+
+#eventos {
+  order: 80;
+}
+
+#modulo_pagos {
+  order: 90;
 }
 
 @media (min-width: 992px) {
@@ -186,6 +224,99 @@ body {
 .card-title {
   font-size: 15px;
   opacity: 0.85;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dashboard-grid > [class*="col-"] {
+  width: auto;
+  max-width: none;
+  padding: 0;
+}
+
+.dashboard-grid .card {
+  height: 100%;
+  min-height: 124px;
+}
+
+.dashboard-grid .card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 124px;
+  padding: 18px;
+}
+
+.dashboard-grid .card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 2.3em;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-grid .card-body h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 3vw, 2.1rem);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.attendance-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.attendance-stat {
+  background: white;
+  border-left: 5px solid var(--accent);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.attendance-stat > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.attendance-stat-label {
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.attendance-stat strong {
+  color: var(--primary);
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.attendance-stat small {
+  color: var(--text-light);
+}
+
+.dashboard-chart-grid > [class*="col-"] {
+  width: auto;
+  max-width: none;
+  padding: 0;
+  margin: 0 !important;
 }
 
 h2 {
@@ -281,6 +412,37 @@ canvas {
   border-color: var(--accent-dark) !important;
 }
 
+.qr-attendance-panel {
+  background: #f8fafc;
+  border: 1px solid rgba(47, 128, 237, 0.18);
+  border-radius: 18px;
+  padding: 18px;
+}
+
+.qr-attendance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.qr-scanner-wrapper {
+  background: #0f172a;
+  border-radius: 16px;
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.qr-scanner-video {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+}
+
+.qr-attendance-status {
+  font-size: 0.95rem;
+}
+
 /* =====================================
    Logo cliente configurado
 ===================================== */
@@ -339,6 +501,57 @@ img[data-config-img="cliente.logo"] {
 
   h2 {
     font-size: 28px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .dashboard-grid .card {
+    min-height: 104px;
+    border-radius: 16px;
+  }
+
+  .dashboard-grid .card-body {
+    min-height: 104px;
+    padding: 14px;
+  }
+
+  .dashboard-grid .card-title {
+    min-height: 2.4em;
+    font-size: 0.72rem;
+  }
+
+  .dashboard-grid .card-body h2 {
+    font-size: clamp(1.35rem, 7vw, 1.8rem);
+  }
+
+  .dashboard-chart-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .attendance-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-container {
+    min-height: 280px;
+  }
+
+  .table {
+    font-size: 0.86rem;
+  }
+
+  .table td,
+  .table th {
+    padding: 0.6rem 0.7rem;
+  }
+
+  .table .btn-group-sm .btn {
+    min-width: 2rem;
+    min-height: 1.9rem;
   }
 
   /* =====================================

@@ -87,14 +87,7 @@
             <li class="nav-item mb-2 nav-asistencias">
               <a class="nav-link text-white" href="#asistencias">
                 <i class="bi bi-check2-square"></i>
-                Asistencias
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-multas">
-              <a class="nav-link text-white" href="#multas">
-                <i class="bi bi-currency-dollar"></i>
-                Multas
+                Asistencia
               </a>
             </li>
 
@@ -102,6 +95,13 @@
               <a class="nav-link text-white" href="#finanzas">
                 <i class="bi bi-graph-up"></i>
                 Finanzas
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-multas">
+              <a class="nav-link text-white" href="#multas">
+                <i class="bi bi-currency-dollar"></i>
+                Multas
               </a>
             </li>
           </ul>
@@ -138,14 +138,7 @@
             <li class="nav-item mb-2 nav-asistencias">
               <a class="nav-link text-white" href="#asistencias">
                 <i class="bi bi-check2-square"></i>
-                Asistencias
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-multas">
-              <a class="nav-link text-white" href="#multas">
-                <i class="bi bi-currency-dollar"></i>
-                Multas
+                Asistencia
               </a>
             </li>
 
@@ -153,6 +146,13 @@
               <a class="nav-link text-white" href="#finanzas">
                 <i class="bi bi-graph-up"></i>
                 Finanzas
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-multas">
+              <a class="nav-link text-white" href="#multas">
+                <i class="bi bi-currency-dollar"></i>
+                Multas
               </a>
             </li>
           </ul>
@@ -167,6 +167,71 @@
           <h2 data-config-text="etiquetas.modulos.registrarAsistencia">
             Registrar Asistencia
           </h2>
+
+          <div class="qr-attendance-panel mb-4">
+            <div class="qr-attendance-actions">
+              <button
+                type="button"
+                id="btn_iniciar_qr"
+                class="btn btn-outline-primary"
+                onclick="iniciarEscaneoAsistencia()">
+                <i class="bi bi-qr-code-scan"></i>
+                Escanear QR
+              </button>
+
+              <button
+                type="button"
+                id="btn_detener_qr"
+                class="btn btn-outline-secondary"
+                onclick="detenerEscaneoAsistencia()"
+                disabled>
+                <i class="bi bi-stop-circle"></i>
+                Detener
+              </button>
+            </div>
+
+            <div
+              id="qr_scanner_wrapper"
+              class="qr-scanner-wrapper d-none">
+              <video
+                id="qr_scanner_video"
+                class="qr-scanner-video"
+                muted
+                playsinline>
+              </video>
+            </div>
+
+            <div class="row g-2 mt-3">
+              <div class="col-md-8">
+                <label
+                  for="qr_asistencia_manual"
+                  class="form-label">
+                  Lectura QR o RUT
+                </label>
+
+                <input
+                  type="text"
+                  id="qr_asistencia_manual"
+                  class="form-control"
+                  placeholder="Pegue lectura de credencial o carnet">
+              </div>
+
+              <div class="col-md-4 d-flex align-items-end">
+                <button
+                  type="button"
+                  class="btn btn-outline-primary w-100"
+                  onclick="procesarLecturaAsistenciaManual()">
+                  Usar lectura
+                </button>
+              </div>
+            </div>
+
+            <p
+              id="qr_asistencia_estado"
+              class="qr-attendance-status mt-3 mb-0">
+              Puede escanear la credencial de socio o el carnet de identidad.
+            </p>
+          </div>
 
           <div class="mb-3 px-2">
             <label class="form-label">Nombre Completo</label>
@@ -199,6 +264,7 @@
 
           <button
           type="button"
+          id="btn_registrar_asistencia"
           class="btn btn-primary"
           onclick="registrarAsistencia()"
           data-config-text="etiquetas.botones.registrar">
@@ -275,11 +341,47 @@
               </div>
             </div>
           </div>
+
+          <div
+            id="dashboard_asistencia_stats"
+            class="attendance-stat-grid mt-4">
+            <div class="attendance-stat">
+              <div>
+                <span class="attendance-stat-label">
+                  Ensayos
+                </span>
+
+                <strong id="asistencia_ensayos_porcentaje">
+                  0%
+                </strong>
+              </div>
+
+              <small id="asistencia_ensayos_detalle">
+                0 presentes de 0 registros
+              </small>
+            </div>
+
+            <div class="attendance-stat">
+              <div>
+                <span class="attendance-stat-label">
+                  Presentaciones
+                </span>
+
+                <strong id="asistencia_presentaciones_porcentaje">
+                  0%
+                </strong>
+              </div>
+
+              <small id="asistencia_presentaciones_detalle">
+                0 presentes de 0 registros
+              </small>
+            </div>
+          </div>
         </section>
 
         <!-- GRAFICOS -->
-        <section class="mt-5">
-          <div class="row">
+        <section id="dashboard_graficos" class="mt-5">
+          <div class="row dashboard-chart-grid">
             <div id="grafico_multas_wrapper" class="col-12 col-md-6 mb-3">
               <div class="card p-3 shadow-sm border-0">
                 <h5>Multas por Integrante</h5>
