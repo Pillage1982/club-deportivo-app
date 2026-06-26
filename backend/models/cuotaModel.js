@@ -39,7 +39,9 @@ exports.obtenerSociosActivos = (callback) => {
 
     FROM personas
 
-    WHERE activo = 1
+    WHERE
+      activo = 1
+      AND COALESCE(estado, 'activo') = 'activo'
 
   `;
 

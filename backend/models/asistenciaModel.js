@@ -13,9 +13,27 @@ exports.crearAsistencia = (data, callback) => {
   // Registra asistencia evento
   // incluyendo estado y atraso
   const query = `
-    INSERT INTO asistencias
-    (evento_id, persona_id, estado, minutos_atraso)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO asistencias (
+      evento_id,
+      persona_id,
+      estado,
+      minutos_atraso
+    )
+
+    SELECT
+      ?,
+      p.id,
+      ?,
+      ?
+
+    FROM personas p
+
+    WHERE
+      p.id = ?
+      AND
+      p.activo = 1
+      AND
+      COALESCE(p.estado, 'activo') = 'activo'
   `;
 
   // Ejecuta inserción MySQL
@@ -23,12 +41,11 @@ exports.crearAsistencia = (data, callback) => {
     query,
     [
       data.evento_id,
-      data.persona_id,
       data.estado,
-
       // Minutos solo aplican
       // cuando estado es atrasado
-      data.minutos
+      data.minutos,
+      data.persona_id
     ],
     callback
   );

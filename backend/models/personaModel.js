@@ -20,7 +20,9 @@ exports.obtenerPersonas = (callback) => {
 
       telefono,
 
-      fecha_nacimiento
+      fecha_nacimiento,
+
+      COALESCE(estado, 'activo') AS estado
 
     FROM personas
 
@@ -47,10 +49,11 @@ exports.crearPersona = (
       apellido_materno,
       email,
       telefono,
-      fecha_nacimiento
+      fecha_nacimiento,
+      estado
     )
 
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 
   `;
 
@@ -65,7 +68,8 @@ exports.crearPersona = (
       data.apellido_materno,
       data.email,
       data.telefono,
-      data.fecha_nacimiento || null
+      data.fecha_nacimiento || null,
+      data.estado || 'activo'
     ],
 
     callback
@@ -177,7 +181,8 @@ exports.actualizarPersona = (
       apellido_materno = ?,
       email = ?,
       telefono = ?,
-      fecha_nacimiento = ?
+      fecha_nacimiento = ?,
+      estado = ?
 
     WHERE id = ?
 
@@ -196,6 +201,7 @@ exports.actualizarPersona = (
       data.email,
       data.telefono,
       data.fecha_nacimiento || null,
+      data.estado || 'activo',
 
       id
 
@@ -216,7 +222,9 @@ exports.eliminarPersona = (
 
     UPDATE personas
 
-    SET activo = 0
+    SET
+      activo = 0,
+      estado = 'inactivo'
 
     WHERE id = ?
 
