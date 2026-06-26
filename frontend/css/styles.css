@@ -129,23 +129,23 @@ body {
   order: 40;
 }
 
-#finanzas {
+#eventos {
   order: 50;
 }
 
-#multas {
+#modulo_personas {
   order: 60;
 }
 
-#modulo_personas {
+#modulo_pagos {
   order: 70;
 }
 
-#eventos {
+#finanzas {
   order: 80;
 }
 
-#modulo_pagos {
+#multas {
   order: 90;
 }
 
