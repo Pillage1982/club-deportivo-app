@@ -6,6 +6,7 @@ let qrAsistenciaStream = null;
 let qrAsistenciaDetector = null;
 let qrAsistenciaEscaneando = false;
 let qrAsistenciaUltimaLectura = '';
+let qrAsistenciaCanvas = null;
 
 function registrarAsistencia() {
 
@@ -223,14 +224,6 @@ async function iniciarEscaneoAsistencia() {
     qrAsistenciaDetector =
       await crearDetectorQrAsistencia();
 
-    if (!qrAsistenciaDetector) {
-      actualizarEstadoQrAsistencia(
-        'Este navegador no permite lectura directa. Puede pegar la lectura en el campo manual.',
-        'warning'
-      );
-      return;
-    }
-
     qrAsistenciaStream =
       await navigator.mediaDevices.getUserMedia({
         video: {
@@ -248,7 +241,9 @@ async function iniciarEscaneoAsistencia() {
     qrAsistenciaEscaneando = true;
     qrAsistenciaUltimaLectura = '';
     actualizarEstadoQrAsistencia(
-      'Cámara activa. Acerque la credencial o carnet al lector.',
+      qrAsistenciaDetector
+        ? 'Camara activa. Acerque la credencial o carnet al lector.'
+        : 'Camara activa en modo compatible. Acerque bien el QR al lector.',
       'primary'
     );
 
@@ -308,32 +303,101 @@ async function escanearFrameAsistencia() {
 
   if (
     !qrAsistenciaEscaneando ||
-    !video ||
-    !qrAsistenciaDetector
+    !video
   ) {
     return;
   }
 
   try {
-    const codigos =
-      await qrAsistenciaDetector.detect(video);
+    const lectura =
+      qrAsistenciaDetector
+        ? await detectarLecturaNativaAsistencia(video)
+        : detectarLecturaCompatibleAsistencia(video);
 
-    if (codigos.length > 0) {
-      const lectura =
-        codigos[0].rawValue || '';
-
-      if (lectura && lectura !== qrAsistenciaUltimaLectura) {
-        qrAsistenciaUltimaLectura = lectura;
-        detenerEscaneoAsistencia();
-        procesarLecturaAsistencia(lectura);
-        return;
-      }
+    if (lectura && lectura !== qrAsistenciaUltimaLectura) {
+      qrAsistenciaUltimaLectura = lectura;
+      detenerEscaneoAsistencia();
+      procesarLecturaAsistencia(lectura);
+      return;
     }
   } catch (err) {
     console.error(err);
   }
 
   requestAnimationFrame(escanearFrameAsistencia);
+}
+
+async function detectarLecturaNativaAsistencia(video) {
+  const codigos =
+    await qrAsistenciaDetector.detect(video);
+
+  if (codigos.length === 0) {
+    return '';
+  }
+
+  return codigos[0].rawValue || '';
+}
+
+function detectarLecturaCompatibleAsistencia(video) {
+  if (typeof jsQR !== 'function') {
+    actualizarEstadoQrAsistencia(
+      'No se pudo cargar el lector compatible. Recargue la pagina o use lectura manual.',
+      'warning'
+    );
+    return '';
+  }
+
+  if (
+    video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
+    video.videoWidth === 0 ||
+    video.videoHeight === 0
+  ) {
+    return '';
+  }
+
+  if (!qrAsistenciaCanvas) {
+    qrAsistenciaCanvas =
+      document.createElement('canvas');
+  }
+
+  const contexto =
+    qrAsistenciaCanvas.getContext('2d', {
+      willReadFrequently: true
+    });
+
+  qrAsistenciaCanvas.width =
+    video.videoWidth;
+
+  qrAsistenciaCanvas.height =
+    video.videoHeight;
+
+  contexto.drawImage(
+    video,
+    0,
+    0,
+    qrAsistenciaCanvas.width,
+    qrAsistenciaCanvas.height
+  );
+
+  const imagen =
+    contexto.getImageData(
+      0,
+      0,
+      qrAsistenciaCanvas.width,
+      qrAsistenciaCanvas.height
+    );
+
+  const codigo =
+    jsQR(
+      imagen.data,
+      imagen.width,
+      imagen.height,
+      {
+        inversionAttempts: 'dontInvert'
+      }
+    );
+
+  return codigo ? codigo.data : '';
 }
 
 function procesarLecturaAsistenciaManual() {
