@@ -487,10 +487,13 @@ async function buscarPersonaPorLecturaAsistencia(lectura) {
 
 async function obtenerPersonasParaQrAsistencia() {
   if (
+    typeof personasTabla !== 'undefined' &&
     Array.isArray(personasTabla) &&
     personasTabla.length > 0
   ) {
-    return personasTabla;
+    return personasTabla.filter(
+      persona => (persona.estado || 'activo') === 'activo'
+    );
   }
 
   const res =
@@ -507,8 +510,13 @@ async function obtenerPersonasParaQrAsistencia() {
     );
   }
 
-  personasTabla = data;
-  return personasTabla;
+  if (typeof personasTabla !== 'undefined') {
+    personasTabla = data;
+  }
+
+  return data.filter(
+    persona => (persona.estado || 'activo') === 'activo'
+  );
 }
 
 function extraerDatosLecturaAsistencia(lectura) {

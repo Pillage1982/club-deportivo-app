@@ -25,6 +25,12 @@ exports.registrar = (req, res) => {
   });
 }
 
+if (!result || result.affectedRows === 0) {
+  return res.status(400).json({
+    mensaje: 'El integrante no esta activo para registrar asistencia.'
+  });
+}
+
 res.json({
   mensaje: 'Asistencia registrada'
 });

@@ -67,11 +67,16 @@ function normalizarPersona(data) {
     apellido_materno: limpiarTexto(data.apellido_materno),
     email: limpiarTexto(data.email).toLowerCase(),
     telefono: limpiarTexto(data.telefono),
-    fecha_nacimiento: data.fecha_nacimiento
+    fecha_nacimiento: data.fecha_nacimiento,
+    estado: limpiarTexto(data.estado || 'activo').toLowerCase()
   };
 }
 
 function validarPersona(data) {
+  if (!['activo', 'receso'].includes(data.estado)) {
+    return 'Seleccione un estado de integrante valido';
+  }
+
   if (!validarRut(data.rut)) {
     return 'Ingrese un RUT chileno válido';
   }
