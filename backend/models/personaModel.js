@@ -74,6 +74,91 @@ exports.crearPersona = (
 
 };
 
+exports.obtenerPersonaPorRutIncluyendoInactivos = (
+  rut,
+  callback
+) => {
+  const query = `
+
+    SELECT
+      id,
+      rut,
+      nombres,
+      apellido_paterno,
+      apellido_materno,
+      email,
+      telefono,
+      fecha_nacimiento,
+      activo
+
+    FROM personas
+
+    WHERE
+      REPLACE(
+        REPLACE(
+          REPLACE(
+            UPPER(rut),
+            '.',
+            ''
+          ),
+          '-',
+          ''
+        ),
+        ' ',
+        ''
+      ) = ?
+
+    LIMIT 1
+
+  `;
+
+  db.query(
+    query,
+    [rut],
+    callback
+  );
+};
+
+exports.reactivarPersona = (
+  id,
+  data,
+  callback
+) => {
+  const query = `
+
+    UPDATE personas
+
+    SET
+
+      rut = ?,
+      nombres = ?,
+      apellido_paterno = ?,
+      apellido_materno = ?,
+      email = ?,
+      telefono = ?,
+      fecha_nacimiento = ?,
+      activo = 1
+
+    WHERE id = ?
+
+  `;
+
+  db.query(
+    query,
+    [
+      data.rut,
+      data.nombres,
+      data.apellido_paterno,
+      data.apellido_materno,
+      data.email,
+      data.telefono,
+      data.fecha_nacimiento || null,
+      id
+    ],
+    callback
+  );
+};
+
 exports.actualizarPersona = (
   id,
   data,
