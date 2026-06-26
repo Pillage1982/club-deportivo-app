@@ -168,6 +168,18 @@ function prepararDatosDashboard(data) {
       ].includes(asistencia.estado);
     }).length;
 
+  const asistenciaEnsayos =
+    calcularResumenAsistenciaPorTipo(
+      asistencias,
+      ['entrenamiento']
+    );
+
+  const asistenciaPresentaciones =
+    calcularResumenAsistenciaPorTipo(
+      asistencias,
+      ['partido']
+    );
+
   const cuotasPendientes =
     cuotas.filter(cuota => {
       return cuota.estado === 'pendiente' ||
@@ -183,8 +195,71 @@ function prepararDatosDashboard(data) {
     proximasActividades,
     totalAsistencias: asistencias.length,
     asistenciasConProblema,
-    cuotasPendientes
+    cuotasPendientes,
+    asistenciaEnsayos,
+    asistenciaPresentaciones
   };
+}
+
+function calcularResumenAsistenciaPorTipo(asistencias, tipos) {
+  const registros =
+    asistencias.filter(asistencia => {
+      return tipos.includes(asistencia.tipo_evento);
+    });
+
+  const presentes =
+    registros.filter(asistencia => {
+      return [
+        'presente',
+        'atrasado'
+      ].includes(asistencia.estado);
+    }).length;
+
+  const total =
+    registros.length;
+
+  return {
+    presentes,
+    total,
+    porcentaje: total > 0
+      ? Math.round((presentes / total) * 100)
+      : 0
+  };
+}
+
+function actualizarEstadisticasAsistenciaDashboard(datos) {
+  const ensayosPorcentaje =
+    document.getElementById('asistencia_ensayos_porcentaje');
+
+  const ensayosDetalle =
+    document.getElementById('asistencia_ensayos_detalle');
+
+  const presentacionesPorcentaje =
+    document.getElementById('asistencia_presentaciones_porcentaje');
+
+  const presentacionesDetalle =
+    document.getElementById('asistencia_presentaciones_detalle');
+
+  if (
+    !ensayosPorcentaje ||
+    !ensayosDetalle ||
+    !presentacionesPorcentaje ||
+    !presentacionesDetalle
+  ) {
+    return;
+  }
+
+  ensayosPorcentaje.innerText =
+    `${datos.asistenciaEnsayos.porcentaje}%`;
+
+  ensayosDetalle.innerText =
+    `${datos.asistenciaEnsayos.presentes} presentes de ${datos.asistenciaEnsayos.total} registros`;
+
+  presentacionesPorcentaje.innerText =
+    `${datos.asistenciaPresentaciones.porcentaje}%`;
+
+  presentacionesDetalle.innerText =
+    `${datos.asistenciaPresentaciones.presentes} presentes de ${datos.asistenciaPresentaciones.total} registros`;
 }
 
 function actualizarTarjetaDashboard(config) {
@@ -216,6 +291,8 @@ function actualizarTarjetaDashboard(config) {
 }
 
 function aplicarDashboardPorRol(datos) {
+  actualizarEstadisticasAsistenciaDashboard(datos);
+
   const rol =
     obtenerRolActual();
 
