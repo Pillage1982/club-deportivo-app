@@ -396,25 +396,27 @@ function renderizarTablaPersonas(personas) {
             ${obtenerBadgeEstadoPersona(persona.estado)}
           </td>
 
-          <td>
+          <td class="text-nowrap">
 
-            <button
-              class="btn btn-warning btn-sm"
-              onclick='editarPersona(${JSON.stringify(persona)}
-            )'>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
+              <button
+                type="button"
+                class="btn btn-outline-warning"
+                title="Editar"
+                aria-label="Editar"
+                onclick='editarPersona(${JSON.stringify(persona)})'>
+                &#9998;
+              </button>
 
-              Editar
-
-            </button>
-
-            <button
-              class="btn btn-danger btn-sm"
-              onclick='eliminarPersona(${persona.id}
-            )'>
-
-              Eliminar
-
-            </button>
+              <button
+                type="button"
+                class="btn btn-outline-danger"
+                title="Eliminar"
+                aria-label="Eliminar"
+                onclick='eliminarPersona(${persona.id})'>
+                &times;
+              </button>
+            </div>
 
           </td>
 

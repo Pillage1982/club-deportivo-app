@@ -354,24 +354,35 @@ function renderizarTablaEventos(eventos) {
           }
         </td>
 
-        <td>
-          ${!finalizado ? `
-          <button
-            class="btn btn-warning btn-sm"
-            onclick='editarEvento(${JSON.stringify(evento)})'>
-            Editar
-          </button>
-          <button
-            class="btn btn-secondary btn-sm"
-            onclick='cerrarEvento(${evento.id})'>
-            Finalizar
-          </button>
-          ` : ''}
-          <button
-            class="btn btn-danger btn-sm"
-            onclick='eliminarEvento(${evento.id})'>
-            Eliminar
-          </button>
+        <td class="text-nowrap">
+          <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
+            ${!finalizado ? `
+            <button
+              type="button"
+              class="btn btn-outline-warning"
+              title="Editar"
+              aria-label="Editar"
+              onclick='editarEvento(${JSON.stringify(evento)})'>
+              &#9998;
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              title="Finalizar"
+              aria-label="Finalizar"
+              onclick='cerrarEvento(${evento.id})'>
+              &#10003;
+            </button>
+            ` : ''}
+            <button
+              type="button"
+              class="btn btn-outline-danger"
+              title="Eliminar"
+              aria-label="Eliminar"
+              onclick='eliminarEvento(${evento.id})'>
+              &times;
+            </button>
+          </div>
         </td>
 
       </tr>
