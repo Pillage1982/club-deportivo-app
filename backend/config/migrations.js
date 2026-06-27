@@ -146,9 +146,20 @@ async function asegurarCamposPersonas() {
   }
 }
 
+async function asegurarCampoFinalizadoEventos() {
+  const existe = await columnaExiste('eventos', 'finalizado');
+  if (!existe) {
+    await ejecutar(`
+      ALTER TABLE eventos
+      ADD COLUMN finalizado TINYINT(1) NOT NULL DEFAULT 0
+    `);
+  }
+}
+
 async function ejecutarMigraciones() {
   await asegurarEstadoIntegrantes();
   await asegurarCamposPersonas();
+  await asegurarCampoFinalizadoEventos();
   await reconstruirVistaEstadoFinanciero();
 }
 

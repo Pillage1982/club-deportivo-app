@@ -1,4 +1,6 @@
 const eventoModel = require('../models/eventoModel');
+const asistenciaModel = require('../models/asistenciaModel');
+const multaModel = require('../models/multaModel');
 
 const tiposPermitidos = [
   'entrenamiento',
@@ -146,5 +148,61 @@ exports.eliminar = (req, res) => {
     }
 
   );
+
+};
+
+exports.cerrar = (req, res) => {
+
+  const id = req.params.id;
+
+  eventoModel.obtenerEventoPorId(id, (err, evento) => {
+
+    if (err) {
+      return res.status(500).json({ mensaje: 'Error al verificar actividad' });
+    }
+
+    if (!evento) {
+      return res.status(404).json({ mensaje: 'Actividad no encontrada' });
+    }
+
+    if (evento.finalizado) {
+      return res.status(400).json({ mensaje: 'La actividad ya está finalizada' });
+    }
+
+    asistenciaModel.registrarAusentesEvento(id, (ausErr, ausResult) => {
+
+      if (ausErr) {
+        return res.status(500).json({ mensaje: 'Error al registrar ausentes' });
+      }
+
+      const totalAusentes = ausResult ? ausResult.affectedRows : 0;
+
+      multaModel.crearMultasAusentes(id, (multaErr) => {
+
+        if (multaErr) {
+          return res.status(500).json({ mensaje: 'Error al generar multas por inasistencia' });
+        }
+
+        eventoModel.cerrarEvento(id, (cerrarErr) => {
+
+          if (cerrarErr) {
+            return res.status(500).json({ mensaje: 'Error al finalizar actividad' });
+          }
+
+          const detalle = totalAusentes > 0
+            ? ` Se registraron ${totalAusentes} ausente(s) con multa de $5.000.`
+            : ' Todos los integrantes tenían asistencia registrada.';
+
+          res.json({
+            mensaje: `Actividad finalizada.${detalle}`
+          });
+
+        });
+
+      });
+
+    });
+
+  });
 
 };

@@ -73,8 +73,11 @@ function cargarEventos() {
         const option = document.createElement('option');
 
         option.value = evento.id;
-        option.textContent = evento.nombre;
+        option.textContent = evento.finalizado
+          ? `${evento.nombre} (Cerrado)`
+          : evento.nombre;
         option.dataset.fecha = evento.fecha || '';
+        option.dataset.finalizado = evento.finalizado ? '1' : '0';
 
         select.appendChild(option);
 
@@ -379,6 +382,8 @@ function renderizarTablaEventos(eventos) {
 
   eventos.forEach(evento => {
 
+    const finalizado = evento.finalizado ? 1 : 0;
+
     // Acciones CRUD eventos
     tabla.innerHTML += `
 
@@ -404,26 +409,36 @@ function renderizarTablaEventos(eventos) {
           ${evento.descripcion || ''}
         </td>
 
+        <td>
+          ${finalizado
+            ? '<span class="badge bg-secondary">Finalizado</span>'
+            : '<span class="badge bg-success">Activo</span>'
+          }
+        </td>
+
         <td class="text-nowrap">
 
           <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
+
+            ${!finalizado ? `
             <button
-
               type="button"
-
               class="btn btn-outline-warning"
-
               title="Editar"
-
               aria-label="Editar"
-
-              onclick='editarEvento(
-                ${JSON.stringify(evento)}
-              )'>
-
+              onclick='editarEvento(${JSON.stringify(evento)})'>
               &#9998;
-
             </button>
+
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              title="Finalizar"
+              aria-label="Finalizar"
+              onclick='cerrarEvento(${evento.id})'>
+              &#10003;
+            </button>
+            ` : ''}
 
             <button
 
@@ -594,5 +609,56 @@ function ejecutarEliminarEvento(id) {
       'danger'
     );
   });
+
+}
+
+// =====================================
+// FINALIZAR EVENTO
+// =====================================
+
+function cerrarEvento(id) {
+
+  mostrarConfirmacion(
+    'Al finalizar esta actividad ya no se podrá registrar asistencia. ¿Deseas continuar?',
+    () => ejecutarCerrarEvento(id)
+  );
+
+}
+
+function ejecutarCerrarEvento(id) {
+
+  fetch(`${API_URL}/eventos/${id}/cerrar`, {
+
+    method: 'PATCH',
+
+    headers: getAuthHeaders()
+
+  })
+
+  .then(async res => {
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.mensaje || 'Error al finalizar actividad');
+    }
+
+    return data;
+
+  })
+
+  .then(data => {
+
+    mostrarAlerta(data.mensaje, 'success');
+
+    cargarTablaEventos();
+    cargarEventos();
+
+  })
+
+  .catch(err => mostrarAlerta(
+    obtenerMensajeError(err, 'No se pudo finalizar la actividad'),
+    'danger'
+  ));
 
 }

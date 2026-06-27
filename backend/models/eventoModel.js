@@ -15,7 +15,9 @@ exports.obtenerEventos = (callback) => {
 
     ubicacion,
 
-    descripcion
+    descripcion,
+
+    finalizado
 
   FROM eventos
 
@@ -124,4 +126,23 @@ exports.eliminarEvento = (
     callback
   );
 
+};
+
+exports.obtenerEventoPorId = (id, callback) => {
+  db.query(
+    'SELECT * FROM eventos WHERE id = ?',
+    [id],
+    (err, rows) => {
+      if (err) return callback(err);
+      callback(null, rows[0] || null);
+    }
+  );
+};
+
+exports.cerrarEvento = (id, callback) => {
+  db.query(
+    'UPDATE eventos SET finalizado = 1 WHERE id = ?',
+    [id],
+    callback
+  );
 };
