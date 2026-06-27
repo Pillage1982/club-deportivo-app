@@ -271,15 +271,10 @@ function detenerEscaneoAsistencia() {
     wrapper.classList.add('d-none');
   }
 
-  const btnIniciar =
-    document.getElementById('btn_iniciar_qr');
-
   const btnDetener =
     document.getElementById('btn_detener_qr');
 
-  if (btnIniciar) {
-    btnIniciar.disabled = false;
-  }
+  actualizarBotonesEscaneoQr();
 
   if (btnDetener) {
     btnDetener.disabled = true;
