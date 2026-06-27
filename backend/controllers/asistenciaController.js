@@ -3,7 +3,23 @@
 // =====================================
 
 const asistenciaModel = require('../models/asistenciaModel');
+const multaModel = require('../models/multaModel');
 
+function calcularMultaAsistencia(estado, minutos) {
+  if (estado === 'ausente') {
+    return { monto: 5000, motivo: 'Inasistencia a actividad' };
+  }
+
+  if (estado === 'atrasado') {
+    const mins = Number(minutos) || 0;
+    return {
+      monto: mins < 10 ? 1000 : 3000,
+      motivo: 'Atraso a actividad'
+    };
+  }
+
+  return null;
+}
 
 // =====================================
 // REGISTRAR ASISTENCIA
@@ -31,24 +47,24 @@ exports.registrar = (req, res) => {
       });
     }
 
-    asistenciaModel.crearMultaSiCorresponde(
-      req.body,
-      result.insertId,
-      (errMulta, resultadoMulta) => {
-        if (errMulta) {
-          console.error('Error generando multa:', errMulta);
-          return res.status(500).json({
-            mensaje: 'Asistencia registrada, pero no se pudo generar la multa'
-          });
-        }
+    const multa = calcularMultaAsistencia(req.body.estado, req.body.minutos);
 
-        res.json({
-          mensaje: resultadoMulta.multaGenerada
-            ? `Asistencia registrada. Multa generada: ${resultadoMulta.motivo}`
-            : 'Asistencia registrada'
-        });
+    if (!multa) {
+      return res.json({ mensaje: 'Asistencia registrada' });
+    }
+
+    multaModel.crearMultaAsistencia({
+      persona_id: req.body.persona_id,
+      asistencia_id: result.insertId,
+      monto: multa.monto,
+      motivo: multa.motivo
+    }, (multaErr) => {
+      if (multaErr) {
+        console.error('Error creando multa:', multaErr);
       }
-    );
+
+      res.json({ mensaje: 'Asistencia registrada' });
+    });
 
   });
 
@@ -66,7 +82,6 @@ exports.listar = (req, res) => {
       return res.status(500).send(err);
     }
 
-    // Devuelve historial asistencias
     res.json(results);
 
   });
