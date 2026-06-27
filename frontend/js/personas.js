@@ -271,12 +271,6 @@ document.getElementById(
 
     data.forEach(persona => {
 
-    const edad =
-    calcularEdad(persona.fecha_nacimiento);
-
-    const categoria =
-    calcularCategoria(persona.fecha_nacimiento);
-
     // Acciones CRUD personas
     tabla.innerHTML += `
 
@@ -315,11 +309,7 @@ document.getElementById(
           </td>
 
           <td>
-            ${edad}
-          </td>
-
-          <td>
-            ${categoria}
+            ${persona.fecha_nacimiento ? formatearFecha(persona.fecha_nacimiento) : ''}
           </td>
 
           <td>
