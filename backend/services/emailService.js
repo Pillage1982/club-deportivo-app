@@ -1,29 +1,53 @@
-const nodemailer = require('nodemailer');
+let nodemailer = null;
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+try {
+  nodemailer = require('nodemailer');
+} catch (e) {
+  console.warn('[Email] nodemailer no disponible. Ejecute npm install en el servidor.');
+}
 
 function emailConfigurado() {
+  if (!nodemailer) return false;
   const pass = process.env.EMAIL_PASS || '';
   return pass.length > 0 && pass !== 'REEMPLAZAR_CON_CLAVE_DE_APLICACION';
 }
 
+function crearTransporter() {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+}
+
 function enviarCorreo({ destinatario, asunto, cuerpo }) {
   if (!emailConfigurado()) {
-    console.warn('[Email] Credenciales no configuradas. Correo no enviado a:', destinatario);
+    console.warn('[Email] No configurado. Correo no enviado a:', destinatario);
     return Promise.resolve();
   }
 
-  return transporter.sendMail({
+  return crearTransporter().sendMail({
     from: `"Gran Diablada Calameña" <${process.env.EMAIL_USER}>`,
     to: destinatario,
     subject: asunto,
     html: cuerpo
+  });
+}
+
+function formatearFechaTexto(fecha) {
+  if (!fecha) return '';
+
+  const d = new Date(String(fecha).replace(' ', 'T'));
+
+  if (Number.isNaN(d.getTime())) return String(fecha).substring(0, 10);
+
+  return d.toLocaleDateString('es-CL', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
   });
 }
 
@@ -62,21 +86,6 @@ function notificarAusenteEvento(persona, evento) {
     destinatario: persona.email,
     asunto: `Ausencia registrada — ${evento.nombre}`,
     cuerpo
-  });
-}
-
-function formatearFechaTexto(fecha) {
-  if (!fecha) return '';
-
-  const d = new Date(String(fecha).replace(' ', 'T'));
-
-  if (Number.isNaN(d.getTime())) return String(fecha).substring(0, 10);
-
-  return d.toLocaleDateString('es-CL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
   });
 }
 
