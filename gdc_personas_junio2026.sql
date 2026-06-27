@@ -320,7 +320,8 @@ Casa', 'Ingrisordenes17@gmail.com', '9-96719875', '1987-06-24', '2007-09-09', 'a
   ('21958927-1', 'Millaray Yubinza', 'Lincopi', 'Gonzalez', 'Jukumaris', 'Femenino', 'Los Robles 1747', 'millaray.ylg@gmail.com', '979668124', '2005-10-22', '2024-09-27', 'activo', 1),
   ('21086809-7', 'Nicolas Isaac', 'Caro', 'Muñoz', 'Jukumaris', 'Masculino', 'Héctor Pumarino Soto 662', 'nicolascaromunoz@gmail.com', '974533976', '2002-08-06', '2015-09-09', 'activo', 1),
   ('18362574-8', 'Nicole Patricia', 'Magna', 'Magna', 'Jukumaris', 'femenino', 'Carlos Condell 1880', 'nicole.magna.magna@gmail.com', '920213258', '1993-03-10', '2025-09-26', 'activo', 1),
-  ('24217189-6', 'Sayumi Ayanami', 'Silva', 'Valdivia', 'Jukumaris', 'Femenino', 'Costa Rica 2893 Casa 1', 'jvaldiviasalva@gmail.com', '989130352', '2013-03-12', '2013-09-09', 'activo', 1),
+  -- OMITIDO: RUT 24217189-6 duplicado con Sebastian Gonzalez Segovia (Figurines/Condor). Verificar RUT correcto en Excel y agregar manualmente.
+  -- ('24217189-6', 'Sayumi Ayanami', 'Silva', 'Valdivia', 'Jukumaris', 'Femenino', 'Costa Rica 2893 Casa 1', 'jvaldiviasalva@gmail.com', '989130352', '2013-03-12', '2013-09-09', 'activo', 1),
   ('19552326-6', 'Sebastián Alejandro', 'Lara', 'Rodriguez', 'Jukumaris', 'Masculino', 'José Joaquin Prieto 2037', 's.97.lara@gmail.com', '968487181', '1997-09-29', '2020-09-09', 'activo', 1),
   ('21005219-4', 'Tomas', 'Montoya', 'Cruz', 'Jukumaris', 'Masculino', 'Puritama 363', 'tomas_2515@icloud.com', '942716745', '2002-04-25', '2022-09-29', 'activo', 1),
   ('16450297-k', 'Victor Manuel', 'Gahona', 'Lopez', 'Jukumaris', 'Masculino', 'Curico 2587', 'victorgahona1986@gmail.com', '939293501', '1986-09-21', '2024-09-27', 'activo', 1),
