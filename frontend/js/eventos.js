@@ -4,6 +4,20 @@
 
 let eventoEditando = null;
 let eventosAsistencia = [];
+let eventosCargados = [];
+
+function normalizarTextoEvento(valor) {
+  return String(valor || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim();
+}
+
+function obtenerFechaEvento(fecha) {
+  if (!fecha) return '';
+  return String(fecha).substring(0, 10);
+}
 
 function obtenerTipoActividad(tipo) {
 
@@ -249,13 +263,6 @@ function cargarTablaEventos() {
 
   .then(data => {
 
-    const tabla =
-      document.getElementById(
-        'tabla_eventos'
-      );
-
-    tabla.innerHTML = '';
-
     if (!Array.isArray(data)) {
       mostrarAlerta(
         data.mensaje || 'No se pudo cargar la tabla de actividades',
@@ -264,83 +271,142 @@ function cargarTablaEventos() {
       return;
     }
 
-    data.forEach(evento => {
-
-      const finalizado = evento.finalizado ? 1 : 0;
-
-      // Acciones CRUD eventos
-      tabla.innerHTML += `
-
-        <tr>
-
-          <td>
-            ${evento.nombre}
-          </td>
-
-          <td>
-            ${obtenerTipoActividad(evento.tipo)}
-          </td>
-
-          <td>
-            ${formatearFechaHora(evento.fecha)}
-          </td>
-
-          <td>
-            ${evento.ubicacion || ''}
-          </td>
-
-          <td>
-            ${evento.descripcion || ''}
-          </td>
-
-          <td>
-            ${finalizado
-              ? '<span class="badge bg-secondary">Finalizado</span>'
-              : '<span class="badge bg-success">Activo</span>'
-            }
-          </td>
-
-          <td>
-
-            ${!finalizado ? `
-            <button
-              class="btn btn-warning btn-sm"
-              onclick='editarEvento(${JSON.stringify(evento)})'>
-              Editar
-            </button>
-
-            <button
-              class="btn btn-secondary btn-sm"
-              onclick='cerrarEvento(${evento.id})'>
-              Finalizar
-            </button>
-            ` : ''}
-
-            <button
-
-              class="btn btn-danger btn-sm"
-
-              onclick='eliminarEvento(
-                ${evento.id}
-              )'>
-
-              Eliminar
-
-            </button>
-
-          </td>
-
-
-        </tr>
-
-      `;
-
-    });
+    eventosCargados = data;
+    renderizarTablaEventos(filtrarEventos(data));
 
   })
 
   .catch(err => console.error(err));
 
+}
+
+function filtrarEventos(eventos) {
+  const busqueda =
+    normalizarTextoEvento(
+      document.getElementById('buscar_eventos')?.value
+    );
+
+  const tipo =
+    document.getElementById('filtro_evento_tipo')?.value || '';
+
+  const fecha =
+    document.getElementById('filtro_evento_fecha')?.value || '';
+
+  return eventos.filter(evento => {
+    const textoEvento = normalizarTextoEvento([
+      evento.nombre,
+      evento.ubicacion,
+      evento.descripcion
+    ].join(' '));
+
+    const coincideBusqueda =
+      !busqueda || textoEvento.includes(busqueda);
+
+    const coincideTipo =
+      !tipo || evento.tipo === tipo;
+
+    const coincideFecha =
+      !fecha || obtenerFechaEvento(evento.fecha) === fecha;
+
+    return coincideBusqueda && coincideTipo && coincideFecha;
+  });
+}
+
+function renderizarTablaEventos(eventos) {
+  const tabla =
+    document.getElementById('tabla_eventos');
+
+  tabla.innerHTML = '';
+
+  if (!eventos.length) {
+    tabla.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center text-muted">
+          No hay actividades para los filtros seleccionados
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  eventos.forEach(evento => {
+
+    const finalizado = evento.finalizado ? 1 : 0;
+
+    tabla.innerHTML += `
+
+      <tr>
+
+        <td>${evento.nombre}</td>
+
+        <td>${obtenerTipoActividad(evento.tipo)}</td>
+
+        <td>${formatearFechaHora(evento.fecha)}</td>
+
+        <td>${evento.ubicacion || ''}</td>
+
+        <td>${evento.descripcion || ''}</td>
+
+        <td>
+          ${finalizado
+            ? '<span class="badge bg-secondary">Finalizado</span>'
+            : '<span class="badge bg-success">Activo</span>'
+          }
+        </td>
+
+        <td>
+          ${!finalizado ? `
+          <button
+            class="btn btn-warning btn-sm"
+            onclick='editarEvento(${JSON.stringify(evento)})'>
+            Editar
+          </button>
+          <button
+            class="btn btn-secondary btn-sm"
+            onclick='cerrarEvento(${evento.id})'>
+            Finalizar
+          </button>
+          ` : ''}
+          <button
+            class="btn btn-danger btn-sm"
+            onclick='eliminarEvento(${evento.id})'>
+            Eliminar
+          </button>
+        </td>
+
+      </tr>
+
+    `;
+
+  });
+}
+
+function aplicarFiltrosEventos() {
+  renderizarTablaEventos(filtrarEventos(eventosCargados));
+}
+
+function limpiarFiltrosEventos() {
+  const buscar = document.getElementById('buscar_eventos');
+  const tipo   = document.getElementById('filtro_evento_tipo');
+  const fecha  = document.getElementById('filtro_evento_fecha');
+
+  if (buscar) buscar.value = '';
+  if (tipo)   tipo.value   = '';
+  if (fecha)  fecha.value  = '';
+
+  aplicarFiltrosEventos();
+}
+
+function configurarFiltrosEventos() {
+  ['buscar_eventos', 'filtro_evento_tipo', 'filtro_evento_fecha']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener(
+        el.tagName === 'INPUT' ? 'input' : 'change',
+        aplicarFiltrosEventos
+      );
+    });
 }
 
 // =====================================
