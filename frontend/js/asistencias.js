@@ -408,8 +408,36 @@ function describirPersonaAsistencia(persona) {
   return `${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}`.trim();
 }
 
+function limpiarFormularioAsistenciaParaLectura() {
+  const persona =
+    document.getElementById('persona_id');
+
+  const estado =
+    document.getElementById('estado');
+
+  const minutos =
+    document.getElementById('minutos');
+
+  if (persona) {
+    persona.value = '';
+  }
+
+  if (estado) {
+    estado.value = 'presente';
+  }
+
+  if (minutos) {
+    minutos.value = 0;
+  }
+}
+
 async function procesarLecturaAsistencia(lectura) {
   let persona = null;
+  let evento = null;
+  const fechaEscaneo =
+    new Date();
+
+  limpiarFormularioAsistenciaParaLectura();
 
   try {
     persona =
@@ -440,11 +468,23 @@ async function procesarLecturaAsistencia(lectura) {
 
   seleccionarPersonaAsistencia(persona);
 
-  const estado =
-    document.getElementById('estado');
+  try {
+    evento =
+      await seleccionarEventoAsistenciaPorFecha(fechaEscaneo);
+  } catch (err) {
+    console.error(err);
+    mostrarAlerta(
+      obtenerMensajeError(
+        err,
+        'No se pudo seleccionar la actividad del dia'
+      ),
+      'danger'
+    );
+    return;
+  }
 
-  if (estado) {
-    estado.value = 'presente';
+  if (evento) {
+    aplicarAtrasoAsistencia(evento, fechaEscaneo);
   }
 
   actualizarEstadoQrAsistencia(
@@ -452,11 +492,11 @@ async function procesarLecturaAsistencia(lectura) {
     'success'
   );
 
-  if (document.getElementById('evento_id').value) {
+  if (evento && document.getElementById('evento_id').value) {
     registrarAsistencia();
   } else {
     mostrarAlerta(
-      'Seleccione una actividad para registrar la asistencia',
+      'No se encontro una actividad para la fecha del escaneo',
       'warning'
     );
   }
@@ -518,6 +558,138 @@ async function obtenerPersonasParaQrAsistencia() {
   return data.filter(
     persona => (persona.estado || 'activo') === 'activo'
   );
+}
+
+async function obtenerEventosParaQrAsistencia() {
+  if (
+    typeof eventosAsistencia !== 'undefined' &&
+    Array.isArray(eventosAsistencia) &&
+    eventosAsistencia.length > 0
+  ) {
+    return eventosAsistencia;
+  }
+
+  const res =
+    await fetch(`${API_URL}/eventos`, {
+      headers: getAuthHeaders()
+    });
+
+  const data =
+    await leerRespuestaJson(res);
+
+  if (!res.ok || !Array.isArray(data)) {
+    throw new Error(
+      data.mensaje || 'No se pudieron cargar las actividades'
+    );
+  }
+
+  if (typeof eventosAsistencia !== 'undefined') {
+    eventosAsistencia = data;
+  }
+
+  return data;
+}
+
+function parsearFechaEventoAsistencia(fecha) {
+  const texto =
+    String(fecha || '').trim();
+
+  if (!texto) {
+    return null;
+  }
+
+  const fechaNormalizada =
+    texto.includes('T')
+      ? texto
+      : texto.replace(' ', 'T');
+
+  const resultado =
+    new Date(fechaNormalizada);
+
+  if (Number.isNaN(resultado.getTime())) {
+    return null;
+  }
+
+  return resultado;
+}
+
+function esMismaFechaAsistencia(fechaEvento, fechaEscaneo) {
+  return (
+    fechaEvento.getFullYear() === fechaEscaneo.getFullYear() &&
+    fechaEvento.getMonth() === fechaEscaneo.getMonth() &&
+    fechaEvento.getDate() === fechaEscaneo.getDate()
+  );
+}
+
+async function seleccionarEventoAsistenciaPorFecha(fechaEscaneo) {
+  const select =
+    document.getElementById('evento_id');
+
+  if (!select) {
+    return null;
+  }
+
+  const eventos =
+    await obtenerEventosParaQrAsistencia();
+
+  const candidatos =
+    eventos
+      .map(evento => ({
+        ...evento,
+        fechaAsistencia: parsearFechaEventoAsistencia(evento.fecha)
+      }))
+      .filter(evento => (
+        evento.fechaAsistencia &&
+        esMismaFechaAsistencia(evento.fechaAsistencia, fechaEscaneo)
+      ))
+      .sort((a, b) => (
+        Math.abs(a.fechaAsistencia - fechaEscaneo) -
+        Math.abs(b.fechaAsistencia - fechaEscaneo)
+      ));
+
+  const evento =
+    candidatos[0] || null;
+
+  select.value =
+    evento ? String(evento.id) : '';
+
+  select.dispatchEvent(new Event('change'));
+
+  return evento;
+}
+
+function aplicarAtrasoAsistencia(evento, fechaEscaneo) {
+  const fechaEvento =
+    evento.fechaAsistencia ||
+    parsearFechaEventoAsistencia(evento.fecha);
+
+  const estado =
+    document.getElementById('estado');
+
+  const minutos =
+    document.getElementById('minutos');
+
+  const minutosAtraso =
+    fechaEvento
+      ? Math.max(
+        0,
+        Math.floor(
+          (fechaEscaneo.getTime() - fechaEvento.getTime()) /
+          60000
+        )
+      )
+      : 0;
+
+  if (estado) {
+    estado.value =
+      minutosAtraso > 0
+        ? 'atrasado'
+        : 'presente';
+  }
+
+  if (minutos) {
+    minutos.value = minutosAtraso;
+  }
 }
 
 function extraerDatosLecturaAsistencia(lectura) {
