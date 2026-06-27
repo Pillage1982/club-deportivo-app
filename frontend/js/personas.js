@@ -96,6 +96,18 @@ function cargarPersonas() {
       'fecha_nacimiento'
     ).value,
 
+    fecha_ingreso:
+      document.getElementById('fecha_ingreso').value || null,
+
+    bloque:
+      document.getElementById('bloque').value,
+
+    sexo:
+      document.getElementById('sexo').value || null,
+
+    direccion:
+      document.getElementById('direccion').value,
+
     estado:
       document.getElementById(
         'persona_estado'
@@ -200,6 +212,11 @@ document.getElementById(
   'fecha_nacimiento'
 ).value = '';
 
+document.getElementById('fecha_ingreso').value = '';
+document.getElementById('bloque').value = '';
+document.getElementById('sexo').value = '';
+document.getElementById('direccion').value = '';
+
 document.getElementById(
   'persona_estado'
 ).value = 'activo';
@@ -257,9 +274,6 @@ document.getElementById(
     const edad =
     calcularEdad(persona.fecha_nacimiento);
 
-    const categoria =
-    calcularCategoria(persona.fecha_nacimiento);
-
     // Acciones CRUD personas
     tabla.innerHTML += `
 
@@ -278,6 +292,14 @@ document.getElementById(
           </td>
 
           <td>
+            ${persona.bloque || ''}
+          </td>
+
+          <td>
+            ${persona.sexo || ''}
+          </td>
+
+          <td>
             ${persona.email || ''}
           </td>
 
@@ -285,12 +307,16 @@ document.getElementById(
             ${persona.telefono || ''}
           </td>
 
+          <td title="${persona.direccion || ''}">
+            ${persona.direccion ? persona.direccion.substring(0, 25) + (persona.direccion.length > 25 ? '…' : '') : ''}
+          </td>
+
           <td>
             ${edad}
           </td>
 
           <td>
-            ${categoria}
+            ${persona.fecha_ingreso ? formatearFecha(persona.fecha_ingreso) : ''}
           </td>
 
           <td>
@@ -368,6 +394,20 @@ function editarPersona(persona) {
     persona.fecha_nacimiento
     ? persona.fecha_nacimiento.split('T')[0]
   : '';
+
+  document.getElementById('fecha_ingreso').value =
+    persona.fecha_ingreso
+      ? persona.fecha_ingreso.split('T')[0]
+      : '';
+
+  document.getElementById('bloque').value =
+    persona.bloque || '';
+
+  document.getElementById('sexo').value =
+    persona.sexo || '';
+
+  document.getElementById('direccion').value =
+    persona.direccion || '';
 
   document.getElementById(
     'persona_estado'

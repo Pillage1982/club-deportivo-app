@@ -55,13 +55,17 @@ exports.crearPersona = (
       nombres,
       apellido_paterno,
       apellido_materno,
+      bloque,
+      sexo,
+      direccion,
       email,
       telefono,
       fecha_nacimiento,
+      fecha_ingreso,
       estado
     )
 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
   `;
 
@@ -74,9 +78,13 @@ exports.crearPersona = (
       data.nombres,
       data.apellido_paterno,
       data.apellido_materno,
+      data.bloque || null,
+      data.sexo || null,
+      data.direccion || null,
       data.email,
       data.telefono,
       data.fecha_nacimiento || null,
+      data.fecha_ingreso || null,
       data.estado || 'activo'
     ],
 
@@ -147,9 +155,13 @@ exports.reactivarPersona = (
       nombres = ?,
       apellido_paterno = ?,
       apellido_materno = ?,
+      bloque = ?,
+      sexo = ?,
+      direccion = ?,
       email = ?,
       telefono = ?,
       fecha_nacimiento = ?,
+      fecha_ingreso = ?,
       estado = ?,
       activo = 1
 
@@ -164,9 +176,13 @@ exports.reactivarPersona = (
       data.nombres,
       data.apellido_paterno,
       data.apellido_materno,
+      data.bloque || null,
+      data.sexo || null,
+      data.direccion || null,
       data.email,
       data.telefono,
       data.fecha_nacimiento || null,
+      data.fecha_ingreso || null,
       data.estado || 'activo',
       id
     ],
@@ -190,9 +206,13 @@ exports.actualizarPersona = (
       nombres = ?,
       apellido_paterno = ?,
       apellido_materno = ?,
+      bloque = ?,
+      sexo = ?,
+      direccion = ?,
       email = ?,
       telefono = ?,
       fecha_nacimiento = ?,
+      fecha_ingreso = ?,
       estado = ?
 
     WHERE id = ?
@@ -209,9 +229,13 @@ exports.actualizarPersona = (
       data.nombres,
       data.apellido_paterno,
       data.apellido_materno,
+      data.bloque || null,
+      data.sexo || null,
+      data.direccion || null,
       data.email,
       data.telefono,
       data.fecha_nacimiento || null,
+      data.fecha_ingreso || null,
       data.estado || 'activo',
 
       id
