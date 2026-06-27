@@ -13,7 +13,6 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
-const ejecutarMigraciones = require('./config/migrations');
 
 const app = express();
 
@@ -41,13 +40,6 @@ app.use(express.static(frontendPath));
 
 const PORT = process.env.PORT || 3000;
 
-ejecutarMigraciones()
-  .then(() => {
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Servidor corriendo en puerto ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('Error ejecutando migraciones:', err);
-    process.exit(1);
-  });
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor corriendo en puerto ${PORT}`);
+});
