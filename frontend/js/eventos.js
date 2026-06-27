@@ -3,6 +3,7 @@
 // =====================================
 
 let eventoEditando = null;
+let eventosAsistencia = [];
 let eventosCargados = [];
 
 function normalizarTextoEvento(valor) {
@@ -54,7 +55,8 @@ function cargarEventos() {
       // Selector utilizado en asistencias
       const select = document.getElementById('evento_id');
 
-      select.innerHTML = '';
+      select.innerHTML =
+        '<option value="">Seleccione una actividad</option>';
 
       if (!Array.isArray(data)) {
         mostrarAlerta(
@@ -64,12 +66,15 @@ function cargarEventos() {
         return;
       }
 
+      eventosAsistencia = data;
+
       data.forEach(evento => {
 
         const option = document.createElement('option');
 
         option.value = evento.id;
         option.textContent = evento.nombre;
+        option.dataset.fecha = evento.fecha || '';
 
         select.appendChild(option);
 

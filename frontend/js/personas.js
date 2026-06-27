@@ -24,7 +24,8 @@ function cargarPersonas() {
       const select = document.getElementById('persona_id');
       const selectPago = document.getElementById('pago_persona_id');
 
-      select.innerHTML = '';
+      select.innerHTML =
+        '<option value="">Seleccione un integrante</option>';
 
       selectPago.innerHTML = '';
 
