@@ -1,4 +1,6 @@
 const eventoModel = require('../models/eventoModel');
+const asistenciaModel = require('../models/asistenciaModel');
+const multaModel = require('../models/multaModel');
 
 const tiposPermitidos = [
   'entrenamiento',
@@ -151,7 +153,9 @@ exports.eliminar = (req, res) => {
 
 exports.cerrar = (req, res) => {
 
-  eventoModel.obtenerEventoPorId(req.params.id, (err, evento) => {
+  const id = req.params.id;
+
+  eventoModel.obtenerEventoPorId(id, (err, evento) => {
 
     if (err) {
       return res.status(500).json({ mensaje: 'Error al verificar actividad' });
@@ -165,13 +169,37 @@ exports.cerrar = (req, res) => {
       return res.status(400).json({ mensaje: 'La actividad ya está finalizada' });
     }
 
-    eventoModel.cerrarEvento(req.params.id, (cerrarErr) => {
+    asistenciaModel.registrarAusentesEvento(id, (ausErr, ausResult) => {
 
-      if (cerrarErr) {
-        return res.status(500).json({ mensaje: 'Error al finalizar actividad' });
+      if (ausErr) {
+        return res.status(500).json({ mensaje: 'Error al registrar ausentes' });
       }
 
-      res.json({ mensaje: 'Actividad finalizada. No se podrá registrar más asistencia.' });
+      const totalAusentes = ausResult ? ausResult.affectedRows : 0;
+
+      multaModel.crearMultasAusentes(id, (multaErr) => {
+
+        if (multaErr) {
+          return res.status(500).json({ mensaje: 'Error al generar multas por inasistencia' });
+        }
+
+        eventoModel.cerrarEvento(id, (cerrarErr) => {
+
+          if (cerrarErr) {
+            return res.status(500).json({ mensaje: 'Error al finalizar actividad' });
+          }
+
+          const detalle = totalAusentes > 0
+            ? ` Se registraron ${totalAusentes} ausente(s) con multa de $5.000.`
+            : ' Todos los integrantes tenían asistencia registrada.';
+
+          res.json({
+            mensaje: `Actividad finalizada.${detalle}`
+          });
+
+        });
+
+      });
 
     });
 

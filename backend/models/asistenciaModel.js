@@ -53,6 +53,28 @@ exports.crearAsistencia = (data, callback) => {
 };
 
 // =====================================
+// REGISTRAR AUSENTES AL CERRAR EVENTO
+// =====================================
+
+exports.registrarAusentesEvento = (evento_id, callback) => {
+
+  const query = `
+    INSERT INTO asistencias (evento_id, persona_id, estado, minutos_atraso)
+    SELECT ?, p.id, 'ausente', 0
+    FROM personas p
+    WHERE
+      p.activo = 1
+      AND COALESCE(p.estado, 'activo') = 'activo'
+      AND p.id NOT IN (
+        SELECT persona_id FROM asistencias WHERE evento_id = ?
+      )
+  `;
+
+  db.query(query, [evento_id, evento_id], callback);
+
+};
+
+// =====================================
 // OBTENER HISTORIAL ASISTENCIAS
 // =====================================
 
