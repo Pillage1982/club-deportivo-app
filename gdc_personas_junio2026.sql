@@ -2,11 +2,16 @@
 -- LIMPIEZA DE DATOS DE PRUEBA
 -- =============================================
 SET FOREIGN_KEY_CHECKS = 0;
-TRUNCATE TABLE multas;
-TRUNCATE TABLE asistencias;
-TRUNCATE TABLE cuotas;
-TRUNCATE TABLE pagos;
-TRUNCATE TABLE personas;
+DELETE FROM multas;
+DELETE FROM asistencias;
+DELETE FROM cuotas;
+DELETE FROM pagos;
+DELETE FROM personas;
+ALTER TABLE multas AUTO_INCREMENT = 1;
+ALTER TABLE asistencias AUTO_INCREMENT = 1;
+ALTER TABLE cuotas AUTO_INCREMENT = 1;
+ALTER TABLE pagos AUTO_INCREMENT = 1;
+ALTER TABLE personas AUTO_INCREMENT = 1;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================
