@@ -56,8 +56,11 @@ function cargarEventos() {
         const option = document.createElement('option');
 
         option.value = evento.id;
-        option.textContent = evento.nombre;
+        option.textContent = evento.finalizado
+          ? `${evento.nombre} (Cerrado)`
+          : evento.nombre;
         option.dataset.fecha = evento.fecha || '';
+        option.dataset.finalizado = evento.finalizado ? '1' : '0';
 
         select.appendChild(option);
 
@@ -263,6 +266,8 @@ function cargarTablaEventos() {
 
     data.forEach(evento => {
 
+      const finalizado = evento.finalizado ? 1 : 0;
+
       // Acciones CRUD eventos
       tabla.innerHTML += `
 
@@ -289,18 +294,27 @@ function cargarTablaEventos() {
           </td>
 
           <td>
+            ${finalizado
+              ? '<span class="badge bg-secondary">Finalizado</span>'
+              : '<span class="badge bg-success">Activo</span>'
+            }
+          </td>
+
+          <td>
+
+            ${!finalizado ? `
+            <button
+              class="btn btn-warning btn-sm"
+              onclick='editarEvento(${JSON.stringify(evento)})'>
+              Editar
+            </button>
 
             <button
-
-              class="btn btn-warning btn-sm"
-
-              onclick='editarEvento(
-                ${JSON.stringify(evento)}
-              )'>
-
-              Editar
-
+              class="btn btn-secondary btn-sm"
+              onclick='cerrarEvento(${evento.id})'>
+              Finalizar
             </button>
+            ` : ''}
 
             <button
 
@@ -409,5 +423,53 @@ function ejecutarEliminarEvento(id) {
   })
 
   .catch(err => console.error(err));
+
+}
+
+// =====================================
+// FINALIZAR EVENTO
+// =====================================
+
+function cerrarEvento(id) {
+
+  mostrarConfirmacion(
+    'Al finalizar esta actividad ya no se podrá registrar asistencia. ¿Deseas continuar?',
+    () => ejecutarCerrarEvento(id)
+  );
+
+}
+
+function ejecutarCerrarEvento(id) {
+
+  fetch(`${API_URL}/eventos/${id}/cerrar`, {
+
+    method: 'PATCH',
+
+    headers: getAuthHeaders()
+
+  })
+
+  .then(async res => {
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.mensaje || 'Error al finalizar actividad');
+    }
+
+    return data;
+
+  })
+
+  .then(data => {
+
+    mostrarAlerta(data.mensaje, 'success');
+
+    cargarTablaEventos();
+    cargarEventos();
+
+  })
+
+  .catch(err => mostrarAlerta(err.message, 'danger'));
 
 }

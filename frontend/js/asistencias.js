@@ -13,6 +13,14 @@ let qrAsistenciaCanvas = null;
 
 function registrarAsistencia() {
 
+  if (eventoSeleccionadoFinalizado()) {
+    mostrarAlerta(
+      'Esta actividad ya fue finalizada. No se puede registrar asistencia.',
+      'warning'
+    );
+    return;
+  }
+
   const persona_id = document.getElementById('persona_id').value;
   const evento_id = document.getElementById('evento_id').value;
   const estado = document.getElementById('estado').value;
@@ -483,28 +491,49 @@ async function procesarLecturaAsistencia(lectura) {
   registrarAsistencia();
 }
 
+function eventoSeleccionadoFinalizado() {
+  const eventoId =
+    (document.getElementById('evento_id') || {}).value || '';
+
+  if (!eventoId) return false;
+
+  const opcion = document.querySelector(
+    `#evento_id option[value="${eventoId}"]`
+  );
+
+  return opcion && opcion.dataset.finalizado === '1';
+}
+
 function actualizarBotonesEscaneoQr() {
   const eventoId =
     (document.getElementById('evento_id') || {}).value || '';
 
   const hayEvento = eventoId !== '';
+  const cerrado = eventoSeleccionadoFinalizado();
 
   const btnIniciar = document.getElementById('btn_iniciar_qr');
   const textoIniciar = document.getElementById('btn_iniciar_qr_texto');
   const btnManual = document.getElementById('btn_usar_lectura');
 
   if (btnIniciar) {
-    btnIniciar.disabled = !hayEvento;
+    btnIniciar.disabled = !hayEvento || cerrado;
   }
 
   if (textoIniciar) {
-    textoIniciar.textContent = hayEvento
-      ? 'Escanear QR'
-      : 'Seleccione una actividad primero';
+    textoIniciar.textContent = !hayEvento
+      ? 'Seleccione una actividad primero'
+      : cerrado
+      ? 'Actividad finalizada'
+      : 'Escanear QR';
   }
 
   if (btnManual) {
-    btnManual.disabled = !hayEvento;
+    btnManual.disabled = !hayEvento || cerrado;
+  }
+
+  const aviso = document.getElementById('aviso_evento_cerrado');
+  if (aviso) {
+    aviso.classList.toggle('d-none', !cerrado);
   }
 }
 

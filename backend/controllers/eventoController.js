@@ -148,3 +148,33 @@ exports.eliminar = (req, res) => {
   );
 
 };
+
+exports.cerrar = (req, res) => {
+
+  eventoModel.obtenerEventoPorId(req.params.id, (err, evento) => {
+
+    if (err) {
+      return res.status(500).json({ mensaje: 'Error al verificar actividad' });
+    }
+
+    if (!evento) {
+      return res.status(404).json({ mensaje: 'Actividad no encontrada' });
+    }
+
+    if (evento.finalizado) {
+      return res.status(400).json({ mensaje: 'La actividad ya está finalizada' });
+    }
+
+    eventoModel.cerrarEvento(req.params.id, (cerrarErr) => {
+
+      if (cerrarErr) {
+        return res.status(500).json({ mensaje: 'Error al finalizar actividad' });
+      }
+
+      res.json({ mensaje: 'Actividad finalizada. No se podrá registrar más asistencia.' });
+
+    });
+
+  });
+
+};

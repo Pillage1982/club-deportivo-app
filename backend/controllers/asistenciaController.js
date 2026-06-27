@@ -4,6 +4,7 @@
 
 const asistenciaModel = require('../models/asistenciaModel');
 const multaModel = require('../models/multaModel');
+const eventoModel = require('../models/eventoModel');
 
 function calcularMultaAsistencia(estado, minutos) {
   if (estado === 'ausente') {
@@ -25,6 +26,30 @@ function calcularMultaAsistencia(estado, minutos) {
 // REGISTRAR ASISTENCIA
 // =====================================
 exports.registrar = (req, res) => {
+
+  eventoModel.obtenerEventoPorId(req.body.evento_id, (err, evento) => {
+
+    if (err) {
+      return res.status(500).json({ mensaje: 'Error al verificar actividad' });
+    }
+
+    if (!evento) {
+      return res.status(404).json({ mensaje: 'Actividad no encontrada' });
+    }
+
+    if (evento.finalizado) {
+      return res.status(403).json({
+        mensaje: 'Esta actividad ya fue finalizada. No se puede registrar asistencia.'
+      });
+    }
+
+    registrarAsistenciaInterna(req, res);
+
+  });
+
+};
+
+function registrarAsistenciaInterna(req, res) {
 
   asistenciaModel.crearAsistencia(req.body, (err, result) => {
 
