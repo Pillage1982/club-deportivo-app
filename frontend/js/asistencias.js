@@ -418,6 +418,10 @@ function procesarLecturaAsistenciaManual() {
   procesarLecturaAsistencia(lectura);
 }
 
+function describirPersonaAsistencia(persona) {
+  return `${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}`.trim();
+}
+
 async function procesarLecturaAsistencia(lectura) {
   let persona = null;
 
@@ -458,7 +462,7 @@ async function procesarLecturaAsistencia(lectura) {
   }
 
   actualizarEstadoQrAsistencia(
-    `Integrante identificado: ${persona.nombres} ${persona.apellido_paterno}`,
+    `Integrante identificado: ${describirPersonaAsistencia(persona)}`,
     'success'
   );
 
@@ -479,22 +483,19 @@ async function buscarPersonaPorLecturaAsistencia(lectura) {
   const datos =
     extraerDatosLecturaAsistencia(lectura);
 
+  if (datos.rut) {
+    return personas.find(persona => (
+      normalizarRutAsistencia(persona.rut) === datos.rut
+    ));
+  }
+
   return personas.find(persona => {
     const personaId =
       String(persona.id);
 
-    const rutPersona =
-      normalizarRutAsistencia(persona.rut);
-
     return (
-      (
-        datos.personaId &&
-        personaId === String(datos.personaId)
-      ) ||
-      (
-        datos.rut &&
-        rutPersona === datos.rut
-      )
+      datos.personaId &&
+      personaId === String(datos.personaId)
     );
   });
 }
@@ -538,20 +539,42 @@ function extraerDatosLecturaAsistencia(lectura) {
     rut: null
   };
 
+  datos.rut =
+    extraerRutAsistencia(texto);
+
+  if (
+    !datos.rut &&
+    validarRutLecturaAsistencia(
+      normalizarRutAsistencia(texto)
+    )
+  ) {
+    datos.rut =
+      normalizarRutAsistencia(texto);
+  }
+
   try {
     const json =
       JSON.parse(texto);
 
-    datos.personaId =
-      json.persona_id || json.personaId || json.id || null;
-
-    datos.rut =
+    const rutJson =
       normalizarRutAsistencia(json.rut || json.run || '');
+
+    if (
+      !datos.rut &&
+      validarRutLecturaAsistencia(rutJson)
+    ) {
+      datos.rut = rutJson;
+    }
+
+    if (!datos.rut) {
+      datos.personaId =
+        json.persona_id || json.personaId || json.id || null;
+    }
   } catch (err) {
     datos.personaId = null;
   }
 
-  if (!datos.personaId) {
+  if (!datos.rut && !datos.personaId) {
     const idEncontrado =
       texto.match(/(?:persona_id|personaId|socio|credencial|id)=?[:#-]?(\d+)/i);
 
@@ -561,20 +584,11 @@ function extraerDatosLecturaAsistencia(lectura) {
   }
 
   if (
+    !datos.rut &&
     !datos.personaId &&
     /^\d{1,6}$/.test(texto)
   ) {
     datos.personaId = texto;
-  }
-
-  if (!datos.rut) {
-    datos.rut =
-      extraerRutAsistencia(texto);
-  }
-
-  if (!datos.rut) {
-    datos.rut =
-      normalizarRutAsistencia(texto);
   }
 
   return datos;
@@ -636,6 +650,7 @@ function seleccionarPersonaAsistencia(persona) {
   }
 
   select.value = String(persona.id);
+  select.dispatchEvent(new Event('change'));
 }
 
 function refrescarFinanzasPorAsistencia() {
