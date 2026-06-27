@@ -550,7 +550,7 @@ function formatearFechaHora(fecha) {
   }
 
   const fechaObjeto =
-    new Date(fecha);
+    new Date(String(fecha).replace(' ', 'T'));
 
   if (Number.isNaN(fechaObjeto.getTime())) {
     return formatearFecha(fecha);
