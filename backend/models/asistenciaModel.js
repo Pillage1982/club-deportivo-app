@@ -75,6 +75,32 @@ exports.registrarAusentesEvento = (evento_id, callback) => {
 };
 
 // =====================================
+// OBTENER AUSENTES DE UN EVENTO CON CONTACTO
+// =====================================
+
+exports.obtenerAusentesConContacto = (evento_id, callback) => {
+
+  const query = `
+    SELECT
+      p.id,
+      p.nombres,
+      p.apellido_paterno,
+      p.apellido_materno,
+      p.email
+    FROM asistencias a
+    JOIN personas p ON a.persona_id = p.id
+    WHERE
+      a.evento_id = ?
+      AND a.estado = 'ausente'
+      AND p.email IS NOT NULL
+      AND p.email != ''
+  `;
+
+  db.query(query, [evento_id], callback);
+
+};
+
+// =====================================
 // OBTENER HISTORIAL ASISTENCIAS
 // =====================================
 
