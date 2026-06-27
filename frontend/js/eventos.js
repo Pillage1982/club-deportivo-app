@@ -524,7 +524,9 @@ function editarEvento(evento) {
   document.getElementById(
     'evento_fecha'
   ).value =
-    evento.fecha || '';
+    evento.fecha
+      ? evento.fecha.replace(' ', 'T').substring(0, 16)
+      : '';
 
   document.getElementById(
     'evento_ubicacion'
