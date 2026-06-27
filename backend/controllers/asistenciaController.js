@@ -61,9 +61,14 @@ exports.registrar = (req, res) => {
     }, (multaErr) => {
       if (multaErr) {
         console.error('Error creando multa:', multaErr);
+        return res.json({
+          mensaje: `Asistencia registrada. (Multa no generada: ${multaErr.message})`
+        });
       }
 
-      res.json({ mensaje: 'Asistencia registrada' });
+      res.json({
+        mensaje: `Asistencia registrada. Multa de $${multa.monto} generada.`
+      });
     });
 
   });
