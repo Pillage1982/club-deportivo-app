@@ -352,7 +352,7 @@ function editarEvento(evento) {
     'evento_fecha'
   ).value = (() => {
     if (!evento.fecha) return '';
-    const d = new Date(evento.fecha);
+    const d = new Date(String(evento.fecha).replace(' ', 'T'));
     const p = n => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
   })();
