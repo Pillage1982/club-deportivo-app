@@ -112,3 +112,10 @@ Desktop.ini
 *.pem
 *.key
 *.crt
+
+# ===========================
+# ARCHIVOS TEMPORALES CODEX
+# ===========================
+
+.codex-*
+.pnpm-store/
