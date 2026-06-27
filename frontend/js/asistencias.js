@@ -2,6 +2,9 @@
 // REGISTRAR ASISTENCIA EVENTO
 // =====================================
 
+// Cache de personas para búsqueda QR
+// Evita fetch repetido en cada escaneo
+let personasTabla = [];
 let qrAsistenciaStream = null;
 let qrAsistenciaDetector = null;
 let qrAsistenciaEscaneando = false;
@@ -503,6 +506,15 @@ async function procesarLecturaAsistencia(lectura) {
 }
 
 async function buscarPersonaPorLecturaAsistencia(lectura) {
+
+  // Debug: muestra en consola qué se está buscando
+  console.log('[QR] lectura recibida:', lectura);
+  console.log('[QR] datos extraídos:', datos);
+  console.log('[QR] personas cargadas:', personas.length);
+  if (datos.rut) {
+    console.log('[QR] RUTs en BD:', personas.map(p => normalizarRutAsistencia(p.rut)));
+  }
+  
   const personas =
     await obtenerPersonasParaQrAsistencia();
 
@@ -527,11 +539,10 @@ async function buscarPersonaPorLecturaAsistencia(lectura) {
 }
 
 async function obtenerPersonasParaQrAsistencia() {
-  if (
-    typeof personasTabla !== 'undefined' &&
-    Array.isArray(personasTabla) &&
-    personasTabla.length > 0
-  ) {
+
+  // Si el caché ya tiene datos, lo devuelve directo
+  // sin hacer otro fetch al servidor
+  if (Array.isArray(personasTabla) && personasTabla.length > 0) {
     return personasTabla.filter(
       persona => (persona.estado || 'activo') === 'activo'
     );
@@ -551,9 +562,8 @@ async function obtenerPersonasParaQrAsistencia() {
     );
   }
 
-  if (typeof personasTabla !== 'undefined') {
-    personasTabla = data;
-  }
+  // Guarda en caché para próximos escaneos
+  personasTabla = data;
 
   return data.filter(
     persona => (persona.estado || 'activo') === 'activo'
