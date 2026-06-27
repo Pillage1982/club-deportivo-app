@@ -274,6 +274,9 @@ document.getElementById(
     const edad =
     calcularEdad(persona.fecha_nacimiento);
 
+    const categoria =
+    calcularCategoria(persona.fecha_nacimiento);
+
     // Acciones CRUD personas
     tabla.innerHTML += `
 
@@ -313,6 +316,10 @@ document.getElementById(
 
           <td>
             ${edad}
+          </td>
+
+          <td>
+            ${categoria}
           </td>
 
           <td>
