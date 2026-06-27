@@ -108,6 +108,12 @@ function cargarPersonas() {
     direccion:
       document.getElementById('direccion').value,
 
+    nombre_apoderado:
+      document.getElementById('nombre_apoderado').value,
+
+    telefono_apoderado:
+      document.getElementById('telefono_apoderado').value,
+
     estado:
       document.getElementById(
         'persona_estado'
@@ -216,6 +222,8 @@ document.getElementById('fecha_ingreso').value = '';
 document.getElementById('bloque').value = '';
 document.getElementById('sexo').value = '';
 document.getElementById('direccion').value = '';
+document.getElementById('nombre_apoderado').value = '';
+document.getElementById('telefono_apoderado').value = '';
 
 document.getElementById(
   'persona_estado'
@@ -317,6 +325,14 @@ document.getElementById(
           </td>
 
           <td>
+            ${persona.nombre_apoderado || ''}
+          </td>
+
+          <td>
+            ${persona.telefono_apoderado || ''}
+          </td>
+
+          <td>
             ${obtenerBadgeEstadoPersona(persona.estado)}
           </td>
 
@@ -405,6 +421,12 @@ function editarPersona(persona) {
 
   document.getElementById('direccion').value =
     persona.direccion || '';
+
+  document.getElementById('nombre_apoderado').value =
+    persona.nombre_apoderado || '';
+
+  document.getElementById('telefono_apoderado').value =
+    persona.telefono_apoderado || '';
 
   document.getElementById(
     'persona_estado'

@@ -135,6 +135,14 @@ async function asegurarCamposPersonas() {
     {
       nombre: 'fecha_ingreso',
       sql: "ADD COLUMN fecha_ingreso DATE NULL AFTER fecha_nacimiento"
+    },
+    {
+      nombre: 'nombre_apoderado',
+      sql: "ADD COLUMN nombre_apoderado VARCHAR(150) NULL AFTER fecha_ingreso"
+    },
+    {
+      nombre: 'telefono_apoderado',
+      sql: "ADD COLUMN telefono_apoderado VARCHAR(30) NULL AFTER nombre_apoderado"
     }
   ];
 

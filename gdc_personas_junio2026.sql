@@ -1,4 +1,12 @@
 ﻿-- =============================================
+-- COLUMNAS NUEVAS (se omiten si ya existen)
+-- =============================================
+ALTER TABLE personas ADD COLUMN IF NOT EXISTS bloque VARCHAR(100) NULL AFTER apellido_materno;
+ALTER TABLE personas ADD COLUMN IF NOT EXISTS sexo ENUM('Masculino','Femenino') NULL AFTER bloque;
+ALTER TABLE personas ADD COLUMN IF NOT EXISTS direccion VARCHAR(255) NULL AFTER sexo;
+ALTER TABLE personas ADD COLUMN IF NOT EXISTS fecha_ingreso DATE NULL AFTER fecha_nacimiento;
+
+-- =============================================
 -- LIMPIEZA DE DATOS DE PRUEBA
 -- =============================================
 SET FOREIGN_KEY_CHECKS = 0;
