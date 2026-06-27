@@ -3,6 +3,7 @@
 // =====================================
 
 let personaEditando = null;
+let personasTabla = [];
 
 // =====================================
 // CARGAR PERSONAS EN SELECTORES
@@ -262,13 +263,6 @@ document.getElementById(
 
   .then(data => {
 
-    const tabla =
-      document.getElementById(
-        'tabla_personas'
-      );
-
-    tabla.innerHTML = '';
-
     if (!Array.isArray(data)) {
       mostrarAlerta(
       data.mensaje || 'No se pudo cargar la tabla de integrantes',
@@ -277,9 +271,75 @@ document.getElementById(
       return;
     }
 
-    data.forEach(persona => {
+    personasTabla = data;
 
-    // Acciones CRUD personas
+    renderizarTablaPersonas(
+      filtrarPersonas(obtenerTerminoBusquedaPersonas())
+    );
+
+  })
+
+  .catch(err => console.error(err));
+
+}
+
+function obtenerTerminoBusquedaPersonas() {
+  const input =
+    document.getElementById('buscar_personas');
+
+  return input ? input.value : '';
+}
+
+function normalizarTextoBusqueda(valor) {
+  return String(valor || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim();
+}
+
+function filtrarPersonas(termino) {
+  const busqueda =
+    normalizarTextoBusqueda(termino);
+
+  if (!busqueda) {
+    return personasTabla;
+  }
+
+  return personasTabla.filter(persona => {
+    const textoBusqueda = [
+      persona.nombres,
+      persona.apellido_paterno,
+      persona.apellido_materno,
+      persona.rut,
+      persona.email,
+      persona.telefono,
+      persona.bloque
+    ].map(normalizarTextoBusqueda).join(' ');
+
+    return textoBusqueda.includes(busqueda);
+  });
+}
+
+function renderizarTablaPersonas(personas) {
+  const tabla =
+    document.getElementById('tabla_personas');
+
+  tabla.innerHTML = '';
+
+  if (personas.length === 0) {
+    tabla.innerHTML = `
+      <tr>
+        <td colspan="13" class="text-center text-muted">
+          No se encontraron integrantes
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  personas.forEach(persona => {
+
     tabla.innerHTML += `
 
         <tr>
@@ -362,12 +422,23 @@ document.getElementById(
 
       `;
 
-    });
+  });
 
-  })
+}
 
-  .catch(err => console.error(err));
+function configurarBuscadorPersonas() {
+  const input =
+    document.getElementById('buscar_personas');
 
+  if (!input) {
+    return;
+  }
+
+  input.addEventListener('input', () => {
+    renderizarTablaPersonas(
+      filtrarPersonas(input.value)
+    );
+  });
 }
 
 // =====================================

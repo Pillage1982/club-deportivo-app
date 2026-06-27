@@ -51,6 +51,18 @@ const alerta =
 
 }
 
+function obtenerMensajeError(error, mensajeDefecto) {
+  if (error && error.message) {
+    return error.message;
+  }
+
+  return mensajeDefecto || 'No se pudo completar la operación';
+}
+
+async function leerRespuestaJson(res) {
+  return res.json().catch(() => ({}));
+}
+
 // =====================================
 // CONFIRMACION VISUAL BOOTSTRAP
 // =====================================
@@ -443,6 +455,103 @@ function aplicarConfiguracionVisual() {
 
     });
 
+}
+
+function formatearMonto(valor) {
+  const monto =
+    Number(valor || 0);
+
+  return new Intl.NumberFormat(
+    'es-CL',
+    {
+      style: 'currency',
+      currency: 'CLP',
+      maximumFractionDigits: 0
+    }
+  ).format(monto);
+}
+
+function crearBadge(texto, clase) {
+  return `<span class="badge ${clase}">${texto}</span>`;
+}
+
+function obtenerBadgeAsistencia(estado) {
+  const badges = {
+    presente: crearBadge('Presente', 'bg-success'),
+    atrasado: crearBadge('Atrasado', 'bg-warning text-dark'),
+    ausente: crearBadge('Ausente', 'bg-danger')
+  };
+
+  return badges[estado] || crearBadge('Sin estado', 'bg-secondary');
+}
+
+function obtenerBadgeCuota(estado) {
+  const badges = {
+    pagado: crearBadge('Pagado', 'bg-success'),
+    vencido: crearBadge('Vencido', 'bg-danger'),
+    pendiente: crearBadge('Pendiente', 'bg-warning text-dark')
+  };
+
+  return badges[estado] || crearBadge('Sin estado', 'bg-secondary');
+}
+
+function obtenerBadgeFinanciero(deudaActual) {
+  const deuda =
+    Number(deudaActual || 0);
+
+  if (deuda === 0) {
+    return crearBadge('AL DIA', 'bg-success');
+  }
+
+  if (deuda < 0) {
+    return crearBadge(
+      `${formatearMonto(Math.abs(deuda))} (A FAVOR)`,
+      'bg-primary'
+    );
+  }
+
+  return crearBadge(
+    `Deuda: ${formatearMonto(deuda)}`,
+    'bg-danger'
+  );
+}
+
+function bloquearBoton(id, textoCarga = 'Guardando...') {
+  const boton =
+    document.getElementById(id);
+
+  if (!boton || boton.disabled) {
+    return null;
+  }
+
+  const textoOriginal =
+    boton.innerText;
+
+  boton.disabled = true;
+  boton.innerText = textoCarga;
+
+  return {
+    boton,
+    textoOriginal
+  };
+}
+
+function restaurarBoton(estadoBoton, textoFinal) {
+  if (!estadoBoton) {
+    return;
+  }
+
+  estadoBoton.boton.disabled = false;
+  estadoBoton.boton.innerText =
+    textoFinal || estadoBoton.textoOriginal;
+}
+
+function obtenerRolActual() {
+  const usuario = JSON.parse(
+    localStorage.getItem('usuario')
+  );
+
+  return usuario?.rol || 'admin';
 }
 
 function formatearFechaHora(fecha) {

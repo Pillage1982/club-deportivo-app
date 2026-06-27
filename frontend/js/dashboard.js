@@ -51,8 +51,8 @@ function cargarDashboard() {
       });
     }
 
-    document.getElementById('total_pagado').innerText = `$${totalPagado}`;
-    document.getElementById('deuda_total').innerText  = `$${deudaTotal}`;
+    document.getElementById('total_pagado').innerText = formatearMonto(totalPagado);
+    document.getElementById('deuda_total').innerText  = formatearMonto(deudaTotal);
 
     actualizarEstadisticasAsistenciaDashboard(
       Array.isArray(asistencias) ? asistencias : []

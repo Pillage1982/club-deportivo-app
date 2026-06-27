@@ -2,9 +2,6 @@
 // REGISTRAR ASISTENCIA EVENTO
 // =====================================
 
-// Cache de personas para búsqueda QR
-// Evita fetch repetido en cada escaneo
-let personasTabla = [];
 let qrAsistenciaStream = null;
 let qrAsistenciaDetector = null;
 let qrAsistenciaEscaneando = false;
@@ -103,6 +100,14 @@ function registrarAsistencia() {
 
       }
 
+      const estadoBoton =
+        bloquearBoton(
+          'btn_registrar_asistencia',
+          'Registrando...'
+        );
+
+      if (!estadoBoton) return;
+
       // Registra asistencia en backend
       fetch(`${API_URL}/asistencia`, {
 
@@ -138,17 +143,11 @@ mostrarAlerta(
   'success'
 );
 
-      // Refresca automáticamente:
-      // asistencias
-      // multas
-      // finanzas
-      // dashboard
-      // gráficos
       cargarAsistencias();
-      cargarMultas();
-      cargarFinanzas();
       cargarDashboard();
-      cargarGraficos();
+      refrescarFinanzasPorAsistencia();
+
+      document.getElementById('minutos').value = 0;
 
     })
 
@@ -156,14 +155,18 @@ mostrarAlerta(
 
     console.error(err);
 
-    // Evita registros duplicados
-    // misma persona + mismo evento
     mostrarAlerta(
   err.message,
   'danger'
 );
 
-});
+})
+  .finally(() => {
+    restaurarBoton(
+      estadoBoton,
+      'Registrar'
+    );
+  });
 
 }
 
@@ -537,19 +540,28 @@ function actualizarBotonesEscaneoQr() {
   }
 }
 
+function refrescarFinanzasPorAsistencia() {
+  const rol =
+    obtenerRolActual();
+
+  if (rol !== 'admin' && rol !== 'tesorero') {
+    return;
+  }
+
+  setTimeout(() => {
+    cargarMultas();
+    cargarFinanzas();
+    cargarDashboard();
+    cargarGraficos();
+  }, 300);
+}
+
 async function buscarPersonaPorLecturaAsistencia(lectura) {
   const personas =
     await obtenerPersonasParaQrAsistencia();
 
   const datos =
     extraerDatosLecturaAsistencia(lectura);
-
-  console.log('[QR] lectura recibida:', lectura);
-  console.log('[QR] datos extraídos:', datos);
-  console.log('[QR] personas cargadas:', personas.length);
-  if (datos.rut) {
-    console.log('[QR] RUTs en BD:', personas.map(p => normalizarRutAsistencia(p.rut)));
-  }
 
   if (datos.rut) {
     return personas.find(persona => (
@@ -894,13 +906,7 @@ function cargarAsistencias() {
           <tr>
             <td>${asistencia.nombres} ${asistencia.apellido_paterno} ${asistencia.apellido_materno || ''}</td>
             <td>${asistencia.evento}</td>
-            <td>${
-              asistencia.estado === 'presente'
-              ? '<span class="badge bg-success">Presente</span>'
-              : asistencia.estado === 'atrasado'
-              ? '<span class="badge bg-warning text-dark">Atrasado</span>'
-              : '<span class="badge bg-danger">Ausente</span>'
-            }</td>
+            <td>${obtenerBadgeAsistencia(asistencia.estado)}</td>
             <td>${asistencia.minutos_atraso}</td>
           </tr>
         `;
