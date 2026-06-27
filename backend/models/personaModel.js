@@ -16,19 +16,11 @@ exports.obtenerPersonas = (callback) => {
 
       apellido_materno,
 
-      bloque,
-
-      sexo,
-
-      direccion,
-
       email,
 
       telefono,
 
       fecha_nacimiento,
-
-      fecha_ingreso,
 
       COALESCE(estado, 'activo') AS estado
 
@@ -101,8 +93,7 @@ exports.obtenerPersonaPorRutIncluyendoInactivos = (
       email,
       telefono,
       fecha_nacimiento,
-      activo,
-      COALESCE(estado, 'activo') AS estado
+      activo
 
     FROM personas
 
@@ -150,7 +141,6 @@ exports.reactivarPersona = (
       email = ?,
       telefono = ?,
       fecha_nacimiento = ?,
-      estado = ?,
       activo = 1
 
     WHERE id = ?
@@ -167,7 +157,6 @@ exports.reactivarPersona = (
       data.email,
       data.telefono,
       data.fecha_nacimiento || null,
-      data.estado || 'activo',
       id
     ],
     callback

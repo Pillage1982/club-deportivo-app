@@ -118,37 +118,8 @@ async function reconstruirVistaEstadoFinanciero() {
   `);
 }
 
-async function asegurarCamposPersonas() {
-  const columnas = [
-    {
-      nombre: 'bloque',
-      sql: "ADD COLUMN bloque VARCHAR(100) NULL AFTER apellido_materno"
-    },
-    {
-      nombre: 'sexo',
-      sql: "ADD COLUMN sexo ENUM('Masculino','Femenino') NULL AFTER bloque"
-    },
-    {
-      nombre: 'direccion',
-      sql: "ADD COLUMN direccion VARCHAR(255) NULL AFTER sexo"
-    },
-    {
-      nombre: 'fecha_ingreso',
-      sql: "ADD COLUMN fecha_ingreso DATE NULL AFTER fecha_nacimiento"
-    }
-  ];
-
-  for (const col of columnas) {
-    const existe = await columnaExiste('personas', col.nombre);
-    if (!existe) {
-      await ejecutar(`ALTER TABLE personas ${col.sql}`);
-    }
-  }
-}
-
 async function ejecutarMigraciones() {
   await asegurarEstadoIntegrantes();
-  await asegurarCamposPersonas();
   await reconstruirVistaEstadoFinanciero();
 }
 
