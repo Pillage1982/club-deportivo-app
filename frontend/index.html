@@ -188,9 +188,10 @@
                 type="button"
                 id="btn_iniciar_qr"
                 class="btn btn-outline-primary"
-                onclick="iniciarEscaneoAsistencia()">
+                onclick="iniciarEscaneoAsistencia()"
+                disabled>
                 <i class="bi bi-qr-code-scan"></i>
-                Escanear QR
+                <span id="btn_iniciar_qr_texto">Seleccione una actividad primero</span>
               </button>
 
               <button
@@ -233,8 +234,10 @@
               <div class="col-md-4 d-flex align-items-end">
                 <button
                   type="button"
+                  id="btn_usar_lectura"
                   class="btn btn-outline-primary w-100"
-                  onclick="procesarLecturaAsistenciaManual()">
+                  onclick="procesarLecturaAsistenciaManual()"
+                  disabled>
                   Usar lectura
                 </button>
               </div>
