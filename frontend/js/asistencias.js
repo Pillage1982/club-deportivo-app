@@ -453,10 +453,7 @@ async function procesarLecturaAsistencia(lectura) {
   } catch (err) {
     console.error(err);
     mostrarAlerta(
-      obtenerMensajeError(
-        err,
-        'No se pudo procesar la lectura'
-      ),
+      err.message || 'No se pudo procesar la lectura',
       'danger'
     );
     return;
@@ -538,7 +535,7 @@ async function obtenerPersonasParaQrAsistencia() {
     });
 
   const data =
-    await leerRespuestaJson(res);
+    await res.json().catch(() => ({}));
 
   if (!res.ok || !Array.isArray(data)) {
     throw new Error(
@@ -567,7 +564,7 @@ async function obtenerEventosParaQrAsistencia() {
     });
 
   const data =
-    await leerRespuestaJson(res);
+    await res.json().catch(() => ({}));
 
   if (!res.ok || !Array.isArray(data)) {
     throw new Error(
