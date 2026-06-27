@@ -523,10 +523,12 @@ function editarEvento(evento) {
 
   document.getElementById(
     'evento_fecha'
-  ).value =
-    evento.fecha
-      ? evento.fecha.replace(' ', 'T').substring(0, 16)
-      : '';
+  ).value = (() => {
+    if (!evento.fecha) return '';
+    const d = new Date(evento.fecha);
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  })();
 
   document.getElementById(
     'evento_ubicacion'
