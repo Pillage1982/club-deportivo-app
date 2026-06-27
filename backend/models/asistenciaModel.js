@@ -88,9 +88,11 @@ exports.obtenerAsistencias = (callback) => {
   const query = `
     SELECT
       a.id,
+      a.persona_id,
       p.nombres,
       p.apellido_paterno,
       p.apellido_materno,
+      p.bloque,
       e.nombre AS evento,
       e.tipo AS tipo_evento,
       e.fecha AS fecha_evento,

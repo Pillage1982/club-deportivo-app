@@ -363,39 +363,10 @@
             </div>
           </div>
 
-          <div
-            id="dashboard_asistencia_stats"
-            class="attendance-stat-grid mt-4">
-            <div class="attendance-stat">
-              <div>
-                <span class="attendance-stat-label">
-                  Ensayos
-                </span>
-
-                <strong id="asistencia_ensayos_porcentaje">
-                  0%
-                </strong>
-              </div>
-
-              <small id="asistencia_ensayos_detalle">
-                0 presentes de 0 registros
-              </small>
-            </div>
-
-            <div class="attendance-stat">
-              <div>
-                <span class="attendance-stat-label">
-                  Presentaciones
-                </span>
-
-                <strong id="asistencia_presentaciones_porcentaje">
-                  0%
-                </strong>
-              </div>
-
-              <small id="asistencia_presentaciones_detalle">
-                0 presentes de 0 registros
-              </small>
+          <div id="dashboard_asistencia_stats" class="mt-4">
+            <h6 class="text-muted mb-2">Asistencia por Bloque</h6>
+            <div id="asistencia_por_bloque">
+              <p class="text-muted small">Cargando...</p>
             </div>
           </div>
         </section>
@@ -405,7 +376,7 @@
           <div class="row dashboard-chart-grid">
             <div id="grafico_multas_wrapper" class="col-12 col-md-6 mb-3">
               <div class="card p-3 shadow-sm border-0">
-                <h5>Multas por Integrante</h5>
+                <h5>Multas por Bloque</h5>
 
                 <div class="chart-container">
                   <canvas id="graficoMultas"></canvas>
@@ -415,7 +386,7 @@
 
             <div id="grafico_deuda_wrapper" class="col-12 col-md-6 mb-3">
               <div class="card p-3 shadow-sm border-0">
-                <h5>Deuda Actual</h5>
+                <h5>Deuda por Bloque</h5>
 
                 <div class="chart-container">
                   <canvas id="graficoDeuda"></canvas>

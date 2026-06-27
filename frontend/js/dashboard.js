@@ -11,8 +11,6 @@ let chartDeuda = null;
 
 function cargarDashboard() {
 
-  // Obtiene datos generales
-  // en paralelo para optimizar carga
   Promise.all([
 
     fetch(`${API_URL}/personas`, {
@@ -37,59 +35,24 @@ function cargarDashboard() {
 
     document.getElementById(
       'total_personas'
-    ).innerText = personas.length;
+    ).innerText = Array.isArray(personas) ? personas.length : 0;
 
     document.getElementById(
       'total_multas'
-    ).innerText = multas.length;
+    ).innerText = Array.isArray(multas) ? multas.length : 0;
 
-// Variables acumuladoras financieras
-let totalPagado = 0;
-let deudaTotal = 0;
-let totalCuotas = 0;
-let totalMultasPendientes = 0;
-let sociosConDeuda = 0;
+    let totalPagado = 0;
+    let deudaTotal = 0;
 
-if (!Array.isArray(finanzas)) {
-  mostrarAlerta(
-    finanzas.mensaje || 'No se pudo cargar el dashboard',
-    'warning'
-  );
-  return;
-}
+    if (Array.isArray(finanzas)) {
+      finanzas.forEach(f => {
+        totalPagado += Number(f.total_pagado || 0);
+        deudaTotal  += Number(f.deuda_actual || 0);
+      });
+    }
 
-finanzas.forEach(f => {
-
-  totalPagado +=
-    Number(f.total_pagado || 0);
-
-  deudaTotal +=
-    Number(f.deuda_actual || 0);
-
-  totalCuotas +=
-    Number(f.total_cuotas || 0);
-
-  totalMultasPendientes +=
-    Number(f.total_multas || 0);
-
-  if (Number(f.deuda_actual || 0) > 0) {
-
-    sociosConDeuda++;
-
-  }
-
-});
-
-    // Actualiza tarjetas visuales dashboard
-    document.getElementById(
-      'total_pagado'
-    ).innerText =
-      `$${totalPagado}`;
-
-    document.getElementById(
-      'deuda_total'
-    ).innerText =
-      `$${deudaTotal}`;
+    document.getElementById('total_pagado').innerText = `$${totalPagado}`;
+    document.getElementById('deuda_total').innerText  = `$${deudaTotal}`;
 
     actualizarEstadisticasAsistenciaDashboard(
       Array.isArray(asistencias) ? asistencias : []
@@ -101,199 +64,222 @@ finanzas.forEach(f => {
 
 }
 
-function calcularResumenAsistenciaPorTipo(asistencias, tipos) {
-  const registros =
-    asistencias.filter(asistencia => {
-      return tipos.includes(asistencia.tipo_evento);
-    });
-
-  const presentes =
-    registros.filter(asistencia => {
-      return [
-        'presente',
-        'atrasado'
-      ].includes(asistencia.estado);
-    }).length;
-
-  const total =
-    registros.length;
-
-  return {
-    presentes,
-    total,
-    porcentaje: total > 0
-      ? Math.round((presentes / total) * 100)
-      : 0
-  };
-}
+// =====================================
+// ESTADISTICAS ASISTENCIA POR BLOQUE
+// =====================================
 
 function actualizarEstadisticasAsistenciaDashboard(asistencias) {
-  const ensayos =
-    calcularResumenAsistenciaPorTipo(
-      asistencias,
-      ['entrenamiento']
-    );
 
-  const presentaciones =
-    calcularResumenAsistenciaPorTipo(
-      asistencias,
-      ['partido']
-    );
+  const contenedor =
+    document.getElementById('asistencia_por_bloque');
 
-  const ensayosPorcentaje =
-    document.getElementById('asistencia_ensayos_porcentaje');
+  if (!contenedor) return;
 
-  const ensayosDetalle =
-    document.getElementById('asistencia_ensayos_detalle');
-
-  const presentacionesPorcentaje =
-    document.getElementById('asistencia_presentaciones_porcentaje');
-
-  const presentacionesDetalle =
-    document.getElementById('asistencia_presentaciones_detalle');
-
-  if (
-    !ensayosPorcentaje ||
-    !ensayosDetalle ||
-    !presentacionesPorcentaje ||
-    !presentacionesDetalle
-  ) {
+  if (!asistencias.length) {
+    contenedor.innerHTML =
+      '<p class="text-muted small">Sin registros de asistencia aún.</p>';
     return;
   }
 
-  ensayosPorcentaje.innerText =
-    `${ensayos.porcentaje}%`;
+  // Agrupa por bloque y tipo de evento
+  const porBloque = {};
 
-  ensayosDetalle.innerText =
-    `${ensayos.presentes} presentes de ${ensayos.total} registros`;
+  asistencias.forEach(a => {
 
-  presentacionesPorcentaje.innerText =
-    `${presentaciones.porcentaje}%`;
+    const bloque = a.bloque || 'Sin Bloque';
 
-  presentacionesDetalle.innerText =
-    `${presentaciones.presentes} presentes de ${presentaciones.total} registros`;
+    if (!porBloque[bloque]) {
+      porBloque[bloque] = {
+        ensayos:        { presentes: 0, total: 0 },
+        presentaciones: { presentes: 0, total: 0 }
+      };
+    }
+
+    const presente =
+      ['presente', 'atrasado'].includes(a.estado);
+
+    if (a.tipo_evento === 'entrenamiento') {
+      porBloque[bloque].ensayos.total++;
+      if (presente) porBloque[bloque].ensayos.presentes++;
+    } else if (a.tipo_evento === 'partido') {
+      porBloque[bloque].presentaciones.total++;
+      if (presente) porBloque[bloque].presentaciones.presentes++;
+    }
+
+  });
+
+  const bloques = Object.keys(porBloque).sort();
+
+  let html = `
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered align-middle mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>Bloque</th>
+            <th class="text-center">Ensayos</th>
+            <th class="text-center">Presentaciones</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  bloques.forEach(bloque => {
+
+    const e = porBloque[bloque].ensayos;
+    const p = porBloque[bloque].presentaciones;
+
+    const pctE = e.total > 0
+      ? Math.round((e.presentes / e.total) * 100)
+      : 0;
+
+    const pctP = p.total > 0
+      ? Math.round((p.presentes / p.total) * 100)
+      : 0;
+
+    const badgeE = pctE >= 70
+      ? 'bg-success'
+      : pctE >= 40
+      ? 'bg-warning text-dark'
+      : 'bg-danger';
+
+    const badgeP = pctP >= 70
+      ? 'bg-success'
+      : pctP >= 40
+      ? 'bg-warning text-dark'
+      : 'bg-danger';
+
+    html += `
+      <tr>
+        <td><strong>${bloque}</strong></td>
+        <td class="text-center">
+          <span class="badge ${badgeE}">${pctE}%</span>
+          <small class="text-muted ms-1">${e.presentes}/${e.total}</small>
+        </td>
+        <td class="text-center">
+          <span class="badge ${badgeP}">${pctP}%</span>
+          <small class="text-muted ms-1">${p.presentes}/${p.total}</small>
+        </td>
+      </tr>
+    `;
+
+  });
+
+  html += '</tbody></table></div>';
+
+  contenedor.innerHTML = html;
+
 }
 
 // =====================================
-// CARGAR GRAFICOS FINANCIEROS
+// CARGAR GRAFICOS POR BLOQUE
 // =====================================
 
 function cargarGraficos() {
 
-  fetch(`${API_URL}/finanzas`, {
+  Promise.all([
 
-    headers: getAuthHeaders()
+    fetch(`${API_URL}/finanzas`, {
+      headers: getAuthHeaders()
+    }).then(res => res.json()),
 
-  })
+    fetch(`${API_URL}/personas`, {
+      headers: getAuthHeaders()
+    }).then(res => res.json())
 
-  .then(res => res.json())
+  ])
 
-  .then(data => {
+  .then(([finanzas, personas]) => {
 
-    // Prepara datos para Chart.js
-    if (!Array.isArray(data)) {
-      mostrarAlerta(
-      data.mensaje || 'No se pudieron cargar los gráficos',
-      'warning'
-      );
+    if (!Array.isArray(finanzas) || !Array.isArray(personas)) {
+      mostrarAlerta('No se pudieron cargar los gráficos', 'warning');
       return;
     }
 
-    const nombres = data.map(
-      f => `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`
-    );
+    // Mapa id → bloque desde personas
+    const bloqueMap = {};
+    personas.forEach(p => {
+      bloqueMap[p.id] = p.bloque || 'Sin Bloque';
+    });
 
-    const multas = data.map(
-      f => Number(f.total_multas)
-    );
+    // Agrupa finanzas por bloque
+    const porBloque = {};
 
-    const cuotas = data.map(
-      f => Number(f.total_cuotas || 0)
-    );
+    finanzas.forEach(f => {
 
-    const deuda = data.map(
-      f => Number(f.deuda_actual)
-    );
+      const bloque = bloqueMap[f.id] || 'Sin Bloque';
 
-    // Destruye gráficos anteriores
-    // para evitar duplicados visuales
-    if (chartMultas) {
+      if (!porBloque[bloque]) {
+        porBloque[bloque] = { multas: 0, cuotas: 0, deuda: 0 };
+      }
 
-      chartMultas.destroy();
+      porBloque[bloque].multas += Number(f.total_multas || 0);
+      porBloque[bloque].cuotas += Number(f.total_cuotas  || 0);
+      porBloque[bloque].deuda  += Number(f.deuda_actual  || 0);
 
-    } 
+    });
 
-if (chartDeuda) {
+    const bloques = Object.keys(porBloque).sort();
+    const multas  = bloques.map(b => porBloque[b].multas);
+    const cuotas  = bloques.map(b => porBloque[b].cuotas);
+    const deuda   = bloques.map(b => porBloque[b].deuda);
 
-  chartDeuda.destroy();
+    // Paleta de colores para bloques
+    const colores = [
+      '#4e79a7', '#f28e2b', '#e15759',
+      '#76b7b2', '#59a14f', '#edc948',
+      '#b07aa1', '#ff9da7', '#9c755f'
+    ];
 
-}
+    if (chartMultas) chartMultas.destroy();
+    if (chartDeuda)  chartDeuda.destroy();
 
-// Grafico barras multas por socio
     chartMultas = new Chart(
-
-      document.getElementById(
-        'graficoMultas'
-      ),
-
+      document.getElementById('graficoMultas'),
       {
-
         type: 'bar',
-
         data: {
-
-          labels: nombres,
-
+          labels: bloques,
           datasets: [
-  {
-
-    label: 'Multas',
-
-    data: multas
-
-  },
-  {
-
-    label: 'Cuotas',
-
-    data: cuotas
-
-  }
-]
-
+            {
+              label: 'Multas',
+              data: multas,
+              backgroundColor: '#e15759'
+            },
+            {
+              label: 'Cuotas',
+              data: cuotas,
+              backgroundColor: '#4e79a7'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' }
+          }
         }
-
       }
-
     );
 
-    // Grafico circular deuda financiera
     chartDeuda = new Chart(
-
-      document.getElementById(
-        'graficoDeuda'
-      ),
-
+      document.getElementById('graficoDeuda'),
       {
-
         type: 'pie',
-
         data: {
-
-          labels: nombres,
-
+          labels: bloques,
           datasets: [{
-
             label: 'Deuda',
-
-            data: deuda
-
+            data: deuda,
+            backgroundColor: colores.slice(0, bloques.length)
           }]
-
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'right' }
+          }
         }
-
       }
-
     );
 
   })
