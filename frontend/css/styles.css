@@ -426,17 +426,33 @@ canvas {
 }
 
 .qr-scanner-wrapper {
+  position: relative;
   background: #0f172a;
   border-radius: 16px;
   margin-top: 16px;
+  width: min(100%, 360px);
+  aspect-ratio: 1 / 1;
   overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
 .qr-scanner-video {
   display: block;
   width: 100%;
-  max-height: 320px;
+  height: 100%;
   object-fit: cover;
+}
+
+.qr-scanner-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 14%;
+  border: 2px solid rgba(255, 255, 255, 0.82);
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 999px rgba(15, 23, 42, 0.18),
+    0 0 22px rgba(244, 122, 34, 0.28);
+  pointer-events: none;
 }
 
 .qr-attendance-status {
