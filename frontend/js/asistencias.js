@@ -680,8 +680,14 @@ function aplicarAtrasoAsistencia(evento, fechaEscaneo) {
   const minutos =
     document.getElementById('minutos');
 
+  // Si el evento no es de hoy no se puede calcular atraso con precisión
+  // (el evento sólo guarda fecha sin hora, comparar contra otro día daría minutos irreales)
+  const esHoy =
+    fechaEvento &&
+    esMismaFechaAsistencia(fechaEvento, fechaEscaneo);
+
   const minutosAtraso =
-    fechaEvento
+    esHoy
       ? Math.max(
         0,
         Math.floor(
