@@ -16,11 +16,19 @@ exports.obtenerPersonas = (callback) => {
 
       apellido_materno,
 
+      bloque,
+
+      sexo,
+
+      direccion,
+
       email,
 
       telefono,
 
       fecha_nacimiento,
+
+      fecha_ingreso,
 
       COALESCE(estado, 'activo') AS estado
 
