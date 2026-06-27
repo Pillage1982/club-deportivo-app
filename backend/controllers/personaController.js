@@ -67,11 +67,16 @@ function normalizarPersona(data) {
     apellido_materno: limpiarTexto(data.apellido_materno),
     email: limpiarTexto(data.email).toLowerCase(),
     telefono: limpiarTexto(data.telefono),
-    fecha_nacimiento: data.fecha_nacimiento
+    fecha_nacimiento: data.fecha_nacimiento,
+    estado: limpiarTexto(data.estado || 'activo').toLowerCase()
   };
 }
 
 function validarPersona(data) {
+  if (!['activo', 'receso'].includes(data.estado)) {
+    return 'Seleccione un estado de integrante valido';
+  }
+
   if (!validarRut(data.rut)) {
     return 'Ingrese un RUT chileno válido';
   }
@@ -124,33 +129,73 @@ if (errorValidacion) {
   });
 }
 
-personaModel.crearPersona(
-  data,
-
-    (err, result) => {
-
-      if (err) {
-  if (err.code === 'ER_DUP_ENTRY') {
-    return res.status(409).json({
-      mensaje: 'Ya existe un integrante registrado con ese RUT'
-    });
-  }
-
-  console.error('Error creando persona:', err);
-  return res.status(500).json({
-    mensaje: 'Error al crear integrante'
-  });
-}
-
-      res.json({
-        mensaje: 'Integrante creado correctamente'
-      });
-
-    }
-
-  );
+responderCreacionPersona(res, data);
 
 };
+
+function responderCreacionPersona(res, data) {
+  personaModel.obtenerPersonaPorRutIncluyendoInactivos(
+    limpiarRut(data.rut),
+    (errBusqueda, resultados) => {
+      if (errBusqueda) {
+        console.error('Error buscando persona por RUT:', errBusqueda);
+        return res.status(500).json({
+          mensaje: 'Error al crear integrante'
+        });
+      }
+
+      const personaExistente =
+        Array.isArray(resultados) ? resultados[0] : null;
+
+      if (personaExistente && Number(personaExistente.activo) === 1) {
+        return res.status(409).json({
+          mensaje: 'Ya existe un integrante activo con ese RUT'
+        });
+      }
+
+      if (personaExistente) {
+        return personaModel.reactivarPersona(
+          personaExistente.id,
+          data,
+          (errReactivar) => {
+            if (errReactivar) {
+              console.error('Error reactivando persona:', errReactivar);
+              return res.status(500).json({
+                mensaje: 'Error al reactivar integrante'
+              });
+            }
+
+            return res.json({
+              mensaje: 'Integrante reactivado correctamente'
+            });
+          }
+        );
+      }
+
+      personaModel.crearPersona(
+        data,
+        (errCrear) => {
+          if (errCrear) {
+            if (errCrear.code === 'ER_DUP_ENTRY') {
+              return res.status(409).json({
+                mensaje: 'Ya existe un integrante registrado con ese RUT'
+              });
+            }
+
+            console.error('Error creando persona:', errCrear);
+            return res.status(500).json({
+              mensaje: 'Error al crear integrante'
+            });
+          }
+
+          return res.json({
+            mensaje: 'Integrante creado correctamente'
+          });
+        }
+      );
+    }
+  );
+}
 
 exports.eliminar = (req, res) => {
 

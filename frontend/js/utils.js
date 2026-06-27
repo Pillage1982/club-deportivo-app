@@ -276,6 +276,7 @@ function aplicarRolesFrontend() {
 
   if (rol === 'tesorero') {
   ocultarSelector('.nav-asistencias');
+  ocultarSelector('.nav-eventos');
 
   ocultarElemento('modulo_asistencia');
   ocultarElemento('form_personas');

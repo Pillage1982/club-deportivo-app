@@ -86,14 +86,14 @@
             <li class="nav-item mb-2 nav-asistencias">
               <a class="nav-link text-white" href="#asistencias">
                 <i class="bi bi-check2-square"></i>
-                Asistencias
+                Asistencia
               </a>
             </li>
 
-            <li class="nav-item mb-2 nav-multas">
-              <a class="nav-link text-white" href="#multas">
-                <i class="bi bi-currency-dollar"></i>
-                Multas
+            <li class="nav-item mb-2 nav-eventos">
+              <a class="nav-link text-white" href="#eventos">
+                <i class="bi bi-calendar-event"></i>
+                Eventos
               </a>
             </li>
 
@@ -101,6 +101,13 @@
               <a class="nav-link text-white" href="#finanzas">
                 <i class="bi bi-graph-up"></i>
                 Finanzas
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-multas">
+              <a class="nav-link text-white" href="#multas">
+                <i class="bi bi-currency-dollar"></i>
+                Multas
               </a>
             </li>
           </ul>
@@ -137,14 +144,14 @@
             <li class="nav-item mb-2 nav-asistencias">
               <a class="nav-link text-white" href="#asistencias">
                 <i class="bi bi-check2-square"></i>
-                Asistencias
+                Asistencia
               </a>
             </li>
 
-            <li class="nav-item mb-2 nav-multas">
-              <a class="nav-link text-white" href="#multas">
-                <i class="bi bi-currency-dollar"></i>
-                Multas
+            <li class="nav-item mb-2 nav-eventos">
+              <a class="nav-link text-white" href="#eventos">
+                <i class="bi bi-calendar-event"></i>
+                Eventos
               </a>
             </li>
 
@@ -152,6 +159,13 @@
               <a class="nav-link text-white" href="#finanzas">
                 <i class="bi bi-graph-up"></i>
                 Finanzas
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-multas">
+              <a class="nav-link text-white" href="#multas">
+                <i class="bi bi-currency-dollar"></i>
+                Multas
               </a>
             </li>
           </ul>
@@ -228,10 +242,46 @@
               </div>
             </div>
           </div>
+
+          <div
+            id="dashboard_asistencia_stats"
+            class="attendance-stat-grid mt-4">
+            <div class="attendance-stat">
+              <div>
+                <span class="attendance-stat-label">
+                  Ensayos
+                </span>
+
+                <strong id="asistencia_ensayos_porcentaje">
+                  0%
+                </strong>
+              </div>
+
+              <small id="asistencia_ensayos_detalle">
+                0 presentes de 0 registros
+              </small>
+            </div>
+
+            <div class="attendance-stat">
+              <div>
+                <span class="attendance-stat-label">
+                  Presentaciones
+                </span>
+
+                <strong id="asistencia_presentaciones_porcentaje">
+                  0%
+                </strong>
+              </div>
+
+              <small id="asistencia_presentaciones_detalle">
+                0 presentes de 0 registros
+              </small>
+            </div>
+          </div>
         </section>
 
         <!-- GRAFICOS -->
-        <section class="mt-5">
+        <section id="dashboard_graficos" class="mt-5">
           <div id="dashboard_charts" class="dashboard-chart-grid">
             <div id="grafico_multas_wrapper" class="col-12 col-md-6 mb-3">
               <div class="card p-3 shadow-sm border-0">
@@ -260,6 +310,74 @@
           <h2 data-config-text="etiquetas.modulos.registrarAsistencia">
             Registrar Asistencia
           </h2>
+
+          <div class="qr-attendance-panel mb-4">
+            <div class="qr-attendance-actions">
+              <button
+                type="button"
+                id="btn_iniciar_qr"
+                class="btn btn-outline-primary"
+                onclick="iniciarEscaneoAsistencia()"
+                disabled>
+                <i class="bi bi-qr-code-scan"></i>
+                <span id="btn_iniciar_qr_texto">Seleccione una actividad primero</span>
+              </button>
+
+              <button
+                type="button"
+                id="btn_detener_qr"
+                class="btn btn-outline-secondary"
+                onclick="detenerEscaneoAsistencia()"
+                disabled>
+                <i class="bi bi-stop-circle"></i>
+                Detener
+              </button>
+            </div>
+
+            <div
+              id="qr_scanner_wrapper"
+              class="qr-scanner-wrapper d-none">
+              <video
+                id="qr_scanner_video"
+                class="qr-scanner-video"
+                muted
+                playsinline>
+              </video>
+            </div>
+
+            <div class="row g-2 mt-3">
+              <div class="col-md-8">
+                <label
+                  for="qr_asistencia_manual"
+                  class="form-label">
+                  Lectura QR o RUT
+                </label>
+
+                <input
+                  type="text"
+                  id="qr_asistencia_manual"
+                  class="form-control"
+                  placeholder="Pegue lectura de credencial o carnet">
+              </div>
+
+              <div class="col-md-4 d-flex align-items-end">
+                <button
+                  type="button"
+                  id="btn_usar_lectura"
+                  class="btn btn-outline-primary w-100"
+                  onclick="procesarLecturaAsistenciaManual()"
+                  disabled>
+                  Usar lectura
+                </button>
+              </div>
+            </div>
+
+            <p
+              id="qr_asistencia_estado"
+              class="qr-attendance-status mt-3 mb-0">
+              Puede escanear la credencial de socio o el carnet de identidad.
+            </p>
+          </div>
 
           <div class="mb-3 px-2">
             <label class="form-label">Nombre Completo</label>
@@ -372,6 +490,15 @@
                   id="fecha_nacimiento"
                   class="form-control">
               </div>
+
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Estado</label>
+
+                <select id="persona_estado" class="form-select">
+                  <option value="activo">Activo</option>
+                  <option value="receso">Receso</option>
+                </select>
+              </div>
             </div>
 
             <button
@@ -413,6 +540,7 @@
                   <th>Teléfono</th>
                   <th>Edad</th>
                   <th>Categoría</th>
+                  <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -891,6 +1019,7 @@
   <script src="js/personas.js"></script>
   <script src="js/eventos.js"></script>
   <script src="js/pagos.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="js/asistencias.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/cuotas.js"></script>

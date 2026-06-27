@@ -1,5 +1,14 @@
 const db = require('../config/db');
 
+exports.crearMultaAsistencia = (data, callback) => {
+  db.query(
+    `INSERT INTO multas (persona_id, asistencia_id, monto, motivo, estado)
+     VALUES (?, ?, ?, ?, 'pendiente')`,
+    [data.persona_id, data.asistencia_id, data.monto, data.motivo],
+    callback
+  );
+};
+
 exports.obtenerMultas = (callback) => {
 
   const query = `

@@ -16,11 +16,21 @@ exports.obtenerPersonas = (callback) => {
 
       apellido_materno,
 
+      bloque,
+
+      sexo,
+
+      direccion,
+
       email,
 
       telefono,
 
-      fecha_nacimiento
+      fecha_nacimiento,
+
+      fecha_ingreso,
+
+      COALESCE(estado, 'activo') AS estado
 
     FROM personas
 
@@ -47,10 +57,11 @@ exports.crearPersona = (
       apellido_materno,
       email,
       telefono,
-      fecha_nacimiento
+      fecha_nacimiento,
+      estado
     )
 
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 
   `;
 
@@ -65,13 +76,102 @@ exports.crearPersona = (
       data.apellido_materno,
       data.email,
       data.telefono,
-      data.fecha_nacimiento || null
+      data.fecha_nacimiento || null,
+      data.estado || 'activo'
     ],
 
     callback
 
   );
 
+};
+
+exports.obtenerPersonaPorRutIncluyendoInactivos = (
+  rut,
+  callback
+) => {
+  const query = `
+
+    SELECT
+      id,
+      rut,
+      nombres,
+      apellido_paterno,
+      apellido_materno,
+      email,
+      telefono,
+      fecha_nacimiento,
+      activo,
+      COALESCE(estado, 'activo') AS estado
+
+    FROM personas
+
+    WHERE
+      REPLACE(
+        REPLACE(
+          REPLACE(
+            UPPER(rut),
+            '.',
+            ''
+          ),
+          '-',
+          ''
+        ),
+        ' ',
+        ''
+      ) = ?
+
+    LIMIT 1
+
+  `;
+
+  db.query(
+    query,
+    [rut],
+    callback
+  );
+};
+
+exports.reactivarPersona = (
+  id,
+  data,
+  callback
+) => {
+  const query = `
+
+    UPDATE personas
+
+    SET
+
+      rut = ?,
+      nombres = ?,
+      apellido_paterno = ?,
+      apellido_materno = ?,
+      email = ?,
+      telefono = ?,
+      fecha_nacimiento = ?,
+      estado = ?,
+      activo = 1
+
+    WHERE id = ?
+
+  `;
+
+  db.query(
+    query,
+    [
+      data.rut,
+      data.nombres,
+      data.apellido_paterno,
+      data.apellido_materno,
+      data.email,
+      data.telefono,
+      data.fecha_nacimiento || null,
+      data.estado || 'activo',
+      id
+    ],
+    callback
+  );
 };
 
 exports.actualizarPersona = (
@@ -92,7 +192,8 @@ exports.actualizarPersona = (
       apellido_materno = ?,
       email = ?,
       telefono = ?,
-      fecha_nacimiento = ?
+      fecha_nacimiento = ?,
+      estado = ?
 
     WHERE id = ?
 
@@ -111,6 +212,7 @@ exports.actualizarPersona = (
       data.email,
       data.telefono,
       data.fecha_nacimiento || null,
+      data.estado || 'activo',
 
       id
 
@@ -131,7 +233,9 @@ exports.eliminarPersona = (
 
     UPDATE personas
 
-    SET activo = 0
+    SET
+      activo = 0,
+      estado = 'inactivo'
 
     WHERE id = ?
 

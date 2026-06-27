@@ -24,7 +24,8 @@ function cargarPersonas() {
       const select = document.getElementById('persona_id');
       const selectPago = document.getElementById('pago_persona_id');
 
-      select.innerHTML = '';
+      select.innerHTML =
+        '<option value="">Seleccione un integrante</option>';
 
       selectPago.innerHTML = '';
 
@@ -45,8 +46,12 @@ function cargarPersonas() {
         option.value = persona.id;
         option.textContent = `${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}`;
 
-        select.appendChild(option);
-        const optionPago = option.cloneNode(true); selectPago.appendChild(optionPago);
+        if ((persona.estado || 'activo') === 'activo') {
+          select.appendChild(option);
+        }
+
+        const optionPago = option.cloneNode(true);
+        selectPago.appendChild(optionPago);
 
       });
 
@@ -91,6 +96,11 @@ function cargarPersonas() {
       document.getElementById(
       'fecha_nacimiento'
     ).value,
+
+    estado:
+      document.getElementById(
+        'persona_estado'
+      ).value,
 
   };
 
@@ -198,6 +208,10 @@ document.getElementById(
 document.getElementById(
   'fecha_nacimiento'
 ).value = '';
+
+document.getElementById(
+  'persona_estado'
+).value = 'activo';
 
 // Refresca selectores y tabla personas
     cargarPersonas();
@@ -335,7 +349,7 @@ function renderizarTablaPersonas(personas) {
     tabla.innerHTML = `
 
       <tr>
-        <td colspan="7" class="text-center text-muted">
+        <td colspan="8" class="text-center text-muted">
           No se encontraron integrantes
         </td>
       </tr>
@@ -383,6 +397,10 @@ function renderizarTablaPersonas(personas) {
 
           <td>
             ${categoria}
+          </td>
+
+          <td>
+            ${obtenerBadgeEstadoPersona(persona.estado)}
           </td>
 
           <td class="text-nowrap">
@@ -471,6 +489,10 @@ function editarPersona(persona) {
     persona.fecha_nacimiento
     ? persona.fecha_nacimiento.split('T')[0]
   : '';
+
+  document.getElementById(
+    'persona_estado'
+  ).value = persona.estado || 'activo';
 
   document.getElementById(
     'btn_guardar_persona'
@@ -601,6 +623,21 @@ function calcularCategoria(fechaNacimiento) {
 
 }
 
+function obtenerBadgeEstadoPersona(estado) {
+  const valor =
+    estado || 'activo';
+
+  if (valor === 'receso') {
+    return '<span class="badge bg-info text-dark">Receso</span>';
+  }
+
+  if (valor === 'inactivo') {
+    return '<span class="badge bg-secondary">Inactivo</span>';
+  }
+
+  return '<span class="badge bg-success">Activo</span>';
+}
+
 function limpiarRutFrontend(rut) {
   return String(rut || '').replace(/\./g, '').replace(/-/g, '').trim().toUpperCase();
 }
@@ -686,6 +723,10 @@ function validarPersonaFrontend(data) {
 
   if (!validarFechaNacimientoFrontend(data.fecha_nacimiento)) {
     return 'Ingrese una fecha de nacimiento válida';
+  }
+
+  if (!['activo', 'receso'].includes(data.estado || 'activo')) {
+    return 'Seleccione un estado de integrante valido';
   }
 
   return null;

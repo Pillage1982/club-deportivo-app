@@ -16,6 +16,7 @@ CREATE TABLE personas (
     telefono VARCHAR(20),
     fecha_nacimiento DATE,
     activo TINYINT DEFAULT 1,
+    estado ENUM('activo', 'receso', 'inactivo') DEFAULT 'activo',
     fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -381,4 +382,7 @@ LEFT JOIN (
 
 ON p.id = pg.persona_id
 
-WHERE p.activo = 1;
+WHERE
+  p.activo = 1
+  AND
+  COALESCE(p.estado, 'activo') = 'activo';
