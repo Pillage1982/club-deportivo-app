@@ -506,20 +506,18 @@ async function procesarLecturaAsistencia(lectura) {
 }
 
 async function buscarPersonaPorLecturaAsistencia(lectura) {
+  const personas =
+    await obtenerPersonasParaQrAsistencia();
 
-  // Debug: muestra en consola qué se está buscando
+  const datos =
+    extraerDatosLecturaAsistencia(lectura);
+
   console.log('[QR] lectura recibida:', lectura);
   console.log('[QR] datos extraídos:', datos);
   console.log('[QR] personas cargadas:', personas.length);
   if (datos.rut) {
     console.log('[QR] RUTs en BD:', personas.map(p => normalizarRutAsistencia(p.rut)));
   }
-  
-  const personas =
-    await obtenerPersonasParaQrAsistencia();
-
-  const datos =
-    extraerDatosLecturaAsistencia(lectura);
 
   if (datos.rut) {
     return personas.find(persona => (
@@ -866,53 +864,6 @@ function cargarAsistencias() {
               : '<span class="badge bg-danger">Ausente</span>'
             }</td>
             <td>${asistencia.minutos_atraso}</td>
-          </tr>
-        `;
-
-      });
-
-    })
-    .catch(err => console.error(err));
-
-}
-
-// =====================================
-// CARGAR MULTAS AUTOMATICAS
-// =====================================
-
-function cargarMultas() {
-
-  fetch(`${API_URL}/multas`, {
-
-  headers: getAuthHeaders()
-
-})
-    .then(res => res.json())
-    .then(data => {
-
-      const tabla = document.getElementById('tabla_multas');
-
-      tabla.innerHTML = '';
-
-      if (!Array.isArray(data)) {
-  mostrarAlerta(
-    data.mensaje || 'No se pudo cargar la tabla de multas',
-    'warning'
-  );
-  return;
-}
-
-      data.forEach(multa => {
-
-        // Multas generadas automáticamente
-        // desde registro de asistencia
-        tabla.innerHTML += `
-
-          <tr>
-            <td>${multa.nombres} ${multa.apellido_paterno} ${multa.apellido_materno || ''}</td>
-            <td>$${multa.monto}</td>
-            <td>${multa.motivo}</td>
-            <td>${formatearFecha(multa.fecha)}</td>
           </tr>
         `;
 
