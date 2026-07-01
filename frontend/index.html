@@ -11,552 +11,259 @@
 
   <title>Gestion de Agrupaciones</title>
 
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
-    rel="stylesheet">
-
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
-
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 
 <body>
-  <div
-    id="alert_container"
-    class="position-fixed top-0 end-0 p-3"
-    style="z-index: 9999;">
-  </div>
+  <div id="alert_container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
 
+  <!-- NAVBAR -->
   <nav class="navbar navbar-dark bg-dark">
     <div class="container-fluid">
-      <button
-        class="btn btn-outline-light d-lg-none me-2"
-        type="button"
-        data-bs-toggle="offcanvas"
-        data-bs-target="#sidebarMobile">
-
-        <i class="bi bi-list"></i>
-      </button>
-
-      <span class="navbar-brand mb-0 h1 d-flex align-items-/center gap-2">
-        
-        <img
-          class="cliente-logo"
-          src="img/logo-calamena.jpeg"
-          alt="Gran Diablada Calameña"
-        data-config-img="cliente.logo">
-
-        <span data-config="producto.nombre">
-          Gran Diablada Calameña
-        </span>
-
+      <span class="navbar-brand mb-0 h1 d-flex align-items-center gap-2">
+        <img class="cliente-logo" src="img/logo-calamena.jpeg" alt="Gran Diablada Calameña" data-config-img="cliente.logo">
+        <span data-config="producto.nombre">Gran Diablada Calameña</span>
       </span>
-
-      <div class="d-flex align-items-center gap-2 flex-wrap">
-        <span class="text-white" id="usuario_logeado"></span>
-
-        <button
-        type="button"
-        class="btn btn-danger"
-        onclick="cerrarSesion()"
-        data-config-text="etiquetas.botones.cerrarSesion">
-          Cerrar Sesión
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-white small d-none d-sm-inline" id="usuario_logeado"></span>
+        <button type="button" class="btn btn-danger btn-sm" onclick="cerrarSesion()">
+          <i class="bi bi-box-arrow-right"></i>
+          <span class="d-none d-md-inline"> Cerrar Sesión</span>
         </button>
       </div>
     </div>
   </nav>
 
-  <div class="container-fluid">
-    <div class="d-flex">
+  <!-- PESTAÑAS PRINCIPALES -->
+  <div class="app-tabs-wrapper">
+    <ul class="nav nav-tabs app-tabs" id="mainTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <a class="nav-link active" data-bs-toggle="tab" href="#tab_dashboard" role="tab">
+          <i class="bi bi-speedometer2"></i><span class="tab-label"> Dashboard</span>
+        </a>
+      </li>
+      <li class="nav-item" role="presentation" id="nav_tab_asistencia">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab_asistencia" role="tab">
+          <i class="bi bi-qr-code-scan"></i><span class="tab-label"> Asistencia</span>
+        </a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab_tablas" role="tab">
+          <i class="bi bi-table"></i><span class="tab-label"> Tablas</span>
+        </a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab_formularios" role="tab">
+          <i class="bi bi-pencil-square"></i><span class="tab-label"> Formularios</span>
+        </a>
+      </li>
+    </ul>
+  </div>
 
-      <!-- SIDEBAR DESKTOP -->
-      <div class="d-none d-lg-block sidebar-desktop">
-        <div class="sidebar-mobile p-3 min-vh-100">
-          <ul class="nav flex-column">
-            <li class="nav-item mb-2 nav-dashboard">
-              <a class="nav-link text-white" href="#dashboard">
-                <i class="bi bi-speedometer2"></i>
-                Dashboard
-              </a>
-            </li>
+  <!-- CONTENIDO DE PESTAÑAS -->
+  <div class="tab-content app-tab-content">
 
-            <li class="nav-item mb-2 nav-asistencias">
-              <a class="nav-link text-white" href="#asistencias">
-                <i class="bi bi-check2-square"></i>
-                Asistencia
-              </a>
-            </li>
+    <!-- ============================= -->
+    <!-- TAB: DASHBOARD                -->
+    <!-- ============================= -->
+    <div class="tab-pane fade show active" id="tab_dashboard" role="tabpanel">
 
-            <li class="nav-item mb-2 nav-eventos">
-              <a class="nav-link text-white" href="#eventos">
-                <i class="bi bi-calendar-event"></i>
-                Eventos
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-finanzas">
-              <a class="nav-link text-white" href="#finanzas">
-                <i class="bi bi-graph-up"></i>
-                Finanzas
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-multas">
-              <a class="nav-link text-white" href="#multas">
-                <i class="bi bi-currency-dollar"></i>
-                Multas
-              </a>
-            </li>
-          </ul>
+      <section id="dashboard">
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3">
+            <div class="card text-bg-primary shadow-sm border-0">
+              <div class="card-body shadow-sm border-0">
+                <h5 class="card-title"><i class="bi bi-people-fill"></i> Integrantes</h5>
+                <h2 id="total_personas">0</h2>
+              </div>
+            </div>
+          </div>
+          <div id="card_dashboard_multas" class="col-6 col-md-3">
+            <div class="card text-bg-danger shadow-sm border-0">
+              <div class="card-body shadow-sm border-0">
+                <h5 class="card-title"><i class="bi bi-exclamation-triangle-fill"></i> Multas</h5>
+                <h2 id="total_multas">0</h2>
+              </div>
+            </div>
+          </div>
+          <div id="card_dashboard_pagado" class="col-6 col-md-3">
+            <div class="card text-bg-success shadow-sm border-0">
+              <div class="card-body shadow-sm border-0">
+                <h5 class="card-title"><i class="bi bi-cash-stack"></i> Pagado</h5>
+                <h2 id="total_pagado">$0</h2>
+              </div>
+            </div>
+          </div>
+          <div id="card_dashboard_deuda" class="col-6 col-md-3">
+            <div class="card text-bg-warning shadow-sm border-0">
+              <div class="card-body shadow-sm border-0">
+                <h5 class="card-title"><i class="bi bi-wallet2"></i> Deuda</h5>
+                <h2 id="deuda_total">$0</h2>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- SIDEBAR MOVIL -->
-      <div
-        class="offcanvas offcanvas-start d-lg-none"
-        tabindex="-1"
-        id="sidebarMobile">
+        <div id="dashboard_asistencia_stats" class="mb-4">
+          <h6 class="text-muted mb-2">Asistencia por Bloque</h6>
+          <div id="asistencia_por_bloque"><p class="text-muted small">Cargando...</p></div>
+        </div>
+      </section>
 
-        <div class="offcanvas-header">
-          <h5 class="offcanvas-title text-white">
-            Menú
-          </h5>
+      <section id="dashboard_graficos">
+        <div class="row g-3">
+          <div id="grafico_multas_wrapper" class="col-12 col-md-6">
+            <div class="card p-3 shadow-sm border-0">
+              <h5>Multas por Bloque</h5>
+              <div class="chart-container"><canvas id="graficoMultas"></canvas></div>
+            </div>
+          </div>
+          <div id="grafico_deuda_wrapper" class="col-12 col-md-6">
+            <div class="card p-3 shadow-sm border-0">
+              <h5>Deuda por Bloque</h5>
+              <div class="chart-container"><canvas id="graficoDeuda"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
 
-          <button
-            type="button"
-            class="btn-close btn-close-white"
-            data-bs-dismiss="offcanvas">
+    <!-- ============================= -->
+    <!-- TAB: ASISTENCIA               -->
+    <!-- ============================= -->
+    <div class="tab-pane fade" id="tab_asistencia" role="tabpanel">
+      <section id="modulo_asistencia">
+
+        <!-- Móvil: botón selector de evento -->
+        <div class="d-md-none mb-3">
+          <button class="btn-evento-selector" data-bs-toggle="modal" data-bs-target="#modal_eventos_activos">
+            <i class="bi bi-calendar-event"></i>
+            <span id="label_evento_mobile">Seleccionar Actividad</span>
+            <i class="bi bi-chevron-down ms-auto"></i>
           </button>
         </div>
 
-        <div class="offcanvas-body sidebar-mobile">
-          <ul class="nav flex-column">
-            <li class="nav-item mb-2 nav-dashboard">
-              <a class="nav-link text-white" href="#dashboard">
-                <i class="bi bi-speedometer2"></i>
-                Dashboard
-              </a>
-            </li>
+        <div class="asistencia-layout">
 
-            <li class="nav-item mb-2 nav-asistencias">
-              <a class="nav-link text-white" href="#asistencias">
-                <i class="bi bi-check2-square"></i>
-                Asistencia
-              </a>
-            </li>
+          <!-- Panel scanner (móvil oscuro, escritorio claro) -->
+          <div class="scanner-panel">
 
-            <li class="nav-item mb-2 nav-eventos">
-              <a class="nav-link text-white" href="#eventos">
-                <i class="bi bi-calendar-event"></i>
-                Eventos
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-finanzas">
-              <a class="nav-link text-white" href="#finanzas">
-                <i class="bi bi-graph-up"></i>
-                Finanzas
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-multas">
-              <a class="nav-link text-white" href="#multas">
-                <i class="bi bi-currency-dollar"></i>
-                Multas
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- CONTENIDO -->
-      <main class="main-content flex-grow-1 p-4">
-
-        <!-- REGISTRAR ASISTENCIA -->
-        <section id="modulo_asistencia" class="module-section">
-          <h2 data-config-text="etiquetas.modulos.registrarAsistencia">
-            Registrar Asistencia
-          </h2>
-
-          <div class="qr-attendance-panel mb-4">
-            <div class="qr-attendance-actions">
-              <button
-                type="button"
-                id="btn_iniciar_qr"
-                class="btn btn-outline-primary"
-                onclick="iniciarEscaneoAsistencia()"
-                disabled>
-                <i class="bi bi-qr-code-scan"></i>
-                <span id="btn_iniciar_qr_texto">Seleccione una actividad primero</span>
-              </button>
-
-              <button
-                type="button"
-                id="btn_detener_qr"
-                class="btn btn-outline-secondary"
-                onclick="detenerEscaneoAsistencia()"
-                disabled>
-                <i class="bi bi-stop-circle"></i>
-                Detener
-              </button>
+            <div id="qr_scanner_wrapper" class="scanner-video-wrapper d-none">
+              <video id="qr_scanner_video" class="scanner-video" muted playsinline></video>
+              <div class="scanner-line"></div>
             </div>
 
-            <div
-              id="qr_scanner_wrapper"
-              class="qr-scanner-wrapper d-none">
-              <video
-                id="qr_scanner_video"
-                class="qr-scanner-video"
-                muted
-                playsinline>
-              </video>
-            </div>
-
-            <div class="row g-2 mt-3">
-              <div class="col-md-8">
-                <label
-                  for="qr_asistencia_manual"
-                  class="form-label">
-                  Lectura QR o RUT
-                </label>
-
-                <input
-                  type="text"
-                  id="qr_asistencia_manual"
-                  class="form-control"
-                  placeholder="Pegue lectura de credencial o carnet">
-              </div>
-
-              <div class="col-md-4 d-flex align-items-end">
-                <button
-                  type="button"
-                  id="btn_usar_lectura"
-                  class="btn btn-outline-primary w-100"
-                  onclick="procesarLecturaAsistenciaManual()"
-                  disabled>
-                  Usar lectura
-                </button>
-              </div>
-            </div>
-
-            <p
-              id="qr_asistencia_estado"
-              class="qr-attendance-status mt-3 mb-0">
-              Puede escanear la credencial de socio o el carnet de identidad.
+            <p id="qr_asistencia_estado" class="scanner-status">
+              Seleccione una actividad para comenzar.
             </p>
-          </div>
 
-          <div class="mb-3 px-2">
-            <label class="form-label">Nombre Completo</label>
-            <select id="persona_id" class="form-select"></select>
-          </div>
-
-          <div class="mb-3 px-2">
-            <label class="form-label">Actividad</label>
-            <select id="evento_id" class="form-select"></select>
-          </div>
-
-          <div id="aviso_evento_cerrado" class="alert alert-warning py-2 px-3 d-none" role="alert">
-            Esta actividad ya fue finalizada. No se puede registrar más asistencia.
-          </div>
-
-          <div class="mb-3 px-2">
-            <label class="form-label">Estado</label>
-            <select id="estado" class="form-select">
-              <option value="presente">Presente</option>
-              <option value="atrasado">Atrasado</option>
-              <option value="ausente">Ausente</option>
-            </select>
-          </div>
-
-          <div class="mb-3 px-2">
-            <label class="form-label">Minutos atraso</label>
-
-            <input
-              type="number"
-              id="minutos"
-              class="form-control"
-              value="0">
-          </div>
-
-          <button
-          type="button"
-          id="btn_registrar_asistencia"
-          class="btn btn-primary"
-          onclick="registrarAsistencia()"
-          data-config-text="etiquetas.botones.registrar">
-            Registrar
-          </button>
-
-          <p id="respuesta" class="mt-3"></p>
-        </section>
-
-        <!-- DASHBOARD -->
-        <section id="dashboard" class="mt-4">
-          <h2 data-config-text="etiquetas.modulos.dashboard">
-            Dashboard
-          </h2>
-
-          <div class="row g-3">
-            <div class="col-6 col-md-3">
-              <div class="card text-bg-primary shadow-sm border-0">
-                <div class="card-body shadow-sm border-0">
-                  <h5 class="card-title shadow-sm border-0">
-                    <i class="bi bi-people-fill"></i>
-                    Integrantes
-                  </h5>
-
-                  <h2 id="total_personas">
-                    0
-                  </h2>
-                </div>
-              </div>
+            <div class="scanner-btns mb-3">
+              <button type="button" id="btn_iniciar_qr" class="btn-scan" onclick="iniciarEscaneoAsistencia()" disabled>
+                <i class="bi bi-qr-code-scan"></i>
+                <span id="btn_iniciar_qr_texto">ESCANEAR QR</span>
+              </button>
+              <button type="button" id="btn_detener_qr" class="btn-stop d-none" onclick="detenerEscaneoAsistencia()">
+                <i class="bi bi-stop-circle"></i> DETENER
+              </button>
             </div>
 
-            <div id="card_dashboard_multas" class="col-6 col-md-3">
-              <div class="card text-bg-danger shadow-sm border-0">
-                <div class="card-body shadow-sm border-0">
-                  <h5 class="card-title shadow-sm border-0">
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                    Multas
-                  </h5>
-
-                  <h2 id="total_multas">
-                    0
-                  </h2>
-                </div>
-              </div>
-            </div>
-
-            <div id="card_dashboard_pagado" class="col-6 col-md-3">
-              <div class="card text-bg-success shadow-sm border-0">
-                <div class="card-body shadow-sm border-0">
-                  <h5 class="card-title shadow-sm border-0">
-                    <i class="bi bi-cash-stack"></i>
-                    Pagado
-                  </h5>
-
-                  <h2 id="total_pagado">
-                    $0
-                  </h2>
-                </div>
-              </div>
-            </div>
-
-            <div id="card_dashboard_deuda" class="col-6 col-md-3">
-              <div class="card text-bg-warning shadow-sm border-0">
-                <div class="card-body shadow-sm border-0">
-                  <h5 class="card-title shadow-sm border-0">
-                    <i class="bi bi-wallet2"></i>
-                    Deuda
-                  </h5>
-
-                  <h2 id="deuda_total">
-                    $0
-                  </h2>
-                </div>
-              </div>
+            <div class="input-group manual-input">
+              <input type="text" id="qr_asistencia_manual" class="form-control" placeholder="RUT o N° de carnet">
+              <button class="btn-accent" id="btn_usar_lectura" onclick="procesarLecturaAsistenciaManual()" disabled>
+                <span class="d-md-none"><i class="bi bi-send-fill"></i></span>
+                <span class="d-none d-md-inline">Usar lectura</span>
+              </button>
             </div>
           </div>
 
-          <div id="dashboard_asistencia_stats" class="mt-4">
-            <h6 class="text-muted mb-2">Asistencia por Bloque</h6>
-            <div id="asistencia_por_bloque">
-              <p class="text-muted small">Cargando...</p>
+          <!-- Panel formulario (escritorio) — elementos accesibles al JS desde móvil -->
+          <div class="asistencia-form d-none d-md-block">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Actividad</label>
+              <select id="evento_id" class="form-select"></select>
             </div>
-          </div>
-        </section>
-
-        <!-- GRAFICOS -->
-        <section id="dashboard_graficos" class="mt-5">
-          <div class="row dashboard-chart-grid">
-            <div id="grafico_multas_wrapper" class="col-12 col-md-6 mb-3">
-              <div class="card p-3 shadow-sm border-0">
-                <h5>Multas por Bloque</h5>
-
-                <div class="chart-container">
-                  <canvas id="graficoMultas"></canvas>
-                </div>
-              </div>
+            <div id="aviso_evento_cerrado" class="alert alert-warning py-2 px-3 d-none" role="alert">
+              Esta actividad ya fue finalizada. No se puede registrar más asistencia.
             </div>
-
-            <div id="grafico_deuda_wrapper" class="col-12 col-md-6 mb-3">
-              <div class="card p-3 shadow-sm border-0">
-                <h5>Deuda por Bloque</h5>
-
-                <div class="chart-container">
-                  <canvas id="graficoDeuda"></canvas>
-                </div>
-              </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Integrante</label>
+              <select id="persona_id" class="form-select"></select>
             </div>
-          </div>
-        </section>
-
-        <!-- PERSONAS -->
-        <section id="modulo_personas" class="module-section">
-          <h2 data-config-text="etiquetas.modulos.gestionIntegrantes">
-            Gestión de Integrantes
-          </h2>
-
-          <div id="form_personas" class="card p-4 shadow-sm border-0">
-            <div class="row">
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Nombres</label>
-
-                <input
-                  type="text"
-                  id="nombres"
-                  class="form-control">
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Apellido Paterno</label>
-
-                <input
-                  type="text"
-                  id="apellido_paterno"
-                  class="form-control">
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Apellido Materno</label>
-
-                <input
-                  type="text"
-                  id="apellido_materno"
-                  class="form-control">
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label class="form-label">RUT</label>
-
-                <input
-                  type="text"
-                  id="rut"
-                  class="form-control">
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Email</label>
-
-                <input
-                  type="email"
-                  id="email"
-                  class="form-control">
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Teléfono</label>
-
-                <input
-                  type="text"
-                  id="telefono"
-                  class="form-control">
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Fecha de nacimiento</label>
-
-                <input
-                  type="date"
-                  id="fecha_nacimiento"
-                  class="form-control">
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Fecha de ingreso</label>
-
-                <input
-                  type="date"
-                  id="fecha_ingreso"
-                  class="form-control">
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Estado</label>
-
-                <select id="persona_estado" class="form-select">
-                  <option value="activo">Activo</option>
-                  <option value="receso">Receso</option>
-                </select>
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Bloque</label>
-
-                <input
-                  type="text"
-                  id="bloque"
-                  class="form-control">
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Sexo</label>
-
-                <select id="sexo" class="form-select">
-                  <option value="">Sin especificar</option>
-                  <option value="Masculino">Masculino</option>
-                  <option value="Femenino">Femenino</option>
-                </select>
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Dirección</label>
-
-                <input
-                  type="text"
-                  id="direccion"
-                  class="form-control">
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Nombre Apoderado</label>
-
-                <input
-                  type="text"
-                  id="nombre_apoderado"
-                  class="form-control">
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Teléfono Apoderado</label>
-
-                <input
-                  type="text"
-                  id="telefono_apoderado"
-                  class="form-control">
-              </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Estado</label>
+              <select id="estado" class="form-select">
+                <option value="presente">Presente</option>
+                <option value="atrasado">Atrasado</option>
+                <option value="ausente">Ausente</option>
+              </select>
             </div>
-
-            <button
-            type="button"
-            id="btn_guardar_persona"
-            class="btn btn-success w-100"
-            onclick="crearPersona()"
-            data-config-text="etiquetas.botones.guardarIntegrante">
-              Guardar Integrante
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Minutos atraso</label>
+              <input type="number" id="minutos" class="form-control" value="0">
+            </div>
+            <button type="button" id="btn_registrar_asistencia" class="btn btn-primary w-100" onclick="registrarAsistencia()" data-config-text="etiquetas.botones.registrar">
+              Registrar
             </button>
-
-            <p id="respuesta_persona" class="mt-3"></p>
+            <p id="respuesta" class="mt-3"></p>
           </div>
 
-          <div class="row g-2 mb-3 mt-3">
+        </div>
+      </section>
+    </div>
+
+    <!-- ============================= -->
+    <!-- TAB: TABLAS                   -->
+    <!-- ============================= -->
+    <div class="tab-pane fade" id="tab_tablas" role="tabpanel">
+
+      <ul class="nav nav-pills subtabs" id="subTabsTablas" role="tablist">
+        <li class="nav-item" role="presentation">
+          <a class="nav-link active" data-bs-toggle="tab" href="#subtab_personas" role="tab">
+            <i class="bi bi-people"></i> Integrantes
+          </a>
+        </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_eventos">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_eventos" role="tab">
+            <i class="bi bi-calendar-event"></i> Actividades
+          </a>
+        </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_asistencias">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_asistencias" role="tab">
+            <i class="bi bi-check2-square"></i> Asistencias
+          </a>
+        </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_pagos">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_pagos" role="tab">
+            <i class="bi bi-cash"></i> Pagos
+          </a>
+        </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_multas">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_multas" role="tab">
+            <i class="bi bi-exclamation-circle"></i> Multas
+          </a>
+        </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_finanzas">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_finanzas" role="tab">
+            <i class="bi bi-graph-up"></i> Finanzas
+          </a>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+
+        <!-- Integrantes -->
+        <div class="tab-pane fade show active" id="subtab_personas" role="tabpanel">
+          <div class="row g-2 mb-3">
             <div class="col-md-6">
               <label for="buscar_personas" class="form-label">Buscar Integrante</label>
-              <input
-                type="search"
-                id="buscar_personas"
-                class="form-control"
-                placeholder="Buscar por nombre, RUT, bloque, email o teléfono">
+              <input type="search" id="buscar_personas" class="form-control" placeholder="Buscar por nombre, RUT, bloque, email o teléfono">
             </div>
           </div>
-
-          <div id="tabla_personas_wrapper" class="table-responsive mt-4">
-            <table class="table table-bordered table-striped table-hover align-middle">
+          <div id="tabla_personas_wrapper" class="table-responsive tabla-scroll">
+            <table class="table table-bordered table-striped table-hover align-middle mb-0">
               <thead class="table-dark">
                 <tr>
                   <th>Nombre Completo</th>
@@ -574,97 +281,18 @@
                   <th>Acciones</th>
                 </tr>
               </thead>
-
               <tbody id="tabla_personas"></tbody>
             </table>
           </div>
-        </section>
+        </div>
 
-        <!-- EVENTOS -->
-        <section id="eventos" class="module-section">
-          <div id="modulo_eventos">
-            <h2 data-config-text="etiquetas.modulos.gestionActividades">
-              Gestión de Actividades
-            </h2>
-
-            <div class="card p-4 shadow-sm border-0">
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Nombre Actividad</label>
-
-                  <input
-                    type="text"
-                    id="evento_nombre"
-                    class="form-control">
-                </div>
-
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Tipo</label>
-
-                  <select id="evento_tipo" class="form-select">
-                    <option value="entrenamiento">
-                      Ensayo
-                    </option>
-
-                    <option value="partido">
-                      Presentación
-                    </option>
-
-                    <option value="reunion">
-                      Reunión
-                    </option>
-                  </select>
-                </div>
-
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Fecha</label>
-
-                  <input
-                    type="datetime-local"
-                    id="evento_fecha"
-                    class="form-control">
-                </div>
-
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Ubicación</label>
-
-                  <input
-                    type="text"
-                    id="evento_ubicacion"
-                    class="form-control">
-                </div>
-
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Descripción</label>
-
-                  <input
-                    type="text"
-                    id="evento_descripcion"
-                    class="form-control">
-                </div>
-              </div>
-
-              <button
-              type="button"
-              id="btn_guardar_evento"
-              class="btn btn-primary w-100"
-              onclick="crearEvento()"
-              data-config-text="etiquetas.botones.guardarActividad">
-                Guardar Actividad
-              </button>
-            </div>
-          </div>
-
-          <div id="filtros_eventos_wrapper" class="row g-3 mt-2 mb-3">
+        <!-- Actividades -->
+        <div class="tab-pane fade" id="subtab_eventos" role="tabpanel">
+          <div id="filtros_eventos_wrapper" class="row g-2 mb-3">
             <div class="col-md-4">
               <label for="buscar_eventos" class="form-label">Buscar Actividades</label>
-              <input
-                type="search"
-                id="buscar_eventos"
-                class="form-control"
-                placeholder="Buscar por nombre, ubicación o descripción">
+              <input type="search" id="buscar_eventos" class="form-control" placeholder="Buscar por nombre, ubicación o descripción">
             </div>
-
             <div class="col-md-3">
               <label for="filtro_evento_tipo" class="form-label">Tipo</label>
               <select id="filtro_evento_tipo" class="form-select">
@@ -674,25 +302,16 @@
                 <option value="reunion">Reunión</option>
               </select>
             </div>
-
             <div class="col-md-3">
               <label for="filtro_evento_fecha" class="form-label">Fecha</label>
               <input type="date" id="filtro_evento_fecha" class="form-control">
             </div>
-
             <div class="col-md-2 d-flex align-items-end">
-              <button
-                type="button"
-                id="btn_limpiar_filtros_eventos"
-                class="btn btn-outline-secondary w-100"
-                onclick="limpiarFiltrosEventos()">
-                Limpiar
-              </button>
+              <button type="button" id="btn_limpiar_filtros_eventos" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosEventos()">Limpiar</button>
             </div>
           </div>
-
-          <div id="tabla_eventos_wrapper" class="table-responsive mt-4">
-            <table class="table table-bordered table-striped">
+          <div id="tabla_eventos_wrapper" class="table-responsive tabla-scroll">
+            <table class="table table-bordered table-striped mb-0">
               <thead class="table-dark">
                 <tr>
                   <th>Nombre</th>
@@ -704,73 +323,35 @@
                   <th>Acciones</th>
                 </tr>
               </thead>
-
               <tbody id="tabla_eventos"></tbody>
             </table>
           </div>
-        </section>
+        </div>
 
-        <!-- PAGOS -->
-        <section id="modulo_pagos" class="module-section">
-          <h2 data-config-text="etiquetas.modulos.gestionPagos">
-            Gestión de Pagos
-          </h2>
-
-          <div class="card p-4 shadow-sm border-0">
-            <div class="row">
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Integrante</label>
-                <select id="pago_persona_id" class="form-select"></select>
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Monto</label>
-
-                <input
-                  type="number"
-                  id="pago_monto"
-                  class="form-control">
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Método Pago</label>
-
-                <select id="pago_metodo" class="form-select">
-                  <option value="efectivo">
-                    Efectivo
-                  </option>
-
-                  <option value="transferencia">
-                    Transferencia
-                  </option>
-
-                  <option value="debito">
-                    Débito
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <button
-            type="button"
-            id="btn_guardar_pago"
-            class="btn btn-success w-100"
-            onclick="crearPago()"
-            data-config-text="etiquetas.botones.guardarPago">
-              Guardar Pago
-            </button>
+        <!-- Asistencias historial -->
+        <div class="tab-pane fade" id="subtab_asistencias" role="tabpanel">
+          <div id="tabla_asistencias_wrapper" class="table-responsive tabla-scroll">
+            <table class="table table-striped table-bordered mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Nombre Completo</th>
+                  <th>Actividad</th>
+                  <th>Estado</th>
+                  <th>Minutos</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_asistencias"></tbody>
+            </table>
           </div>
+        </div>
 
-          <div class="row g-2 mb-3 mt-3">
+        <!-- Pagos -->
+        <div class="tab-pane fade" id="subtab_pagos" role="tabpanel">
+          <div class="row g-2 mb-3">
             <div class="col-md-5">
               <label for="buscar_pagos" class="form-label">Buscar Integrante</label>
-              <input
-                type="search"
-                id="buscar_pagos"
-                class="form-control"
-                placeholder="Buscar por nombre">
+              <input type="search" id="buscar_pagos" class="form-control" placeholder="Buscar por nombre">
             </div>
-
             <div class="col-md-3">
               <label for="filtro_pago_metodo" class="form-label">Método</label>
               <select id="filtro_pago_metodo" class="form-select">
@@ -780,19 +361,12 @@
                 <option value="debito">Débito</option>
               </select>
             </div>
-
             <div class="col-md-2 d-flex align-items-end">
-              <button
-                type="button"
-                class="btn btn-outline-secondary w-100"
-                onclick="limpiarFiltrosPagos()">
-                Limpiar
-              </button>
+              <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosPagos()">Limpiar</button>
             </div>
           </div>
-
-          <div id="tabla_pagos_wrapper" class="table-responsive mt-4">
-            <table class="table table-bordered table-striped">
+          <div id="tabla_pagos_wrapper" class="table-responsive tabla-scroll">
+            <table class="table table-bordered table-striped mb-0">
               <thead class="table-dark">
                 <tr>
                   <th>Integrante</th>
@@ -802,43 +376,16 @@
                   <th>Acciones</th>
                 </tr>
               </thead>
-
               <tbody id="tabla_pagos"></tbody>
             </table>
           </div>
-        </section>
+        </div>
 
-        <!-- ASISTENCIAS -->
-        <section id="asistencias">
-          <h2 data-config-text="etiquetas.modulos.asistencias">
-            Asistencias
-          </h2>
-
-          <div id="tabla_asistencias_wrapper" class="table-responsive">
-            <table class="table table-striped table-bordered">
-              <thead class="table-dark">
-                <tr>
-                  <th>Nombre Completo</th>
-                  <th>Actividad</th>
-                  <th>Estado</th>
-                  <th>Minutos</th>
-                </tr>
-              </thead>
-
-              <tbody id="tabla_asistencias"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- MULTAS -->
-        <section id="multas" class="mt-5">
-          <div id="modulo_multas" class="module-section">
-            <h2 data-config-text="etiquetas.modulos.multas">
-              Multas
-            </h2>
-
-            <div id="tabla_multas_wrapper" class="table-responsive">
-              <table class="table table-bordered table-striped">
+        <!-- Multas -->
+        <div class="tab-pane fade" id="subtab_multas" role="tabpanel">
+          <div id="modulo_multas">
+            <div id="tabla_multas_wrapper" class="table-responsive tabla-scroll">
+              <table class="table table-bordered table-striped mb-0">
                 <thead class="table-danger">
                   <tr>
                     <th>Nombre Completo</th>
@@ -847,116 +394,84 @@
                     <th>Fecha</th>
                   </tr>
                 </thead>
-
                 <tbody id="tabla_multas"></tbody>
               </table>
             </div>
           </div>
-        </section>
+        </div>
 
-        <!-- FINANZAS -->
-        <section id="finanzas">
-          <div id="modulo_finanzas" class="module-section">
-            <h2 data-config-text="etiquetas.modulos.estadoFinanciero">
-              Estado Financiero
-            </h2>
+        <!-- Finanzas + Cuotas -->
+        <div class="tab-pane fade" id="subtab_finanzas" role="tabpanel">
+          <div id="modulo_finanzas">
 
             <div class="mb-3">
-              <button
-              type="button"
-              id="btn_generar_cuotas"
-              class="btn btn-success"
-              onclick="generarCuotasMensuales()"
-              data-config-text="etiquetas.botones.generarCuotas">
+              <button type="button" id="btn_generar_cuotas" class="btn btn-success" onclick="generarCuotasMensuales()" data-config-text="etiquetas.botones.generarCuotas">
                 Generar cuotas del mes
               </button>
+            </div>
 
-              <div class="row g-2 mb-3 mt-3">
-                <div class="col-md-4">
-                  <label for="buscar_cuotas" class="form-label">Buscar Integrante</label>
-                  <input
-                    type="search"
-                    id="buscar_cuotas"
-                    class="form-control"
-                    placeholder="Buscar por nombre">
-                </div>
-
-                <div class="col-md-2">
-                  <label for="filtro_cuota_estado" class="form-label">Estado</label>
-                  <select id="filtro_cuota_estado" class="form-select">
-                    <option value="">Todos</option>
-                    <option value="pendiente">Pendiente</option>
-                    <option value="pagado">Pagado</option>
-                    <option value="vencido">Vencido</option>
-                  </select>
-                </div>
-
-                <div class="col-md-2">
-                  <label for="filtro_cuota_mes" class="form-label">Mes</label>
-                  <select id="filtro_cuota_mes" class="form-select">
-                    <option value="">Todos</option>
-                    <option value="1">Enero</option>
-                    <option value="2">Febrero</option>
-                    <option value="3">Marzo</option>
-                    <option value="4">Abril</option>
-                    <option value="5">Mayo</option>
-                    <option value="6">Junio</option>
-                    <option value="7">Julio</option>
-                    <option value="8">Agosto</option>
-                    <option value="9">Septiembre</option>
-                    <option value="10">Octubre</option>
-                    <option value="11">Noviembre</option>
-                    <option value="12">Diciembre</option>
-                  </select>
-                </div>
-
-                <div class="col-md-2">
-                  <label for="filtro_cuota_anio" class="form-label">Año</label>
-                  <input
-                    type="number"
-                    id="filtro_cuota_anio"
-                    class="form-control"
-                    placeholder="2025">
-                </div>
-
-                <div class="col-md-2 d-flex align-items-end">
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary w-100"
-                    onclick="limpiarFiltrosCuotas()">
-                    Limpiar
-                  </button>
-                </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-4">
+                <label for="buscar_cuotas" class="form-label">Buscar Integrante</label>
+                <input type="search" id="buscar_cuotas" class="form-control" placeholder="Buscar por nombre">
               </div>
-
-              <div id="tabla_cuotas_wrapper" class="table-responsive mt-4">
-                <table class="table table-hover align-middle">
-                  <thead>
-                    <tr>
-                      <th>Integrante</th>
-                      <th>Monto</th>
-                      <th>Mes</th>
-                      <th>Año</th>
-                      <th>Vencimiento</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-
-                  <tbody id="tabla_cuotas"></tbody>
-                </table>
+              <div class="col-md-2">
+                <label for="filtro_cuota_estado" class="form-label">Estado</label>
+                <select id="filtro_cuota_estado" class="form-select">
+                  <option value="">Todos</option>
+                  <option value="pendiente">Pendiente</option>
+                  <option value="pagado">Pagado</option>
+                  <option value="vencido">Vencido</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label for="filtro_cuota_mes" class="form-label">Mes</label>
+                <select id="filtro_cuota_mes" class="form-select">
+                  <option value="">Todos</option>
+                  <option value="1">Enero</option>
+                  <option value="2">Febrero</option>
+                  <option value="3">Marzo</option>
+                  <option value="4">Abril</option>
+                  <option value="5">Mayo</option>
+                  <option value="6">Junio</option>
+                  <option value="7">Julio</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Septiembre</option>
+                  <option value="10">Octubre</option>
+                  <option value="11">Noviembre</option>
+                  <option value="12">Diciembre</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label for="filtro_cuota_anio" class="form-label">Año</label>
+                <input type="number" id="filtro_cuota_anio" class="form-control" placeholder="2025">
+              </div>
+              <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosCuotas()">Limpiar</button>
               </div>
             </div>
 
-            <div class="row g-2 mb-3 mt-3">
+            <div id="tabla_cuotas_wrapper" class="table-responsive tabla-scroll mb-4">
+              <table class="table table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Integrante</th>
+                    <th>Monto</th>
+                    <th>Mes</th>
+                    <th>Año</th>
+                    <th>Vencimiento</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="tabla_cuotas"></tbody>
+              </table>
+            </div>
+
+            <div class="row g-2 mb-3">
               <div class="col-md-5">
                 <label for="buscar_finanzas" class="form-label">Buscar Integrante</label>
-                <input
-                  type="search"
-                  id="buscar_finanzas"
-                  class="form-control"
-                  placeholder="Buscar por nombre">
+                <input type="search" id="buscar_finanzas" class="form-control" placeholder="Buscar por nombre">
               </div>
-
               <div class="col-md-3">
                 <label for="filtro_finanzas_estado" class="form-label">Estado</label>
                 <select id="filtro_finanzas_estado" class="form-select">
@@ -966,19 +481,13 @@
                   <option value="a_favor">A favor</option>
                 </select>
               </div>
-
               <div class="col-md-2 d-flex align-items-end">
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary w-100"
-                  onclick="limpiarFiltrosFinanzas()">
-                  Limpiar
-                </button>
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosFinanzas()">Limpiar</button>
               </div>
             </div>
 
-            <div id="tabla_finanzas_wrapper" class="table-responsive">
-              <table class="table table-bordered">
+            <div id="tabla_finanzas_wrapper" class="table-responsive tabla-scroll">
+              <table class="table table-bordered mb-0">
                 <thead class="table-dark">
                   <tr>
                     <th>Nombre Completo</th>
@@ -988,20 +497,220 @@
                     <th>Deuda Actual</th>
                   </tr>
                 </thead>
-
                 <tbody id="tabla_finanzas"></tbody>
               </table>
             </div>
+
           </div>
-        </section>
-      </main>
+        </div>
+
+      </div><!-- /tab-content subtabs tablas -->
+    </div>
+
+    <!-- ============================= -->
+    <!-- TAB: FORMULARIOS              -->
+    <!-- ============================= -->
+    <div class="tab-pane fade" id="tab_formularios" role="tabpanel">
+
+      <ul class="nav nav-pills subtabs" id="subTabsFormularios" role="tablist">
+        <li class="nav-item" role="presentation">
+          <a class="nav-link active" data-bs-toggle="tab" href="#subtab_form_persona" role="tab">
+            <i class="bi bi-person-plus"></i> Integrante
+          </a>
+        </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_form_evento">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_form_evento" role="tab">
+            <i class="bi bi-calendar-plus"></i> Actividad
+          </a>
+        </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_form_pago">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_form_pago" role="tab">
+            <i class="bi bi-cash-coin"></i> Pago
+          </a>
+        </li>
+      </ul>
+
+      <div class="tab-content mt-3">
+
+        <!-- Formulario Integrante -->
+        <div class="tab-pane fade show active" id="subtab_form_persona" role="tabpanel">
+          <div id="modulo_personas">
+            <div id="form_personas" class="card p-4 shadow-sm border-0">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Nombres</label>
+                  <input type="text" id="nombres" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Apellido Paterno</label>
+                  <input type="text" id="apellido_paterno" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Apellido Materno</label>
+                  <input type="text" id="apellido_materno" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">RUT</label>
+                  <input type="text" id="rut" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Email</label>
+                  <input type="email" id="email" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Teléfono</label>
+                  <input type="text" id="telefono" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Fecha de nacimiento</label>
+                  <input type="date" id="fecha_nacimiento" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Fecha de ingreso</label>
+                  <input type="date" id="fecha_ingreso" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Estado</label>
+                  <select id="persona_estado" class="form-select">
+                    <option value="activo">Activo</option>
+                    <option value="receso">Receso</option>
+                  </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Bloque</label>
+                  <input type="text" id="bloque" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Sexo</label>
+                  <select id="sexo" class="form-select">
+                    <option value="">Sin especificar</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                  </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Dirección</label>
+                  <input type="text" id="direccion" class="form-control">
+                </div>
+
+                <!-- Apoderado: visible solo si menor de edad -->
+                <div id="bloque_apoderado" class="col-12 d-none">
+                  <div class="alert alert-info py-2 px-3 mb-3">
+                    <i class="bi bi-info-circle"></i> Integrante menor de edad — datos de apoderado requeridos.
+                  </div>
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Nombre Apoderado</label>
+                      <input type="text" id="nombre_apoderado" class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Teléfono Apoderado</label>
+                      <input type="text" id="telefono_apoderado" class="form-control">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" id="btn_guardar_persona" class="btn btn-success w-100" onclick="crearPersona()" data-config-text="etiquetas.botones.guardarIntegrante">
+                Guardar Integrante
+              </button>
+              <p id="respuesta_persona" class="mt-3"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulario Actividad -->
+        <div class="tab-pane fade" id="subtab_form_evento" role="tabpanel">
+          <div id="modulo_eventos">
+            <div class="card p-4 shadow-sm border-0">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Nombre Actividad</label>
+                  <input type="text" id="evento_nombre" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Tipo</label>
+                  <select id="evento_tipo" class="form-select">
+                    <option value="entrenamiento">Ensayo</option>
+                    <option value="partido">Presentación</option>
+                    <option value="reunion">Reunión</option>
+                  </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Fecha</label>
+                  <input type="datetime-local" id="evento_fecha" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Ubicación</label>
+                  <input type="text" id="evento_ubicacion" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Descripción</label>
+                  <input type="text" id="evento_descripcion" class="form-control">
+                </div>
+              </div>
+              <button type="button" id="btn_guardar_evento" class="btn btn-primary w-100" onclick="crearEvento()" data-config-text="etiquetas.botones.guardarActividad">
+                Guardar Actividad
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulario Pago -->
+        <div class="tab-pane fade" id="subtab_form_pago" role="tabpanel">
+          <div id="modulo_pagos">
+            <div class="card p-4 shadow-sm border-0">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Integrante</label>
+                  <select id="pago_persona_id" class="form-select"></select>
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Monto</label>
+                  <input type="number" id="pago_monto" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Método Pago</label>
+                  <select id="pago_metodo" class="form-select">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="debito">Débito</option>
+                  </select>
+                </div>
+              </div>
+              <button type="button" id="btn_guardar_pago" class="btn btn-success w-100" onclick="crearPago()" data-config-text="etiquetas.botones.guardarPago">
+                Guardar Pago
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /tab-content subtabs formularios -->
+    </div>
+
+  </div><!-- /app-tab-content -->
+
+  <!-- Modal: selección de evento (móvil asistencia) -->
+  <div class="modal fade" id="modal_eventos_activos" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+      <div class="modal-content modal-eventos-content">
+        <div class="modal-header modal-eventos-header">
+          <h5 class="modal-title">
+            <i class="bi bi-calendar-event me-2"></i>Seleccionar Actividad
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="lista_eventos_modal" class="d-grid gap-2">
+            <p class="text-muted text-center">Cargando actividades...</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <footer class="app-footer text-center py-3 mt-5">
-    <small>
-      Diseño de Mario Riquelme
-    </small>
+  <footer class="app-footer text-center py-3 mt-4">
+    <small>Diseño de Mario Riquelme</small>
   </footer>
 
   <script src="js/config.js"></script>

@@ -338,7 +338,29 @@ function renderizarTablaPersonas(personas) {
     return;
   }
 
-  personas.forEach(persona => {
+  const sorted = [...personas].sort((a, b) => {
+    const bloqueA = (a.bloque || '').toLowerCase();
+    const bloqueB = (b.bloque || '').toLowerCase();
+    if (bloqueA !== bloqueB) return bloqueA.localeCompare(bloqueB, 'es');
+    const apA = (a.apellido_paterno || '').toLowerCase();
+    const apB = (b.apellido_paterno || '').toLowerCase();
+    return apA.localeCompare(apB, 'es');
+  });
+
+  let bloqueActual = null;
+
+  sorted.forEach(persona => {
+
+    const bloquePersona = persona.bloque || '';
+
+    if (bloquePersona !== bloqueActual) {
+      bloqueActual = bloquePersona;
+      tabla.innerHTML += `
+        <tr class="tabla-bloque-header">
+          <td colspan="13"><i class="bi bi-people-fill me-2"></i>${bloquePersona || 'Sin bloque'}</td>
+        </tr>
+      `;
+    }
 
     tabla.innerHTML += `
 
@@ -509,6 +531,29 @@ function editarPersona(persona) {
     'btn_guardar_persona'
   ).innerText = 'Actualizar Integrante';
 
+  actualizarVisibilidadApoderado();
+}
+
+function calcularEdad(fechaNacimiento) {
+  if (!fechaNacimiento) return null;
+  const hoy = new Date();
+  const nac = new Date(fechaNacimiento);
+  let edad = hoy.getFullYear() - nac.getFullYear();
+  const m = hoy.getMonth() - nac.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+  return edad;
+}
+
+function actualizarVisibilidadApoderado() {
+  const fechaInput = document.getElementById('fecha_nacimiento');
+  const bloque = document.getElementById('bloque_apoderado');
+  if (!fechaInput || !bloque) return;
+  const edad = calcularEdad(fechaInput.value);
+  if (edad !== null && edad < 18) {
+    bloque.classList.remove('d-none');
+  } else {
+    bloque.classList.add('d-none');
+  }
 }
 
 // =====================================
@@ -730,3 +775,10 @@ function validarPersonaFrontend(data) {
 
   return null;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const fechaInput = document.getElementById('fecha_nacimiento');
+  if (fechaInput) {
+    fechaInput.addEventListener('change', actualizarVisibilidadApoderado);
+  }
+});

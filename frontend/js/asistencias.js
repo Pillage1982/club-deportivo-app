@@ -235,8 +235,8 @@ async function iniciarEscaneoAsistencia() {
     await video.play();
 
     wrapper.classList.remove('d-none');
-    document.getElementById('btn_iniciar_qr').disabled = true;
-    document.getElementById('btn_detener_qr').disabled = false;
+    document.getElementById('btn_iniciar_qr')?.classList.add('d-none');
+    document.getElementById('btn_detener_qr')?.classList.remove('d-none');
 
     qrAsistenciaEscaneando = true;
     qrAsistenciaUltimaLectura = '';
@@ -282,14 +282,10 @@ function detenerEscaneoAsistencia() {
     wrapper.classList.add('d-none');
   }
 
-  const btnDetener =
-    document.getElementById('btn_detener_qr');
+  document.getElementById('btn_detener_qr')?.classList.add('d-none');
+  document.getElementById('btn_iniciar_qr')?.classList.remove('d-none');
 
   actualizarBotonesEscaneoQr();
-
-  if (btnDetener) {
-    btnDetener.disabled = true;
-  }
 }
 
 async function escanearFrameAsistencia() {
@@ -918,9 +914,46 @@ function cargarAsistencias() {
 
 }
 
+function seleccionarEventoMobile(id, nombre) {
+  const select = document.getElementById('evento_id');
+  if (select) {
+    select.value = String(id);
+    select.dispatchEvent(new Event('change'));
+  }
+  const label = document.getElementById('label_evento_mobile');
+  if (label) label.textContent = nombre;
+  const modalEl = document.getElementById('modal_eventos_activos');
+  if (modalEl) {
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) modal.hide();
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const eventoSelect = document.getElementById('evento_id');
   if (eventoSelect) {
     eventoSelect.addEventListener('change', actualizarBotonesEscaneoQr);
+  }
+
+  const modalEl = document.getElementById('modal_eventos_activos');
+  if (modalEl) {
+    modalEl.addEventListener('show.bs.modal', () => {
+      const select = document.getElementById('evento_id');
+      const lista = document.getElementById('lista_eventos_modal');
+      if (!select || !lista) return;
+      lista.innerHTML = '';
+      const opciones = Array.from(select.options).filter(o => o.value);
+      if (opciones.length === 0) {
+        lista.innerHTML = '<p class="text-muted text-center py-3">No hay actividades activas.</p>';
+        return;
+      }
+      opciones.forEach(o => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-evento-item w-100 mb-2';
+        btn.textContent = o.textContent;
+        btn.onclick = () => seleccionarEventoMobile(o.value, o.textContent.trim());
+        lista.appendChild(btn);
+      });
+    });
   }
 });
