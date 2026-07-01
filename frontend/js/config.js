@@ -1,6 +1,6 @@
 window.APP_CONFIG = {
   producto: {
-    nombre: 'NexoComunidad',
+    nombre: 'GDC.APP',
     descripcion: 'Sistema administrativo adaptable para organizaciones'
   },
 
