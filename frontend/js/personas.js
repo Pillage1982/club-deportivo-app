@@ -337,6 +337,8 @@ function filtrarPersonas(termino) {
   });
 }
 
+const ORDEN_CATEGORIA = ['Sub-8','Sub-10','Sub-12','Sub-15','Sub-18','Adulto','Senior','Fecha requerida'];
+
 function renderizarTablaPersonas(personas) {
   const tabla =
     document.getElementById(
@@ -347,24 +349,42 @@ function renderizarTablaPersonas(personas) {
 
   if (personas.length === 0) {
     tabla.innerHTML = `
-
       <tr>
         <td colspan="8" class="text-center text-muted">
           No se encontraron integrantes
         </td>
       </tr>
-
     `;
     return;
   }
 
-  personas.forEach(persona => {
+  const sorted = [...personas].sort((a, b) => {
+    const catA = calcularCategoria(a.fecha_nacimiento);
+    const catB = calcularCategoria(b.fecha_nacimiento);
+    const idxA = ORDEN_CATEGORIA.indexOf(catA);
+    const idxB = ORDEN_CATEGORIA.indexOf(catB);
+    if (idxA !== idxB) return idxA - idxB;
+    return (a.apellido_paterno || '').localeCompare(b.apellido_paterno || '', 'es');
+  });
+
+  let categoriaActual = null;
+
+  sorted.forEach(persona => {
 
     const edad =
     calcularEdad(persona.fecha_nacimiento);
 
     const categoria =
     calcularCategoria(persona.fecha_nacimiento);
+
+    if (categoria !== categoriaActual) {
+      categoriaActual = categoria;
+      tabla.innerHTML += `
+        <tr class="tabla-bloque-header">
+          <td colspan="8"><i class="bi bi-people-fill me-2"></i>${categoria}</td>
+        </tr>
+      `;
+    }
 
     // Acciones CRUD personas
     tabla.innerHTML += `
@@ -498,7 +518,21 @@ function editarPersona(persona) {
     'btn_guardar_persona'
   ).innerText = 'Actualizar Integrante';
 
+  actualizarVisibilidadApoderado();
 }
+
+function actualizarVisibilidadApoderado() {
+  const fechaInput = document.getElementById('fecha_nacimiento');
+  const bloque     = document.getElementById('bloque_apoderado');
+  if (!fechaInput || !bloque) return;
+  const edad = calcularEdad(fechaInput.value);
+  bloque.classList.toggle('d-none', !(typeof edad === 'number' && edad < 18));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const fechaInput = document.getElementById('fecha_nacimiento');
+  if (fechaInput) fechaInput.addEventListener('change', actualizarVisibilidadApoderado);
+});
 
 // =====================================
 // ELIMINAR PERSONAS

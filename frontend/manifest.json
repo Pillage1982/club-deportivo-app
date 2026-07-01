@@ -1,0 +1,17 @@
+{
+  "name": "NexoComunidad",
+  "short_name": "NexoComunidad",
+  "description": "Sistema administrativo para organizaciones comunitarias",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "icons": [
+    {
+      "src": "img/logo-nexocomunidad.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

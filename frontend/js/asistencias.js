@@ -108,73 +108,46 @@ function registrarAsistencia() {
 
       if (!estadoBoton) return;
 
-      // Registra asistencia en backend
       fetch(`${API_URL}/asistencia`, {
-
-        method: 'POST',
-
+        method:  'POST',
         headers: getAuthHeaders(),
-
-        body: JSON.stringify(data)
-
+        body:    JSON.stringify(data)
       })
-
       .then(async res => {
-  const contentType = res.headers.get('content-type') || '';
-  const data = contentType.includes('application/json')
-    ? await res.json()
-    : { mensaje: await res.text() };
-
-  if (!res.ok) {
-    throw new Error(
-      data.mensaje || 'No se pudo registrar la asistencia'
-    );
-  }
-
-  return data;
-})
-.then(response => {
-
-document.getElementById('respuesta').innerText =
-  response.mensaje || 'Asistencia registrada';
-
-mostrarAlerta(
-  response.mensaje || 'Asistencia registrada',
-  'success'
-);
-
-      // Refresca automáticamente:
-      // asistencias
-      // multas
-      // finanzas
-      // dashboard
-      // gráficos
-      cargarAsistencias();
-      cargarDashboard();
-      refrescarFinanzasPorAsistencia();
-
-      document.getElementById('minutos').value = 0;
-
-    })
-
-    .catch(err => {
-
-    console.error(err);
-
-    // Evita registros duplicados
-    // misma persona + mismo evento
-    mostrarAlerta(
-  err.message,
-  'danger'
-);
-
-})
-  .finally(() => {
-    restaurarBoton(
-      estadoBoton,
-      'Registrar'
-    );
-  });
+        const contentType = res.headers.get('content-type') || '';
+        const resData = contentType.includes('application/json')
+          ? await res.json()
+          : { mensaje: await res.text() };
+        if (!res.ok) throw new Error(resData.mensaje || 'No se pudo registrar la asistencia');
+        return resData;
+      })
+      .then(response => {
+        document.getElementById('respuesta').innerText = response.mensaje || 'Asistencia registrada';
+        mostrarAlerta(response.mensaje || 'Asistencia registrada', 'success');
+        cargarAsistencias();
+        cargarDashboard();
+        refrescarFinanzasPorAsistencia();
+        document.getElementById('minutos').value = 0;
+      })
+      .catch(async err => {
+        const sinRed = !navigator.onLine || err.message === 'Failed to fetch';
+        if (sinRed) {
+          try {
+            await guardarAsistenciaOffline(data);
+            await actualizarBadgeOffline();
+            mostrarAlerta('Sin conexión — asistencia guardada localmente y se enviará al recuperar señal', 'warning');
+            document.getElementById('respuesta').innerText = 'Guardado sin conexión';
+          } catch {
+            mostrarAlerta('Sin conexión y no se pudo guardar localmente', 'danger');
+          }
+        } else {
+          console.error(err);
+          mostrarAlerta(err.message, 'danger');
+        }
+      })
+      .finally(() => {
+        restaurarBoton(estadoBoton, 'Registrar');
+      });
 
 }
 
@@ -243,8 +216,8 @@ async function iniciarEscaneoAsistencia() {
     await video.play();
 
     wrapper.classList.remove('d-none');
-    document.getElementById('btn_iniciar_qr').disabled = true;
-    document.getElementById('btn_detener_qr').disabled = false;
+    document.getElementById('btn_iniciar_qr')?.classList.add('d-none');
+    document.getElementById('btn_detener_qr')?.classList.remove('d-none');
 
     qrAsistenciaEscaneando = true;
     qrAsistenciaUltimaLectura = '';
@@ -290,17 +263,10 @@ function detenerEscaneoAsistencia() {
     wrapper.classList.add('d-none');
   }
 
-  const btnIniciar =
-    document.getElementById('btn_iniciar_qr');
-
-  const btnDetener =
-    document.getElementById('btn_detener_qr');
+  document.getElementById('btn_detener_qr')?.classList.add('d-none');
+  document.getElementById('btn_iniciar_qr')?.classList.remove('d-none');
 
   actualizarBotonesEscaneoQr();
-
-  if (btnDetener) {
-    btnDetener.disabled = true;
-  }
 }
 
 async function escanearFrameAsistencia() {
@@ -333,15 +299,38 @@ async function escanearFrameAsistencia() {
   requestAnimationFrame(escanearFrameAsistencia);
 }
 
+// Zoom digital: recorta el centro del frame para mejorar detección en webcams de escritorio
+const QR_ZOOM_CROP = 0.5;
+
+function prepararCanvasCroppedAsistencia(video) {
+  if (
+    video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
+    video.videoWidth === 0 ||
+    video.videoHeight === 0
+  ) return null;
+
+  if (!qrAsistenciaCanvas) qrAsistenciaCanvas = document.createElement('canvas');
+
+  const srcX = video.videoWidth  * (1 - QR_ZOOM_CROP) / 2;
+  const srcY = video.videoHeight * (1 - QR_ZOOM_CROP) / 2;
+  const srcW = video.videoWidth  * QR_ZOOM_CROP;
+  const srcH = video.videoHeight * QR_ZOOM_CROP;
+
+  qrAsistenciaCanvas.width  = srcW;
+  qrAsistenciaCanvas.height = srcH;
+
+  qrAsistenciaCanvas
+    .getContext('2d', { willReadFrequently: true })
+    .drawImage(video, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
+
+  return qrAsistenciaCanvas;
+}
+
 async function detectarLecturaNativaAsistencia(video) {
-  const codigos =
-    await qrAsistenciaDetector.detect(video);
-
-  if (codigos.length === 0) {
-    return '';
-  }
-
-  return codigos[0].rawValue || '';
+  const canvas = prepararCanvasCroppedAsistencia(video);
+  if (!canvas) return '';
+  const codigos = await qrAsistenciaDetector.detect(canvas);
+  return codigos.length > 0 ? (codigos[0].rawValue || '') : '';
 }
 
 function detectarLecturaCompatibleAsistencia(video) {
@@ -353,55 +342,12 @@ function detectarLecturaCompatibleAsistencia(video) {
     return '';
   }
 
-  if (
-    video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
-    video.videoWidth === 0 ||
-    video.videoHeight === 0
-  ) {
-    return '';
-  }
+  const canvas = prepararCanvasCroppedAsistencia(video);
+  if (!canvas) return '';
 
-  if (!qrAsistenciaCanvas) {
-    qrAsistenciaCanvas =
-      document.createElement('canvas');
-  }
-
-  const contexto =
-    qrAsistenciaCanvas.getContext('2d', {
-      willReadFrequently: true
-    });
-
-  qrAsistenciaCanvas.width =
-    video.videoWidth;
-
-  qrAsistenciaCanvas.height =
-    video.videoHeight;
-
-  contexto.drawImage(
-    video,
-    0,
-    0,
-    qrAsistenciaCanvas.width,
-    qrAsistenciaCanvas.height
-  );
-
-  const imagen =
-    contexto.getImageData(
-      0,
-      0,
-      qrAsistenciaCanvas.width,
-      qrAsistenciaCanvas.height
-    );
-
-  const codigo =
-    jsQR(
-      imagen.data,
-      imagen.width,
-      imagen.height,
-      {
-        inversionAttempts: 'dontInvert'
-      }
-    );
+  const ctx    = canvas.getContext('2d', { willReadFrequently: true });
+  const imagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const codigo = jsQR(imagen.data, imagen.width, imagen.height, { inversionAttempts: 'dontInvert' });
 
   return codigo ? codigo.data : '';
 }
@@ -972,9 +918,46 @@ function cargarMultas() {
 
 }
 
+function seleccionarEventoMobile(id, nombre) {
+  const select = document.getElementById('evento_id');
+  if (select) {
+    select.value = String(id);
+    select.dispatchEvent(new Event('change'));
+  }
+  const label = document.getElementById('label_evento_mobile');
+  if (label) label.textContent = nombre;
+  const modalEl = document.getElementById('modal_eventos_activos');
+  if (modalEl) {
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) modal.hide();
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const eventoSelect = document.getElementById('evento_id');
   if (eventoSelect) {
     eventoSelect.addEventListener('change', actualizarBotonesEscaneoQr);
+  }
+
+  const modalEl = document.getElementById('modal_eventos_activos');
+  if (modalEl) {
+    modalEl.addEventListener('show.bs.modal', () => {
+      const select = document.getElementById('evento_id');
+      const lista  = document.getElementById('lista_eventos_modal');
+      if (!select || !lista) return;
+      lista.innerHTML = '';
+      const opciones = Array.from(select.options).filter(o => o.value);
+      if (opciones.length === 0) {
+        lista.innerHTML = '<p class="text-muted text-center py-3">No hay actividades activas.</p>';
+        return;
+      }
+      opciones.forEach(o => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-evento-item w-100 mb-2';
+        btn.textContent = o.textContent;
+        btn.onclick = () => seleccionarEventoMobile(o.value, o.textContent.trim());
+        lista.appendChild(btn);
+      });
+    });
   }
 });
