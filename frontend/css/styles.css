@@ -631,22 +631,54 @@ img[data-config-img="cliente.logo"] {
    MÓDULO ASISTENCIA — SCAN-IT STYLE
 ===================================== */
 
-/* Panel scanner — siempre oscuro, centrado */
+/* Asistencia ocupa todo el espacio disponible sin padding del tab */
+#tab_asistencia {
+  padding: 0 !important;
+}
+
 .scanner-centrado {
-  max-width: 480px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 64px - 52px); /* móvil: navbar + tabs */
+}
+
+@media (min-width: 992px) {
+  .scanner-centrado {
+    min-height: calc(100vh - 76px - 52px); /* escritorio: navbar + tabs */
+  }
+}
+
+.scanner-centrado > .mb-3 {
+  padding: 16px 16px 0;
 }
 
 .scanner-panel {
   background: #16213e;
-  border-radius: 22px;
-  padding: 20px;
+  border-radius: 0;
+  padding: 16px;
   color: white;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (min-width: 768px) {
+  .scanner-centrado > .mb-3 {
+    padding: 20px 28px 0;
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+
   .scanner-panel {
-    padding: 28px;
+    padding: 20px 28px 28px;
+    align-items: center;
+  }
+
+  .scanner-panel > * {
+    width: 100%;
+    max-width: 520px;
   }
 }
 
@@ -689,6 +721,7 @@ img[data-config-img="cliente.logo"] {
   aspect-ratio: 4 / 3;
   width: 100%;
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .scanner-video {
