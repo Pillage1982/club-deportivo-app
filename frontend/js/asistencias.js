@@ -319,7 +319,7 @@ async function escanearFrameAsistencia() {
 }
 
 // Recorta el centro del frame (zoom digital) para mejorar detección en webcams de escritorio
-const QR_ZOOM_CROP = 0.65;
+const QR_ZOOM_CROP = 0.5;
 
 function prepararCanvasCroppedAsistencia(video) {
   if (
