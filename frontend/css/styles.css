@@ -631,31 +631,12 @@ img[data-config-img="cliente.logo"] {
    MÓDULO ASISTENCIA — SCAN-IT STYLE
 ===================================== */
 
-.asistencia-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+/* Panel scanner — siempre oscuro, centrado */
+.scanner-centrado {
+  max-width: 480px;
+  margin: 0 auto;
 }
 
-@media (min-width: 768px) {
-  .asistencia-layout {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 28px;
-  }
-
-  .scanner-panel {
-    width: 340px;
-    min-width: 300px;
-    flex-shrink: 0;
-  }
-
-  .asistencia-form {
-    flex: 1;
-  }
-}
-
-/* Panel scanner oscuro en móvil */
 .scanner-panel {
   background: #16213e;
   border-radius: 22px;
@@ -665,11 +646,7 @@ img[data-config-img="cliente.logo"] {
 
 @media (min-width: 768px) {
   .scanner-panel {
-    background: white;
-    color: var(--text);
-    border-radius: 22px;
-    padding: 24px;
-    box-shadow: var(--shadow);
+    padding: 28px;
   }
 }
 
@@ -759,19 +736,11 @@ img[data-config-img="cliente.logo"] {
   margin-bottom: 14px;
 }
 
-@media (min-width: 768px) {
-  .scanner-status { color: var(--text-light); }
-}
-
 /* Botones scan/stop */
 .scanner-btns {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-@media (min-width: 768px) {
-  .scanner-btns { flex-direction: row; }
 }
 
 .btn-scan {
@@ -800,20 +769,6 @@ img[data-config-img="cliente.logo"] {
   color: rgba(255,255,255,0.45);
 }
 
-@media (min-width: 768px) {
-  .btn-scan {
-    padding: 10px 18px;
-    font-size: 0.88rem;
-    width: auto;
-    border-radius: 10px;
-  }
-
-  .btn-scan:disabled {
-    background: #e2e8f0;
-    color: #94a3b8;
-  }
-}
-
 .btn-stop {
   display: flex;
   align-items: center;
@@ -832,18 +787,6 @@ img[data-config-img="cliente.logo"] {
 }
 
 .btn-stop:hover { background: rgba(255,255,255,0.18); }
-
-@media (min-width: 768px) {
-  .btn-stop {
-    background: transparent;
-    color: var(--text);
-    border-color: rgba(0,0,0,0.18);
-    padding: 8px 16px;
-    width: auto;
-    border-radius: 10px;
-    font-size: 0.88rem;
-  }
-}
 
 /* Input manual */
 .manual-input .form-control {
@@ -877,34 +820,6 @@ img[data-config-img="cliente.logo"] {
 }
 
 .btn-accent:hover { background: var(--accent-dark); color: white; }
-
-@media (min-width: 768px) {
-  .manual-input .form-control {
-    background: white;
-    border: 1px solid rgba(0,0,0,0.08);
-    color: var(--text);
-    min-height: 48px;
-    font-size: 0.9rem;
-  }
-
-  .manual-input .form-control::placeholder { color: var(--text-light); }
-
-  .manual-input .form-control:focus {
-    background: white;
-    color: var(--text);
-    border-color: var(--accent);
-  }
-
-  .btn-accent { font-size: 0.9rem; min-height: 48px; }
-}
-
-/* Panel formulario escritorio */
-.asistencia-form {
-  background: white;
-  border-radius: 22px;
-  padding: 28px;
-  box-shadow: var(--shadow);
-}
 
 /* Modal eventos */
 .modal-eventos-content { border-radius: 20px; overflow: hidden; }

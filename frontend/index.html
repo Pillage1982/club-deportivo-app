@@ -135,10 +135,10 @@
     <!-- TAB: ASISTENCIA               -->
     <!-- ============================= -->
     <div class="tab-pane fade" id="tab_asistencia" role="tabpanel">
-      <section id="modulo_asistencia">
+      <section id="modulo_asistencia" class="scanner-centrado">
 
-        <!-- Móvil: botón selector de evento -->
-        <div class="d-md-none mb-3">
+        <!-- Selector de evento -->
+        <div class="mb-3">
           <button class="btn-evento-selector" data-bs-toggle="modal" data-bs-target="#modal_eventos_activos">
             <i class="bi bi-calendar-event"></i>
             <span id="label_evento_mobile">Seleccionar Actividad</span>
@@ -146,71 +146,54 @@
           </button>
         </div>
 
-        <div class="asistencia-layout">
+        <!-- Panel scanner -->
+        <div class="scanner-panel">
 
-          <!-- Panel scanner (móvil oscuro, escritorio claro) -->
-          <div class="scanner-panel">
-
-            <div id="qr_scanner_wrapper" class="scanner-video-wrapper d-none">
-              <video id="qr_scanner_video" class="scanner-video" muted playsinline></video>
-              <div class="scanner-line"></div>
-            </div>
-
-            <p id="qr_asistencia_estado" class="scanner-status">
-              Seleccione una actividad para comenzar.
-            </p>
-
-            <div class="scanner-btns mb-3">
-              <button type="button" id="btn_iniciar_qr" class="btn-scan" onclick="iniciarEscaneoAsistencia()" disabled>
-                <i class="bi bi-qr-code-scan"></i>
-                <span id="btn_iniciar_qr_texto">ESCANEAR QR</span>
-              </button>
-              <button type="button" id="btn_detener_qr" class="btn-stop d-none" onclick="detenerEscaneoAsistencia()">
-                <i class="bi bi-stop-circle"></i> DETENER
-              </button>
-            </div>
-
-            <div class="input-group manual-input">
-              <input type="text" id="qr_asistencia_manual" class="form-control" placeholder="RUT o N° de carnet">
-              <button class="btn-accent" id="btn_usar_lectura" onclick="procesarLecturaAsistenciaManual()" disabled>
-                <span class="d-md-none"><i class="bi bi-send-fill"></i></span>
-                <span class="d-none d-md-inline">Usar lectura</span>
-              </button>
-            </div>
+          <div id="aviso_evento_cerrado" class="alert alert-warning py-2 px-3 mb-3 d-none" role="alert">
+            Esta actividad ya fue finalizada. No se puede registrar más asistencia.
           </div>
 
-          <!-- Panel formulario (escritorio) — elementos accesibles al JS desde móvil -->
-          <div class="asistencia-form d-none d-md-block">
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Actividad</label>
-              <select id="evento_id" class="form-select"></select>
-            </div>
-            <div id="aviso_evento_cerrado" class="alert alert-warning py-2 px-3 d-none" role="alert">
-              Esta actividad ya fue finalizada. No se puede registrar más asistencia.
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Integrante</label>
-              <select id="persona_id" class="form-select"></select>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Estado</label>
-              <select id="estado" class="form-select">
-                <option value="presente">Presente</option>
-                <option value="atrasado">Atrasado</option>
-                <option value="ausente">Ausente</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Minutos atraso</label>
-              <input type="number" id="minutos" class="form-control" value="0">
-            </div>
-            <button type="button" id="btn_registrar_asistencia" class="btn btn-primary w-100" onclick="registrarAsistencia()" data-config-text="etiquetas.botones.registrar">
-              Registrar
+          <div id="qr_scanner_wrapper" class="scanner-video-wrapper d-none">
+            <video id="qr_scanner_video" class="scanner-video" muted playsinline></video>
+            <div class="scanner-line"></div>
+          </div>
+
+          <p id="qr_asistencia_estado" class="scanner-status">
+            Seleccione una actividad para comenzar.
+          </p>
+
+          <div class="scanner-btns mb-3">
+            <button type="button" id="btn_iniciar_qr" class="btn-scan" onclick="iniciarEscaneoAsistencia()" disabled>
+              <i class="bi bi-qr-code-scan"></i>
+              <span id="btn_iniciar_qr_texto">ESCANEAR QR</span>
             </button>
-            <p id="respuesta" class="mt-3"></p>
+            <button type="button" id="btn_detener_qr" class="btn-stop d-none" onclick="detenerEscaneoAsistencia()">
+              <i class="bi bi-stop-circle"></i> DETENER
+            </button>
           </div>
 
+          <div class="input-group manual-input">
+            <input type="text" id="qr_asistencia_manual" class="form-control" placeholder="RUT o N° de carnet">
+            <button class="btn-accent" id="btn_usar_lectura" onclick="procesarLecturaAsistenciaManual()" disabled>
+              <i class="bi bi-send-fill"></i>
+            </button>
+          </div>
         </div>
+
+        <!-- Campos ocultos requeridos por el JS de asistencias -->
+        <div class="d-none">
+          <select id="evento_id"></select>
+          <select id="persona_id"></select>
+          <select id="estado">
+            <option value="presente">Presente</option>
+            <option value="atrasado">Atrasado</option>
+            <option value="ausente">Ausente</option>
+          </select>
+          <input type="number" id="minutos" value="0">
+          <button id="btn_registrar_asistencia" onclick="registrarAsistencia()"></button>
+          <p id="respuesta"></p>
+        </div>
+
       </section>
     </div>
 
