@@ -108,65 +108,46 @@ function registrarAsistencia() {
 
       if (!estadoBoton) return;
 
-      // Registra asistencia en backend
       fetch(`${API_URL}/asistencia`, {
-
-        method: 'POST',
-
+        method:  'POST',
         headers: getAuthHeaders(),
-
-        body: JSON.stringify(data)
-
+        body:    JSON.stringify(data)
       })
-
       .then(async res => {
-  const contentType = res.headers.get('content-type') || '';
-  const data = contentType.includes('application/json')
-    ? await res.json()
-    : { mensaje: await res.text() };
-
-  if (!res.ok) {
-    throw new Error(
-      data.mensaje || 'No se pudo registrar la asistencia'
-    );
-  }
-
-  return data;
-})
-.then(response => {
-
-document.getElementById('respuesta').innerText =
-  response.mensaje || 'Asistencia registrada';
-
-mostrarAlerta(
-  response.mensaje || 'Asistencia registrada',
-  'success'
-);
-
-      cargarAsistencias();
-      cargarDashboard();
-      refrescarFinanzasPorAsistencia();
-
-      document.getElementById('minutos').value = 0;
-
-    })
-
-    .catch(err => {
-
-    console.error(err);
-
-    mostrarAlerta(
-  err.message,
-  'danger'
-);
-
-})
-  .finally(() => {
-    restaurarBoton(
-      estadoBoton,
-      'Registrar'
-    );
-  });
+        const contentType = res.headers.get('content-type') || '';
+        const resData = contentType.includes('application/json')
+          ? await res.json()
+          : { mensaje: await res.text() };
+        if (!res.ok) throw new Error(resData.mensaje || 'No se pudo registrar la asistencia');
+        return resData;
+      })
+      .then(response => {
+        document.getElementById('respuesta').innerText = response.mensaje || 'Asistencia registrada';
+        mostrarAlerta(response.mensaje || 'Asistencia registrada', 'success');
+        cargarAsistencias();
+        cargarDashboard();
+        refrescarFinanzasPorAsistencia();
+        document.getElementById('minutos').value = 0;
+      })
+      .catch(async err => {
+        const sinRed = !navigator.onLine || err.message === 'Failed to fetch';
+        if (sinRed) {
+          try {
+            await guardarAsistenciaOffline(data);
+            await actualizarBadgeOffline();
+            mostrarAlerta('Sin conexión — asistencia guardada localmente y se enviará al recuperar señal', 'warning');
+            document.getElementById('respuesta').innerText = 'Guardado sin conexión';
+          } catch {
+            mostrarAlerta('Sin conexión y no se pudo guardar localmente', 'danger');
+          }
+        } else {
+          console.error(err);
+          mostrarAlerta(err.message, 'danger');
+        }
+      })
+      .finally(() => {
+        restaurarBoton(estadoBoton, 'Registrar');
+      });
 
 }
 

@@ -1,0 +1,22 @@
+{
+  "name": "Gran Diablada Calameña",
+  "short_name": "GDC Asistencia",
+  "description": "Sistema de asistencia Gran Diablada Calameña",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "icons": [
+    {
+      "src": "img/logo-calamena.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "img/logo-calamena.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
