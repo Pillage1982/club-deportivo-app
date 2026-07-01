@@ -318,15 +318,41 @@ async function escanearFrameAsistencia() {
   requestAnimationFrame(escanearFrameAsistencia);
 }
 
-async function detectarLecturaNativaAsistencia(video) {
-  const codigos =
-    await qrAsistenciaDetector.detect(video);
+// Recorta el centro del frame (zoom digital) para mejorar detección en webcams de escritorio
+const QR_ZOOM_CROP = 0.65;
 
-  if (codigos.length === 0) {
-    return '';
+function prepararCanvasCroppedAsistencia(video) {
+  if (
+    video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
+    video.videoWidth === 0 ||
+    video.videoHeight === 0
+  ) return null;
+
+  if (!qrAsistenciaCanvas) {
+    qrAsistenciaCanvas = document.createElement('canvas');
   }
 
-  return codigos[0].rawValue || '';
+  const srcX = video.videoWidth  * (1 - QR_ZOOM_CROP) / 2;
+  const srcY = video.videoHeight * (1 - QR_ZOOM_CROP) / 2;
+  const srcW = video.videoWidth  * QR_ZOOM_CROP;
+  const srcH = video.videoHeight * QR_ZOOM_CROP;
+
+  qrAsistenciaCanvas.width  = srcW;
+  qrAsistenciaCanvas.height = srcH;
+
+  qrAsistenciaCanvas
+    .getContext('2d', { willReadFrequently: true })
+    .drawImage(video, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
+
+  return qrAsistenciaCanvas;
+}
+
+async function detectarLecturaNativaAsistencia(video) {
+  const canvas = prepararCanvasCroppedAsistencia(video);
+  if (!canvas) return '';
+
+  const codigos = await qrAsistenciaDetector.detect(canvas);
+  return codigos.length > 0 ? (codigos[0].rawValue || '') : '';
 }
 
 function detectarLecturaCompatibleAsistencia(video) {
@@ -338,55 +364,15 @@ function detectarLecturaCompatibleAsistencia(video) {
     return '';
   }
 
-  if (
-    video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
-    video.videoWidth === 0 ||
-    video.videoHeight === 0
-  ) {
-    return '';
-  }
+  const canvas = prepararCanvasCroppedAsistencia(video);
+  if (!canvas) return '';
 
-  if (!qrAsistenciaCanvas) {
-    qrAsistenciaCanvas =
-      document.createElement('canvas');
-  }
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const imagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-  const contexto =
-    qrAsistenciaCanvas.getContext('2d', {
-      willReadFrequently: true
-    });
-
-  qrAsistenciaCanvas.width =
-    video.videoWidth;
-
-  qrAsistenciaCanvas.height =
-    video.videoHeight;
-
-  contexto.drawImage(
-    video,
-    0,
-    0,
-    qrAsistenciaCanvas.width,
-    qrAsistenciaCanvas.height
-  );
-
-  const imagen =
-    contexto.getImageData(
-      0,
-      0,
-      qrAsistenciaCanvas.width,
-      qrAsistenciaCanvas.height
-    );
-
-  const codigo =
-    jsQR(
-      imagen.data,
-      imagen.width,
-      imagen.height,
-      {
-        inversionAttempts: 'dontInvert'
-      }
-    );
+  const codigo = jsQR(imagen.data, imagen.width, imagen.height, {
+    inversionAttempts: 'dontInvert'
+  });
 
   return codigo ? codigo.data : '';
 }
