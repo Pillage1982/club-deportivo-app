@@ -523,32 +523,34 @@ img[data-config-img="cliente.logo"] {
 }
 
 .app-tabs .nav-link {
-  color: var(--text-light) !important;
+  color: #000 !important;
+  background: var(--accent);
   border-radius: 10px 10px 0 0;
   padding: 10px 16px;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.88rem;
   display: flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid transparent;
+  border: 1px solid var(--accent-dark);
   border-bottom: none;
-  transition: 0.2s;
+  transition: background 0.2s, color 0.2s;
   white-space: nowrap;
   transform: none !important;
 }
 
 .app-tabs .nav-link:hover {
   color: var(--accent) !important;
-  background: rgba(244, 122, 34, 0.07);
+  background: #000 !important;
   padding-left: 16px !important;
+  border-color: #000;
 }
 
 .app-tabs .nav-link.active {
   color: var(--accent) !important;
-  background: white;
-  border-color: rgba(0,0,0,0.08);
-  font-weight: 600;
+  background: #000 !important;
+  border-color: #000;
+  font-weight: 700;
 }
 
 .app-tabs .nav-link i {
