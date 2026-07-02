@@ -2,10 +2,10 @@
 // SERVICE WORKER — NexoComunidad PWA
 // =====================================
 
-const CACHE_STATIC  = 'nexo-static-v2';
-const CACHE_API     = 'nexo-api-v2';
+const CACHE_STATIC  = 'nexo-static-v3';
+const CACHE_API     = 'nexo-api-v3';
 
-const STATIC_ASSETS = [
+const LOCAL_ASSETS = [
   '/index.html',
   '/login.html',
   '/css/styles.css',
@@ -23,7 +23,10 @@ const STATIC_ASSETS = [
   '/js/offline-db.js',
   '/img/logo-calamena.jpeg',
   '/img/logo-calamena-black.jpeg',
-  '/favicon.svg',
+  '/favicon.svg'
+];
+
+const CDN_ASSETS = [
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css',
   'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js',
@@ -34,15 +37,24 @@ const STATIC_ASSETS = [
 // Rutas de API que se cachean para uso offline
 const API_CACHE_PATHS = ['/api/personas', '/api/eventos'];
 
-// ─── INSTALL: cachea todos los assets estáticos ───────────────────────────
+// ─── INSTALL ─────────────────────────────────────────────────────────────────
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_STATIC).then(cache => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_STATIC).then(async cache => {
+      // Assets locales: críticos, deben cachearse
+      await cache.addAll(LOCAL_ASSETS);
+      // CDNs: opcionales — si fallan no rompen el SW
+      await Promise.allSettled(
+        CDN_ASSETS.map(url =>
+          fetch(url).then(res => { if (res.ok) cache.put(url, res); })
+        )
+      );
+    })
   );
   self.skipWaiting();
 });
 
-// ─── ACTIVATE: limpia caches viejos ──────────────────────────────────────
+// ─── ACTIVATE: limpia caches viejos ──────────────────────────────────────────
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -56,15 +68,21 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// ─── FETCH ────────────────────────────────────────────────────────────────
+// ─── FETCH ───────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // POST /api/asistencia — manejar offline en el cliente (no interceptar aquí)
+  // POST — manejar offline en el cliente
   if (request.method === 'POST') return;
 
-  // GET a rutas de API que cacheamos (personas, eventos)
+  // Navegación HTML — siempre intentar red, caer a index.html cacheado
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirstNav(request));
+    return;
+  }
+
+  // GET a rutas de API cacheadas
   if (API_CACHE_PATHS.some(p => url.pathname.startsWith(p))) {
     event.respondWith(networkFirstAPI(request));
     return;
@@ -73,6 +91,22 @@ self.addEventListener('fetch', event => {
   // Resto de assets — cache first
   event.respondWith(cacheFirst(request));
 });
+
+// Navegación: red → caché de la página → index.html
+async function networkFirstNav(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_STATIC);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    return caches.match('/index.html');
+  }
+}
 
 // Cache-first: sirve desde caché, actualiza en background
 async function cacheFirst(request) {
