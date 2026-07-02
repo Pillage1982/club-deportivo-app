@@ -127,6 +127,7 @@ function registrarAsistencia() {
         cargarAsistencias();
         cargarDashboard();
         refrescarFinanzasPorAsistencia();
+        cargarUltimosRegistros();
         document.getElementById('minutos').value = 0;
         const inputManual = document.getElementById('qr_asistencia_manual');
         if (inputManual) { inputManual.value = ''; }
@@ -907,7 +908,10 @@ function seleccionarEventoMobile(id, nombre) {
 document.addEventListener('DOMContentLoaded', () => {
   const eventoSelect = document.getElementById('evento_id');
   if (eventoSelect) {
-    eventoSelect.addEventListener('change', actualizarBotonesEscaneoQr);
+    eventoSelect.addEventListener('change', () => {
+      actualizarBotonesEscaneoQr();
+      cargarUltimosRegistros();
+    });
   }
 
   const modalEl = document.getElementById('modal_eventos_activos');
@@ -932,6 +936,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// ── Últimos 5 registros del evento en curso ──
+function cargarUltimosRegistros() {
+  const eventoId = document.getElementById('evento_id')?.value;
+  const wrapper  = document.getElementById('ultimos_registros_wrapper');
+  const tbody    = document.getElementById('ultimos_registros_body');
+  if (!eventoId || !wrapper || !tbody) return;
+
+  fetch(`${API_URL}/asistencia`, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (!Array.isArray(data)) return;
+      const filtrados = data
+        .filter(a => String(a.evento_id) === String(eventoId))
+        .slice(0, 5);
+
+      if (filtrados.length === 0) {
+        wrapper.classList.add('d-none');
+        return;
+      }
+
+      tbody.innerHTML = filtrados.map(a => `
+        <tr>
+          <td>${a.nombres} ${a.apellido_paterno}</td>
+          <td>${obtenerBadgeAsistencia(a.estado)}</td>
+        </tr>
+      `).join('');
+
+      wrapper.classList.remove('d-none');
+    })
+    .catch(() => {});
+}
 
 // ── Reloj en vivo para panel de asistencia ──
 (function iniciarRelojAsistencia() {

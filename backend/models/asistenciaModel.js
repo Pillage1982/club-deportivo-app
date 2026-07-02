@@ -115,6 +115,7 @@ exports.obtenerAsistencias = (callback) => {
     SELECT
       a.id,
       a.persona_id,
+      a.evento_id,
       p.nombres,
       p.apellido_paterno,
       p.apellido_materno,
