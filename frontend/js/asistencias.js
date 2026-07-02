@@ -413,6 +413,7 @@ function limpiarFormularioAsistenciaParaLectura() {
 }
 
 async function procesarLecturaAsistencia(lectura) {
+  console.log('[QR-CI DEBUG] Lectura cruda:', lectura);
   let persona = null;
   const fechaEscaneo = new Date();
 
