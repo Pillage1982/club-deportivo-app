@@ -978,3 +978,19 @@ img[data-config-img="cliente.logo"] {
 
 }
 
+/* ── Logo institucional en panel scanner ── */
+.scanner-logo-bg {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+}
+.scanner-logo-img {
+  width: min(180px, 45vw);
+  border-radius: 50%;
+  opacity: 0.18;
+  pointer-events: none;
+  user-select: none;
+}
+
