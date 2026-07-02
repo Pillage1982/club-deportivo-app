@@ -932,3 +932,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// ── Reloj en vivo para panel de asistencia ──
+(function iniciarRelojAsistencia() {
+  const elHora  = document.getElementById('reloj_hora');
+  const elFecha = document.getElementById('reloj_fecha');
+  if (!elHora || !elFecha) return;
+
+  const DIAS   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MESES  = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  function actualizar() {
+    const ahora = new Date();
+    const hh = String(ahora.getHours()).padStart(2, '0');
+    const mm = String(ahora.getMinutes()).padStart(2, '0');
+    const ss = String(ahora.getSeconds()).padStart(2, '0');
+    elHora.textContent  = `${hh}:${mm}:${ss}`;
+    elFecha.textContent = `${DIAS[ahora.getDay()]} ${ahora.getDate()} de ${MESES[ahora.getMonth()]} ${ahora.getFullYear()}`;
+  }
+
+  actualizar();
+  setInterval(actualizar, 1000);
+})();

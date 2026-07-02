@@ -978,6 +978,27 @@ img[data-config-img="cliente.logo"] {
 
 }
 
+/* ── Reloj en vivo ── */
+.scanner-reloj {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem 1rem 0.25rem;
+  color: var(--accent);
+}
+#reloj_hora {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+#reloj_fecha {
+  font-size: 0.8rem;
+  opacity: 0.75;
+  text-transform: capitalize;
+  margin-top: 0.15rem;
+}
+
 /* ── Logo institucional en panel scanner ── */
 .scanner-logo-bg {
   flex: 1;
