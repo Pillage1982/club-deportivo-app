@@ -900,6 +900,7 @@ function seleccionarEventoMobile(id, nombre) {
   if (label) label.textContent = nombre;
   const modalEl = document.getElementById('modal_eventos_activos');
   if (modalEl) {
+    document.activeElement?.blur();
     const modal = bootstrap.Modal.getInstance(modalEl);
     if (modal) modal.hide();
   }
