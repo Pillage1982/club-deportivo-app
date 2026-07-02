@@ -128,6 +128,10 @@ function registrarAsistencia() {
         cargarDashboard();
         refrescarFinanzasPorAsistencia();
         document.getElementById('minutos').value = 0;
+        const inputManual = document.getElementById('qr_asistencia_manual');
+        if (inputManual) { inputManual.value = ''; }
+        const btnEnviar = document.getElementById('btn_usar_lectura');
+        if (btnEnviar) { btnEnviar.disabled = true; }
       })
       .catch(async err => {
         const sinRed = !navigator.onLine || err.message === 'Failed to fetch';
@@ -137,6 +141,10 @@ function registrarAsistencia() {
             await actualizarBadgeOffline();
             mostrarAlerta('Sin conexión — asistencia guardada localmente y se enviará al recuperar señal', 'warning');
             document.getElementById('respuesta').innerText = 'Guardado sin conexión';
+            const inputManual = document.getElementById('qr_asistencia_manual');
+            if (inputManual) { inputManual.value = ''; }
+            const btnEnviar = document.getElementById('btn_usar_lectura');
+            if (btnEnviar) { btnEnviar.disabled = true; }
           } catch {
             mostrarAlerta('Sin conexión y no se pudo guardar localmente', 'danger');
           }
