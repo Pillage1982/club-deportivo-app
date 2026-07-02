@@ -225,7 +225,9 @@ async function iniciarEscaneoAsistencia() {
     qrAsistenciaStream =
       await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'environment'
+          facingMode: 'environment',
+          width:  { ideal: 1280 },
+          height: { ideal: 720 }
         }
       });
 
@@ -783,6 +785,16 @@ function extraerDatosLecturaAsistencia(lectura) {
     personaId: null,
     rut: null
   };
+
+  // URL del CI chileno: portal.nuevosidiv.registrocivil.cl/...?RUN=15010994-9&...
+  const matchRUN = texto.match(/[?&]RUN=([0-9]{7,8}-[0-9Kk])/i);
+  if (matchRUN) {
+    const rut = normalizarRutAsistencia(matchRUN[1]);
+    if (validarRutLecturaAsistencia(rut)) {
+      datos.rut = rut;
+      return datos;
+    }
+  }
 
   datos.rut =
     extraerRutAsistencia(texto);
