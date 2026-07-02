@@ -318,6 +318,53 @@ async function escanearFrameAsistencia() {
   requestAnimationFrame(escanearFrameAsistencia);
 }
 
+// ── Foto CI: abre cámara nativa, procesa imagen estática ──
+async function procesarFotoCi(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  actualizarEstadoQrAsistencia('Procesando foto del CI...', 'primary');
+
+  try {
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    await img.decode();
+
+    // Dibuja en canvas para ZXing
+    const canvas = document.createElement('canvas');
+    canvas.width  = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    URL.revokeObjectURL(img.src);
+
+    let lectura = '';
+
+    // 1. BarcodeDetector (iOS 17+ / Android Chrome)
+    if ('BarcodeDetector' in window) {
+      try {
+        const det = new BarcodeDetector({ formats: ['qr_code'] });
+        const codes = await det.detect(img);
+        if (codes.length > 0) lectura = codes[0].rawValue || '';
+      } catch {}
+    }
+
+    // 2. ZXing JS puro
+    if (!lectura) lectura = detectarConZxing(canvas);
+
+    if (lectura) {
+      procesarLecturaAsistencia(lectura);
+    } else {
+      actualizarEstadoQrAsistencia('No se pudo leer el QR. Intente con mejor iluminación.', 'danger');
+      mostrarAlerta('No se detectó QR en la foto. Asegúrese de que el código esté visible y sin reflejos.', 'warning');
+    }
+  } catch (err) {
+    console.error(err);
+    mostrarAlerta('Error al procesar la foto del CI.', 'danger');
+  }
+
+  input.value = '';
+}
+
 // ── ZXing: lector JS puro que soporta PDF417 (CI chileno) y QR ──
 function inicializarZxing() {
   if (typeof ZXing === 'undefined' || zxingReader) return;
@@ -559,6 +606,11 @@ function actualizarBotonesEscaneoQr() {
 
   if (btnManual) {
     btnManual.disabled = !hayEvento || cerrado;
+  }
+
+  const btnFotoCi = document.getElementById('btn_foto_ci');
+  if (btnFotoCi) {
+    btnFotoCi.disabled = !hayEvento || cerrado;
   }
 
   const aviso = document.getElementById('aviso_evento_cerrado');
@@ -978,6 +1030,15 @@ document.addEventListener('DOMContentLoaded', () => {
       actualizarBotonesEscaneoQr();
       cargarUltimosRegistros();
     });
+  }
+
+  // Inicializar ZXing al cargar (disponible también para foto CI sin abrir escáner)
+  inicializarZxing();
+
+  // Handler foto CI
+  const fotoCiInput = document.getElementById('ci_foto_input');
+  if (fotoCiInput) {
+    fotoCiInput.addEventListener('change', function() { procesarFotoCi(this); });
   }
 
   const modalEl = document.getElementById('modal_eventos_activos');
