@@ -32,7 +32,7 @@ html {
 
 body {
   margin: 0;
-  padding-top: 76px;
+  padding-top: 86px;
   background: var(--bg);
   color: var(--text);
 }
@@ -49,7 +49,7 @@ body {
   z-index: 1050;
   background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
   box-shadow: var(--shadow);
-  padding: 14px 22px;
+  padding: 14px 22px 24px;
   border-bottom: 3px solid var(--accent);
 }
 
@@ -152,10 +152,10 @@ body {
 @media (min-width: 992px) {
   .sidebar-desktop {
     position: fixed;
-    top: 76px;
+    top: 86px;
     left: 0;
     width: 260px;
-    height: calc(100vh - 76px);
+    height: calc(100vh - 86px);
     overflow-y: auto;
     z-index: 1040;
   }
@@ -168,7 +168,7 @@ body {
 
 @media (max-width: 991.98px) {
   body {
-    padding-top: 64px;
+    padding-top: 74px;
   }
 
   .main-content {
@@ -496,7 +496,7 @@ img[data-config-img="cliente.logo"] {
 
 .app-tabs-wrapper {
   position: sticky;
-  top: 76px;
+  top: 86px;
   z-index: 1000;
   background: white;
   border-bottom: 2px solid rgba(0,0,0,0.07);
@@ -505,7 +505,7 @@ img[data-config-img="cliente.logo"] {
 
 @media (max-width: 991.98px) {
   .app-tabs-wrapper {
-    top: 64px;
+    top: 74px;
   }
 }
 
@@ -641,12 +641,12 @@ img[data-config-img="cliente.logo"] {
 .scanner-centrado {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 64px - 52px); /* móvil: navbar + tabs */
+  min-height: calc(100vh - 74px - 52px); /* móvil: navbar + tabs */
 }
 
 @media (min-width: 992px) {
   .scanner-centrado {
-    min-height: calc(100vh - 76px - 52px); /* escritorio: navbar + tabs */
+    min-height: calc(100vh - 86px - 52px); /* escritorio: navbar + tabs */
   }
 }
 
