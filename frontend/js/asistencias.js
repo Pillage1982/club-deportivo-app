@@ -7,6 +7,8 @@ let qrAsistenciaDetector = null;
 let qrAsistenciaEscaneando = false;
 let qrAsistenciaUltimaLectura = '';
 let qrAsistenciaCanvas = null;
+let qrAsistenciaCanvasFull = null;
+let zxingReader = null;
 
 function registrarAsistencia() {
 
@@ -216,6 +218,7 @@ async function iniciarEscaneoAsistencia() {
   }
 
   try {
+    inicializarZxing();
     qrAsistenciaDetector =
       await crearDetectorQrAsistencia();
 
@@ -313,6 +316,52 @@ async function escanearFrameAsistencia() {
   requestAnimationFrame(escanearFrameAsistencia);
 }
 
+// ── ZXing: lector JS puro que soporta PDF417 (CI chileno) y QR ──
+function inicializarZxing() {
+  if (typeof ZXing === 'undefined' || zxingReader) return;
+  try {
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+      ZXing.BarcodeFormat.PDF_417,
+      ZXing.BarcodeFormat.QR_CODE
+    ]);
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+    zxingReader = new ZXing.MultiFormatReader();
+    zxingReader.setHints(hints);
+    console.log('[QR-CI DEBUG] ZXing inicializado (PDF417 + QR)');
+  } catch (e) {
+    console.warn('[QR-CI DEBUG] ZXing no disponible:', e);
+  }
+}
+
+function detectarConZxing(canvas) {
+  if (!zxingReader) return '';
+  try {
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const { width, height } = canvas;
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const lum = new Uint8ClampedArray(width * height);
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      lum[i >> 2] = (imageData.data[i] * 299 + imageData.data[i + 1] * 587 + imageData.data[i + 2] * 114) / 1000;
+    }
+    const source = new ZXing.RGBLuminanceSource(lum, width, height);
+    const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
+    return zxingReader.decode(bitmap).getText();
+  } catch {
+    return '';
+  }
+}
+
+function prepararCanvasCompletoAsistencia(video) {
+  if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.videoWidth === 0) return null;
+  if (!qrAsistenciaCanvasFull) qrAsistenciaCanvasFull = document.createElement('canvas');
+  qrAsistenciaCanvasFull.width  = video.videoWidth;
+  qrAsistenciaCanvasFull.height = video.videoHeight;
+  qrAsistenciaCanvasFull.getContext('2d', { willReadFrequently: true })
+    .drawImage(video, 0, 0);
+  return qrAsistenciaCanvasFull;
+}
+
 // Recorta el centro del frame (zoom digital) para mejorar detección en webcams de escritorio
 const QR_ZOOM_CROP = 0.5;
 
@@ -343,32 +392,30 @@ function prepararCanvasCroppedAsistencia(video) {
 }
 
 async function detectarLecturaNativaAsistencia(video) {
-  if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return '';
-
-  // Usa el video completo — el crop corta PDF417 (CI chileno es banda ancha horizontal)
-  const codigos = await qrAsistenciaDetector.detect(video);
+  // Canvas completo: el crop corta PDF417 del CI (banda ancha horizontal)
+  const canvas = prepararCanvasCompletoAsistencia(video);
+  if (!canvas) return '';
+  const codigos = await qrAsistenciaDetector.detect(canvas);
   return codigos.length > 0 ? (codigos[0].rawValue || '') : '';
 }
 
 function detectarLecturaCompatibleAsistencia(video) {
-  if (typeof jsQR !== 'function') {
-    actualizarEstadoQrAsistencia(
-      'No se pudo cargar el lector compatible. Recargue la pagina o use lectura manual.',
-      'warning'
-    );
-    return '';
+  // 1. ZXing: soporta PDF417 (CI chileno) y QR — usa frame completo
+  if (zxingReader) {
+    const canvasFull = prepararCanvasCompletoAsistencia(video);
+    if (canvasFull) {
+      const lecturaZxing = detectarConZxing(canvasFull);
+      if (lecturaZxing) return lecturaZxing;
+    }
   }
 
+  // 2. jsQR: fallback solo QR — usa frame recortado (mejor para webcam escritorio)
+  if (typeof jsQR !== 'function') return '';
   const canvas = prepararCanvasCroppedAsistencia(video);
   if (!canvas) return '';
-
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const imagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-  const codigo = jsQR(imagen.data, imagen.width, imagen.height, {
-    inversionAttempts: 'dontInvert'
-  });
-
+  const codigo = jsQR(imagen.data, imagen.width, imagen.height, { inversionAttempts: 'dontInvert' });
   return codigo ? codigo.data : '';
 }
 
