@@ -179,16 +179,21 @@ async function crearDetectorQrAsistencia() {
     !('BarcodeDetector' in window) ||
     typeof BarcodeDetector.getSupportedFormats !== 'function'
   ) {
+    console.log('[QR-CI DEBUG] BarcodeDetector no disponible en este dispositivo — usando jsQR (solo QR, no PDF417)');
     return null;
   }
 
   const formatosSoportados =
     await BarcodeDetector.getSupportedFormats();
 
+  console.log('[QR-CI DEBUG] BarcodeDetector disponible. Formatos soportados:', formatosSoportados);
+
   const formatos = [
     'qr_code',
     'pdf417'
   ].filter(formato => formatosSoportados.includes(formato));
+
+  console.log('[QR-CI DEBUG] Formatos activos:', formatos);
 
   if (formatos.length === 0) {
     return null;
@@ -338,10 +343,10 @@ function prepararCanvasCroppedAsistencia(video) {
 }
 
 async function detectarLecturaNativaAsistencia(video) {
-  const canvas = prepararCanvasCroppedAsistencia(video);
-  if (!canvas) return '';
+  if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return '';
 
-  const codigos = await qrAsistenciaDetector.detect(canvas);
+  // Usa el video completo — el crop corta PDF417 (CI chileno es banda ancha horizontal)
+  const codigos = await qrAsistenciaDetector.detect(video);
   return codigos.length > 0 ? (codigos[0].rawValue || '') : '';
 }
 
