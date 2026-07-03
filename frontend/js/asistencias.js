@@ -369,6 +369,7 @@ async function procesarFotoCi(input) {
 function inicializarZxing() {
   if (typeof ZXing === 'undefined' || zxingReader) return;
   try {
+    console.log('[ZXing] Exports disponibles:', Object.keys(ZXing).join(', '));
     const hints = new Map();
     hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
       ZXing.BarcodeFormat.PDF_417,
@@ -377,14 +378,18 @@ function inicializarZxing() {
     hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
     zxingReader = new ZXing.MultiFormatReader();
     zxingReader.setHints(hints);
-    console.log('[QR-CI DEBUG] ZXing inicializado (PDF417 + QR)');
+    console.log('[ZXing] Inicializado. RGBLuminanceSource disponible:', typeof ZXing.RGBLuminanceSource);
   } catch (e) {
-    console.warn('[QR-CI DEBUG] ZXing no disponible:', e);
+    console.warn('[ZXing] Error al inicializar:', e);
   }
 }
 
 function detectarConZxing(canvas) {
   if (!zxingReader) return '';
+  if (typeof ZXing.RGBLuminanceSource === 'undefined') {
+    console.warn('[ZXing] RGBLuminanceSource no disponible');
+    return '';
+  }
   try {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const { width, height } = canvas;
@@ -396,7 +401,8 @@ function detectarConZxing(canvas) {
     const source = new ZXing.RGBLuminanceSource(lum, width, height);
     const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
     return zxingReader.decode(bitmap).getText();
-  } catch {
+  } catch (e) {
+    if (e?.name !== 'NotFoundException') console.warn('[ZXing] decode error:', e?.name, e?.message);
     return '';
   }
 }
