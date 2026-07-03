@@ -214,6 +214,23 @@ function invalidarCacheApi(clave) {
 }
 
 // =====================================
+// CARGA DIFERIDA DE MÓDULOS JS
+// =====================================
+
+const _modulosCargados = new Set();
+
+function cargarModulo(src) {
+  return new Promise((resolve, reject) => {
+    if (_modulosCargados.has(src)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => { _modulosCargados.add(src); resolve(); };
+    s.onerror = () => reject(new Error(`No se pudo cargar: ${src}`));
+    document.body.appendChild(s);
+  });
+}
+
+// =====================================
 // AUTO-CIERRE POR EXPIRACIÓN DE TOKEN
 // =====================================
 
