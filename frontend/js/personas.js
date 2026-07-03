@@ -11,14 +11,14 @@ let personasTabla = [];
 
 function cargarPersonas() {
 
-  fetch(`${API_URL}/personas`, {
+  const cached = obtenerCacheApi('personas');
+  const promesa = cached
+    ? Promise.resolve(cached)
+    : fetch(`${API_URL}/personas`, { headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) guardarCacheApi('personas', data); return data; });
 
-   headers: getAuthHeaders()
-
-  })
-    
-    .then(res => res.json())
-    .then(data => {
+  promesa.then(data => {
 
       // Selectores asistencia y pagos
       const select = document.getElementById('persona_id');
@@ -214,6 +214,7 @@ document.getElementById(
 ).value = 'activo';
 
 // Refresca selectores y tabla personas
+    invalidarCacheApi('personas');
     cargarPersonas();
 
     cargarTablaPersonas();
@@ -247,25 +248,18 @@ document.getElementById(
 
   function cargarTablaPersonas() {
 
-  fetch(`${API_URL}/personas`, {
+  const cached = obtenerCacheApi('personas');
+  const promesa = cached
+    ? Promise.resolve(cached)
+    : fetch(`${API_URL}/personas`, { headers: getAuthHeaders() })
+        .then(async res => {
+          const data = await leerRespuestaJson(res);
+          if (!res.ok) throw new Error(data.mensaje || 'No se pudo cargar los integrantes');
+          if (Array.isArray(data)) guardarCacheApi('personas', data);
+          return data;
+        });
 
-    headers: getAuthHeaders()
-
-  })
-
-  .then(async res => {
-    const data = await leerRespuestaJson(res);
-
-    if (!res.ok) {
-      throw new Error(
-        data.mensaje || 'No se pudo eliminar el integrante'
-      );
-    }
-
-    return data;
-  })
-
-  .then(data => {
+  promesa.then(data => {
 
     const tabla =
       document.getElementById(
@@ -566,6 +560,7 @@ function ejecutarEliminarPersona(id) {
       'warning'
     );
 
+    invalidarCacheApi('personas');
     cargarTablaPersonas();
     cargarPersonas();
 

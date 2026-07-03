@@ -44,13 +44,14 @@ function obtenerTipoActividad(tipo) {
 
 function cargarEventos() {
 
-  fetch(`${API_URL}/eventos`, {
+  const cached = obtenerCacheApi('eventos');
+  const promesa = cached
+    ? Promise.resolve(cached)
+    : fetch(`${API_URL}/eventos`, { headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) guardarCacheApi('eventos', data); return data; });
 
-  headers: getAuthHeaders()
-
-})
-    .then(res => res.json())
-    .then(data => {
+  promesa.then(data => {
 
       // Selector utilizado en asistencias
       const select = document.getElementById('evento_id');
@@ -246,6 +247,7 @@ document.getElementById(
 ).value = '';
 
 // Refresca tabla y selector eventos
+    invalidarCacheApi('eventos');
     cargarTablaEventos();
 
     cargarEventos();
@@ -278,25 +280,18 @@ document.getElementById(
 
 function cargarTablaEventos() {
 
-  fetch(`${API_URL}/eventos`, {
+  const cached = obtenerCacheApi('eventos');
+  const promesa = cached
+    ? Promise.resolve(cached)
+    : fetch(`${API_URL}/eventos`, { headers: getAuthHeaders() })
+        .then(async res => {
+          const data = await leerRespuestaJson(res);
+          if (!res.ok) throw new Error(data.mensaje || 'No se pudo cargar las actividades');
+          if (Array.isArray(data)) guardarCacheApi('eventos', data);
+          return data;
+        });
 
-    headers: getAuthHeaders()
-
-  })
-
-  .then(async res => {
-    const data = await leerRespuestaJson(res);
-
-    if (!res.ok) {
-      throw new Error(
-        data.mensaje || 'No se pudo eliminar la actividad'
-      );
-    }
-
-    return data;
-  })
-
-  .then(data => {
+  promesa.then(data => {
 
     const tabla =
       document.getElementById(
@@ -594,6 +589,7 @@ function ejecutarEliminarEvento(id) {
       'warning'
     );
 
+    invalidarCacheApi('eventos');
     cargarTablaEventos();
     cargarEventos();
 
@@ -651,6 +647,7 @@ function ejecutarCerrarEvento(id) {
 
     mostrarAlerta(data.mensaje, 'success');
 
+    invalidarCacheApi('eventos');
     cargarTablaEventos();
     cargarEventos();
 
