@@ -861,41 +861,75 @@ function seleccionarPersonaAsistencia(persona) {
 // CARGAR HISTORIAL ASISTENCIAS
 // =====================================
 
+let asistenciasTabla = [];
+
+function normalizarTextoAsistencia(valor) {
+  return String(valor || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+
+function filtrarAsistencias() {
+  const busqueda = normalizarTextoAsistencia(document.getElementById('buscar_asistencias')?.value);
+  const estado   = document.getElementById('filtro_asistencia_estado')?.value || '';
+
+  return asistenciasTabla.filter(a => {
+    const texto = normalizarTextoAsistencia(
+      [a.nombres, a.apellido_paterno, a.apellido_materno, a.evento].join(' ')
+    );
+    return (!busqueda || texto.includes(busqueda)) && (!estado || a.estado === estado);
+  });
+}
+
+function renderizarTablaAsistencias(asistencias) {
+  const tabla = document.getElementById('tabla_asistencias');
+  tabla.innerHTML = '';
+
+  if (!asistencias.length) {
+    tabla.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay registros para los filtros seleccionados</td></tr>';
+    return;
+  }
+
+  asistencias.forEach(a => {
+    tabla.innerHTML += `
+      <tr>
+        <td>${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}</td>
+        <td>${a.evento}</td>
+        <td>${obtenerBadgeAsistencia(a.estado)}</td>
+        <td>${a.minutos_atraso}</td>
+      </tr>
+    `;
+  });
+}
+
+function configurarFiltrosAsistencias() {
+  ['buscar_asistencias', 'filtro_asistencia_estado'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change',
+      () => renderizarTablaAsistencias(filtrarAsistencias()));
+  });
+}
+
+function limpiarFiltrosAsistencias() {
+  const buscar = document.getElementById('buscar_asistencias');
+  const estado = document.getElementById('filtro_asistencia_estado');
+  if (buscar) buscar.value = '';
+  if (estado) estado.value = '';
+  renderizarTablaAsistencias(filtrarAsistencias());
+}
+
 function cargarAsistencias() {
 
-  fetch(`${API_URL}/asistencia`, {
-
-  headers: getAuthHeaders()
-
-})
+  fetch(`${API_URL}/asistencia`, { headers: getAuthHeaders() })
     .then(res => res.json())
     .then(data => {
 
-      const tabla = document.getElementById('tabla_asistencias');
-
-      tabla.innerHTML = '';
-
       if (!Array.isArray(data)) {
-  mostrarAlerta(
-    data.mensaje || 'No se pudo cargar la tabla de asistencias',
-    'warning'
-  );
-  return;
-}
+        mostrarAlerta(data.mensaje || 'No se pudo cargar la tabla de asistencias', 'warning');
+        return;
+      }
 
-      data.forEach(asistencia => {
-
-        // Estado visual asistencia
-        tabla.innerHTML += `
-          <tr>
-            <td>${asistencia.nombres} ${asistencia.apellido_paterno} ${asistencia.apellido_materno || ''}</td>
-            <td>${asistencia.evento}</td>
-            <td>${obtenerBadgeAsistencia(asistencia.estado)}</td>
-            <td>${asistencia.minutos_atraso}</td>
-          </tr>
-        `;
-
-      });
+      asistenciasTabla = data;
+      renderizarTablaAsistencias(filtrarAsistencias());
 
     })
     .catch(err => console.error(err));

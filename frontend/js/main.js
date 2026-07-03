@@ -70,6 +70,7 @@ async function inicializarAsistencia() {
 
   if (!_asistenciaIniciada) {
     _asistenciaIniciada = true;
+    configurarFiltrosAsistencias();
     cargarAsistencias();
   }
 }
@@ -83,6 +84,7 @@ async function inicializarTablas() {
     configurarFiltrosPagos();
     configurarFiltrosCuotas();
     configurarFiltrosFinanzas();
+    configurarFiltrosMultas();
   }
 
   if (_puedeVerOperacion) {
