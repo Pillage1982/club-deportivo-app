@@ -323,33 +323,46 @@ async function procesarFotoCi(input) {
   const file = input.files[0];
   if (!file) return;
 
+  console.log('[FOTO-CI] Archivo recibido:', file.name, file.size, 'bytes');
   actualizarEstadoQrAsistencia('Procesando foto del CI...', 'primary');
 
   try {
     const img = new Image();
-    img.src = URL.createObjectURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    img.src = objectUrl;
     await img.decode();
+    console.log('[FOTO-CI] Imagen cargada:', img.naturalWidth, 'x', img.naturalHeight);
 
-    // Dibuja en canvas para ZXing
     const canvas = document.createElement('canvas');
     canvas.width  = img.naturalWidth;
     canvas.height = img.naturalHeight;
     canvas.getContext('2d').drawImage(img, 0, 0);
-    URL.revokeObjectURL(img.src);
 
     let lectura = '';
 
-    // 1. BarcodeDetector (iOS 17+ / Android Chrome)
+    // 1. BarcodeDetector (iOS Safari / Android Chrome)
     if ('BarcodeDetector' in window) {
       try {
         const det = new BarcodeDetector({ formats: ['qr_code'] });
         const codes = await det.detect(img);
+        console.log('[FOTO-CI] BarcodeDetector encontró:', codes.length, 'códigos');
         if (codes.length > 0) lectura = codes[0].rawValue || '';
-      } catch {}
+      } catch (e) {
+        console.warn('[FOTO-CI] BarcodeDetector error:', e.message);
+      }
+    } else {
+      console.log('[FOTO-CI] BarcodeDetector no disponible');
     }
 
-    // 2. ZXing JS puro
-    if (!lectura) lectura = detectarConZxing(canvas);
+    // 2. ZXing
+    if (!lectura) {
+      lectura = detectarConZxing(canvas);
+      console.log('[FOTO-CI] ZXing resultado:', lectura || '(vacío)');
+    }
+
+    URL.revokeObjectURL(objectUrl);
+
+    console.log('[FOTO-CI] Lectura final:', lectura || '(ninguna)');
 
     if (lectura) {
       procesarLecturaAsistencia(lectura);
@@ -358,7 +371,7 @@ async function procesarFotoCi(input) {
       mostrarAlerta('No se detectó QR en la foto. Asegúrese de que el código esté visible y sin reflejos.', 'warning');
     }
   } catch (err) {
-    console.error(err);
+    console.error('[FOTO-CI] Error:', err);
     mostrarAlerta('Error al procesar la foto del CI.', 'danger');
   }
 
