@@ -23,6 +23,7 @@ window.onload = () => {
   const puedeVerFinanzas =
     rol === 'admin' || rol === 'tesorero';
 
+  verificarExpiracionToken();
   aplicarConfiguracionVisual();
   mostrarUsuario();
   aplicarRolesFrontend();

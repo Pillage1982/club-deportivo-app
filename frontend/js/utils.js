@@ -190,6 +190,47 @@ function cerrarSesion() {
 }
 
 // =====================================
+// AUTO-CIERRE POR EXPIRACIÓN DE TOKEN
+// =====================================
+
+let _sesionCerrandose = false;
+
+function decodificarJwt(token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+  } catch { return null; }
+}
+
+function cerrarSesionPorExpiracion() {
+  if (_sesionCerrandose) return;
+  _sesionCerrandose = true;
+  localStorage.removeItem('token');
+  localStorage.removeItem('usuario');
+  sessionStorage.setItem('sesion_expirada', '1');
+  window.location.href = 'login.html';
+}
+
+function verificarExpiracionToken() {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  const payload = decodificarJwt(token);
+  if (!payload?.exp) return;
+  const msRestantes = payload.exp * 1000 - Date.now();
+  if (msRestantes <= 0) { cerrarSesionPorExpiracion(); return; }
+  setTimeout(cerrarSesionPorExpiracion, msRestantes);
+}
+
+// Interceptor global: cierra sesión automáticamente si el servidor devuelve 401
+(function interceptarFetch() {
+  const fetchOriginal = window.fetch;
+  window.fetch = async function(...args) {
+    const response = await fetchOriginal.apply(this, args);
+    if (response.status === 401) cerrarSesionPorExpiracion();
+    return response;
+  };
+})();
+
+// =====================================
 // MOSTRAR USUARIO AUTENTICADO
 // =====================================
 

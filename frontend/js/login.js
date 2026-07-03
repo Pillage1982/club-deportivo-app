@@ -1,5 +1,15 @@
 const API_URL = window.API_URL || window.location.origin;
 
+if (sessionStorage.getItem('sesion_expirada')) {
+  sessionStorage.removeItem('sesion_expirada');
+  document.getElementById('respuesta').innerHTML = `
+    <div class="alert alert-warning mt-3">
+      <i class="bi bi-shield-lock-fill"></i>
+      Por seguridad, tu sesión fue cerrada automáticamente.
+    </div>
+  `;
+}
+
 function login() {
 
   const usuario =
