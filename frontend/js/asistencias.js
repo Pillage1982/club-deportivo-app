@@ -386,24 +386,20 @@ function inicializarZxing() {
 
 function detectarConZxing(canvas) {
   if (!zxingReader) return '';
-  if (typeof ZXing.RGBLuminanceSource === 'undefined') {
-    console.warn('[ZXing] RGBLuminanceSource no disponible');
-    return '';
-  }
   try {
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const { width, height } = canvas;
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const lum = new Uint8ClampedArray(width * height);
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      lum[i >> 2] = (imageData.data[i] * 299 + imageData.data[i + 1] * 587 + imageData.data[i + 2] * 114) / 1000;
-    }
-    const source = new ZXing.RGBLuminanceSource(lum, width, height);
+    // Intento 1: luminancia normal con HTMLCanvasElementLuminanceSource
+    const source = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
     const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
     return zxingReader.decode(bitmap).getText();
-  } catch (e) {
-    if (e?.name !== 'NotFoundException') console.warn('[ZXing] decode error:', e?.name, e?.message);
-    return '';
+  } catch (e1) {
+    try {
+      // Intento 2: luminancia invertida (útil con hologramas de alta reflectancia)
+      const sourceInv = new ZXing.InvertedLuminanceSource(new ZXing.HTMLCanvasElementLuminanceSource(canvas));
+      const bitmapInv = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(sourceInv));
+      return zxingReader.decode(bitmapInv).getText();
+    } catch {
+      return '';
+    }
   }
 }
 
