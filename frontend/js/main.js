@@ -36,6 +36,8 @@ window.onload = () => {
   configurarFiltrosPagos();
   configurarFiltrosCuotas();
   configurarFiltrosFinanzas();
+  configurarFiltrosAsistencias();
+  configurarFiltrosMultas();
 
   if (puedeVerOperacion) {
     cargarEventos();

@@ -808,6 +808,22 @@
             Asistencias
           </h2>
 
+          <div class="row g-2 mb-3">
+            <div class="col-md-5">
+              <input type="search" id="buscar_asistencias" class="form-control" placeholder="Buscar por nombre o actividad...">
+            </div>
+            <div class="col-md-3">
+              <select id="filtro_asistencia_estado" class="form-select">
+                <option value="">Todos los estados</option>
+                <option value="presente">Presente</option>
+                <option value="atrasado">Atrasado</option>
+                <option value="ausente">Ausente</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosAsistencias()">Limpiar</button>
+            </div>
+          </div>
           <div id="tabla_asistencias_wrapper" class="table-responsive">
             <table class="table table-striped table-bordered">
               <thead class="table-dark">
@@ -831,6 +847,14 @@
               Multas
             </h2>
 
+            <div class="row g-2 mb-3">
+              <div class="col-md-5">
+                <input type="search" id="buscar_multas" class="form-control" placeholder="Buscar por nombre o motivo...">
+              </div>
+              <div class="col-md-2">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosMultas()">Limpiar</button>
+              </div>
+            </div>
             <div id="tabla_multas_wrapper" class="table-responsive">
               <table class="table table-bordered table-striped">
                 <thead class="table-danger">
