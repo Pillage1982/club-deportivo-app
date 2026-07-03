@@ -190,6 +190,30 @@ function cerrarSesion() {
 }
 
 // =====================================
+// CACHÉ DE RESPUESTAS API (localStorage)
+// =====================================
+
+const API_CACHE_TTL = 5 * 60 * 1000;
+
+function obtenerCacheApi(clave) {
+  try {
+    const item = localStorage.getItem(`apicache_${clave}`);
+    if (!item) return null;
+    const { ts, data } = JSON.parse(item);
+    if (Date.now() - ts > API_CACHE_TTL) { localStorage.removeItem(`apicache_${clave}`); return null; }
+    return data;
+  } catch { return null; }
+}
+
+function guardarCacheApi(clave, data) {
+  try { localStorage.setItem(`apicache_${clave}`, JSON.stringify({ ts: Date.now(), data })); } catch {}
+}
+
+function invalidarCacheApi(clave) {
+  localStorage.removeItem(`apicache_${clave}`);
+}
+
+// =====================================
 // AUTO-CIERRE POR EXPIRACIÓN DE TOKEN
 // =====================================
 

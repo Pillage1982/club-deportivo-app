@@ -11,14 +11,14 @@ let personasTabla = [];
 
 function cargarPersonas() {
 
-  fetch(`${API_URL}/personas`, {
+  const cached = obtenerCacheApi('personas');
+  const promesa = cached
+    ? Promise.resolve(cached)
+    : fetch(`${API_URL}/personas`, { headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) guardarCacheApi('personas', data); return data; });
 
-   headers: getAuthHeaders()
-
-  })
-    
-    .then(res => res.json())
-    .then(data => {
+  promesa.then(data => {
 
       // Selectores asistencia y pagos
       const select = document.getElementById('persona_id');
@@ -231,6 +231,7 @@ document.getElementById(
 ).value = 'activo';
 
 // Refresca selectores y tabla personas
+    invalidarCacheApi('personas');
     cargarPersonas();
 
     cargarTablaPersonas();
@@ -253,15 +254,14 @@ document.getElementById(
 
   function cargarTablaPersonas() {
 
-  fetch(`${API_URL}/personas`, {
+  const cached = obtenerCacheApi('personas');
+  const promesa = cached
+    ? Promise.resolve(cached)
+    : fetch(`${API_URL}/personas`, { headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) guardarCacheApi('personas', data); return data; });
 
-    headers: getAuthHeaders()
-
-  })
-
-  .then(res => res.json())
-
-  .then(data => {
+  promesa.then(data => {
 
     if (!Array.isArray(data)) {
       mostrarAlerta(
@@ -585,6 +585,7 @@ function ejecutarEliminarPersona(id) {
 
     mostrarAlerta(data.mensaje, 'warning');
 
+    invalidarCacheApi('personas');
     cargarTablaPersonas();
     cargarPersonas();
 
