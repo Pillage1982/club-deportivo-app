@@ -3,8 +3,7 @@
 // ==============================
 
 let _rol, _puedeVerOperacion, _puedeVerFinanzas;
-let _asistenciaIniciada = false;
-let _tablasIniciadas    = false;
+let _tablasIniciadas = false;
 
 const MODULOS_ASISTENCIA = [
   'js/eventos.js',
@@ -17,6 +16,7 @@ const MODULOS_TABLAS = [
   'js/pagos.js',
   'js/multas.js',
   'js/finanzas.js',
+  'js/asistencias.js',
   'js/cuotas.js'
 ];
 
@@ -65,14 +65,7 @@ window.onload = () => {
 
 async function inicializarAsistencia() {
   await Promise.all(MODULOS_ASISTENCIA.map(cargarModulo));
-
   cargarEventos();
-
-  if (!_asistenciaIniciada) {
-    _asistenciaIniciada = true;
-    configurarFiltrosAsistencias();
-    cargarAsistencias();
-  }
 }
 
 async function inicializarTablas() {
@@ -85,11 +78,13 @@ async function inicializarTablas() {
     configurarFiltrosCuotas();
     configurarFiltrosFinanzas();
     configurarFiltrosMultas();
+    configurarFiltrosAsistencias();
   }
 
   if (_puedeVerOperacion) {
     cargarEventos();
     cargarTablaEventos();
+    cargarAsistencias();
   }
 
   if (_puedeVerFinanzas) {
