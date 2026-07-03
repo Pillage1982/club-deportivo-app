@@ -15,6 +15,7 @@ const MODULOS_ASISTENCIA = [
 const MODULOS_TABLAS = [
   'js/eventos.js',
   'js/pagos.js',
+  'js/asistencias.js',
   'js/cuotas.js'
 ];
 
@@ -57,6 +58,7 @@ async function inicializarAsistencia() {
   cargarEventos();
   if (!_asistenciaIniciada) {
     _asistenciaIniciada = true;
+    configurarFiltrosAsistencias();
     cargarAsistencias();
   }
 }
@@ -69,6 +71,7 @@ async function inicializarTablas() {
     configurarFiltrosPagos();
     configurarFiltrosCuotas();
     configurarFiltrosFinanzas();
+    configurarFiltrosMultas();
   }
   if (_puedeVerOperacion) { cargarEventos(); cargarTablaEventos(); }
   if (_puedeVerFinanzas) { cargarMultas(); cargarFinanzas(); cargarTablaPagos(); cargarCuotas(); }
