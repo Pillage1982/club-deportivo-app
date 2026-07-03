@@ -83,7 +83,7 @@ function registrarAsistenciaInterna(req, res) {
       asistencia_id: result.insertId,
       monto: multa.monto,
       motivo: multa.motivo
-    }, (multaErr) => {
+    }, (multaErr, multaResult) => {
       if (multaErr) {
         console.error('Error creando multa:', multaErr);
         return res.json({
@@ -92,7 +92,9 @@ function registrarAsistenciaInterna(req, res) {
       }
 
       res.json({
-        mensaje: `Asistencia registrada. Multa de $${multa.monto} generada.`
+        mensaje: multaResult && multaResult.affectedRows > 0
+          ? `Asistencia registrada. Multa de $${multa.monto} generada.`
+          : 'Asistencia registrada'
       });
     });
 

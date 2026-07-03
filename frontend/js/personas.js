@@ -39,8 +39,6 @@ function cargarPersonas() {
 
       data.forEach(persona => {
 
-        // Clona opción para reutilizar
-        // en selector de pagos 
         const option = document.createElement('option');
 
         option.value = persona.id;
@@ -50,8 +48,10 @@ function cargarPersonas() {
           select.appendChild(option);
         }
 
-        const optionPago = option.cloneNode(true);
-        selectPago.appendChild(optionPago);
+        if (!persona.es_honorario) {
+          const optionPago = option.cloneNode(true);
+          selectPago.appendChild(optionPago);
+        }
 
       });
 
@@ -119,6 +119,9 @@ function cargarPersonas() {
       document.getElementById(
         'persona_estado'
       ).value,
+
+    es_honorario:
+      document.getElementById('es_honorario').checked,
 
   };
 
@@ -229,6 +232,8 @@ document.getElementById('telefono_apoderado').value = '';
 document.getElementById(
   'persona_estado'
 ).value = 'activo';
+
+document.getElementById('es_honorario').checked = false;
 
 // Refresca selectores y tabla personas
     invalidarCacheApi('personas');
@@ -416,6 +421,7 @@ function renderizarTablaPersonas(personas) {
 
           <td>
             ${obtenerBadgeEstadoPersona(persona.estado)}
+            ${persona.es_honorario ? '<span class="badge bg-info text-dark ms-1">Honorario</span>' : ''}
           </td>
 
           <td class="text-nowrap">
@@ -526,6 +532,8 @@ function editarPersona(persona) {
   document.getElementById(
     'persona_estado'
   ).value = persona.estado || 'activo';
+
+  document.getElementById('es_honorario').checked = !!persona.es_honorario;
 
   document.getElementById(
     'btn_guardar_persona'

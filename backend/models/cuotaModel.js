@@ -42,6 +42,7 @@ exports.obtenerSociosActivos = (callback) => {
     WHERE
       activo = 1
       AND COALESCE(estado, 'activo') = 'activo'
+      AND COALESCE(es_honorario, 0) = 0
 
   `;
 

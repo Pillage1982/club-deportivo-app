@@ -34,7 +34,9 @@ exports.obtenerPersonas = (callback) => {
 
       telefono_apoderado,
 
-      COALESCE(estado, 'activo') AS estado
+      COALESCE(estado, 'activo') AS estado,
+
+      COALESCE(es_honorario, 0) AS es_honorario
 
     FROM personas
 
@@ -44,6 +46,14 @@ exports.obtenerPersonas = (callback) => {
 
   db.query(query, callback);
 
+};
+
+exports.obtenerPersonaPorId = (id, callback) => {
+  db.query(
+    'SELECT id, es_honorario FROM personas WHERE id = ? AND activo = 1 LIMIT 1',
+    [id],
+    (err, results) => callback(err, results ? results[0] : null)
+  );
 };
 
 exports.crearPersona = (
@@ -68,10 +78,11 @@ exports.crearPersona = (
       fecha_ingreso,
       nombre_apoderado,
       telefono_apoderado,
-      estado
+      estado,
+      es_honorario
     )
 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
   `;
 
@@ -93,7 +104,8 @@ exports.crearPersona = (
       data.fecha_ingreso || null,
       data.nombre_apoderado || null,
       data.telefono_apoderado || null,
-      data.estado || 'activo'
+      data.estado || 'activo',
+      data.es_honorario ? 1 : 0
     ],
 
     callback
@@ -173,6 +185,7 @@ exports.reactivarPersona = (
       nombre_apoderado = ?,
       telefono_apoderado = ?,
       estado = ?,
+      es_honorario = ?,
       activo = 1
 
     WHERE id = ?
@@ -196,6 +209,7 @@ exports.reactivarPersona = (
       data.nombre_apoderado || null,
       data.telefono_apoderado || null,
       data.estado || 'activo',
+      data.es_honorario ? 1 : 0,
       id
     ],
     callback
@@ -227,7 +241,8 @@ exports.actualizarPersona = (
       fecha_ingreso = ?,
       nombre_apoderado = ?,
       telefono_apoderado = ?,
-      estado = ?
+      estado = ?,
+      es_honorario = ?
 
     WHERE id = ?
 
@@ -253,6 +268,7 @@ exports.actualizarPersona = (
       data.nombre_apoderado || null,
       data.telefono_apoderado || null,
       data.estado || 'activo',
+      data.es_honorario ? 1 : 0,
 
       id
 

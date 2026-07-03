@@ -68,7 +68,8 @@ function normalizarPersona(data) {
     email: limpiarTexto(data.email).toLowerCase(),
     telefono: limpiarTexto(data.telefono),
     fecha_nacimiento: data.fecha_nacimiento,
-    estado: limpiarTexto(data.estado || 'activo').toLowerCase()
+    estado: limpiarTexto(data.estado || 'activo').toLowerCase(),
+    es_honorario: data.es_honorario ? 1 : 0
   };
 }
 
