@@ -8,7 +8,6 @@ let qrAsistenciaEscaneando = false;
 let qrAsistenciaUltimaLectura = '';
 let qrAsistenciaCanvas = null;
 let qrAsistenciaCanvasFull = null;
-let zxingReader = null;
 
 function registrarAsistencia() {
 
@@ -181,21 +180,16 @@ async function crearDetectorQrAsistencia() {
     !('BarcodeDetector' in window) ||
     typeof BarcodeDetector.getSupportedFormats !== 'function'
   ) {
-    console.log('[QR-CI DEBUG] BarcodeDetector no disponible en este dispositivo — usando jsQR (solo QR, no PDF417)');
     return null;
   }
 
   const formatosSoportados =
     await BarcodeDetector.getSupportedFormats();
 
-  console.log('[QR-CI DEBUG] BarcodeDetector disponible. Formatos soportados:', formatosSoportados);
-
   const formatos = [
     'qr_code',
     'pdf417'
   ].filter(formato => formatosSoportados.includes(formato));
-
-  console.log('[QR-CI DEBUG] Formatos activos:', formatos);
 
   if (formatos.length === 0) {
     return null;
@@ -218,7 +212,6 @@ async function iniciarEscaneoAsistencia() {
   }
 
   try {
-    inicializarZxing();
     qrAsistenciaDetector =
       await crearDetectorQrAsistencia();
 
@@ -318,103 +311,6 @@ async function escanearFrameAsistencia() {
   requestAnimationFrame(escanearFrameAsistencia);
 }
 
-// ── Foto CI: abre cámara nativa, procesa imagen estática ──
-async function procesarFotoCi(input) {
-  const file = input.files[0];
-  if (!file) return;
-
-  console.log('[FOTO-CI] Archivo recibido:', file.name, file.size, 'bytes');
-  actualizarEstadoQrAsistencia('Procesando foto del CI...', 'primary');
-
-  try {
-    const img = new Image();
-    const objectUrl = URL.createObjectURL(file);
-    img.src = objectUrl;
-    await img.decode();
-    console.log('[FOTO-CI] Imagen cargada:', img.naturalWidth, 'x', img.naturalHeight);
-
-    const canvas = document.createElement('canvas');
-    canvas.width  = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    canvas.getContext('2d').drawImage(img, 0, 0);
-
-    let lectura = '';
-
-    // 1. BarcodeDetector (iOS Safari / Android Chrome)
-    if ('BarcodeDetector' in window) {
-      try {
-        const det = new BarcodeDetector({ formats: ['qr_code'] });
-        const codes = await det.detect(img);
-        console.log('[FOTO-CI] BarcodeDetector encontró:', codes.length, 'códigos');
-        if (codes.length > 0) lectura = codes[0].rawValue || '';
-      } catch (e) {
-        console.warn('[FOTO-CI] BarcodeDetector error:', e.message);
-      }
-    } else {
-      console.log('[FOTO-CI] BarcodeDetector no disponible');
-    }
-
-    // 2. ZXing
-    if (!lectura) {
-      lectura = detectarConZxing(canvas);
-      console.log('[FOTO-CI] ZXing resultado:', lectura || '(vacío)');
-    }
-
-    URL.revokeObjectURL(objectUrl);
-
-    console.log('[FOTO-CI] Lectura final:', lectura || '(ninguna)');
-
-    if (lectura) {
-      procesarLecturaAsistencia(lectura);
-    } else {
-      actualizarEstadoQrAsistencia('No se pudo leer el QR. Intente con mejor iluminación.', 'danger');
-      mostrarAlerta('No se detectó QR en la foto. Asegúrese de que el código esté visible y sin reflejos.', 'warning');
-    }
-  } catch (err) {
-    console.error('[FOTO-CI] Error:', err);
-    mostrarAlerta('Error al procesar la foto del CI.', 'danger');
-  }
-
-  input.value = '';
-}
-
-// ── ZXing: lector JS puro que soporta PDF417 (CI chileno) y QR ──
-function inicializarZxing() {
-  if (typeof ZXing === 'undefined' || zxingReader) return;
-  try {
-    console.log('[ZXing] Exports disponibles:', Object.keys(ZXing).join(', '));
-    const hints = new Map();
-    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-      ZXing.BarcodeFormat.PDF_417,
-      ZXing.BarcodeFormat.QR_CODE
-    ]);
-    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-    zxingReader = new ZXing.MultiFormatReader();
-    zxingReader.setHints(hints);
-    console.log('[ZXing] Inicializado. RGBLuminanceSource disponible:', typeof ZXing.RGBLuminanceSource);
-  } catch (e) {
-    console.warn('[ZXing] Error al inicializar:', e);
-  }
-}
-
-function detectarConZxing(canvas) {
-  if (!zxingReader) return '';
-  try {
-    // Intento 1: luminancia normal con HTMLCanvasElementLuminanceSource
-    const source = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
-    const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
-    return zxingReader.decode(bitmap).getText();
-  } catch (e1) {
-    try {
-      // Intento 2: luminancia invertida (útil con hologramas de alta reflectancia)
-      const sourceInv = new ZXing.InvertedLuminanceSource(new ZXing.HTMLCanvasElementLuminanceSource(canvas));
-      const bitmapInv = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(sourceInv));
-      return zxingReader.decode(bitmapInv).getText();
-    } catch {
-      return '';
-    }
-  }
-}
 
 function prepararCanvasCompletoAsistencia(video) {
   if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.videoWidth === 0) return null;
@@ -464,16 +360,6 @@ async function detectarLecturaNativaAsistencia(video) {
 }
 
 function detectarLecturaCompatibleAsistencia(video) {
-  // 1. ZXing: soporta PDF417 (CI chileno) y QR — usa frame completo
-  if (zxingReader) {
-    const canvasFull = prepararCanvasCompletoAsistencia(video);
-    if (canvasFull) {
-      const lecturaZxing = detectarConZxing(canvasFull);
-      if (lecturaZxing) return lecturaZxing;
-    }
-  }
-
-  // 2. jsQR: fallback solo QR — usa frame recortado (mejor para webcam escritorio)
   if (typeof jsQR !== 'function') return '';
   const canvas = prepararCanvasCroppedAsistencia(video);
   if (!canvas) return '';
@@ -529,7 +415,6 @@ function limpiarFormularioAsistenciaParaLectura() {
 }
 
 async function procesarLecturaAsistencia(lectura) {
-  console.log('[QR-CI DEBUG] Lectura cruda:', lectura);
   let persona = null;
   const fechaEscaneo = new Date();
 
@@ -621,11 +506,6 @@ function actualizarBotonesEscaneoQr() {
 
   if (btnManual) {
     btnManual.disabled = !hayEvento || cerrado;
-  }
-
-  const btnFotoCi = document.getElementById('btn_foto_ci');
-  if (btnFotoCi) {
-    btnFotoCi.disabled = !hayEvento || cerrado;
   }
 
   const aviso = document.getElementById('aviso_evento_cerrado');
@@ -1045,15 +925,6 @@ document.addEventListener('DOMContentLoaded', () => {
       actualizarBotonesEscaneoQr();
       cargarUltimosRegistros();
     });
-  }
-
-  // Inicializar ZXing al cargar (disponible también para foto CI sin abrir escáner)
-  inicializarZxing();
-
-  // Handler foto CI
-  const fotoCiInput = document.getElementById('ci_foto_input');
-  if (fotoCiInput) {
-    fotoCiInput.addEventListener('change', function() { procesarFotoCi(this); });
   }
 
   const modalEl = document.getElementById('modal_eventos_activos');
