@@ -211,6 +211,8 @@ async function iniciarEscaneoAsistencia() {
     return;
   }
 
+  await cargarModulo('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js');
+
   try {
     qrAsistenciaDetector =
       await crearDetectorQrAsistencia();

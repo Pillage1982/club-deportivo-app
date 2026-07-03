@@ -7,7 +7,6 @@ let _tablasIniciadas = false;
 
 const MODULOS_ASISTENCIA = [
   'js/eventos.js',
-  'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js',
   'js/asistencias.js'
 ];
 
