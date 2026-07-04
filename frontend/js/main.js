@@ -2,23 +2,6 @@
 // CARGAR DATOS AL INICIAR
 // ==============================
 
-let _rol, _puedeVerOperacion, _puedeVerFinanzas;
-let _tablasIniciadas = false;
-
-const MODULOS_ASISTENCIA = [
-  'js/eventos.js',
-  'js/asistencias.js'
-];
-
-const MODULOS_TABLAS = [
-  'js/eventos.js',
-  'js/pagos.js',
-  'js/multas.js',
-  'js/finanzas.js',
-  'js/asistencias.js',
-  'js/cuotas.js'
-];
-
 window.onload = () => {
 
   const token = localStorage.getItem('token');
@@ -31,9 +14,11 @@ window.onload = () => {
 
   }
 
-  _rol = obtenerRolActual();
-  _puedeVerOperacion = _rol === 'admin' || _rol === 'entrenador';
-  _puedeVerFinanzas  = _rol === 'admin' || _rol === 'tesorero';
+  const rol = obtenerRolActual();
+
+  const puedeVerOperacion = rol === 'admin' || rol === 'entrenador';
+
+  const puedeVerFinanzas  = rol === 'admin' || rol === 'tesorero';
 
   verificarExpiracionToken();
   aplicarConfiguracionVisual();
@@ -41,62 +26,39 @@ window.onload = () => {
   aplicarRolesFrontend();
   aplicarRolesTabs();
 
-  // Módulos críticos: personas y dashboard
   cargarPersonas();
   cargarTablaPersonas();
+
   configurarBuscadorPersonas();
-  cargarDashboard();
-  if (_puedeVerFinanzas) cargarGraficos();
+  configurarFiltrosEventos();
+  configurarFiltrosPagos();
+  configurarFiltrosCuotas();
+  configurarFiltrosFinanzas();
+  configurarFiltrosMultas();
+  configurarFiltrosAsistencias();
 
-  // Pestaña Asistencia — carga diferida
-  document.querySelector('[href="#tab_asistencia"]')
-    ?.addEventListener('show.bs.tab', inicializarAsistencia);
-
-  // Pestaña Tablas — carga diferida
-  document.querySelector('[href="#tab_tablas"]')
-    ?.addEventListener('show.bs.tab', inicializarTablas);
-
-  // Pestaña Formularios — comparte módulos con Tablas
-  document.querySelector('[href="#tab_formularios"]')
-    ?.addEventListener('show.bs.tab', inicializarTablas);
-
-};
-
-async function inicializarAsistencia() {
-  await Promise.all(MODULOS_ASISTENCIA.map(cargarModulo));
-  cargarEventos();
-}
-
-async function inicializarTablas() {
-  await Promise.all(MODULOS_TABLAS.map(cargarModulo));
-
-  if (!_tablasIniciadas) {
-    _tablasIniciadas = true;
-    configurarFiltrosEventos();
-    configurarFiltrosPagos();
-    configurarFiltrosCuotas();
-    configurarFiltrosFinanzas();
-    configurarFiltrosMultas();
-    configurarFiltrosAsistencias();
-  }
-
-  if (_puedeVerOperacion) {
+  if (puedeVerOperacion) {
     cargarEventos();
-    cargarTablaEventos();
     cargarAsistencias();
+    cargarTablaEventos();
   }
 
-  if (_puedeVerFinanzas) {
+  if (puedeVerFinanzas) {
     cargarMultas();
     cargarFinanzas();
+    cargarGraficos();
     cargarTablaPagos();
     cargarCuotas();
   }
-}
+
+  cargarDashboard();
+
+};
 
 function aplicarRolesTabs() {
-  const puedeVerOperacion = _rol === 'admin' || _rol === 'entrenador';
-  const puedeVerFinanzas  = _rol === 'admin' || _rol === 'tesorero';
+  const rol = obtenerRolActual();
+  const puedeVerOperacion = rol === 'admin' || rol === 'entrenador';
+  const puedeVerFinanzas  = rol === 'admin' || rol === 'tesorero';
 
   if (!puedeVerOperacion) {
     document.getElementById('nav_tab_asistencia')?.classList.add('d-none');
