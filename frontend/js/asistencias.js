@@ -9,7 +9,7 @@ let qrAsistenciaUltimaLectura = '';
 let qrAsistenciaCanvas = null;
 let qrAsistenciaCanvasFull = null;
 
-function registrarAsistencia() {
+async function registrarAsistencia() {
 
   if (eventoSeleccionadoFinalizado()) {
     mostrarAlerta(
@@ -58,10 +58,24 @@ function registrarAsistencia() {
 
     if (!data.evento_id) {
 
-      mostrarAlerta(
-        'Seleccione una actividad',
-        'warning'
-      );
+      // Sin actividad seleccionada: guardar offline como sin_evento
+      // El scanner nunca se bloquea por falta de evento
+      try {
+        await guardarAsistenciaOffline(data);
+        mostrarAvisoSinEvento();
+        actualizarBadgeOffline();
+        mostrarAlerta(
+          'Sin actividad — escaneo guardado localmente. Se asignará cuando se seleccione o cree la actividad.',
+          'warning'
+        );
+        document.getElementById('minutos').value = 0;
+        const inputManual = document.getElementById('qr_asistencia_manual');
+        if (inputManual) inputManual.value = '';
+        const btnEnviar = document.getElementById('btn_usar_lectura');
+        if (btnEnviar) btnEnviar.disabled = true;
+      } catch {
+        mostrarAlerta('No se pudo guardar el escaneo localmente', 'danger');
+      }
 
       return;
 
@@ -493,19 +507,19 @@ function actualizarBotonesEscaneoQr() {
   const btnManual = document.getElementById('btn_usar_lectura');
 
   if (btnIniciar) {
-    btnIniciar.disabled = !hayEvento || cerrado;
+    btnIniciar.disabled = cerrado;
   }
 
   if (textoIniciar) {
-    textoIniciar.textContent = !hayEvento
-      ? 'Seleccione una actividad primero'
-      : cerrado
+    textoIniciar.textContent = cerrado
       ? 'Actividad finalizada'
+      : !hayEvento
+      ? 'Escanear QR (sin actividad — guardará localmente)'
       : 'Escanear QR';
   }
 
   if (btnManual) {
-    btnManual.disabled = !hayEvento || cerrado;
+    btnManual.disabled = cerrado;
   }
 
   const aviso = document.getElementById('aviso_evento_cerrado');
@@ -958,6 +972,11 @@ document.addEventListener('DOMContentLoaded', () => {
     eventoSelect.addEventListener('change', () => {
       actualizarBotonesEscaneoQr();
       cargarUltimosRegistros();
+      ocultarAvisoSinEvento();
+      const opt = eventoSelect.options[eventoSelect.selectedIndex];
+      if (opt && opt.value) {
+        intentarMatchingSinEvento(opt.value, opt.dataset.fecha || '');
+      }
     });
   }
 
@@ -1037,3 +1056,45 @@ function cargarUltimosRegistros() {
   actualizar();
   setInterval(actualizar, 1000);
 })();
+
+// =====================================
+// ASISTENCIAS SIN EVENTO — OFFLINE
+// =====================================
+
+function mostrarAvisoSinEvento() {
+  document.getElementById('aviso_sin_evento')?.classList.remove('d-none');
+}
+
+function ocultarAvisoSinEvento() {
+  document.getElementById('aviso_sin_evento')?.classList.add('d-none');
+}
+
+// Cuando se selecciona un evento, intenta asignar los registros sin_evento
+// cuyo timestamp coincide con la fecha del evento seleccionado.
+async function intentarMatchingSinEvento(eventoId, fechaEvento) {
+  if (!eventoId || !fechaEvento) return;
+  const sinEvento = await obtenerAsistenciasSinEvento();
+  if (sinEvento.length === 0) return;
+
+  const fechaDia = String(fechaEvento).substring(0, 10); // YYYY-MM-DD
+  let asignados = 0;
+
+  for (const reg of sinEvento) {
+    const fechaReg = String(reg.timestamp).substring(0, 10);
+    if (fechaReg === fechaDia) {
+      await actualizarRegistroOffline(reg.id, {
+        evento_id:  Number(eventoId),
+        estadoSync: 'pendiente'
+      });
+      asignados++;
+    }
+  }
+
+  if (asignados > 0) {
+    mostrarAlerta(
+      `${asignados} escaneo(s) sin actividad asignado(s) a esta actividad`,
+      'info'
+    );
+    actualizarBadgeOffline();
+  }
+}
