@@ -96,6 +96,26 @@ exports.crearCuotaMensual = (
 
 };
 
+// Un solo INSERT SELECT reemplaza N inserts individuales (uno por socio)
+exports.generarMensualidadMasiva = (data, callback) => {
+  const query = `
+    INSERT IGNORE INTO cuotas
+      (persona_id, tipo_cuota_id, monto, mes, anio, fecha_vencimiento, estado, origen)
+    SELECT id, ?, ?, ?, ?, ?, 'pendiente', 'interno'
+    FROM personas
+    WHERE activo = 1
+      AND COALESCE(estado, 'activo') = 'activo'
+      AND COALESCE(es_honorario, 0) = 0
+  `;
+  db.query(query, [
+    data.tipo_cuota_id,
+    data.monto,
+    data.mes,
+    data.anio,
+    data.fecha_vencimiento
+  ], callback);
+};
+
 // =====================================
 // OBTENER CUOTAS
 // =====================================

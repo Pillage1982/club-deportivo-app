@@ -74,19 +74,15 @@ function renderizarTablaFinanzas(finanzas) {
     return;
   }
 
-  finanzas.forEach(finanza => {
-    tabla.innerHTML += `
-      <tr>
-        <td>${finanza.nombres} ${finanza.apellido_paterno} ${finanza.apellido_materno || ''}</td>
-        <td>${formatearMonto(finanza.total_multas)}</td>
-        <td>${formatearMonto(finanza.total_cuotas)}</td>
-        <td>${formatearMonto(finanza.total_pagado)}</td>
-        <td>
-          ${obtenerBadgeFinanciero(finanza.deuda_actual)}
-        </td>
-      </tr>
-    `;
-  });
+  tabla.innerHTML = finanzas.map(finanza => `
+    <tr>
+      <td>${finanza.nombres} ${finanza.apellido_paterno} ${finanza.apellido_materno || ''}</td>
+      <td>${formatearMonto(finanza.total_multas)}</td>
+      <td>${formatearMonto(finanza.total_cuotas)}</td>
+      <td>${formatearMonto(finanza.total_pagado)}</td>
+      <td>${obtenerBadgeFinanciero(finanza.deuda_actual)}</td>
+    </tr>
+  `).join('');
 }
 
 function aplicarFiltrosFinanzas() {

@@ -26,8 +26,15 @@ window.onload = () => {
   aplicarRolesFrontend();
   aplicarRolesTabs();
 
-  cargarPersonas();
-  cargarTablaPersonas();
+  // Un solo fetch a /personas — luego ambas funciones usan el caché
+  fetch(`${API_URL}/personas`, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => { if (Array.isArray(data)) guardarCacheApi('personas', data); })
+    .catch(() => {})
+    .finally(() => {
+      cargarPersonas();
+      cargarTablaPersonas();
+    });
 
   configurarBuscadorPersonas();
   configurarFiltrosEventos();
@@ -38,9 +45,16 @@ window.onload = () => {
   configurarFiltrosAsistencias();
 
   if (puedeVerOperacion) {
-    cargarEventos();
+    // Un solo fetch a /eventos — luego ambas funciones usan el caché
+    fetch(`${API_URL}/eventos`, { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => { if (Array.isArray(data)) guardarCacheApi('eventos', data); })
+      .catch(() => {})
+      .finally(() => {
+        cargarEventos();
+        cargarTablaEventos();
+      });
     cargarAsistencias();
-    cargarTablaEventos();
   }
 
   if (puedeVerFinanzas) {

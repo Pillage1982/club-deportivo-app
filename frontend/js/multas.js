@@ -28,16 +28,14 @@ function renderizarTablaMultas(multas) {
     return;
   }
 
-  multas.forEach(multa => {
-    tabla.innerHTML += `
-      <tr>
-        <td>${multa.nombres} ${multa.apellido_paterno} ${multa.apellido_materno || ''}</td>
-        <td>${formatearMonto(multa.monto)}</td>
-        <td>${multa.motivo}</td>
-        <td>${formatearFecha(multa.fecha)}</td>
-      </tr>
-    `;
-  });
+  tabla.innerHTML = multas.map(multa => `
+    <tr>
+      <td>${multa.nombres} ${multa.apellido_paterno} ${multa.apellido_materno || ''}</td>
+      <td>${formatearMonto(multa.monto)}</td>
+      <td>${multa.motivo}</td>
+      <td>${formatearFecha(multa.fecha)}</td>
+    </tr>
+  `).join('');
 }
 
 function configurarFiltrosMultas() {

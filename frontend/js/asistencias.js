@@ -535,10 +535,10 @@ function refrescarFinanzasPorAsistencia() {
     return;
   }
 
+  // cargarDashboard() ya fue llamado directamente — solo refrescar finanzas y gráficos
   setTimeout(() => {
     cargarMultas();
     cargarFinanzas();
-    cargarDashboard();
     cargarGraficos();
   }, 300);
 }
@@ -901,16 +901,14 @@ function renderizarTablaAsistencias(asistencias) {
     return;
   }
 
-  asistencias.forEach(a => {
-    tabla.innerHTML += `
-      <tr>
-        <td>${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}</td>
-        <td>${a.evento}</td>
-        <td>${obtenerBadgeAsistencia(a.estado)}</td>
-        <td>${a.minutos_atraso}</td>
-      </tr>
-    `;
-  });
+  tabla.innerHTML = asistencias.map(a => `
+    <tr>
+      <td>${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}</td>
+      <td>${a.evento}</td>
+      <td>${obtenerBadgeAsistencia(a.estado)}</td>
+      <td>${a.minutos_atraso}</td>
+    </tr>
+  `).join('');
 }
 
 function configurarFiltrosAsistencias() {
@@ -944,6 +942,7 @@ function cargarAsistencias() {
       asistenciasTabla = data;
       renderizarTablaAsistencias(filtrarAsistencias());
       cargarUltimosRegistros();
+      actualizarEstadisticasAsistenciaDashboard(asistenciasTabla);
 
     })
     .catch(err => console.error(err));

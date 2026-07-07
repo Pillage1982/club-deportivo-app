@@ -179,41 +179,22 @@ function renderizarTablaPagos(pagos) {
     return;
   }
 
-  pagos.forEach(pago => {
-    tabla.innerHTML += `
-      <tr>
-        <td>
-          ${pago.nombres}
-          ${pago.apellido_paterno}
-          ${pago.apellido_materno || ''}
-        </td>
-        <td>${formatearMonto(pago.monto_total)}</td>
-        <td>${pago.metodo}</td>
-        <td>${formatearFecha(pago.fecha)}</td>
-        <td class="text-nowrap">
-          <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
-            <button
-              type="button"
-              class="btn btn-outline-warning"
-              title="Editar"
-              aria-label="Editar"
-              onclick='editarPago(${JSON.stringify(pago)})'>
-              &#9998;
-            </button>
-
-            <button
-              type="button"
-              class="btn btn-outline-danger"
-              title="Eliminar"
-              aria-label="Eliminar"
-              onclick='eliminarPago(${pago.id})'>
-              &times;
-            </button>
-          </div>
-        </td>
-      </tr>
-    `;
-  });
+  tabla.innerHTML = pagos.map(pago => `
+    <tr>
+      <td>${pago.nombres} ${pago.apellido_paterno} ${pago.apellido_materno || ''}</td>
+      <td>${formatearMonto(pago.monto_total)}</td>
+      <td>${pago.metodo}</td>
+      <td>${formatearFecha(pago.fecha)}</td>
+      <td class="text-nowrap">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
+          <button type="button" class="btn btn-outline-warning" title="Editar" aria-label="Editar"
+            onclick='editarPago(${JSON.stringify(pago)})'>&#9998;</button>
+          <button type="button" class="btn btn-outline-danger" title="Eliminar" aria-label="Eliminar"
+            onclick='eliminarPago(${pago.id})'>&times;</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
 }
 
 function aplicarFiltrosPagos() {

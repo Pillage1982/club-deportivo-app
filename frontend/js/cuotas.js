@@ -176,43 +176,16 @@ function renderizarTablaCuotas(cuotas) {
     return;
   }
 
-  cuotas.forEach(cuota => {
-
-    tabla.innerHTML += `
-
-      <tr>
-
-        <td>
-          ${cuota.nombres}
-          ${cuota.apellido_paterno}
-          ${cuota.apellido_materno || ''}
-        </td>
-
-        <td>
-          ${formatearMonto(cuota.monto)}
-        </td>
-
-        <td>
-          ${cuota.mes}
-        </td>
-
-        <td>
-          ${cuota.anio}
-        </td>
-
-        <td>
-          ${formatearFecha(cuota.fecha_vencimiento)}
-        </td>
-
-        <td>
-          ${obtenerBadgeCuota(cuota.estado)}
-        </td>
-
-      </tr>
-
-    `;
-
-  });
+  tabla.innerHTML = cuotas.map(cuota => `
+    <tr>
+      <td>${cuota.nombres} ${cuota.apellido_paterno} ${cuota.apellido_materno || ''}</td>
+      <td>${formatearMonto(cuota.monto)}</td>
+      <td>${cuota.mes}</td>
+      <td>${cuota.anio}</td>
+      <td>${formatearFecha(cuota.fecha_vencimiento)}</td>
+      <td>${obtenerBadgeCuota(cuota.estado)}</td>
+    </tr>
+  `).join('');
 }
 
 function aplicarFiltrosCuotas() {

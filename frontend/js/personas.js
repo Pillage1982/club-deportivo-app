@@ -353,106 +353,47 @@ function renderizarTablaPersonas(personas) {
   });
 
   let bloqueActual = null;
+  const filas = [];
 
   sorted.forEach(persona => {
-
     const bloquePersona = persona.bloque || '';
-
     if (bloquePersona !== bloqueActual) {
       bloqueActual = bloquePersona;
-      tabla.innerHTML += `
+      filas.push(`
         <tr class="tabla-bloque-header">
           <td colspan="13"><i class="bi bi-people-fill me-2"></i>${bloquePersona || 'Sin bloque'}</td>
-        </tr>
-      `;
+        </tr>`);
     }
-
-    tabla.innerHTML += `
-
-        <tr>
-
-          <td>
-
-            ${persona.nombres}
-            ${persona.apellido_paterno}
-            ${persona.apellido_materno || ''}
-
-          </td>
-
-          <td>
-            ${persona.rut || ''}
-          </td>
-
-          <td>
-            ${persona.bloque || ''}
-          </td>
-
-          <td>
-            ${persona.sexo || ''}
-          </td>
-
-          <td>
-            ${persona.email || ''}
-          </td>
-
-          <td>
-            ${persona.telefono || ''}
-          </td>
-
-          <td title="${persona.direccion || ''}">
-            ${persona.direccion ? persona.direccion.substring(0, 25) + (persona.direccion.length > 25 ? '…' : '') : ''}
-          </td>
-
-          <td>
-            ${persona.fecha_nacimiento ? formatearFecha(persona.fecha_nacimiento) : ''}
-          </td>
-
-          <td>
-            ${persona.fecha_ingreso ? formatearFecha(persona.fecha_ingreso) : ''}
-          </td>
-
-          <td>
-            ${persona.nombre_apoderado || ''}
-          </td>
-
-          <td>
-            ${persona.telefono_apoderado || ''}
-          </td>
-
-          <td>
-            ${obtenerBadgeEstadoPersona(persona.estado)}
-            ${persona.es_honorario ? '<span class="badge bg-info text-dark ms-1">Honorario</span>' : ''}
-          </td>
-
-          <td class="text-nowrap">
-
-            <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
-              <button
-                type="button"
-                class="btn btn-outline-warning"
-                title="Editar"
-                aria-label="Editar"
-                onclick='editarPersona(${JSON.stringify(persona)})'>
-                &#9998;
-              </button>
-
-              <button
-                type="button"
-                class="btn btn-outline-danger"
-                title="Eliminar"
-                aria-label="Eliminar"
-                onclick='eliminarPersona(${persona.id})'>
-                &times;
-              </button>
-            </div>
-
-          </td>
-
-        </tr>
-
-      `;
-
+    const dir = persona.direccion || '';
+    filas.push(`
+      <tr>
+        <td>${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}</td>
+        <td>${persona.rut || ''}</td>
+        <td>${persona.bloque || ''}</td>
+        <td>${persona.sexo || ''}</td>
+        <td>${persona.email || ''}</td>
+        <td>${persona.telefono || ''}</td>
+        <td title="${dir}">${dir ? dir.substring(0, 25) + (dir.length > 25 ? '…' : '') : ''}</td>
+        <td>${persona.fecha_nacimiento ? formatearFecha(persona.fecha_nacimiento) : ''}</td>
+        <td>${persona.fecha_ingreso ? formatearFecha(persona.fecha_ingreso) : ''}</td>
+        <td>${persona.nombre_apoderado || ''}</td>
+        <td>${persona.telefono_apoderado || ''}</td>
+        <td>
+          ${obtenerBadgeEstadoPersona(persona.estado)}
+          ${persona.es_honorario ? '<span class="badge bg-info text-dark ms-1">Honorario</span>' : ''}
+        </td>
+        <td class="text-nowrap">
+          <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
+            <button type="button" class="btn btn-outline-warning" title="Editar" aria-label="Editar"
+              onclick='editarPersona(${JSON.stringify(persona)})'>&#9998;</button>
+            <button type="button" class="btn btn-outline-danger" title="Eliminar" aria-label="Eliminar"
+              onclick='eliminarPersona(${persona.id})'>&times;</button>
+          </div>
+        </td>
+      </tr>`);
   });
+
+  tabla.innerHTML = filas.join('');
 
 }
 
@@ -542,22 +483,13 @@ function editarPersona(persona) {
   actualizarVisibilidadApoderado();
 }
 
-function calcularEdad(fechaNacimiento) {
-  if (!fechaNacimiento) return null;
-  const hoy = new Date();
-  const nac = new Date(fechaNacimiento);
-  let edad = hoy.getFullYear() - nac.getFullYear();
-  const m = hoy.getMonth() - nac.getMonth();
-  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
-  return edad;
-}
-
 function actualizarVisibilidadApoderado() {
   const fechaInput = document.getElementById('fecha_nacimiento');
   const bloque = document.getElementById('bloque_apoderado');
   if (!fechaInput || !bloque) return;
   const edad = calcularEdad(fechaInput.value);
-  if (edad !== null && edad < 18) {
+  // calcularEdad devuelve '' si no hay fecha — usar typeof para evitar falso positivo
+  if (typeof edad === 'number' && edad < 18) {
     bloque.classList.remove('d-none');
   } else {
     bloque.classList.add('d-none');

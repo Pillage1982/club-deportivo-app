@@ -330,67 +330,32 @@ function renderizarTablaEventos(eventos) {
     return;
   }
 
-  eventos.forEach(evento => {
-
+  tabla.innerHTML = eventos.map(evento => {
     const finalizado = evento.finalizado ? 1 : 0;
-
-    tabla.innerHTML += `
-
+    return `
       <tr>
-
         <td>${evento.nombre}</td>
-
         <td>${obtenerTipoActividad(evento.tipo)}</td>
-
         <td>${formatearFechaHora(evento.fecha)}</td>
-
         <td>${evento.ubicacion || ''}</td>
-
         <td>${evento.descripcion || ''}</td>
-
-        <td>
-          ${finalizado
-            ? '<span class="badge bg-secondary">Finalizado</span>'
-            : '<span class="badge bg-success">Activo</span>'
-          }
-        </td>
-
+        <td>${finalizado
+          ? '<span class="badge bg-secondary">Finalizado</span>'
+          : '<span class="badge bg-success">Activo</span>'}</td>
         <td class="text-nowrap">
           <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
             ${!finalizado ? `
-            <button
-              type="button"
-              class="btn btn-outline-warning"
-              title="Editar"
-              aria-label="Editar"
-              onclick='editarEvento(${JSON.stringify(evento)})'>
-              &#9998;
-            </button>
-            <button
-              type="button"
-              class="btn btn-outline-secondary"
-              title="Finalizar"
-              aria-label="Finalizar"
-              onclick='cerrarEvento(${evento.id})'>
-              &#10003;
-            </button>
+              <button type="button" class="btn btn-outline-warning" title="Editar" aria-label="Editar"
+                onclick='editarEvento(${JSON.stringify(evento)})'>&#9998;</button>
+              <button type="button" class="btn btn-outline-secondary" title="Finalizar" aria-label="Finalizar"
+                onclick='cerrarEvento(${evento.id})'>&#10003;</button>
             ` : ''}
-            <button
-              type="button"
-              class="btn btn-outline-danger"
-              title="Eliminar"
-              aria-label="Eliminar"
-              onclick='eliminarEvento(${evento.id})'>
-              &times;
-            </button>
+            <button type="button" class="btn btn-outline-danger" title="Eliminar" aria-label="Eliminar"
+              onclick='eliminarEvento(${evento.id})'>&times;</button>
           </div>
         </td>
-
-      </tr>
-
-    `;
-
-  });
+      </tr>`;
+  }).join('');
 }
 
 function aplicarFiltrosEventos() {
