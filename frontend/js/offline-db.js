@@ -53,7 +53,7 @@ async function guardarAsistenciaOffline(data) {
   };
   store.add(registro);
   return new Promise((resolve, reject) => {
-    tx.oncomplete = () => resolve(registro.id);
+    tx.oncomplete = () => { iniciarCicloSync(); resolve(registro.id); };
     tx.onerror    = e => reject(e.target.error);
   });
 }
@@ -155,4 +155,39 @@ async function actualizarBadgeOffline() {
   const span  = badge.querySelector('span');
   if (span) span.textContent = total;
   badge.classList.toggle('d-none', total === 0);
+}
+
+// ── Retry con backoff progresivo ──────────────────────────────────────────────
+// Reintenta sincronizar mientras haya pendientes: 30s → 60s → 300s → cada 5min
+const _retryCadencias = [30000, 60000, 300000];
+let   _retryTimer     = null;
+let   _retryIdx       = 0;
+
+function programarReintento() {
+  if (_retryTimer) return; // ya hay uno en vuelo
+  const delay = _retryCadencias[Math.min(_retryIdx, _retryCadencias.length - 1)];
+  _retryTimer = setTimeout(async () => {
+    _retryTimer = null;
+    const pendientes = await contarAsistenciasOffline();
+    if (pendientes === 0) { _retryIdx = 0; return; }
+    await sincronizarAsistenciasOffline();
+    _retryIdx++;
+    const quedan = await contarAsistenciasOffline();
+    if (quedan > 0) programarReintento();
+    else _retryIdx = 0;
+  }, delay);
+}
+
+// Llamar cuando se guarda offline para arrancar el ciclo de reintentos
+function iniciarCicloSync() {
+  programarReintento();
+}
+
+// Botón manual "Sincronizar ahora" — llama esto desde el onclick del botón
+async function sincronizarManual() {
+  if (_retryTimer) { clearTimeout(_retryTimer); _retryTimer = null; }
+  _retryIdx = 0;
+  await sincronizarAsistenciasOffline();
+  const quedan = await contarAsistenciasOffline();
+  if (quedan > 0) programarReintento();
 }

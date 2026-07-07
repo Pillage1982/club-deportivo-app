@@ -164,10 +164,21 @@ async function asegurarCampoFinalizadoEventos() {
   }
 }
 
+async function asegurarCampoHonorarioPersonas() {
+  const existe = await columnaExiste('personas', 'es_honorario');
+  if (!existe) {
+    await ejecutar(`
+      ALTER TABLE personas
+      ADD COLUMN es_honorario TINYINT(1) NOT NULL DEFAULT 0
+    `);
+  }
+}
+
 async function ejecutarMigraciones() {
   await asegurarEstadoIntegrantes();
   await asegurarCamposPersonas();
   await asegurarCampoFinalizadoEventos();
+  await asegurarCampoHonorarioPersonas();
   await reconstruirVistaEstadoFinanciero();
 }
 

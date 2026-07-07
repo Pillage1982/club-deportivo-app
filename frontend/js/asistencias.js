@@ -139,10 +139,9 @@ async function registrarAsistencia() {
       .then(response => {
         document.getElementById('respuesta').innerText = response.mensaje || 'Asistencia registrada';
         mostrarAlerta(response.mensaje || 'Asistencia registrada', 'success');
-        cargarAsistencias();
+        cargarAsistencias(); // también llama cargarUltimosRegistros() al completar
         cargarDashboard();
         refrescarFinanzasPorAsistencia();
-        cargarUltimosRegistros();
         document.getElementById('minutos').value = 0;
         const inputManual = document.getElementById('qr_asistencia_manual');
         if (inputManual) { inputManual.value = ''; }
@@ -944,6 +943,7 @@ function cargarAsistencias() {
 
       asistenciasTabla = data;
       renderizarTablaAsistencias(filtrarAsistencias());
+      cargarUltimosRegistros();
 
     })
     .catch(err => console.error(err));
@@ -1010,29 +1010,23 @@ function cargarUltimosRegistros() {
   const tbody    = document.getElementById('ultimos_registros_body');
   if (!eventoId || !wrapper || !tbody) return;
 
-  fetch(`${API_URL}/asistencia`, { headers: getAuthHeaders() })
-    .then(res => res.json())
-    .then(data => {
-      if (!Array.isArray(data)) return;
-      const filtrados = data
-        .filter(a => String(a.evento_id) === String(eventoId))
-        .slice(0, 5);
+  const filtrados = asistenciasTabla
+    .filter(a => String(a.evento_id) === String(eventoId))
+    .slice(0, 5);
 
-      if (filtrados.length === 0) {
-        wrapper.classList.add('d-none');
-        return;
-      }
+  if (filtrados.length === 0) {
+    wrapper.classList.add('d-none');
+    return;
+  }
 
-      tbody.innerHTML = filtrados.map(a => `
-        <tr>
-          <td>${a.nombres} ${a.apellido_paterno}</td>
-          <td>${obtenerBadgeAsistencia(a.estado)}</td>
-        </tr>
-      `).join('');
+  tbody.innerHTML = filtrados.map(a => `
+    <tr>
+      <td>${a.nombres} ${a.apellido_paterno}</td>
+      <td>${obtenerBadgeAsistencia(a.estado)}</td>
+    </tr>
+  `).join('');
 
-      wrapper.classList.remove('d-none');
-    })
-    .catch(() => {});
+  wrapper.classList.remove('d-none');
 }
 
 // ── Reloj en vivo para panel de asistencia ──
@@ -1076,11 +1070,13 @@ async function intentarMatchingSinEvento(eventoId, fechaEvento) {
   const sinEvento = await obtenerAsistenciasSinEvento();
   if (sinEvento.length === 0) return;
 
-  const fechaDia = String(fechaEvento).substring(0, 10); // YYYY-MM-DD
+  const fechaDia = String(fechaEvento).substring(0, 10); // YYYY-MM-DD (fecha local del evento)
   let asignados = 0;
 
   for (const reg of sinEvento) {
-    const fechaReg = String(reg.timestamp).substring(0, 10);
+    // Usar fecha local del dispositivo, no UTC, para evitar desfase nocturno (Chile UTC-3/-4)
+    const dt = new Date(reg.timestamp);
+    const fechaReg = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     if (fechaReg === fechaDia) {
       await actualizarRegistroOffline(reg.id, {
         evento_id:  Number(eventoId),
@@ -1096,5 +1092,97 @@ async function intentarMatchingSinEvento(eventoId, fechaEvento) {
       'info'
     );
     actualizarBadgeOffline();
+    cargarPanelSinEvento();
   }
+}
+
+// =====================================
+// PANEL "SIN ASIGNAR" — SUBTAB TABLAS
+// =====================================
+
+async function cargarPanelSinEvento() {
+  const tbody  = document.getElementById('tabla_sin_evento');
+  const badge  = document.getElementById('badge_sin_evento');
+  if (!tbody) return;
+
+  const registros = await obtenerAsistenciasSinEvento();
+
+  if (badge) {
+    badge.textContent = registros.length;
+    badge.classList.toggle('d-none', registros.length === 0);
+  }
+
+  if (registros.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Sin registros pendientes</td></tr>';
+    return;
+  }
+
+  const _hoyDt = new Date();
+  const hoy = `${_hoyDt.getFullYear()}-${String(_hoyDt.getMonth() + 1).padStart(2, '0')}-${String(_hoyDt.getDate()).padStart(2, '0')}`;
+
+  tbody.innerHTML = registros.map(reg => {
+    const persona   = personasTabla.find(p => String(p.id) === String(reg.persona_id));
+    const nombre    = persona
+      ? `${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}`.trim()
+      : `Persona #${reg.persona_id}`;
+    const rut       = persona ? (persona.rut || '—') : '—';
+    const dt        = new Date(reg.timestamp);
+    const fechaReg  = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    const hora      = dt.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+    const fechaStr  = fechaReg === hoy ? `Hoy ${hora}` : `${fechaReg} ${hora}`;
+
+    const eventosDelDia = (eventosCargados || []).filter(ev =>
+      String(ev.fecha || '').substring(0, 10) === fechaReg
+    );
+
+    const opcionesEventos = eventosDelDia.length
+      ? eventosDelDia.map(ev =>
+          `<option value="${ev.id}" data-fecha="${ev.fecha}">${ev.nombre}</option>`
+        ).join('')
+      : `<option value="" disabled>Sin actividades ese día</option>`;
+
+    return `
+      <tr>
+        <td>${nombre}</td>
+        <td>${rut}</td>
+        <td>${fechaStr}</td>
+        <td>
+          <select class="form-select form-select-sm" id="sel_sin_evento_${reg.id}">
+            <option value="">Seleccionar...</option>
+            ${opcionesEventos}
+          </select>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-success"
+            onclick="asignarRegistroSinEvento('${reg.id}')">
+            <i class="bi bi-check-lg"></i> Asignar
+          </button>
+          <button class="btn btn-sm btn-outline-danger ms-1"
+            onclick="descartarRegistroSinEvento('${reg.id}')">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+async function asignarRegistroSinEvento(id) {
+  const sel = document.getElementById(`sel_sin_evento_${id}`);
+  if (!sel || !sel.value) {
+    mostrarAlerta('Selecciona una actividad antes de asignar.', 'warning');
+    return;
+  }
+  const eventoId = Number(sel.value);
+  await actualizarRegistroOffline(id, { evento_id: eventoId, estadoSync: 'pendiente' });
+  mostrarAlerta('Registro asignado. Se sincronizará cuando haya conexión.', 'success');
+  actualizarBadgeOffline();
+  sincronizarManual();
+  cargarPanelSinEvento();
+}
+
+async function descartarRegistroSinEvento(id) {
+  if (!confirm('¿Eliminar este registro sin asignar?')) return;
+  await eliminarAsistenciaOffline(id);
+  actualizarBadgeOffline();
+  cargarPanelSinEvento();
 }
