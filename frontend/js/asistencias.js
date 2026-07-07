@@ -966,6 +966,9 @@ function seleccionarEventoMobile(id, nombre) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Establece estado inicial del botón QR (el HTML lo trae disabled por defecto)
+  actualizarBotonesEscaneoQr();
+
   const eventoSelect = document.getElementById('evento_id');
   if (eventoSelect) {
     eventoSelect.addEventListener('change', () => {
