@@ -1,339 +1,135 @@
-# 🏆 Club Deportivo App
+# NexoComunidad
 
-Sistema administrativo web para gestión de clubes deportivos.
+Sistema administrativo web para organizaciones comunitarias: agrupaciones, clubes, academias y juntas vecinales.
 
----
-
-# 🚀 Descripción
-
-Club Deportivo App es una plataforma web desarrollada para administrar:
-
-- socios
-- eventos
-- asistencias
-- multas
-- pagos
-- estados financieros
-- dashboard administrativo
-
-El sistema fue construido utilizando arquitectura modular frontend/backend y autenticación JWT.
+**Cliente activo:** Gran Diablada Calameña (`devclub.pillageweb.cl`)
 
 ---
 
-# 🛠 Tecnologías Utilizadas
+## Stack
 
-## Frontend
-
-- HTML5
-- CSS3
-- Bootstrap 5
-- JavaScript Vanilla
-- Chart.js
-
-## Backend
-
-- Node.js
-- Express.js
-- JWT Authentication
-- Middleware personalizado
-
-## Base de Datos
-
-- MySQL
-- UTF8MB4
+- Frontend: HTML5, Bootstrap 5, JavaScript Vanilla, Chart.js, PWA (Service Worker + IndexedDB)
+- Backend: Node.js, Express.js, JWT
+- Base de datos: MySQL
 
 ---
 
-# 📁 Arquitectura Proyecto
+## Arquitectura
 
-```plaintext
+```
 club-deportivo-app/
-│
 ├── backend/
-│   ├── config/
+│   ├── config/          # db.js, migrations.js
 │   ├── controllers/
 │   ├── middleware/
 │   ├── models/
 │   ├── routes/
+│   ├── services/        # emailService.js
 │   └── server.js
-│
 ├── frontend/
 │   ├── js/
+│   │   ├── config.js    # personalización por cliente
 │   │   ├── utils.js
+│   │   ├── offline-db.js  # IndexedDB + sync
+│   │   ├── main.js
 │   │   ├── personas.js
 │   │   ├── eventos.js
-│   │   ├── pagos.js
 │   │   ├── asistencias.js
-│   │   ├── dashboard.js
-│   │   └── main.js
-│   │
+│   │   ├── pagos.js
+│   │   ├── multas.js
+│   │   ├── finanzas.js
+│   │   ├── cuotas.js
+│   │   └── dashboard.js
+│   ├── sw.js            # Service Worker PWA
 │   ├── index.html
 │   └── login.html
-│
-└── README.md
+└── documentacion/
 ```
 
 ---
 
-# 🔐 Roles del Sistema
+## Ambientes
 
-## 👑 Administrador
-
-Puede:
-
-- gestionar personas
-- gestionar eventos
-- registrar asistencias
-- gestionar pagos
-- visualizar dashboard
-- visualizar multas
-- visualizar finanzas
+| URL | Rama | Propósito |
+|-----|------|-----------|
+| club.pillageweb.cl | main | Producción NexoComunidad genérico |
+| devnexo.pillageweb.cl | v1.3-dev | Desarrollo activo |
+| devclub.pillageweb.cl | cliente/calamena | Cliente Gran Diablada Calameña |
+| nexocomunidad.pillageweb.cl | — | Landing comercial |
 
 ---
 
-## 💰 Tesorero
+## Módulos
 
-Puede:
-
-- gestionar pagos
-- visualizar finanzas
-- visualizar multas
-- visualizar dashboard
-
-No puede:
-
-- registrar asistencias
-
----
-
-## 🏃 Entrenador
-
-Puede:
-
-- registrar asistencias
-- visualizar asistencias
-- visualizar eventos
-
-No puede:
-
-- acceder a finanzas
-- acceder a multas
+| Módulo | Descripción |
+|--------|-------------|
+| Dashboard | Resumen financiero y estadísticas de asistencia |
+| Integrantes | CRUD con validación RUT, apoderado condicional por edad |
+| Eventos | CRUD con cierre y notificación por email |
+| Asistencia QR | Lector QR/PDF417 offline-first, sin evento ni conexión |
+| Finanzas | Vista consolidada del estado financiero por integrante |
+| Pagos | Registro y gestión de pagos |
+| Cuotas | Generación masiva mensual automática |
+| Multas | Registro y seguimiento de multas |
 
 ---
 
-# 📌 Funcionalidades Principales
+## Roles
 
-## 👥 Gestión Personas
-
-- crear socios
-- editar socios
-- eliminar socios
-- validaciones frontend
-- actualización automática tablas
+| Rol | Acceso |
+|-----|--------|
+| admin | Acceso completo |
+| tesorero | Finanzas, pagos, cuotas, multas |
+| entrenador | Asistencia, eventos, integrantes (solo lectura) |
 
 ---
 
-## 📅 Gestión Eventos
+## PWA offline-first
 
-- crear eventos
-- editar eventos
-- eliminar eventos
-- entrenamientos
-- reuniones
-- actividades deportivas
+El módulo de asistencia funciona sin conexión:
 
----
-
-## ✅ Registro Asistencias
-
-- presente
-- atrasado
-- ausente
-- control minutos atraso
-- validación duplicados
+- Escaneos se guardan en IndexedDB aunque no haya evento ni red
+- Matching automático al seleccionar evento o abrir panel "Sin asignar"
+- Sincronización automática al recuperar conexión (retry 30s → 60s → 300s)
+- Badge visible con contador de registros pendientes
 
 ---
 
-## ⚠ Sistema Multas
-
-Las multas se generan automáticamente desde asistencias.
-
-Ejemplos:
-
-- atraso
-- ausencia
-
----
-
-## 💰 Gestión Financiera
-
-- registro pagos
-- edición pagos
-- eliminación pagos
-- saldo a favor
-- estado al día
-- deuda pendiente
-
----
-
-## 📊 Dashboard Administrativo
-
-Incluye:
-
-- total socios
-- total multas
-- deuda total
-- pagos totales
-- gráficos dinámicos
-
----
-
-# 🔐 Seguridad
-
-El sistema utiliza:
-
-- autenticación JWT
-- middleware autenticación
-- middleware autorización roles
-- rutas protegidas
-- control permisos frontend y backend
-
----
-
-# ⚡ Características Técnicas
-
-## ✅ Frontend Modular
-
-El frontend fue modularizado para mejorar:
-
-- mantenibilidad
-- escalabilidad
-- legibilidad
-- reutilización código
-
----
-
-## ✅ Backend Organizado
-
-Separación por capas:
-
-- controllers
-- models
-- routes
-- middleware
-
----
-
-## ✅ Base Datos UTF8
-
-Soporte completo para:
-
-- Ñ
-- tildes
-- caracteres especiales
-- internacionalización
-
----
-
-# 🚀 Instalación
-
-## 1️⃣ Clonar repositorio
+## Instalación local
 
 ```bash
-git clone URL_REPOSITORIO
-```
+# Clonar
+git clone https://github.com/Pillage1982/club-deportivo-app.git
+cd club-deportivo-app
 
----
+# Instalar dependencias
+cd backend && npm install
 
-## 2️⃣ Instalar dependencias backend
+# Configurar entorno
+cp .env.example .env  # completar con credenciales MySQL y JWT_SECRET
 
-```bash
-cd backend
-npm install
-```
-
----
-
-## 3️⃣ Configurar variables entorno
-
-Crear archivo:
-
-```plaintext
-.env
-```
-
-Ejemplo:
-
-```env
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=club_deportivo
-JWT_SECRET=secret123
-```
-
----
-
-## 4️⃣ Ejecutar backend
-
-```bash
+# Iniciar
 node server.js
 ```
 
+Abrir `frontend/index.html` o usar Live Server.
+
 ---
 
-## 5️⃣ Ejecutar frontend
+## Variables de entorno
 
-Abrir:
-
-```plaintext
-frontend/index.html
+```env
+DB_HOST=127.0.0.1
+DB_USER=usuario_mysql
+DB_PASSWORD=password_mysql
+DB_NAME=nombre_base_datos
+JWT_SECRET=secreto_jwt
+EMAIL_USER=correo@gmail.com
+EMAIL_PASS=app_password_gmail
 ```
 
-O utilizar Live Server.
-
 ---
 
-# 📊 Estado Proyecto
-
-## ✅ Implementado
-
-- autenticación JWT
-- roles
-- CRUD personas
-- CRUD eventos
-- CRUD pagos
-- asistencias
-- multas automáticas
-- dashboard
-- gráficos
-- finanzas
-- frontend modular
-- validaciones
-- documentación
-
----
-
-# 🚧 Mejoras Futuras
-
-- responsive móvil avanzado
-- modales Bootstrap
-- sistema auditoría
-- exportación Excel/PDF
-- notificaciones
-- deploy producción
-- backups automáticos
-- recuperación contraseña
-
----
-
-# 👨‍💻 Autor
+## Autor
 
 Mario Rodrigo Riquelme Cabello
-
----
-
-# 📄 Licencia
-
-Proyecto desarrollado con fines educativos y administrativos.
-

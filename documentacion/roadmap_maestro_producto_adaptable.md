@@ -1,544 +1,128 @@
-# Roadmap Maestro - Plataforma de Gestion para Organizaciones
+# Roadmap Maestro — NexoComunidad
 
-## Objetivo Final
+Plataforma adaptable para administrar organizaciones: agrupaciones, clubes, academias, comunidades.
 
-Construir una plataforma adaptable para administrar organizaciones, agrupaciones y comunidades desde una misma base tecnica.
-
-La aplicacion debe poder ajustarse a distintos tipos de cliente sin rehacer el sistema:
-
-- Agrupaciones de baile religioso.
-- Clubes deportivos.
-- Academias.
-- Talleres.
-- Agrupaciones culturales.
-- Juntas vecinales.
-- Organizaciones comunitarias.
-
-La meta final es pasar de una app especifica a un producto configurable.
+**Frase guía:** Una misma base técnica, configurable para cualquier organización, que ordena integrantes, actividades, asistencias y finanzas sin depender de planillas dispersas.
 
 ---
 
-## Enfoque Principal
+## Versiones completadas
 
-El roadmap anterior estaba orientado a un club deportivo. Ese trabajo no se pierde: queda como la primera version funcional y validada.
+### V1.0 — Base estable (main)
+Login JWT, roles, integrantes, eventos, asistencias, multas, pagos, cuotas, estado financiero, dashboard, validaciones, permisos backend y frontend, despliegue Hostinger.
 
-Desde ahora, el enfoque cambia a:
+### V1.1 — Personalización por cliente
+`config.js` con APP_CONFIG (nombre, logo, colores, etiquetas, tipos de actividad). La misma base funciona para agrupación religiosa, club deportivo u otro tipo de organización sin editar HTML.
 
-```text
-Gestion de Organizaciones Adaptable
-```
+### V1.2 — Usabilidad operativa
+Filtros en todas las tablas, botones compactos, carga condicional por rol en main.js, funciones utilitarias centralizadas en utils.js.
 
-Esto significa:
-
-- No cambiar tablas internas antes de tiempo.
-- No romper produccion.
-- No crear una app distinta por cliente.
-- Crear una capa de configuracion visual, textual y funcional.
-- Mantener una base comun y activar/adaptar modulos segun el tipo de organizacion.
-
----
-
-## Estado Actual
-
-### Produccion
-
-Rama:
-
-```text
-main
-```
-
-Estado:
-
-- Estable.
-- Desplegada en Hostinger.
-- Login funcionando.
-- Roles protegidos.
-- Validaciones principales listas.
-- Datos demo funcionales.
-- Documentacion RC2 creada.
-
-### Desarrollo
-
-Rama:
-
-```text
-v1.1-dev
-```
-
-Estado:
-
-- Adaptacion visual para agrupacion religiosa.
-- Logo y paleta de cliente aplicados.
-- Textos deportivos eliminados de la demo.
-- Personas visibles como integrantes.
-- Eventos visibles como actividades.
-- Tipos visibles adaptados:
-  - entrenamiento -> ensayo.
-  - partido -> presentacion.
-  - reunion -> reunion.
-- Navbar y sidebar fijos.
-- Seed demo contextualizado.
+### V1.3 (parcial) — calamena
+- PWA offline-first: scanner QR sin evento ni red, IndexedDB, matching automático, retry backoff
+- Email al cerrar evento (nodemailer defensivo)
+- Generación masiva de cuotas (INSERT SELECT)
+- Migraciones BD con guardas (INFORMATION_SCHEMA)
+- Dashboard con endpoint único
 
 ---
 
-## Principios de Desarrollo
+## Próximas versiones
 
-### 1. Produccion no se toca directamente
-
-Todo avance se realiza en:
-
-```text
-v1.1-dev
-```
-
-Solo se fusiona a `main` cuando:
-
-- esta probado,
-- esta documentado,
-- no rompe la demo,
-- no afecta datos reales.
-
-### 2. Configuracion antes que migracion
-
-Antes de modificar base de datos, se debe crear una capa de configuracion.
-
-Ejemplo:
-
-```text
-frontend/js/config.js
-```
-
-Desde ahi deben salir:
-
-- nombre del sistema,
-- nombre de la organizacion,
-- logo,
-- colores,
-- labels,
-- roles visibles,
-- tipos de actividad visibles.
-
-### 3. Interno estable, externo adaptable
-
-Por ahora se mantienen internamente:
-
-- personas,
-- eventos,
-- cuotas,
-- multas,
-- entrenador.
-
-Pero visualmente pueden mostrarse como:
-
-- integrantes,
-- actividades,
-- aportes/cuotas,
-- sanciones/multas,
-- encargado/caporal/entrenador.
-
-### 4. Avances chicos y reversibles
-
-Cada mejora debe poder probarse y revertirse facilmente.
-
----
-
-## Roadmap por Versiones
-
-## V1.0 RC2 - Base Estable
-
-Estado:
-
-```text
-Completado
-```
-
-Incluye:
-
-- Despliegue Hostinger estable.
-- Login JWT.
-- Roles.
-- Personas.
-- Eventos.
-- Asistencias.
-- Multas.
-- Pagos.
-- Cuotas.
-- Estado financiero.
-- Dashboard.
-- Validaciones principales.
-- Permisos backend/frontend.
-- Documentacion de release.
-
-Objetivo cumplido:
-
-```text
-Tener una app funcional, demostrable y recuperable.
-```
-
----
-
-## V1.1 - Personalizacion y Demo Adaptable
-
-Objetivo:
-
-Convertir la app en una demo neutral y adaptable para organizaciones.
-
-### Sprint 1 - Configuracion de Cliente
-
-Crear:
-
-```text
-frontend/js/config.js
-```
-
-Debe incluir:
-
-- nombreSistema,
-- nombreOrganizacion,
-- logo,
-- tema,
-- labels,
-- rolesVisuales,
-- tiposActividad.
-
-Criterio de exito:
-
-Cambiar cliente no debe requerir editar manualmente muchas secciones HTML.
-
-### Sprint 2 - Aplicar Configuracion Visual
-
-Tareas:
-
-- Cargar `config.js` antes de `utils.js`.
-- Crear `aplicarConfiguracionVisual()`.
-- Aplicar logo en login y navbar.
-- Aplicar nombre del sistema.
-- Aplicar labels principales.
-- Aplicar rol visual.
-- Mantener ids/rutas internas sin cambios.
-
-### Sprint 3 - Tema Visual Configurable
-
-Tareas:
-
-- Pasar colores de cliente a variables CSS.
-- Aplicar paleta desde configuracion.
-- Mantener fallback generico.
-- Evitar CSS duplicado entre login y app.
-
-### Sprint 4 - Demo Generica
-
-Crear una configuracion base:
-
-```text
-Gestion de Agrupaciones
-```
-
-Y una configuracion cliente:
-
-```text
-Gran Diablada Calamena
-```
-
-Criterio de exito:
-
-La misma app puede presentarse como demo generica o como demo de cliente.
-
----
-
-## V1.2 - Usabilidad Operativa
-
-Objetivo:
-
-Mejorar el uso diario del sistema.
-
-### Busquedas y filtros
-
-Integrantes:
-
-- buscar por nombre,
-- buscar por RUT,
-- filtrar activos/inactivos.
-
-Actividades:
-
-- filtrar por tipo,
-- filtrar por fecha,
-- buscar por nombre.
-
-Asistencias:
-
-- filtrar por actividad,
-- filtrar por integrante,
-- filtrar por estado.
-
-Finanzas:
-
-- filtrar por deuda,
-- filtrar pagos por fecha,
-- filtrar cuotas por mes/estado.
-
-### Dashboard por rol
-
-Admin:
-
-- resumen general.
-
-Tesorero:
-
-- pagos,
-- cuotas,
-- multas,
-- deuda,
-- recaudacion.
-
-Encargado:
-
-- actividades,
-- asistencias,
-- integrantes activos,
-- ausentes/atrasados.
-
----
-
-## V1.3 - Reportes y Exportacion
-
-Objetivo:
-
-Entregar informacion lista para reuniones, directiva o rendicion.
+### V1.3 (completo) — Reportes y exportación
+**Objetivo:** Entregar información lista para reuniones, directiva o rendición.
 
 Reportes:
+- Lista de deudores (cuotas + multas pendientes por integrante)
+- Asistencias por evento o rango de fechas
+- Cuotas del mes (pagadas / pendientes)
+- Integrantes (lista completa con estado y contacto)
+- Resumen financiero general
 
-- estado financiero por integrante,
-- pagos por periodo,
-- cuotas pendientes,
-- multas pendientes,
-- asistencia por actividad,
-- resumen general.
+Implementación:
+- **Excel**: SheetJS (CDN, client-side) — genera .xlsx desde datos en memoria
+- **PDF**: jsPDF (CDN, client-side) — tablas simples, sin backend extra
+- Botones de exportación en cada tabla existente
 
-Exportacion:
-
-- Excel,
-- PDF.
-
----
-
-## V1.4 - Portal de Integrantes
-
-Objetivo:
-
-Permitir que cada integrante vea su propia informacion.
-
-Funciones:
-
-- login de integrante,
-- deuda personal,
-- cuotas pendientes,
-- multas pendientes,
-- historial de pagos,
-- historial de asistencia,
-- proximas actividades.
-
-Valor:
-
-Reduce consultas manuales al tesorero y mejora transparencia.
+Estado: **pendiente**
 
 ---
 
-## V1.5 - Modulos Opcionales
+### V1.4 — Portal de integrantes
+Cada integrante accede a su propia ficha desde el celular.
 
-Objetivo:
+- PWA separada (URL propia: `/socio/` o subdominio)
+- Login por RUT + PIN auto-generado al enrolar
+- Primer login obliga a cambiar PIN
+- PIN enviado por email al enrolar
+- Datos: bloque, estado, historial de asistencia, cuotas, pagos, deuda
+- Solo lectura — no puede modificar nada
 
-Agregar modulos segun rubro, sin obligar a todos los clientes a usarlos.
-
-### Baile religioso
-
-- trajes / vestimenta,
-- instrumentos,
-- citaciones,
-- festividades,
-- viajes,
-- aportes extraordinarios.
-
-### Club deportivo
-
-- categorias,
-- partidos,
-- convocatorias,
-- entrenamientos,
-- estadisticas.
-
-### Academia / taller
-
-- cursos,
-- horarios,
-- profesores,
-- matriculas,
-- mensualidades.
-
-### Agrupacion comunitaria
-
-- reuniones,
-- actas,
-- socios,
-- cuotas,
-- beneficios.
+Estado: **pendiente** (implementar después de resolver despliegue en BlueHosting)
 
 ---
 
-## V1.6 - Asistencia Avanzada
+### V1.5 — Módulos opcionales por tipo de organización
 
-Objetivo:
+| Organización | Módulos posibles |
+|---|---|
+| Agrupación religiosa | Vestimenta/trajes, instrumentos, viajes, aportes extraordinarios |
+| Club deportivo | Categorías, partidos, convocatorias, estadísticas |
+| Academia / taller | Cursos, horarios, matrículas, mensualidades |
+| Comunidad / junta | Reuniones, actas, beneficios |
 
-Modernizar el registro de asistencia.
-
-Funciones posibles:
-
-- QR por actividad,
-- registro desde celular,
-- validacion por encargado,
-- bloqueo de duplicados,
-- historial de escaneos.
+Estado: **no iniciado**
 
 ---
 
-## V1.7 - Pagos Online
-
-Objetivo:
-
-Permitir pagos desde la app.
-
-Funciones:
-
-- pago de cuotas,
-- pago de multas,
-- comprobante,
-- actualizacion automatica de deuda,
-- integracion con pasarela.
-
-Nota:
-
-No debe abordarse antes de estabilizar configuracion, reportes y portal.
+### V1.6 — Asistencia avanzada (offline completado en calamena)
+Módulo offline-first ya implementado en `cliente/calamena`. Pendiente para nexo genérico:
+- Background Sync API (SyncManager Chromium)
+- Creación de eventos offline
+- Matching server-side (multi-dispositivo)
+- Panel eventos duplicados
 
 ---
 
-## V2.0 - Multi Organizacion
-
-Objetivo:
-
-Una sola plataforma para varios clientes.
-
-Cambio clave:
-
-```text
-organizacion_id
-```
-
-en tablas principales:
-
-- usuarios,
-- personas,
-- eventos,
-- asistencias,
-- multas,
-- cuotas,
-- pagos.
-
-Resultado:
-
-Cada cliente ve solo su informacion.
+### V1.7 — Pagos online
+Integración Webpay/Transbank. No abordar antes de estabilizar V1.4 y V1.5.
 
 ---
 
-## V3.0 - SaaS Comercial
-
-Objetivo:
-
-Convertir el sistema en producto escalable.
-
-Incluye:
-
-- panel administrador global,
-- planes de suscripcion,
-- modulos activables,
-- backup automatico,
-- logs de auditoria,
-- subdominios por cliente,
-- monitoreo,
-- soporte.
+### V2.0 — Multi-organización
+Columna `organizacion_id` en tablas principales (personas, eventos, asistencias, cuotas, pagos, multas, usuarios). Cada cliente ve solo sus datos.
 
 ---
 
-## Orden Recomendado Inmediato
-
-### Ahora
-
-```text
-Sprint v1.1-config
-```
-
-Tareas:
-
-1. Crear `frontend/js/config.js`.
-2. Cargarlo en `index.html` y `login.html`.
-3. Crear `aplicarConfiguracionVisual()`.
-4. Mover nombre/logo/roles visuales a config.
-5. Mover tipos de actividad visibles a config.
-6. Probar Calamena.
-7. Commit en `v1.1-dev`.
-
-### Despues
-
-```text
-Sprint v1.2-usabilidad
-```
-
-Tareas:
-
-1. Filtros en integrantes.
-2. Filtros en actividades.
-3. Filtros en pagos/cuotas/deuda.
-4. Dashboard por rol.
+### V3.0 — SaaS comercial
+Panel administrador global, planes de suscripción, módulos activables, subdominios por cliente, monitoreo, backup automático, auditoría.
 
 ---
 
-## Como Encajan los Roadmaps Anteriores
+## Sistema de puntaje GDC (módulo específico calamena)
 
-### Roadmap V1
+Reemplaza el módulo de multas. Basado en Estatutos GDC 2016 (Art. 8-9).
 
-Se conserva como la base funcional inicial.
+Puntajes por asistencia:
 
-### Roadmap V2
+| Ítem | Puntos |
+|------|--------|
+| Asistencia + cuota al día | +10 |
+| Asistencia sin cuota al día | +5 |
+| Atraso + cuota al día | +7 |
+| Atraso sin cuota al día | +3 |
+| Justificación + cuota al día | +5 |
+| Licencia médica | +6 |
+| Retiro sin aviso | -3 |
 
-Sus ideas pasan a fases posteriores:
+Puntaje por cuotas: +10 por mes pagado en plazo, +10 adicional si es anticipado.
 
-- Portal de socios -> Portal de integrantes.
-- QR asistencia -> Asistencia avanzada.
-- Pagos online -> V1.7.
-- Multi-club -> Multi organizacion.
-
-### Roadmap Adaptable
-
-Pasa a ser el roadmap principal desde ahora.
-
----
-
-## Criterio de Exito Final
-
-El producto alcanza su objetivo cuando:
-
-- puede configurarse para distintos clientes,
-- no depende de textos duros de un rubro,
-- permite administrar integrantes, actividades, asistencia y finanzas,
-- soporta roles,
-- tiene reportes,
-- puede evolucionar a multi-organizacion,
-- puede venderse como producto repetible.
+**Pendiente de diseño** antes de codificar: nuevos estados de asistencia, disparador del cálculo, tabla `puntajes` en BD, vista frontend ranking.
 
 ---
 
-## Frase Guia
+## Prioridad inmediata (jul-2026)
 
-> Una misma plataforma, adaptable a cada organizacion, para ordenar personas, actividades, asistencias y finanzas sin depender de planillas dispersas.
-
+1. Configurar EMAIL_PASS en Hostinger devclub
+2. Exportación Excel/PDF (V1.3 reportes) — pedido del cliente
+3. Sistema de puntaje GDC — diseño primero
+4. Portal del socio — después de resolver despliegue BlueHosting

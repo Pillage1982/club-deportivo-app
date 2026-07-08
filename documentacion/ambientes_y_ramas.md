@@ -1,138 +1,69 @@
 # Ambientes y Ramas
 
-## Objetivo
-
-Mantener produccion estable mientras se desarrolla una version adaptable y configurable del sistema.
-
 ## Ramas Git
 
-### Produccion
-
-Rama:
-
-```text
-main
-```
-
-Uso:
-
-- version estable,
-- conectada al despliegue principal,
-- no se trabaja directamente sobre ella para nuevas funciones.
-
-### Desarrollo
-
-Rama:
-
-```text
-v1.1-dev
-```
-
-Uso:
-
-- nuevas mejoras,
-- personalizacion por cliente,
-- pruebas de interfaz,
-- ajustes de roadmap,
-- cambios que aun no deben llegar a produccion.
+| Rama | Propósito |
+|------|-----------|
+| `main` | Producción estable — no se trabaja directamente |
+| `v1.3-dev` | Desarrollo activo NexoComunidad genérico |
+| `cliente/calamena` | Personalización Gran Diablada Calameña |
 
 ## Ambientes Hostinger
 
-### Produccion
+| Sitio | Rama | BD |
+|-------|------|----|
+| club.pillageweb.cl | main | BD producción (no cargar seeds de prueba) |
+| devnexo.pillageweb.cl | v1.3-dev | BD dev |
+| devclub.pillageweb.cl | cliente/calamena | BD calamena |
+| nexocomunidad.pillageweb.cl | — | Landing comercial (sin BD) |
 
-Sitio:
+## Flujo de trabajo
 
-```text
-club.pillageweb.cl
-```
-
-Rama conectada:
-
-```text
-main
-```
-
-Base de datos:
-
-```text
-BD de produccion
-```
-
-Regla:
-
-No cargar seed de pruebas en esta base.
-
-### Desarrollo
-
-Sitio sugerido:
-
-```text
-clubdev.pillageweb.cl
-```
-
-Rama conectada:
-
-```text
-v1.1-dev
-```
-
-Base de datos:
-
-```text
-BD dev separada
-```
-
-Regla:
-
-En esta base si se pueden cargar seeds, borrar datos y probar cambios.
-
-## Flujo de Trabajo
-
-Antes de trabajar:
-
+Cambios en `v1.3-dev` o `cliente/calamena`:
 ```bash
-git checkout v1.1-dev
-git pull origin v1.1-dev
-git status
+git checkout v1.3-dev   # o cliente/calamena
+git pull
+# ... hacer cambios ...
+git add archivo1 archivo2
+git commit -m "descripción"
+git push
 ```
 
-Guardar avances:
-
-```bash
-git status
-git add .
-git commit -m "Descripcion del cambio"
-git push origin v1.1-dev
-```
-
-Pasar a produccion solo cuando este probado:
-
+Pasar a producción solo cuando esté probado en devnexo:
 ```bash
 git checkout main
-git pull origin main
-git merge v1.1-dev
-git push origin main
+git merge v1.3-dev
+git push
 ```
 
-## Reglas de Seguridad
+## Reglas
 
-- No subir `.env`.
-- No subir `node_modules`.
-- No usar la BD de produccion para pruebas.
-- No cargar seeds dev en produccion.
-- No cambiar Hostinger produccion para apuntar a ramas dev.
-- Probar roles antes de promover cambios.
+- No subir `.env` ni `node_modules`
+- No usar BD de producción para pruebas
+- No hacer cherry-pick entre `v1.3-dev` y `cliente/calamena` — las ramas están muy divergidas, aplicar cambios manualmente
+- Pedir autorización antes de commit y push
+- Revisar en devnexo antes de fusionar a main
 
-## Checklist Antes de Merge a Main
+## Deploy en Hostinger (SSH)
 
-- Login admin probado.
-- Login tesorero probado.
-- Login encargado/entrenador probado.
-- Dashboard carga datos.
-- Actividades cargan datos.
-- Asistencias funcionan.
-- Pagos, cuotas y multas visibles.
-- No hay errores rojos en consola.
-- La rama `v1.1-dev` esta pushada.
-- La documentacion esta actualizada.
+```bash
+# Conectar por SSH y navegar al proyecto
+cd ~/domains/devclub.pillageweb.cl/nodejs
 
+# Actualizar código
+git pull
+
+# Si se modificó package.json
+/opt/alt/alt-nodejs22/root/usr/bin/npm install
+
+# Reiniciar: hPanel → Sitios web → [sitio] → Node.js → Reiniciar
+```
+
+## Checklist antes de merge a main
+
+- [ ] Login admin, tesorero y entrenador probados
+- [ ] Dashboard carga datos
+- [ ] Módulos principales funcionan (integrantes, eventos, asistencias, finanzas)
+- [ ] Sin errores en consola del navegador
+- [ ] Rama pushada a GitHub
+- [ ] Documentación actualizada
