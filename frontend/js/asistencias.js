@@ -1103,10 +1103,55 @@ async function intentarMatchingSinEvento(eventoId, fechaEvento) {
 // PANEL "SIN ASIGNAR" — SUBTAB TABLAS
 // =====================================
 
+// Asigna automáticamente registros sin_evento cuando hay exactamente
+// un evento ese día en eventosCargados (sin ambigüedad).
+async function autoMatchingSinEvento() {
+  if (!Array.isArray(eventosCargados) || eventosCargados.length === 0) return 0;
+
+  const sinEvento = await obtenerAsistenciasSinEvento();
+  if (sinEvento.length === 0) return 0;
+
+  const porFecha = {};
+  for (const reg of sinEvento) {
+    const dt = new Date(reg.timestamp);
+    const fechaReg = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    if (!porFecha[fechaReg]) porFecha[fechaReg] = [];
+    porFecha[fechaReg].push(reg);
+  }
+
+  let totalAsignados = 0;
+
+  for (const [fecha, registros] of Object.entries(porFecha)) {
+    const eventosDelDia = eventosCargados.filter(ev =>
+      String(ev.fecha || '').substring(0, 10) === fecha
+    );
+
+    if (eventosDelDia.length !== 1) continue;
+
+    const evento = eventosDelDia[0];
+    for (const reg of registros) {
+      await actualizarRegistroOffline(reg.id, {
+        evento_id:  Number(evento.id),
+        estadoSync: 'pendiente'
+      });
+      totalAsignados++;
+    }
+  }
+
+  return totalAsignados;
+}
+
 async function cargarPanelSinEvento() {
   const tbody  = document.getElementById('tabla_sin_evento');
   const badge  = document.getElementById('badge_sin_evento');
   if (!tbody) return;
+
+  const autoAsignados = await autoMatchingSinEvento();
+  if (autoAsignados > 0) {
+    mostrarAlerta(`${autoAsignados} escaneo(s) asignado(s) automáticamente a su actividad`, 'info');
+    actualizarBadgeOffline();
+    sincronizarManual();
+  }
 
   const registros = await obtenerAsistenciasSinEvento();
 
