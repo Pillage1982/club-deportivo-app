@@ -1094,6 +1094,7 @@ async function intentarMatchingSinEvento(eventoId, fechaEvento) {
       'info'
     );
     actualizarBadgeOffline();
+    sincronizarManual();
     cargarPanelSinEvento();
   }
 }
