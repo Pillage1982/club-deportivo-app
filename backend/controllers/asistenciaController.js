@@ -3,8 +3,58 @@
 // =====================================
 
 const asistenciaModel = require('../models/asistenciaModel');
-const multaModel = require('../models/multaModel');
-const eventoModel = require('../models/eventoModel');
+const multaModel      = require('../models/multaModel');
+const eventoModel     = require('../models/eventoModel');
+const puntajeModel    = require('../models/puntajeModel');
+
+// ── Puntaje ───────────────────────────────────────────────────────────────────
+
+function calcularPuntosPorEstado(estado, cuotaAlDia) {
+  switch (estado) {
+    case 'presente':
+      return { puntos: cuotaAlDia ? 10 : 5,
+               detalle: cuotaAlDia ? 'Presente + cuota al día' : 'Presente sin cuota al día' };
+    case 'atrasado':
+      return { puntos: cuotaAlDia ? 7 : 3,
+               detalle: cuotaAlDia ? 'Atraso + cuota al día' : 'Atraso sin cuota al día' };
+    case 'justificado':
+      return { puntos: cuotaAlDia ? 5 : 1,
+               detalle: cuotaAlDia ? 'Justificación + cuota al día' : 'Justificación sin cuota al día' };
+    case 'vestimenta_distinta':
+      return { puntos: cuotaAlDia ? 3 : 1,
+               detalle: cuotaAlDia ? 'Vestimenta distinta + cuota al día' : 'Vestimenta distinta sin cuota al día' };
+    case 'licencia_medica':
+      return { puntos: 6, detalle: 'Licencia médica' };
+    case 'retiro_sin_aviso':
+      return { puntos: -3, detalle: 'Retiro sin aviso' };
+    default:
+      return null; // ausente → sin puntaje
+  }
+}
+
+function insertarPuntajeBackground(persona_id, asistencia_id, evento, estado) {
+  const fechaStr = String(evento.fecha).substring(0, 10);
+  const [anio, mesStr] = fechaStr.split('-');
+  const mes = Number(mesStr);
+
+  puntajeModel.verificarCuotaAlDia(persona_id, mes, Number(anio))
+    .then(rows => {
+      const cuotaAlDia = rows[0].cnt > 0;
+      const resultado  = calcularPuntosPorEstado(estado, cuotaAlDia);
+      if (!resultado) return; // ausente
+      return puntajeModel.insertarPuntaje({
+        persona_id,
+        asistencia_id,
+        evento_id: evento.id,
+        puntos:    resultado.puntos,
+        detalle:   resultado.detalle,
+        fecha:     fechaStr
+      });
+    })
+    .catch(err => console.error('Error insertando puntaje:', err));
+}
+
+// ── Multa ─────────────────────────────────────────────────────────────────────
 
 function calcularMultaAsistencia(estado, minutos) {
   if (estado === 'ausente') {
@@ -43,13 +93,13 @@ exports.registrar = (req, res) => {
       });
     }
 
-    registrarAsistenciaInterna(req, res);
+    registrarAsistenciaInterna(req, res, evento);
 
   });
 
 };
 
-function registrarAsistenciaInterna(req, res) {
+function registrarAsistenciaInterna(req, res, evento) {
 
   asistenciaModel.crearAsistencia(req.body, (err, result) => {
 
@@ -71,6 +121,9 @@ function registrarAsistenciaInterna(req, res) {
         mensaje: 'El integrante no esta activo para registrar asistencia.'
       });
     }
+
+    // Puntaje: fire-and-forget, no bloquea la respuesta
+    insertarPuntajeBackground(req.body.persona_id, result.insertId, evento, req.body.estado);
 
     const multa = calcularMultaAsistencia(req.body.estado, req.body.minutos);
 

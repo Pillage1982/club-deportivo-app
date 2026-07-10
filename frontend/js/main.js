@@ -73,6 +73,15 @@ window.onload = () => {
     tabSinEvento.addEventListener('shown.bs.tab', () => cargarPanelSinEvento());
   }
 
+  // Cargar ranking puntaje cuando se activa ese subtab
+  const tabPuntaje = document.querySelector('[href="#subtab_puntaje"]');
+  if (tabPuntaje) {
+    tabPuntaje.addEventListener('shown.bs.tab', () => {
+      cargarRankingPuntaje();
+      configurarBuscadorPuntaje();
+    });
+  }
+
 };
 
 function aplicarRolesTabs() {
@@ -86,6 +95,7 @@ function aplicarRolesTabs() {
     document.getElementById('nav_subtab_asistencias')?.classList.add('d-none');
     document.getElementById('nav_subtab_form_evento')?.classList.add('d-none');
     document.getElementById('nav_subtab_sin_evento')?.classList.add('d-none');
+    document.getElementById('nav_subtab_puntaje')?.classList.add('d-none');
   }
 
   if (!puedeVerFinanzas) {

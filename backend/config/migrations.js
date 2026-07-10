@@ -113,16 +113,67 @@ async function asegurarCamposEventos(colsEventos) {
   }
 }
 
+async function asegurarEstadosAsistencia(colsAsistencias) {
+  const tipoEstado = String(colsAsistencias._tipos['estado'] || '');
+  if (!tipoEstado.includes('justificado')) {
+    await ejecutar(`
+      ALTER TABLE asistencias
+      MODIFY COLUMN estado ENUM(
+        'presente', 'atrasado', 'ausente',
+        'justificado', 'licencia_medica', 'vestimenta_distinta', 'retiro_sin_aviso'
+      ) NOT NULL DEFAULT 'presente'
+    `);
+  }
+}
+
+async function asegurarTablaPuntajes() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS puntajes (
+      id           INT AUTO_INCREMENT PRIMARY KEY,
+      persona_id   INT NOT NULL,
+      asistencia_id INT NOT NULL,
+      evento_id    INT NOT NULL,
+      puntos       INT NOT NULL,
+      detalle      VARCHAR(200) NOT NULL,
+      fecha        DATE NOT NULL,
+      created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uk_asistencia (asistencia_id)
+    )
+  `);
+}
+
+async function reconstruirVistaRankingPuntaje() {
+  await ejecutar(`
+    CREATE OR REPLACE VIEW vista_ranking_puntaje AS
+    SELECT
+      p.id,
+      p.nombres,
+      p.apellido_paterno,
+      p.apellido_materno,
+      p.bloque,
+      COALESCE(SUM(pt.puntos), 0) AS puntaje_total,
+      COUNT(pt.id)                AS total_registros
+    FROM personas p
+    LEFT JOIN puntajes pt ON p.id = pt.persona_id
+    WHERE p.activo = 1 AND COALESCE(p.estado, 'activo') = 'activo'
+    GROUP BY p.id, p.nombres, p.apellido_paterno, p.apellido_materno, p.bloque
+    ORDER BY puntaje_total DESC
+  `);
+}
+
 async function ejecutarMigraciones() {
-  // Una sola consulta por tabla — antes eran 8 queries a INFORMATION_SCHEMA separadas
-  const [colsPersonas, colsEventos] = await Promise.all([
+  const [colsPersonas, colsEventos, colsAsistencias] = await Promise.all([
     columnasExistentes('personas'),
-    columnasExistentes('eventos')
+    columnasExistentes('eventos'),
+    columnasExistentes('asistencias')
   ]);
 
   await asegurarEstadoIntegrantes(colsPersonas);
   await asegurarCamposPersonas(colsPersonas);
   await asegurarCamposEventos(colsEventos);
+  await asegurarEstadosAsistencia(colsAsistencias);
+  await asegurarTablaPuntajes();
+  await reconstruirVistaRankingPuntaje();
   await reconstruirVistaEstadoFinanciero();
 }
 

@@ -221,6 +221,10 @@
             <option value="presente">Presente</option>
             <option value="atrasado">Atrasado</option>
             <option value="ausente">Ausente</option>
+            <option value="justificado">Justificado</option>
+            <option value="licencia_medica">Licencia Médica</option>
+            <option value="vestimenta_distinta">Vestimenta Distinta</option>
+            <option value="retiro_sin_aviso">Retiro Sin Aviso</option>
           </select>
           <input type="number" id="minutos" value="0">
           <button id="btn_registrar_asistencia" onclick="registrarAsistencia()"></button>
@@ -265,6 +269,11 @@
         <li class="nav-item" role="presentation" id="nav_subtab_multas">
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_multas" role="tab">
             <i class="bi bi-exclamation-circle"></i> Multas
+          </a>
+        </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_puntaje">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_puntaje" role="tab">
+            <i class="bi bi-trophy"></i> Puntaje
           </a>
         </li>
         <li class="nav-item" role="presentation" id="nav_subtab_finanzas">
@@ -472,6 +481,31 @@
                 <tbody id="tabla_multas"></tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        <!-- Puntaje GDC -->
+        <div class="tab-pane fade" id="subtab_puntaje" role="tabpanel">
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label for="buscar_puntaje" class="form-label">Buscar Integrante</label>
+              <input type="search" id="buscar_puntaje" class="form-control" placeholder="Buscar por nombre o bloque">
+            </div>
+          </div>
+          <div id="tabla_puntaje_wrapper" class="table-responsive tabla-scroll">
+            <table class="table table-bordered table-striped table-hover align-middle mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th class="text-center" style="width:3rem">#</th>
+                  <th>Integrante</th>
+                  <th>Bloque</th>
+                  <th class="text-center">Puntaje</th>
+                  <th class="text-center">Registros</th>
+                  <th class="text-center" style="width:5rem">Historial</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_puntaje"></tbody>
+            </table>
           </div>
         </div>
 
@@ -795,6 +829,35 @@
     </div>
   </div>
 
+  <!-- Modal: Historial de puntaje -->
+  <div class="modal fade" id="modal_historial_puntaje" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-clock-history me-2"></i>Historial — <span id="puntaje_historial_nombre"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Fecha</th>
+                  <th>Actividad</th>
+                  <th>Detalle</th>
+                  <th class="text-center">Puntos</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_historial_puntaje"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="app-footer text-center py-3 mt-4">
     <small>Diseño de Mario Riquelme</small>
   </footer>
@@ -807,6 +870,7 @@
   <script src="js/eventos.js"></script>
   <script src="js/pagos.js"></script>
   <script src="js/multas.js"></script>
+  <script src="js/puntaje.js"></script>
   <script src="js/finanzas.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="js/asistencias.js"></script>
