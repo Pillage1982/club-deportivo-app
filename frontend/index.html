@@ -288,9 +288,14 @@
         <!-- Integrantes -->
         <div class="tab-pane fade show active" id="subtab_personas" role="tabpanel">
           <div class="row g-2 mb-3">
-            <div class="col-md-6">
+            <div class="col-md-5">
               <label for="buscar_personas" class="form-label">Buscar Integrante</label>
               <input type="search" id="buscar_personas" class="form-control" placeholder="Buscar por nombre, RUT, bloque, email o teléfono">
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+              <button type="button" class="btn btn-outline-success w-100" onclick="exportarIntegrantesExcel()" title="Exportar integrantes a Excel">
+                <i class="bi bi-file-earmark-excel"></i>
+              </button>
             </div>
           </div>
           <div id="tabla_personas_wrapper" class="table-responsive tabla-scroll">
@@ -375,8 +380,13 @@
                 <option value="ausente">Ausente</option>
               </select>
             </div>
-            <div class="col-md-2 d-flex align-items-end">
+            <div class="col-md-1 d-flex align-items-end">
               <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosAsistencias()">Limpiar</button>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+              <button type="button" class="btn btn-outline-success w-100" onclick="exportarAsistenciasExcel()" title="Exportar asistencias a Excel">
+                <i class="bi bi-file-earmark-excel"></i>
+              </button>
             </div>
           </div>
           <div id="tabla_asistencias_wrapper" class="table-responsive tabla-scroll">
@@ -487,9 +497,14 @@
         <!-- Puntaje GDC -->
         <div class="tab-pane fade" id="subtab_puntaje" role="tabpanel">
           <div class="row g-2 mb-3">
-            <div class="col-md-6">
+            <div class="col-md-5">
               <label for="buscar_puntaje" class="form-label">Buscar Integrante</label>
               <input type="search" id="buscar_puntaje" class="form-control" placeholder="Buscar por nombre o bloque">
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+              <button type="button" class="btn btn-outline-success w-100" onclick="exportarPuntajeExcel()" title="Exportar ranking a Excel">
+                <i class="bi bi-file-earmark-excel"></i>
+              </button>
             </div>
           </div>
           <div id="tabla_puntaje_wrapper" class="table-responsive tabla-scroll">
@@ -577,7 +592,7 @@
             </div>
 
             <div class="row g-2 mb-3">
-              <div class="col-md-5">
+              <div class="col-md-4">
                 <label for="buscar_finanzas" class="form-label">Buscar Integrante</label>
                 <input type="search" id="buscar_finanzas" class="form-control" placeholder="Buscar por nombre">
               </div>
@@ -596,6 +611,11 @@
               <div class="col-md-1 d-flex align-items-end">
                 <button type="button" class="btn btn-outline-danger w-100" onclick="exportarDeudoresPDF()" title="Exportar deudores a PDF">
                   <i class="bi bi-file-earmark-pdf"></i>
+                </button>
+              </div>
+              <div class="col-md-1 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-success w-100" onclick="exportarDeudoresExcel()" title="Exportar deudores a Excel">
+                  <i class="bi bi-file-earmark-excel"></i>
                 </button>
               </div>
             </div>
@@ -876,6 +896,7 @@
   <script src="js/asistencias.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/cuotas.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
   <script src="js/reportes.js"></script>

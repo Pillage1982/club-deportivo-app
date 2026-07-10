@@ -10,6 +10,110 @@ function _fechaHoy() {
   return new Date().toLocaleDateString('es-CL');
 }
 
+// ── Excel helpers ─────────────────────────────────────────────────────────────
+
+function _xlsxDisponible() {
+  if (!window.XLSX) {
+    mostrarAlerta('Librería Excel no disponible. Verifica tu conexión e intenta de nuevo.', 'danger');
+    return false;
+  }
+  return true;
+}
+
+function _descargarExcel(rows, nombreHoja, nombreArchivo) {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
+  XLSX.writeFile(wb, `${nombreArchivo}_${_fechaHoy().replace(/\//g, '-')}.xlsx`);
+}
+
+// ── Excel: Integrantes ────────────────────────────────────────────────────────
+
+function exportarIntegrantesExcel() {
+  if (!_xlsxDisponible()) return;
+  if (!personasTabla || personasTabla.length === 0) {
+    mostrarAlerta('No hay integrantes para exportar.', 'warning');
+    return;
+  }
+  const rows = personasTabla.map(p => ({
+    'Nombre':         `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno || ''}`.trim(),
+    'RUT':            p.rut || '',
+    'Bloque':         p.bloque || '',
+    'Sexo':           p.sexo || '',
+    'Email':          p.email || '',
+    'Teléfono':       p.telefono || '',
+    'Dirección':      p.direccion || '',
+    'F. Nacimiento':  p.fecha_nacimiento ? String(p.fecha_nacimiento).substring(0, 10) : '',
+    'F. Ingreso':     p.fecha_ingreso    ? String(p.fecha_ingreso).substring(0, 10)    : '',
+    'Estado':         p.estado || 'activo',
+    'Honorario':      p.es_honorario ? 'Sí' : 'No',
+    'Apoderado':      p.nombre_apoderado   || '',
+    'Tel. Apoderado': p.telefono_apoderado || ''
+  }));
+  _descargarExcel(rows, 'Integrantes', 'integrantes');
+  mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
+}
+
+// ── Excel: Asistencias ────────────────────────────────────────────────────────
+
+function exportarAsistenciasExcel() {
+  if (!_xlsxDisponible()) return;
+  if (!asistenciasTabla || asistenciasTabla.length === 0) {
+    mostrarAlerta('No hay asistencias para exportar.', 'warning');
+    return;
+  }
+  const rows = asistenciasTabla.map(a => ({
+    'Integrante':  `${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}`.trim(),
+    'Bloque':      a.bloque       || '',
+    'Actividad':   a.evento       || '',
+    'Tipo':        a.tipo_evento  || '',
+    'Fecha':       a.fecha_evento ? String(a.fecha_evento).substring(0, 10) : '',
+    'Estado':      a.estado       || '',
+    'Min. Atraso': Number(a.minutos_atraso || 0)
+  }));
+  _descargarExcel(rows, 'Asistencias', 'asistencias');
+  mostrarAlerta(`Excel generado: ${rows.length} registro(s).`, 'success');
+}
+
+// ── Excel: Deudores ───────────────────────────────────────────────────────────
+
+function exportarDeudoresExcel() {
+  if (!_xlsxDisponible()) return;
+  const deudores = (finanzasCargadas || []).filter(f => Number(f.deuda_actual) > 0);
+  if (deudores.length === 0) {
+    mostrarAlerta('No hay integrantes con deuda para exportar.', 'warning');
+    return;
+  }
+  const rows = deudores.map(f => ({
+    'Integrante':   `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`.trim(),
+    'Total Multas': Number(f.total_multas || 0),
+    'Total Cuotas': Number(f.total_cuotas || 0),
+    'Total Pagado': Number(f.total_pagado || 0),
+    'Deuda Actual': Number(f.deuda_actual || 0)
+  }));
+  _descargarExcel(rows, 'Deudores', 'deudores');
+  mostrarAlerta(`Excel generado: ${rows.length} deudor(es).`, 'success');
+}
+
+// ── Excel: Puntaje ────────────────────────────────────────────────────────────
+
+function exportarPuntajeExcel() {
+  if (!_xlsxDisponible()) return;
+  if (!rankingCargado || rankingCargado.length === 0) {
+    mostrarAlerta('No hay datos de puntaje para exportar.', 'warning');
+    return;
+  }
+  const rows = rankingCargado.map((r, i) => ({
+    '#':          i + 1,
+    'Integrante': `${r.nombres} ${r.apellido_paterno} ${r.apellido_materno || ''}`.trim(),
+    'Bloque':     r.bloque || '',
+    'Puntaje':    Number(r.puntaje_total),
+    'Registros':  Number(r.total_registros)
+  }));
+  _descargarExcel(rows, 'Puntaje', 'ranking_puntaje');
+  mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
+}
+
 // ── PDF: Reporte de Deudores ──────────────────────────────────────────────────
 
 function exportarDeudoresPDF() {
