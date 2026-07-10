@@ -293,6 +293,11 @@
               <input type="search" id="buscar_personas" class="form-control" placeholder="Buscar por nombre, RUT, bloque, email o teléfono">
             </div>
             <div class="col-md-1 d-flex align-items-end">
+              <button type="button" class="btn btn-outline-danger w-100" onclick="exportarIntegrantesPDF()" title="Exportar integrantes a PDF">
+                <i class="bi bi-file-earmark-pdf"></i>
+              </button>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
               <button type="button" class="btn btn-outline-success w-100" onclick="exportarIntegrantesExcel()" title="Exportar integrantes a Excel">
                 <i class="bi bi-file-earmark-excel"></i>
               </button>
@@ -382,6 +387,11 @@
             </div>
             <div class="col-md-1 d-flex align-items-end">
               <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosAsistencias()">Limpiar</button>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+              <button type="button" class="btn btn-outline-danger w-100" onclick="exportarAsistenciasPDF()" title="Exportar asistencias a PDF">
+                <i class="bi bi-file-earmark-pdf"></i>
+              </button>
             </div>
             <div class="col-md-1 d-flex align-items-end">
               <button type="button" class="btn btn-outline-success w-100" onclick="exportarAsistenciasExcel()" title="Exportar asistencias a Excel">
@@ -500,6 +510,11 @@
             <div class="col-md-5">
               <label for="buscar_puntaje" class="form-label">Buscar Integrante</label>
               <input type="search" id="buscar_puntaje" class="form-control" placeholder="Buscar por nombre o bloque">
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+              <button type="button" class="btn btn-outline-danger w-100" onclick="exportarPuntajePDF()" title="Exportar ranking a PDF">
+                <i class="bi bi-file-earmark-pdf"></i>
+              </button>
             </div>
             <div class="col-md-1 d-flex align-items-end">
               <button type="button" class="btn btn-outline-success w-100" onclick="exportarPuntajeExcel()" title="Exportar ranking a Excel">

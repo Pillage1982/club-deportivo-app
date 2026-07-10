@@ -114,6 +114,126 @@ function exportarPuntajeExcel() {
   mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
 }
 
+// ── PDF helpers ───────────────────────────────────────────────────────────────
+
+function _pdfDisponible() {
+  if (!window.jspdf) {
+    mostrarAlerta('Librería PDF no disponible. Verifica tu conexión e intenta de nuevo.', 'danger');
+    return false;
+  }
+  return true;
+}
+
+function _crearDocPDF(titulo) {
+  const { jsPDF } = window.jspdf;
+  const doc  = new jsPDF();
+  const fecha = _fechaHoy();
+  const org   = _nombreOrg();
+  doc.setFontSize(16);
+  doc.setTextColor(30, 30, 30);
+  doc.text(titulo, 14, 18);
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`${org}  ·  ${fecha}`, 14, 25);
+  doc._fechaArchivo = fecha;
+  return doc;
+}
+
+// ── PDF: Integrantes ──────────────────────────────────────────────────────────
+
+function exportarIntegrantesPDF() {
+  if (!_pdfDisponible()) return;
+  if (!personasTabla || personasTabla.length === 0) {
+    mostrarAlerta('No hay integrantes para exportar.', 'warning');
+    return;
+  }
+  const doc = _crearDocPDF('Listado de Integrantes');
+  doc.autoTable({
+    startY: 30,
+    head: [['Nombre', 'RUT', 'Bloque', 'Sexo', 'Email', 'Estado']],
+    body: personasTabla.map(p => [
+      `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno || ''}`.trim(),
+      p.rut || '',
+      p.bloque || '',
+      p.sexo || '',
+      p.email || '',
+      p.estado || 'activo'
+    ]),
+    foot: [['', '', '', '', `Total: ${personasTabla.length} integrante(s)`, '']],
+    styles:             { fontSize: 8, cellPadding: 2 },
+    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+    footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [250, 250, 250] }
+  });
+  doc.save(`integrantes_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
+  mostrarAlerta(`PDF generado: ${personasTabla.length} integrante(s).`, 'success');
+}
+
+// ── PDF: Asistencias ──────────────────────────────────────────────────────────
+
+function exportarAsistenciasPDF() {
+  if (!_pdfDisponible()) return;
+  if (!asistenciasTabla || asistenciasTabla.length === 0) {
+    mostrarAlerta('No hay asistencias para exportar.', 'warning');
+    return;
+  }
+  const doc = _crearDocPDF('Historial de Asistencias');
+  doc.autoTable({
+    startY: 30,
+    head: [['Integrante', 'Actividad', 'Fecha', 'Estado', 'Min.']],
+    body: asistenciasTabla.map(a => [
+      `${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}`.trim(),
+      a.evento || '',
+      a.fecha_evento ? String(a.fecha_evento).substring(0, 10) : '',
+      a.estado || '',
+      a.minutos_atraso || 0
+    ]),
+    foot: [['', '', '', `Total: ${asistenciasTabla.length} registro(s)`, '']],
+    styles:             { fontSize: 8, cellPadding: 2 },
+    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+    footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [250, 250, 250] },
+    columnStyles:       { 4: { halign: 'center' } }
+  });
+  doc.save(`asistencias_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
+  mostrarAlerta(`PDF generado: ${asistenciasTabla.length} registro(s).`, 'success');
+}
+
+// ── PDF: Puntaje ──────────────────────────────────────────────────────────────
+
+function exportarPuntajePDF() {
+  if (!_pdfDisponible()) return;
+  if (!rankingCargado || rankingCargado.length === 0) {
+    mostrarAlerta('No hay datos de puntaje para exportar.', 'warning');
+    return;
+  }
+  const doc = _crearDocPDF('Ranking de Puntaje');
+  const totalPuntos = rankingCargado.reduce((s, r) => s + Number(r.puntaje_total), 0);
+  doc.autoTable({
+    startY: 30,
+    head: [['#', 'Integrante', 'Bloque', 'Puntaje', 'Registros']],
+    body: rankingCargado.map((r, i) => [
+      i + 1,
+      `${r.nombres} ${r.apellido_paterno} ${r.apellido_materno || ''}`.trim(),
+      r.bloque || '',
+      r.puntaje_total,
+      r.total_registros
+    ]),
+    foot: [['', `${rankingCargado.length} integrante(s)`, '', totalPuntos, '']],
+    styles:             { fontSize: 8, cellPadding: 2 },
+    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+    footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [250, 250, 250] },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center' },
+      3: { halign: 'center', fontStyle: 'bold' },
+      4: { halign: 'center' }
+    }
+  });
+  doc.save(`puntaje_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
+  mostrarAlerta(`PDF generado: ${rankingCargado.length} integrante(s).`, 'success');
+}
+
 // ── PDF: Reporte de Deudores ──────────────────────────────────────────────────
 
 function exportarDeudoresPDF() {
