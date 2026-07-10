@@ -2,11 +2,38 @@
 // MODELO PAGOS
 // =====================================
 
-const pagoModel =
-  require('../models/pagoModel');
+const pagoModel    = require('../models/pagoModel');
+const personaModel = require('../models/personaModel');
+const cuotaModel   = require('../models/cuotaModel');
+const puntajeModel = require('../models/puntajeModel');
 
-const personaModel =
-  require('../models/personaModel');
+function calcularPuntosCuota(mes, anio) {
+  const hoy     = new Date();
+  const mesHoy  = hoy.getMonth() + 1;
+  const anioHoy = hoy.getFullYear();
+
+  const anticipado = anioHoy < anio || (anioHoy === anio && mesHoy < mes);
+  const oportuno   = anioHoy === anio && mesHoy === mes;
+  const meses = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  if (anticipado) return { puntos: 20, detalle: `Cuota ${meses[mes]} ${anio} pagada anticipadamente` };
+  if (oportuno)   return { puntos: 10, detalle: `Cuota ${meses[mes]} ${anio} pagada oportunamente` };
+  return null; // fuera de plazo — sin puntaje
+}
+
+function procesarPuntajeCuota(persona_id, cuota_id) {
+  cuotaModel.obtenerCuotaPorId(cuota_id, (err, cuota) => {
+    if (err || !cuota) return;
+    const resultado = calcularPuntosCuota(cuota.mes, cuota.anio);
+    if (!resultado) return;
+    const fecha = new Date().toISOString().substring(0, 10);
+    puntajeModel.insertarPuntajeCuota({
+      persona_id, cuota_id, puntos: resultado.puntos,
+      detalle: resultado.detalle, fecha
+    }).catch(e => console.error('Error puntaje cuota:', e));
+  });
+}
 
   const metodosPermitidos = [
   'efectivo',
@@ -58,27 +85,21 @@ function validarPago(body) {
     }
 
     // Inserta pago en base datos
-    pagoModel.crearPago(
+    pagoModel.crearPago(req.body, (err, result) => {
+      if (err) return res.status(500).json(err);
 
-    req.body,
+      const cuota_id = req.body.cuota_id ? Number(req.body.cuota_id) : null;
 
-    // Manejo errores backend pagos
-    (err, result) => {
-
-      if (err) {
-
-        return res.status(500).json(err);
-
+      if (cuota_id) {
+        cuotaModel.marcarCuotaPagada(cuota_id, (errC) => {
+          if (errC) console.error('Error marcando cuota:', errC);
+        });
+        procesarPuntajeCuota(Number(req.body.persona_id), cuota_id);
+        return res.json({ mensaje: 'Pago registrado y cuota marcada como pagada' });
       }
 
-      // Respuesta exitosa frontend
-      res.json({
-        mensaje: 'Pago registrado'
-      });
-
-    }
-
-    );
+      res.json({ mensaje: 'Pago registrado' });
+    });
   });
 
 };

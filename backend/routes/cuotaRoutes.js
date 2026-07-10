@@ -5,6 +5,13 @@ const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
 
 router.get(
+  '/pendientes/:persona_id',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.listarPendientesPorPersona
+);
+
+router.get(
   '/',
   authMiddleware,
   roleMiddleware('admin', 'tesorero'),

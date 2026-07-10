@@ -45,3 +45,10 @@ exports.insertarPuntaje = (data) =>
       (persona_id, asistencia_id, evento_id, puntos, detalle, fecha)
     VALUES (?, ?, ?, ?, ?, ?)
   `, [data.persona_id, data.asistencia_id, data.evento_id, data.puntos, data.detalle, data.fecha]);
+
+exports.insertarPuntajeCuota = (data) =>
+  ejecutar(`
+    INSERT IGNORE INTO puntajes
+      (persona_id, cuota_id, puntos, detalle, fecha)
+    VALUES (?, ?, ?, ?, ?)
+  `, [data.persona_id, data.cuota_id, data.puntos, data.detalle, data.fecha]);

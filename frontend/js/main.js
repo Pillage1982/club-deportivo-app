@@ -39,6 +39,7 @@ window.onload = () => {
   configurarBuscadorPersonas();
   configurarFiltrosEventos();
   configurarFiltrosPagos();
+  configurarSelectorCuotaPago();
   configurarFiltrosCuotas();
   configurarFiltrosFinanzas();
   configurarFiltrosMultas();

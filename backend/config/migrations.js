@@ -44,7 +44,8 @@ async function asegurarEstadoIntegrantes(colsPersonas) {
 }
 
 async function reconstruirVistaEstadoFinanciero() {
-  // CREATE OR REPLACE es atómico y no requiere DROP previo
+  // Multas se muestran como informativo pero NO suman a deuda_actual
+  // (la agrupación no las cobra actualmente — se reactivarán cuando lo decidan)
   await ejecutar(`
     CREATE OR REPLACE VIEW vista_estado_financiero AS
 
@@ -57,8 +58,7 @@ async function reconstruirVistaEstadoFinanciero() {
       COALESCE(c.total_cuotas, 0) AS total_cuotas,
       COALESCE(pg.total_pagado, 0) AS total_pagado,
       (
-        COALESCE(m.total_multas, 0)
-        + COALESCE(c.total_cuotas, 0)
+        COALESCE(c.total_cuotas, 0)
         - COALESCE(pg.total_pagado, 0)
       ) AS deuda_actual
 
@@ -129,17 +129,32 @@ async function asegurarEstadosAsistencia(colsAsistencias) {
 async function asegurarTablaPuntajes() {
   await ejecutar(`
     CREATE TABLE IF NOT EXISTS puntajes (
-      id           INT AUTO_INCREMENT PRIMARY KEY,
-      persona_id   INT NOT NULL,
-      asistencia_id INT NOT NULL,
-      evento_id    INT NOT NULL,
-      puntos       INT NOT NULL,
-      detalle      VARCHAR(200) NOT NULL,
-      fecha        DATE NOT NULL,
-      created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE KEY uk_asistencia (asistencia_id)
+      id            INT AUTO_INCREMENT PRIMARY KEY,
+      persona_id    INT NOT NULL,
+      asistencia_id INT NULL,
+      evento_id     INT NULL,
+      cuota_id      INT NULL,
+      puntos        INT NOT NULL,
+      detalle       VARCHAR(200) NOT NULL,
+      fecha         DATE NOT NULL,
+      created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uk_asistencia (asistencia_id),
+      UNIQUE KEY uk_cuota (cuota_id)
     )
   `);
+}
+
+async function asegurarCamposPuntajes() {
+  const cols = await columnasExistentes('puntajes');
+  if (!cols.has('cuota_id')) {
+    await ejecutar(`
+      ALTER TABLE puntajes
+        MODIFY COLUMN asistencia_id INT NULL,
+        MODIFY COLUMN evento_id     INT NULL,
+        ADD COLUMN cuota_id         INT NULL AFTER evento_id,
+        ADD UNIQUE KEY uk_cuota (cuota_id)
+    `);
+  }
 }
 
 async function reconstruirVistaRankingPuntaje() {
@@ -173,6 +188,7 @@ async function ejecutarMigraciones() {
   await asegurarCamposEventos(colsEventos);
   await asegurarEstadosAsistencia(colsAsistencias);
   await asegurarTablaPuntajes();
+  await asegurarCamposPuntajes();
   await reconstruirVistaRankingPuntaje();
   await reconstruirVistaEstadoFinanciero();
 }
