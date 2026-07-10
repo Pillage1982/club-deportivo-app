@@ -293,14 +293,15 @@
               <input type="search" id="buscar_personas" class="form-control" placeholder="Buscar por nombre, RUT, bloque, email o teléfono">
             </div>
             <div class="col-md-1 d-flex align-items-end">
-              <button type="button" class="btn btn-outline-danger w-100" onclick="exportarIntegrantesPDF()" title="Exportar integrantes a PDF">
-                <i class="bi bi-file-earmark-pdf"></i>
-              </button>
-            </div>
-            <div class="col-md-1 d-flex align-items-end">
-              <button type="button" class="btn btn-outline-success w-100" onclick="exportarIntegrantesExcel()" title="Exportar integrantes a Excel">
-                <i class="bi bi-file-earmark-excel"></i>
-              </button>
+              <div class="dropdown w-100">
+                <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Exportar">
+                  <i class="bi bi-download"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="#" onclick="exportarIntegrantesPDF();return false;"><i class="bi bi-file-earmark-pdf text-danger me-2"></i>PDF</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="exportarIntegrantesExcel();return false;"><i class="bi bi-file-earmark-excel text-success me-2"></i>Excel</a></li>
+                </ul>
+              </div>
             </div>
           </div>
           <div id="tabla_personas_wrapper" class="table-responsive tabla-scroll">
@@ -385,18 +386,19 @@
                 <option value="ausente">Ausente</option>
               </select>
             </div>
-            <div class="col-md-1 d-flex align-items-end">
+            <div class="col-md-2 d-flex align-items-end">
               <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosAsistencias()">Limpiar</button>
             </div>
             <div class="col-md-1 d-flex align-items-end">
-              <button type="button" class="btn btn-outline-danger w-100" onclick="exportarAsistenciasPDF()" title="Exportar asistencias a PDF">
-                <i class="bi bi-file-earmark-pdf"></i>
-              </button>
-            </div>
-            <div class="col-md-1 d-flex align-items-end">
-              <button type="button" class="btn btn-outline-success w-100" onclick="exportarAsistenciasExcel()" title="Exportar asistencias a Excel">
-                <i class="bi bi-file-earmark-excel"></i>
-              </button>
+              <div class="dropdown w-100">
+                <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Exportar">
+                  <i class="bi bi-download"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="#" onclick="exportarAsistenciasPDF();return false;"><i class="bi bi-file-earmark-pdf text-danger me-2"></i>PDF</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="exportarAsistenciasExcel();return false;"><i class="bi bi-file-earmark-excel text-success me-2"></i>Excel</a></li>
+                </ul>
+              </div>
             </div>
           </div>
           <div id="tabla_asistencias_wrapper" class="table-responsive tabla-scroll">
@@ -512,14 +514,15 @@
               <input type="search" id="buscar_puntaje" class="form-control" placeholder="Buscar por nombre o bloque">
             </div>
             <div class="col-md-1 d-flex align-items-end">
-              <button type="button" class="btn btn-outline-danger w-100" onclick="exportarPuntajePDF()" title="Exportar ranking a PDF">
-                <i class="bi bi-file-earmark-pdf"></i>
-              </button>
-            </div>
-            <div class="col-md-1 d-flex align-items-end">
-              <button type="button" class="btn btn-outline-success w-100" onclick="exportarPuntajeExcel()" title="Exportar ranking a Excel">
-                <i class="bi bi-file-earmark-excel"></i>
-              </button>
+              <div class="dropdown w-100">
+                <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Exportar">
+                  <i class="bi bi-download"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="#" onclick="exportarPuntajePDF();return false;"><i class="bi bi-file-earmark-pdf text-danger me-2"></i>PDF</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="exportarPuntajeExcel();return false;"><i class="bi bi-file-earmark-excel text-success me-2"></i>Excel</a></li>
+                </ul>
+              </div>
             </div>
           </div>
           <div id="tabla_puntaje_wrapper" class="table-responsive tabla-scroll">
@@ -607,7 +610,7 @@
             </div>
 
             <div class="row g-2 mb-3">
-              <div class="col-md-4">
+              <div class="col-md-5">
                 <label for="buscar_finanzas" class="form-label">Buscar Integrante</label>
                 <input type="search" id="buscar_finanzas" class="form-control" placeholder="Buscar por nombre">
               </div>
@@ -624,14 +627,15 @@
                 <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosFinanzas()">Limpiar</button>
               </div>
               <div class="col-md-1 d-flex align-items-end">
-                <button type="button" class="btn btn-outline-danger w-100" onclick="exportarDeudoresPDF()" title="Exportar deudores a PDF">
-                  <i class="bi bi-file-earmark-pdf"></i>
-                </button>
-              </div>
-              <div class="col-md-1 d-flex align-items-end">
-                <button type="button" class="btn btn-outline-success w-100" onclick="exportarDeudoresExcel()" title="Exportar deudores a Excel">
-                  <i class="bi bi-file-earmark-excel"></i>
-                </button>
+                <div class="dropdown w-100">
+                  <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Exportar">
+                    <i class="bi bi-download"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#" onclick="exportarDeudoresPDF();return false;"><i class="bi bi-file-earmark-pdf text-danger me-2"></i>PDF</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="exportarDeudoresExcel();return false;"><i class="bi bi-file-earmark-excel text-success me-2"></i>Excel</a></li>
+                  </ul>
+                </div>
               </div>
             </div>
 
