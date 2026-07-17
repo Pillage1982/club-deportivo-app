@@ -62,6 +62,12 @@ window.onload = () => {
 
   cargarDashboard();
 
+  // Cargar panel "Sin asignar" cuando se activa ese subtab
+  const tabSinEvento = document.querySelector('[href="#subtab_sin_evento"]');
+  if (tabSinEvento) {
+    tabSinEvento.addEventListener('shown.bs.tab', () => cargarPanelSinEvento());
+  }
+
 };
 
 function aplicarRolesTabs() {
@@ -73,6 +79,7 @@ function aplicarRolesTabs() {
     document.getElementById('nav_tab_asistencia')?.classList.add('d-none');
     document.getElementById('nav_subtab_eventos')?.classList.add('d-none');
     document.getElementById('nav_subtab_asistencias')?.classList.add('d-none');
+    document.getElementById('nav_subtab_sin_evento')?.classList.add('d-none');
     document.getElementById('nav_subtab_form_evento')?.classList.add('d-none');
   }
 
