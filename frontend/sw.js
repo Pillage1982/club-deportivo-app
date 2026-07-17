@@ -2,8 +2,8 @@
 // SERVICE WORKER — NexoComunidad PWA
 // =====================================
 
-const CACHE_STATIC = 'nexo-static-v4';
-const CACHE_API    = 'nexo-api-v4';
+const CACHE_STATIC = 'nexo-static-v5';
+const CACHE_API    = 'nexo-api-v5';
 
 const LOCAL_ASSETS = [
   '/index.html',
@@ -18,6 +18,7 @@ const LOCAL_ASSETS = [
   '/js/asistencias.js',
   '/js/cuotas.js',
   '/js/dashboard.js',
+  '/js/reportes.js',
   '/js/main.js',
   '/img/logo-nexocomunidad.svg',
   '/favicon.svg'
@@ -28,7 +29,10 @@ const CDN_ASSETS = [
   'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js',
   'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js',
-  'https://cdn.jsdelivr.net/npm/chart.js'
+  'https://cdn.jsdelivr.net/npm/chart.js',
+  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+  'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js'
 ];
 
 const API_CACHE_PATHS = ['/api/personas', '/api/eventos'];
