@@ -1,6 +1,7 @@
 const eventoModel = require('../models/eventoModel');
 const asistenciaModel = require('../models/asistenciaModel');
-const multaModel = require('../models/multaModel');
+const multaModel      = require('../models/multaModel');
+const { notificarAusentesEvento } = require('../services/emailService');
 
 const tiposPermitidos = [
   'entrenamiento',
@@ -195,6 +196,14 @@ exports.cerrar = (req, res) => {
 
           res.json({
             mensaje: `Actividad finalizada.${detalle}`
+          });
+
+          // Fire-and-forget: notificar ausentes por email
+          asistenciaModel.obtenerAusentesConContacto(id, (contactErr, ausentes) => {
+            if (contactErr || !ausentes) return;
+            notificarAusentesEvento(ausentes, evento).catch(err => {
+              console.error('[Email] Error general en notificaciones:', err);
+            });
           });
 
         });
