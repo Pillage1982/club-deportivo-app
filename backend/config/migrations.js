@@ -135,6 +135,10 @@ async function asegurarCamposPersonas() {
     {
       nombre: 'fecha_ingreso',
       sql: "ADD COLUMN fecha_ingreso DATE NULL AFTER fecha_nacimiento"
+    },
+    {
+      nombre: 'es_honorario',
+      sql: "ADD COLUMN es_honorario TINYINT(1) NOT NULL DEFAULT 0 AFTER estado"
     }
   ];
 

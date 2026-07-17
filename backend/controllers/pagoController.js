@@ -2,8 +2,8 @@
 // MODELO PAGOS
 // =====================================
 
-const pagoModel =
-  require('../models/pagoModel');
+const pagoModel    = require('../models/pagoModel');
+const personaModel = require('../models/personaModel');
 
   const metodosPermitidos = [
   'efectivo',
@@ -45,6 +45,15 @@ function validarPago(body) {
     });
   }
 
+  personaModel.obtenerPersonaPorId(Number(req.body.persona_id), (errPersona, persona) => {
+    if (errPersona || !persona) {
+      return res.status(400).json({ mensaje: 'Integrante no encontrado' });
+    }
+
+    if (persona.es_honorario) {
+      return res.status(403).json({ mensaje: 'Los integrantes honorarios están exentos de pagos' });
+    }
+
     // Inserta pago en base datos
     pagoModel.crearPago(
 
@@ -67,6 +76,8 @@ function validarPago(body) {
     }
 
   );
+
+  }); // obtenerPersonaPorId
 
 };
 

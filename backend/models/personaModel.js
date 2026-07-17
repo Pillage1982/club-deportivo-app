@@ -30,7 +30,8 @@ exports.obtenerPersonas = (callback) => {
 
       fecha_ingreso,
 
-      COALESCE(estado, 'activo') AS estado
+      COALESCE(estado, 'activo') AS estado,
+      COALESCE(es_honorario, 0) AS es_honorario
 
     FROM personas
 
@@ -40,6 +41,14 @@ exports.obtenerPersonas = (callback) => {
 
   db.query(query, callback);
 
+};
+
+exports.obtenerPersonaPorId = (id, callback) => {
+  db.query(
+    'SELECT id, COALESCE(es_honorario, 0) AS es_honorario FROM personas WHERE id = ? AND activo = 1 LIMIT 1',
+    [id],
+    (err, results) => callback(err, results ? results[0] : null)
+  );
 };
 
 exports.crearPersona = (
