@@ -4,6 +4,7 @@
 
 const pagoModel    = require('../models/pagoModel');
 const personaModel = require('../models/personaModel');
+const cuotaModel   = require('../models/cuotaModel');
 
   const metodosPermitidos = [
   'efectivo',
@@ -66,6 +67,15 @@ function validarPago(body) {
 
         return res.status(500).json(err);
 
+      }
+
+      const cuota_id = req.body.cuota_id ? Number(req.body.cuota_id) : null;
+
+      if (cuota_id) {
+        cuotaModel.marcarCuotaPagada(cuota_id, (errC) => {
+          if (errC) console.error('Error marcando cuota:', errC);
+        });
+        return res.json({ mensaje: 'Pago registrado y cuota marcada como pagada' });
       }
 
       // Respuesta exitosa frontend

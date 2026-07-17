@@ -2,6 +2,34 @@ let pagoEditando = null;
 let pagosCargados = [];
 let finanzasCargadas = [];
 
+const MESES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+function cargarCuotasPendientesPago(persona_id) {
+  const select = document.getElementById('pago_cuota_id');
+  if (!select) return;
+  select.innerHTML = '<option value="">Sin vincular a cuota</option>';
+  if (!persona_id) return;
+
+  fetch(`${API_URL}/cuotas/pendientes/${persona_id}`, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(cuotas => {
+      if (!Array.isArray(cuotas) || cuotas.length === 0) return;
+      cuotas.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = `${MESES[c.mes]} ${c.anio} — ${formatearMonto(c.monto)} (${c.estado})`;
+        select.appendChild(opt);
+      });
+    })
+    .catch(() => {});
+}
+
+function configurarSelectorCuotaPago() {
+  const sel = document.getElementById('pago_persona_id');
+  if (!sel) return;
+  sel.addEventListener('change', () => cargarCuotasPendientesPago(sel.value));
+}
+
 function normalizarTextoPago(valor) {
   return String(valor || '')
     .toLowerCase()
@@ -167,7 +195,8 @@ function crearPago() {
   const data = {
     persona_id: document.getElementById('pago_persona_id').value,
     monto_total: document.getElementById('pago_monto').value,
-    metodo: document.getElementById('pago_metodo').value
+    metodo: document.getElementById('pago_metodo').value,
+    cuota_id: document.getElementById('pago_cuota_id')?.value || null
   };
 
   data.monto_total = Number(data.monto_total);

@@ -96,6 +96,48 @@ exports.crearCuotaMensual = (
 };
 
 // =====================================
+// CUOTAS PENDIENTES POR PERSONA
+// =====================================
+
+exports.obtenerCuotasPendientesPorPersona = (persona_id, callback) => {
+  db.query(
+    `SELECT id, mes, anio, monto, fecha_vencimiento, estado
+     FROM cuotas
+     WHERE persona_id = ? AND estado IN ('pendiente', 'vencido')
+     ORDER BY anio ASC, mes ASC`,
+    [persona_id],
+    callback
+  );
+};
+
+// =====================================
+// OBTENER CUOTA POR ID
+// =====================================
+
+exports.obtenerCuotaPorId = (id, callback) => {
+  db.query(
+    `SELECT id, persona_id, mes, anio, monto, estado FROM cuotas WHERE id = ?`,
+    [id],
+    (err, rows) => {
+      if (err) return callback(err);
+      callback(null, rows[0] || null);
+    }
+  );
+};
+
+// =====================================
+// MARCAR CUOTA COMO PAGADA
+// =====================================
+
+exports.marcarCuotaPagada = (id, callback) => {
+  db.query(
+    `UPDATE cuotas SET estado = 'pagado' WHERE id = ? AND estado IN ('pendiente', 'vencido')`,
+    [id],
+    callback
+  );
+};
+
+// =====================================
 // OBTENER CUOTAS
 // =====================================
 
