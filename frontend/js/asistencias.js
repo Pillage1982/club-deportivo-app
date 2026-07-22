@@ -901,14 +901,45 @@ function renderizarTablaAsistencias(asistencias) {
     return;
   }
 
-  tabla.innerHTML = asistencias.map(a => `
-    <tr>
-      <td>${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}</td>
-      <td>${a.evento}</td>
-      <td>${obtenerBadgeAsistencia(a.estado)}</td>
-      <td>${a.minutos_atraso}</td>
-    </tr>
-  `).join('');
+  // Agrupar por evento_id, conservando orden del servidor (DESC por id = más reciente primero)
+  const grupos = new Map();
+  for (const a of asistencias) {
+    const key = a.evento_id;
+    if (!grupos.has(key)) {
+      grupos.set(key, { nombre: a.evento, fecha: a.fecha_evento, filas: [] });
+    }
+    grupos.get(key).filas.push(a);
+  }
+
+  let html = '';
+  for (const [, grupo] of grupos) {
+    const fecha = grupo.fecha
+      ? new Date(String(grupo.fecha).replace(' ', 'T')).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })
+      : '';
+    const total = grupo.filas.length;
+
+    html += `
+      <tr class="table-active border-top border-2">
+        <td colspan="4" class="py-2">
+          <i class="bi bi-calendar-event me-1"></i>
+          <strong>${grupo.nombre}</strong>
+          <span class="text-muted small ms-2">${fecha}</span>
+          <span class="badge bg-secondary ms-2">${total}</span>
+        </td>
+      </tr>`;
+
+    for (const a of grupo.filas) {
+      html += `
+        <tr>
+          <td>${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}</td>
+          <td class="text-muted small">—</td>
+          <td>${obtenerBadgeAsistencia(a.estado)}</td>
+          <td>${a.minutos_atraso}</td>
+        </tr>`;
+    }
+  }
+
+  tabla.innerHTML = html;
 }
 
 function configurarFiltrosAsistencias() {
