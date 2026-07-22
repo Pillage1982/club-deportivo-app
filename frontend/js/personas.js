@@ -617,7 +617,7 @@ function obtenerBadgeEstadoPersona(estado) {
   }
 
   if (valor === 'inactivo') {
-    return '<span class="badge bg-success bg-opacity-50 text-dark">Inactivo</span>';
+    return '<span class="badge bg-warning text-dark">Inactivo</span>';
   }
 
   return '<span class="badge bg-success">Activo</span>';
