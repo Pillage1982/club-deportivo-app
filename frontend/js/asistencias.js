@@ -1052,12 +1052,23 @@ function cargarUltimosRegistros() {
     return;
   }
 
-  tbody.innerHTML = filtrados.map(a => `
-    <tr>
-      <td>${a.nombres} ${a.apellido_paterno}</td>
-      <td>${obtenerBadgeAsistencia(a.estado)}</td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = filtrados.map(a => {
+    let horaFecha = '';
+    if (a.fecha_registro) {
+      const dt = new Date(String(a.fecha_registro).replace(' ', 'T'));
+      const hh = String(dt.getHours()).padStart(2, '0');
+      const mm = String(dt.getMinutes()).padStart(2, '0');
+      const dd = String(dt.getDate()).padStart(2, '0');
+      const mo = String(dt.getMonth() + 1).padStart(2, '0');
+      horaFecha = `${hh}:${mm} · ${dd}/${mo}`;
+    }
+    return `
+      <tr>
+        <td>${a.nombres} ${a.apellido_paterno}</td>
+        <td>${obtenerBadgeAsistencia(a.estado)}</td>
+        <td class="text-muted small text-nowrap">${horaFecha}</td>
+      </tr>`;
+  }).join('');
 
   wrapper.classList.remove('d-none');
 }

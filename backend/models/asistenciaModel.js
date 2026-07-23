@@ -123,6 +123,7 @@ exports.obtenerAsistencias = (callback) => {
       e.nombre AS evento,
       e.tipo AS tipo_evento,
       e.fecha AS fecha_evento,
+      a.fecha_registro,
       a.estado,
       a.minutos_atraso
     FROM asistencias a
