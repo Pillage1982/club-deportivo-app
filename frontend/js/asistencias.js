@@ -1066,7 +1066,7 @@ function cargarUltimosRegistros() {
       <tr>
         <td>${a.nombres} ${a.apellido_paterno}</td>
         <td>${obtenerBadgeAsistencia(a.estado)}</td>
-        <td class="text-muted small text-nowrap">${horaFecha}</td>
+        <td class="text-white small text-nowrap">${horaFecha}</td>
       </tr>`;
   }).join('');
 
