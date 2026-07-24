@@ -725,9 +725,14 @@ function aplicarAtrasoAsistencia(evento, fechaEscaneo) {
       )
       : 0;
 
+  // Margen de gracia antes de marcar "atrasado" (config.js → asistencia.toleranciaMinutosAtraso,
+  // pendiente de confirmación del cliente; por ahora en 0 = sin tolerancia).
+  const toleranciaMinutos =
+    Number((window.APP_CONFIG || {}).asistencia?.toleranciaMinutosAtraso) || 0;
+
   if (estado) {
     estado.value =
-      minutosAtraso > 0
+      minutosAtraso > toleranciaMinutos
         ? 'atrasado'
         : 'presente';
   }
@@ -1107,27 +1112,65 @@ function ocultarAvisoSinEvento() {
   document.getElementById('aviso_sin_evento')?.classList.add('d-none');
 }
 
-// Cuando se selecciona un evento, intenta asignar los registros sin_evento
-// cuyo timestamp coincide con la fecha del evento seleccionado.
+// Margen mínimo de diferencia entre el candidato más cercano y el siguiente para
+// considerar el matching automático inequívoco. Por debajo de esto (ej. actividades
+// separadas por ~1 hora durante el viaje anual) se deja el registro para asignación manual.
+const MARGEN_AMBIGUEDAD_MATCHING_MS = 15 * 60 * 1000; // 15 min
+
+// Dado el timestamp de un escaneo y los eventos de ese mismo día, determina si hay
+// un ganador inequívoco por cercanía horaria. Devuelve null si es ambiguo (0 eventos,
+// o 2+ eventos demasiado cerca entre sí en el tiempo).
+function eventoMasCercano(regTimestamp, eventosDelDia) {
+  if (!eventosDelDia || eventosDelDia.length === 0) return null;
+  if (eventosDelDia.length === 1) return eventosDelDia[0];
+
+  const regTime = new Date(regTimestamp).getTime();
+
+  const candidatos = eventosDelDia
+    .map(ev => {
+      const evTime = new Date(String(ev.fecha).replace(' ', 'T')).getTime();
+      return { ev, diff: Number.isNaN(evTime) ? Infinity : Math.abs(regTime - evTime) };
+    })
+    .sort((a, b) => a.diff - b.diff);
+
+  const [mejor, siguiente] = candidatos;
+  if (siguiente && (siguiente.diff - mejor.diff) >= MARGEN_AMBIGUEDAD_MATCHING_MS) {
+    return mejor.ev;
+  }
+  return null;
+}
+
+// Cuando se selecciona un evento, intenta asignar los registros sin_evento de ese
+// mismo día. Si hay una sola actividad ese día, se asignan todos (comportamiento
+// original). Si hay varias (ej. viaje anual con actividades cada ~1 hora), solo se
+// asignan los escaneos cuya hora calza inequívocamente con la actividad seleccionada;
+// el resto queda para el panel "Sin asignar".
 async function intentarMatchingSinEvento(eventoId, fechaEvento) {
   if (!eventoId || !fechaEvento) return;
   const sinEvento = await obtenerAsistenciasSinEvento();
   if (sinEvento.length === 0) return;
 
   const fechaDia = String(fechaEvento).substring(0, 10); // YYYY-MM-DD (fecha local del evento)
+  const eventosDelDia = (eventosAsistencia || []).filter(ev =>
+    String(ev.fecha || '').substring(0, 10) === fechaDia
+  );
+
   let asignados = 0;
 
   for (const reg of sinEvento) {
     // Usar fecha local del dispositivo, no UTC, para evitar desfase nocturno (Chile UTC-3/-4)
     const dt = new Date(reg.timestamp);
     const fechaReg = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-    if (fechaReg === fechaDia) {
-      await actualizarRegistroOffline(reg.id, {
-        evento_id:  Number(eventoId),
-        estadoSync: 'pendiente'
-      });
-      asignados++;
-    }
+    if (fechaReg !== fechaDia) continue;
+
+    const evento = eventoMasCercano(reg.timestamp, eventosDelDia);
+    if (!evento || String(evento.id) !== String(eventoId)) continue;
+
+    await actualizarRegistroOffline(reg.id, {
+      evento_id:  Number(eventoId),
+      estadoSync: 'pendiente'
+    });
+    asignados++;
   }
 
   if (asignados > 0) {
@@ -1145,8 +1188,10 @@ async function intentarMatchingSinEvento(eventoId, fechaEvento) {
 // PANEL "SIN ASIGNAR" — SUBTAB TABLAS
 // =====================================
 
-// Asigna automáticamente registros sin_evento cuando hay exactamente
-// un evento ese día en eventosCargados (sin ambigüedad).
+// Asigna automáticamente registros sin_evento: si hay un solo evento ese día, sin
+// ambigüedad. Si hay varios (ej. viaje anual con actividades cada ~1 hora), asigna
+// solo cuando el más cercano en el tiempo es un ganador inequívoco (ver
+// eventoMasCercano); el resto queda pendiente en el panel manual.
 async function autoMatchingSinEvento() {
   if (!Array.isArray(eventosCargados) || eventosCargados.length === 0) return 0;
 
@@ -1168,10 +1213,12 @@ async function autoMatchingSinEvento() {
       String(ev.fecha || '').substring(0, 10) === fecha
     );
 
-    if (eventosDelDia.length !== 1) continue;
+    if (eventosDelDia.length === 0) continue;
 
-    const evento = eventosDelDia[0];
     for (const reg of registros) {
+      const evento = eventoMasCercano(reg.timestamp, eventosDelDia);
+      if (!evento) continue;
+
       await actualizarRegistroOffline(reg.id, {
         evento_id:  Number(evento.id),
         estadoSync: 'pendiente'
@@ -1225,10 +1272,24 @@ async function cargarPanelSinEvento() {
       String(ev.fecha || '').substring(0, 10) === fechaReg
     );
 
+    // Ordenados por cercanía horaria al escaneo (más probable primero) y con la
+    // hora visible, para elegir a mano con criterio cuando hay varias actividades
+    // el mismo día (ej. viaje anual con poca cobertura).
     const opcionesEventos = eventosDelDia.length
-      ? eventosDelDia.map(ev =>
-          `<option value="${ev.id}" data-fecha="${ev.fecha}">${ev.nombre}</option>`
-        ).join('')
+      ? eventosDelDia
+          .map(ev => {
+            const evDt = new Date(String(ev.fecha).replace(' ', 'T'));
+            const horaEv = Number.isNaN(evDt.getTime())
+              ? ''
+              : evDt.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+            const diff = Number.isNaN(evDt.getTime()) ? Infinity : Math.abs(dt.getTime() - evDt.getTime());
+            return { ev, horaEv, diff };
+          })
+          .sort((a, b) => a.diff - b.diff)
+          .map(({ ev, horaEv }) =>
+            `<option value="${ev.id}" data-fecha="${ev.fecha}">${ev.nombre}${horaEv ? ` — ${horaEv}` : ''}</option>`
+          )
+          .join('')
       : `<option value="" disabled>Sin actividades ese día</option>`;
 
     return `

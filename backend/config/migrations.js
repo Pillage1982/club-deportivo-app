@@ -111,6 +111,17 @@ async function asegurarCamposEventos(colsEventos) {
       ADD COLUMN finalizado TINYINT(1) NOT NULL DEFAULT 0
     `);
   }
+
+  // El formulario ya captura fecha+hora (datetime-local) pero la columna DATE
+  // truncaba la hora al guardar. Se amplía a DATETIME para conservarla y poder
+  // desambiguar actividades del mismo día (ej. viaje anual con varias actividades
+  // separadas por ~1 hora).
+  if (String(colsEventos._tipos['fecha'] || '').toLowerCase() === 'date') {
+    await ejecutar(`
+      ALTER TABLE eventos
+      MODIFY COLUMN fecha DATETIME NOT NULL
+    `);
+  }
 }
 
 async function asegurarEstadosAsistencia(colsAsistencias) {
