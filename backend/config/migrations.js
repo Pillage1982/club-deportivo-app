@@ -168,6 +168,21 @@ async function asegurarCamposPuntajes() {
   }
 }
 
+async function asegurarTablaGastos() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS gastos (
+      id                INT AUTO_INCREMENT PRIMARY KEY,
+      descripcion       VARCHAR(200) NOT NULL,
+      categoria         VARCHAR(100) NOT NULL,
+      monto             DECIMAL(10,2) NOT NULL,
+      fecha             DATE NOT NULL,
+      responsable       VARCHAR(150) NULL,
+      comprobante_path  VARCHAR(255) NULL,
+      created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 async function reconstruirVistaRankingPuntaje() {
   await ejecutar(`
     CREATE OR REPLACE VIEW vista_ranking_puntaje AS
@@ -200,6 +215,7 @@ async function ejecutarMigraciones() {
   await asegurarEstadosAsistencia(colsAsistencias);
   await asegurarTablaPuntajes();
   await asegurarCamposPuntajes();
+  await asegurarTablaGastos();
   await reconstruirVistaRankingPuntaje();
   await reconstruirVistaEstadoFinanciero();
 }

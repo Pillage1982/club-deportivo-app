@@ -171,6 +171,14 @@ function getAuthHeaders() {
 
 }
 
+// Para peticiones con FormData (subida de archivos): sin Content-Type,
+// el navegador debe fijarlo con el boundary del multipart automáticamente.
+function getAuthHeadersMultipart() {
+  return {
+    Authorization: `Bearer ${localStorage.getItem('token')}`
+  };
+}
+
 // ==============================
 // LOGOUT -- CERRAR SESION
 // ==============================
