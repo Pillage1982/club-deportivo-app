@@ -93,6 +93,26 @@ function exportarDeudoresExcel() {
   mostrarAlerta(`Excel generado: ${rows.length} deudor(es).`, 'success');
 }
 
+// ── Excel: Gastos ─────────────────────────────────────────────────────────────
+
+function exportarGastosExcel() {
+  if (!_xlsxDisponible()) return;
+  if (!gastosCargados || gastosCargados.length === 0) {
+    mostrarAlerta('No hay gastos para exportar.', 'warning');
+    return;
+  }
+  const rows = gastosCargados.map(g => ({
+    'Fecha':       g.fecha ? String(g.fecha).substring(0, 10) : '',
+    'Categoría':   g.categoria || '',
+    'Descripción': g.descripcion || '',
+    'Monto':       Number(g.monto || 0),
+    'Responsable': g.responsable || '',
+    'Comprobante': g.comprobante_path ? 'Sí' : 'No'
+  }));
+  _descargarExcel(rows, 'Gastos', 'gastos');
+  mostrarAlerta(`Excel generado: ${rows.length} gasto(s).`, 'success');
+}
+
 // ── PDF helpers ───────────────────────────────────────────────────────────────
 
 function _pdfDisponible() {
@@ -178,7 +198,39 @@ function exportarAsistenciasPDF() {
   mostrarAlerta(`PDF generado: ${asistenciasTabla.length} registro(s).`, 'success');
 }
 
-// ── PDF: Deudores ─────────────────────────────────────────────────────────────
+// ── PDF: Gastos ───────────────────────────────────────────────────────────────
+
+function exportarGastosPDF() {
+  if (!_pdfDisponible()) return;
+  if (!gastosCargados || gastosCargados.length === 0) {
+    mostrarAlerta('No hay gastos para exportar.', 'warning');
+    return;
+  }
+  const doc = _crearDocPDF('Reporte de Gastos');
+  const totalGastos = gastosCargados.reduce((s, g) => s + Number(g.monto || 0), 0);
+  doc.autoTable({
+    startY: 30,
+    head: [['Fecha', 'Categoría', 'Descripción', 'Monto', 'Responsable', 'Comprobante']],
+    body: gastosCargados.map(g => [
+      g.fecha ? String(g.fecha).substring(0, 10) : '',
+      g.categoria || '',
+      g.descripcion || '',
+      formatearMonto(g.monto),
+      g.responsable || '',
+      g.comprobante_path ? 'Sí' : 'No'
+    ]),
+    foot: [['', '', `Total: ${gastosCargados.length} gasto(s)`, formatearMonto(totalGastos), '', '']],
+    styles:             { fontSize: 8, cellPadding: 2 },
+    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+    footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [250, 250, 250] },
+    columnStyles:       { 3: { halign: 'right' } }
+  });
+  doc.save(`gastos_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
+  mostrarAlerta(`PDF generado: ${gastosCargados.length} gasto(s).`, 'success');
+}
+
+// ── PDF: Reporte de Deudores ──────────────────────────────────────────────────
 
 function exportarDeudoresPDF() {
   if (!_pdfDisponible()) return;

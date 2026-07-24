@@ -271,6 +271,11 @@
             <i class="bi bi-graph-up"></i> Finanzas
           </a>
         </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_gastos">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_gastos" role="tab">
+            <i class="bi bi-wallet2"></i> Gastos
+          </a>
+        </li>
       </ul>
 
       <div class="tab-content">
@@ -568,7 +573,50 @@
           </div>
         </div>
 
-      </div>
+        <!-- Gastos de la organizacion, con comprobante de respaldo -->
+        <div class="tab-pane fade" id="subtab_gastos" role="tabpanel">
+          <div class="row g-2 mb-3">
+            <div class="col-md-5">
+              <label for="buscar_gastos" class="form-label">Buscar</label>
+              <input type="search" id="buscar_gastos" class="form-control" placeholder="Descripción, categoría o responsable">
+            </div>
+            <div class="col-md-3">
+              <label for="filtro_gasto_fecha" class="form-label">Fecha</label>
+              <input type="date" id="filtro_gasto_fecha" class="form-control">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosGastos()">Limpiar</button>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+              <div class="dropdown w-100">
+                <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Exportar">
+                  <i class="bi bi-download"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="#" onclick="exportarGastosPDF();return false;"><i class="bi bi-file-earmark-pdf text-danger me-2"></i>PDF</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="exportarGastosExcel();return false;"><i class="bi bi-file-earmark-excel text-success me-2"></i>Excel</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div id="tabla_gastos_wrapper" class="table-responsive tabla-scroll">
+            <table class="table table-bordered table-striped mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Fecha</th>
+                  <th>Categoría</th>
+                  <th>Descripción</th>
+                  <th>Monto</th>
+                  <th>Responsable</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_gastos"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /tab-content subtabs tablas -->
     </div>
 
     <!-- ============================= -->
@@ -590,6 +638,11 @@
         <li class="nav-item" role="presentation" id="nav_subtab_form_pago">
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_form_pago" role="tab">
             <i class="bi bi-cash-coin"></i> Pago
+          </a>
+        </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_form_gasto">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_form_gasto" role="tab">
+            <i class="bi bi-wallet2"></i> Gasto
           </a>
         </li>
       </ul>
@@ -733,7 +786,44 @@
           </div>
         </div>
 
-      </div>
+        <!-- Formulario Gasto -->
+        <div class="tab-pane fade" id="subtab_form_gasto" role="tabpanel">
+          <div id="modulo_gastos">
+            <div class="card p-4 shadow-sm border-0">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Descripción</label>
+                  <input type="text" id="gasto_descripcion" class="form-control" placeholder="Ej: Arriendo de sede julio">
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">Categoría</label>
+                  <input type="text" id="gasto_categoria" class="form-control" placeholder="Ej: Arriendo, Vestuario, Transporte">
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">Monto</label>
+                  <input type="number" id="gasto_monto" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Fecha</label>
+                  <input type="date" id="gasto_fecha" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Responsable <small class="text-muted">(opcional)</small></label>
+                  <input type="text" id="gasto_responsable" class="form-control" placeholder="Quién autorizó/realizó el gasto">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Comprobante <small class="text-muted">(boleta/factura, opcional)</small></label>
+                  <input type="file" id="gasto_comprobante" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
+                </div>
+              </div>
+              <button type="button" id="btn_guardar_gasto" class="btn btn-success w-100" onclick="crearGasto()">
+                Guardar Gasto
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /tab-content subtabs formularios -->
     </div>
 
   </div>
@@ -759,6 +849,7 @@
   <script src="js/personas.js"></script>
   <script src="js/eventos.js"></script>
   <script src="js/pagos.js"></script>
+  <script src="js/gastos.js"></script>
   <script src="js/asistencias.js"></script>
   <script src="js/cuotas.js"></script>
   <script src="js/dashboard.js"></script>

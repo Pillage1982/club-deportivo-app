@@ -160,10 +160,46 @@ async function asegurarCampoFinalizadoEventos() {
   }
 }
 
+async function asegurarFechaHoraEventos() {
+
+  // El formulario ya captura fecha+hora (datetime-local) pero la columna DATE
+  // truncaba la hora al guardar. Se amplía a DATETIME para conservarla y poder
+  // desambiguar actividades del mismo día (ej. viaje anual con varias actividades
+  // separadas por ~1 hora).
+  const filasFecha = await ejecutar(`
+    SELECT DATA_TYPE
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'eventos' AND COLUMN_NAME = 'fecha'
+  `);
+  if (String(filasFecha[0]?.DATA_TYPE || '').toLowerCase() === 'date') {
+    await ejecutar(`
+      ALTER TABLE eventos
+      MODIFY COLUMN fecha DATETIME NOT NULL
+    `);
+  }
+}
+
+async function asegurarTablaGastos() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS gastos (
+      id                INT AUTO_INCREMENT PRIMARY KEY,
+      descripcion       VARCHAR(200) NOT NULL,
+      categoria         VARCHAR(100) NOT NULL,
+      monto             DECIMAL(10,2) NOT NULL,
+      fecha             DATE NOT NULL,
+      responsable       VARCHAR(150) NULL,
+      comprobante_path  VARCHAR(255) NULL,
+      created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 async function ejecutarMigraciones() {
   await asegurarEstadoIntegrantes();
   await asegurarCamposPersonas();
   await asegurarCampoFinalizadoEventos();
+  await asegurarFechaHoraEventos();
+  await asegurarTablaGastos();
   await reconstruirVistaEstadoFinanciero();
 }
 
