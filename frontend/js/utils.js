@@ -252,6 +252,14 @@ function decodificarJwt(token) {
 
 function cerrarSesionPorExpiracion() {
   if (_sesionCerrandose) return;
+
+  // Sin conexión no se fuerza el cierre: el servidor igual valida el token
+  // en cada request real (authMiddleware), así que no hay riesgo de seguridad
+  // en esperar. Cerrar sesión localmente sin señal dejaría a quien está
+  // escaneando sin forma de volver a entrar hasta recuperar cobertura
+  // (ej. viaje anual con zonas de mala señal por varios días).
+  if (navigator.onLine === false) return;
+
   _sesionCerrandose = true;
   localStorage.removeItem('token');
   localStorage.removeItem('usuario');
@@ -268,6 +276,9 @@ function verificarExpiracionToken() {
   if (msRestantes <= 0) { cerrarSesionPorExpiracion(); return; }
   setTimeout(cerrarSesionPorExpiracion, msRestantes);
 }
+
+// Si el token venció mientras no había señal, se revisa de nuevo apenas vuelve la conexión
+window.addEventListener('online', verificarExpiracionToken);
 
 // Interceptor global: cierra sesión automáticamente si el servidor devuelve 401
 (function interceptarFetch() {

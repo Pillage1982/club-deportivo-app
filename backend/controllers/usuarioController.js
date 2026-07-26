@@ -46,7 +46,9 @@ exports.login = (req, res) => {
         },
         process.env.JWT_SECRET,
         {
-          expiresIn: '8h'
+          // 20 días: cubre el viaje anual (nunca más de 15 días) con margen,
+          // para no forzar un re-login en plena zona de mala cobertura.
+          expiresIn: '20d'
         }
       );
 
