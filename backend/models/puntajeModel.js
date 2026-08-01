@@ -1,3 +1,4 @@
+// Acceso MySQL del puntaje GDC: calcula registros por asistencia/cuota y consulta ranking y detalle.
 // =====================================
 // MODELO PUNTAJE GDC
 // =====================================

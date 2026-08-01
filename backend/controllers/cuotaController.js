@@ -1,3 +1,4 @@
+// Controlador HTTP de cuotas: lista, genera y administra cuotas delegando las consultas al modelo.
 const cuotaModel = require('../models/cuotaModel');
 
 // =====================================

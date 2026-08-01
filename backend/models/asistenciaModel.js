@@ -1,3 +1,5 @@
+// Acceso MySQL de asistencias: registra, lista y consulta ausentes sin decidir respuestas HTTP.
+// Acceso MySQL de asistencias: registra, lista y consulta ausentes sin decidir respuestas HTTP.
 // =====================================
 // CONEXION BASE DATOS MYSQL
 // =====================================

@@ -1,3 +1,4 @@
+// Acceso MySQL de integrantes: CRUD, estados activo/receso/inactivo y datos de contacto.
 const db = require('../config/db');
 
 exports.obtenerPersonas = (callback) => {

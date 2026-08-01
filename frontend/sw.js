@@ -1,3 +1,4 @@
+// Service Worker PWA: precachea recursos, aplica estrategias de caché y habilita funcionamiento offline.
 // =====================================
 // SERVICE WORKER — NexoComunidad PWA
 // =====================================

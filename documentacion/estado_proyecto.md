@@ -32,7 +32,7 @@ Documento de referencia rápida: qué está hecho, qué está pendiente y en qu�
 - Logo, paleta negro/naranja, textos en español adaptado a agrupación
 - Cierre de evento con notificación email a ausentes (nodemailer defensivo)
 - PWA offline-first completa:
-  - Service Worker v15 (cache-first para assets, network-first para API)
+  - Service Worker v22 (cache-first para assets, network-first para API)
   - IndexedDB v2 (UUID, store único, índice por estadoSync)
   - Scanner QR/PDF417 nunca bloqueado: guarda `sin_evento` si no hay evento
   - Matching automático por fecha al seleccionar evento en dropdown
@@ -41,6 +41,13 @@ Documento de referencia rápida: qué está hecho, qué está pendiente y en qu�
   - Retry backoff 30s → 60s → 300s
   - Badge offline con contador de pendientes
   - Panel "Sin asignar" en Tablas con asignación manual, dropdown de eventos del día, descarte
+- Matching por cercanía horaria cuando hay varias actividades el mismo día
+- Puntaje GDC fases 1 y 2
+- Exportación Excel/PDF de integrantes, asistencias, deudores y puntaje
+- Pagos vinculados a cuotas
+- Multas desacopladas del cálculo de deuda
+- Módulo de gastos con comprobante adjunto y exportación
+- Sesión de 20 días con continuidad offline
 
 ---
 
@@ -50,14 +57,24 @@ Documento de referencia rápida: qué está hecho, qué está pendiente y en qu�
 | Pendiente | Notas |
 |-----------|-------|
 | EMAIL_PASS en Hostinger | Gmail App Password en .env de devclub — emails cerrar evento no funcionan |
-| Exportación Excel/PDF | SheetJS + jsPDF client-side. Reportes: deudores, asistencias, integrantes, cuotas |
 | Despliegue grandiabladacalameña.cl | Bloqueado — cliente no entrega acceso cPanel de BlueHosting |
 
 ### Media prioridad
 | Pendiente | Notas |
 |-----------|-------|
-| Sistema de puntaje GDC | Reemplaza multas. Tabla de puntajes según Estatutos 2016. Requiere diseño antes de codificar |
+| UI estados especiales de asistencia | Asignar manualmente justificado, licencia médica, vestimenta distinta y retiro sin aviso |
 | Portal del socio | PWA separada, login RUT+PIN, datos propios, solo lectura |
+
+### En espera de definición del cliente
+
+| Tema | Definición necesaria |
+|------|----------------------|
+| Tolerancia QR | Confirmar si se aplicará |
+| Valor | Cantidad de minutos |
+| Alcance | Global para toda la organización o diferente por actividad |
+| Puntaje | Confirmar cómo afecta el estado de asistencia y el cálculo de puntos |
+
+La aplicación contiene una tolerancia global en `config.js`, actualmente configurada en `0`. No se debe desarrollar el campo por actividad ni establecer valores definitivos hasta recibir la instrucción del cliente.
 
 ### Baja prioridad / futuro
 | Pendiente | Notas |

@@ -1,3 +1,4 @@
+-- Esquema inicial V0 del proyecto; referencia histórica para entender el primer modelo relacional.
 CREATE DATABASE club_deportivo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE club_deportivo;
 CREATE TABLE personas (

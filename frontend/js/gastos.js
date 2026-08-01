@@ -1,3 +1,4 @@
+// Interfaz de gastos: formulario, filtros, comprobantes, tabla, eliminación y exportación.
 let gastosCargados = [];
 
 function normalizarTextoGasto(valor) {

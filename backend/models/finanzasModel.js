@@ -1,3 +1,4 @@
+// Acceso MySQL financiero: lee la vista consolidada vista_estado_financiero.
 const db = require('../config/db');
 
 exports.obtenerEstadoFinanciero = (callback) => {

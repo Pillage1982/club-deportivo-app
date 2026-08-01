@@ -1,3 +1,4 @@
+// Acceso MySQL de gastos: CRUD y rutas almacenadas de comprobantes.
 const db = require('../config/db');
 
 exports.obtenerGastos = (callback) => {

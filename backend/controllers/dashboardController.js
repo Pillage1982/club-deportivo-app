@@ -1,3 +1,4 @@
+// Controlador HTTP del dashboard: entrega el resumen consolidado preparado por dashboardModel.
 const dashboardModel = require('../models/dashboardModel');
 
 exports.resumen = (req, res) => {

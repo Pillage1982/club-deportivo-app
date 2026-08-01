@@ -1,3 +1,4 @@
+// Rutas /api/puntaje: ranking y detalle del sistema de puntos GDC.
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/puntajeController');

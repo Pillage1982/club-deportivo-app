@@ -1,3 +1,4 @@
+// Controlador de autenticación: verifica credenciales y emite el JWT usado por las rutas protegidas.
 const usuarioModel = require('../models/usuarioModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');

@@ -1,3 +1,4 @@
+// Acceso MySQL de multas: genera multas por reglas de asistencia y administra su estado.
 const db = require('../config/db');
 
 exports.crearMultaAsistencia = (data, callback) => {

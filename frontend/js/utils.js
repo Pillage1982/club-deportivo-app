@@ -1,3 +1,4 @@
+// Utilidades compartidas del frontend: API/JWT, formato, alertas, modales, caché y componentes reutilizables.
 // =====================================
 // CONFIGURACION GLOBAL API BACKEND
 // =====================================

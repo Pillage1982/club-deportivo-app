@@ -1,3 +1,4 @@
+// Interfaz de multas: carga, filtra y muestra el registro administrativo de multas.
 // =====================================
 // CARGAR TABLA DE MULTAS
 // =====================================

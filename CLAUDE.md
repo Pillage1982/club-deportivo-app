@@ -31,12 +31,12 @@ Cliente activo: Gran Diablada Calameña (rama `cliente/calamena`).
 - `inactivo` → eliminación lógica
 
 ## Módulos (cliente/calamena)
-Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Finanzas, Pagos, Cuotas, Multas, Puntaje
+Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Finanzas, Pagos, Cuotas, Multas, Puntaje, Gastos
 
 ## Estado actual cliente/calamena (jul-2026)
 
 ### Implementado y en producción (devclub.pillageweb.cl)
-- PWA offline-first completa (SW v21, IndexedDB v2 con UUID)
+- PWA offline-first completa (SW v22, IndexedDB v2 con UUID)
 - Scanner QR nunca se bloquea: guarda con `estadoSync: sin_evento` si no hay evento
 - Matching automático al seleccionar evento (por fecha local, corregido timezone)
 - Auto-matching al abrir panel "Sin asignar" (1 evento ese día → asigna solo)
@@ -56,14 +56,22 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - **Pagos vinculados a cuotas (jul-2026):** campo `cuota_id` opcional en formulario de pago; al vincular → cuota pasa a `pagado` + dispara puntaje Fase 2
 - **Multas desacopladas (jul-2026):** `deuda_actual = cuotas − pagos` (multas excluidas de la deuda); columna multas en Estado Financiero es informativa; fácil de reactivar en una línea cuando la agrupación decida cobrarlas
 - Estados extendidos de asistencia: `justificado`, `licencia_medica`, `vestimenta_distinta`, `retiro_sin_aviso` (en BD y puntaje; pendiente UI manual)
+- Matching por cercanía horaria cuando existen varias actividades el mismo día
+- Tolerancia de atraso disponible como configuración global en `config.js`, actualmente en `0`
+- **Módulo de Gastos (jul-2026):** registro, categorías, responsable, comprobante adjunto y exportación
+- Sesión de 20 días y continuidad offline sin cierre forzado por falta de conexión
 
 ### Pendiente calamena
-- **Tolerancia QR:** campo `tolerancia_minutos` por evento para no penalizar la cola de escaneo — con muchos integrantes no siempre es posible escanear a todos antes de la hora exacta
 - UI para asignar manualmente estados nuevos de asistencia (justificado, licencia_medica, vestimenta_distinta, retiro_sin_aviso) — hoy solo accesibles vía QR o BD directa
 - Portal del socio (PWA separada, login por RUT + PIN)
 - Cancionero (Spotify + letras)
 - Despliegue en grandiabladacalameña.cl — bloqueado, cliente no entrega cPanel de BlueHosting
 - EMAIL_PASS no configurado en devclub → emails de cierre de evento no se envían
+
+### En espera de definición del cliente
+- **Tolerancia QR:** no implementar nuevos cambios hasta que el cliente confirme si desea aplicarla.
+- Valores pendientes: cantidad de minutos y si la tolerancia será global o configurable por actividad.
+- Regla pendiente: confirmar cómo afectará el estado de asistencia y el puntaje.
 
 ### Pendiente offline (spec: prompt-asistencia-offline-sin-evento.md)
 - Background Sync API (SyncManager en SW) — el fallback manual ya existe

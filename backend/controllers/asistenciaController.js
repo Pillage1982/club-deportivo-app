@@ -1,3 +1,4 @@
+// Controlador HTTP de asistencias: valida solicitudes y coordina asistencia, multas, eventos y puntaje.
 // =====================================
 // MODELO ASISTENCIAS
 // =====================================

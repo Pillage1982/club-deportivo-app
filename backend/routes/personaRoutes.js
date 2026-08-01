@@ -1,3 +1,4 @@
+// Rutas /api/personas: CRUD de integrantes y controles de rol.
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/personaController');

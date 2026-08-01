@@ -1,3 +1,4 @@
+// Conexión compartida a MySQL mediante pool; todos los modelos importan este módulo para ejecutar consultas.
 require('dotenv').config();
 
 const mysql = require('mysql2');

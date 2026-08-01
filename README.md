@@ -71,6 +71,8 @@ club-deportivo-app/
 | Pagos | Registro y gestión de pagos |
 | Cuotas | Generación masiva mensual automática |
 | Multas | Registro y seguimiento de multas |
+| Puntaje | Ranking GDC por asistencia y pago oportuno o anticipado de cuotas |
+| Gastos | Registro de egresos con responsable y comprobante adjunto |
 
 ---
 

@@ -1,3 +1,4 @@
+// Interfaz de integrantes: formulario, validaciones, filtros, estados y tabla de personas.
 // =====================================
 // VARIABLES GLOBALES PERSONAS
 // =====================================

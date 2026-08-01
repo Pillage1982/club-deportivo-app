@@ -1,3 +1,4 @@
+// Orquestador frontend: inicia la aplicación, aplica permisos por rol, precarga datos y controla sesión/navegación.
 // ==============================
 // CARGAR DATOS AL INICIAR
 // ==============================

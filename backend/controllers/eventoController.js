@@ -1,3 +1,4 @@
+// Controlador HTTP de actividades: valida CRUD, cierre, ausencias, multas y notificaciones por correo.
 const eventoModel = require('../models/eventoModel');
 const asistenciaModel = require('../models/asistenciaModel');
 const multaModel = require('../models/multaModel');

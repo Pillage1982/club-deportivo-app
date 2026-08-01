@@ -1,4 +1,5 @@
 -- Schema para Hostinger.
+-- Crea la estructura base destinada al ambiente alojado; no incluye secretos ni reemplaza las migraciones de arranque.
 -- La base debe estar creada previamente desde hPanel.
 -- Base usada: u193403304_club_deportivo
 

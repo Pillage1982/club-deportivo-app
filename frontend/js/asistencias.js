@@ -1,5 +1,6 @@
 ﻿// =====================================
 // REGISTRAR ASISTENCIA EVENTO
+// Módulo frontend de asistencia: captura QR/manual, calcula atrasos, usa IndexedDB y sincroniza con la API.
 // =====================================
 
 let qrAsistenciaStream = null;

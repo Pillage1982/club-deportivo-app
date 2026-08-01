@@ -1,3 +1,4 @@
+// Persistencia offline de asistencias: IndexedDB, estados de sincronización, reintentos y contador pendiente.
 // =====================================
 // INDEXEDDB — COLA DE ASISTENCIAS OFFLINE
 // =====================================

@@ -1,3 +1,4 @@
+// Rutas /api/multas: consulta y gestión de multas con autorización financiera.
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/multaController');

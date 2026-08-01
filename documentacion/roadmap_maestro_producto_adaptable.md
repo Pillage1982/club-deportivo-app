@@ -23,6 +23,11 @@ Filtros en todas las tablas, botones compactos, carga condicional por rol en mai
 - Generación masiva de cuotas (INSERT SELECT)
 - Migraciones BD con guardas (INFORMATION_SCHEMA)
 - Dashboard con endpoint único
+- Exportación Excel/PDF para integrantes, asistencias, deudores y puntaje
+- Sistema de puntaje GDC fases 1 y 2
+- Pagos vinculados a cuotas
+- Módulo de gastos con comprobantes
+- Matching de actividades por cercanía horaria
 
 ---
 
@@ -43,7 +48,7 @@ Implementación:
 - **PDF**: jsPDF (CDN, client-side) — tablas simples, sin backend extra
 - Botones de exportación en cada tabla existente
 
-Estado: **pendiente**
+Estado en `cliente/calamena`: **implementado parcialmente** para integrantes, asistencias, deudores y puntaje. Pendiente portar al producto genérico y ampliar otros reportes cuando se prioricen.
 
 ---
 
@@ -116,13 +121,28 @@ Puntajes por asistencia:
 
 Puntaje por cuotas: +10 por mes pagado en plazo, +10 adicional si es anticipado.
 
-**Pendiente de diseño** antes de codificar: nuevos estados de asistencia, disparador del cálculo, tabla `puntajes` en BD, vista frontend ranking.
+Estado: **fases 1 y 2 implementadas** en `cliente/calamena`. Pendiente la interfaz para asignar manualmente los estados extendidos de asistencia.
+
+---
+
+## Definición pendiente del cliente — tolerancia QR
+
+Existe una configuración global de tolerancia en `config.js`, actualmente en `0`. Cualquier ampliación queda en espera de que el cliente confirme:
+
+- si desea aplicar tolerancia;
+- cuántos minutos;
+- si será global o configurable por actividad;
+- cómo afectará el estado de asistencia y el puntaje.
+
+No implementar valores ni cambios adicionales antes de recibir esa definición.
 
 ---
 
 ## Prioridad inmediata (jul-2026)
 
 1. Configurar EMAIL_PASS en Hostinger devclub
-2. Exportación Excel/PDF (V1.3 reportes) — pedido del cliente
-3. Sistema de puntaje GDC — diseño primero
+2. Interfaz para estados especiales de asistencia
+3. Validación funcional de los módulos recientes en devclub
 4. Portal del socio — después de resolver despliegue BlueHosting
+
+La tolerancia QR no entra en la prioridad de desarrollo hasta que el cliente entregue su definición.

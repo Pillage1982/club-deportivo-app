@@ -1,5 +1,6 @@
 ﻿-- =============================================
 -- COLUMNAS NUEVAS (se omiten si ya existen)
+-- Importación puntual GDC de junio de 2026: adapta columnas y carga el padrón recibido del cliente.
 -- =============================================
 ALTER TABLE personas ADD COLUMN IF NOT EXISTS bloque VARCHAR(100) NULL AFTER apellido_materno;
 ALTER TABLE personas ADD COLUMN IF NOT EXISTS sexo ENUM('Masculino','Femenino') NULL AFTER bloque;

@@ -1,3 +1,4 @@
+// Controlador HTTP del puntaje GDC: consulta el ranking y su detalle desde puntajeModel.
 // =====================================
 // CONTROLADOR PUNTAJE GDC
 // =====================================

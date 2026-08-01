@@ -1,3 +1,4 @@
+// Rutas /api/cuotas: consulta, generación y administración de cuotas con permisos financieros.
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/cuotaController');

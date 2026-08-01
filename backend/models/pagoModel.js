@@ -1,3 +1,4 @@
+// Acceso MySQL de pagos: registra, lista y elimina movimientos financieros de integrantes.
 // =====================================
 // CONEXION BASE DATOS MYSQL
 // =====================================

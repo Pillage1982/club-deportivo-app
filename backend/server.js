@@ -1,3 +1,4 @@
+// Servidor principal: configura Express, seguridad, rutas API, archivos estáticos y migraciones de arranque.
 console.log('Iniciando backend club deportivo...');
 
 process.on('uncaughtException', (err) => {

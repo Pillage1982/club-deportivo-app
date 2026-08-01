@@ -1,3 +1,4 @@
+// Acceso MySQL de actividades: CRUD, consulta individual y cierre administrativo.
 const db = require('../config/db');
 
 exports.obtenerEventos = (callback) => {

@@ -1,3 +1,4 @@
+// Rutas /api/gastos: CRUD, subida y descarga protegida de comprobantes.
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/gastoController');

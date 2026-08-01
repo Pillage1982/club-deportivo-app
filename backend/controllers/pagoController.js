@@ -1,3 +1,4 @@
+// Controlador HTTP de pagos: valida operaciones y coordina personas, cuotas vinculadas y puntaje.
 // =====================================
 // MODELO PAGOS
 // =====================================

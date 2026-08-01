@@ -1,3 +1,4 @@
+// Rutas /api/eventos: CRUD y cierre de actividades con autorización por rol.
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/eventoController');

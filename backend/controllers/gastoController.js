@@ -1,3 +1,4 @@
+// Controlador HTTP de gastos: valida datos, administra comprobantes y coordina el CRUD con gastoModel.
 const path = require('path');
 const fs = require('fs');
 const gastoModel = require('../models/gastoModel');

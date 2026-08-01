@@ -1,3 +1,4 @@
+// Ruta /api/finanzas: expone el estado financiero consolidado a roles autorizados.
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/finanzasController');

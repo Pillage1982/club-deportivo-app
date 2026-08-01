@@ -1,3 +1,4 @@
+-- Datos de desarrollo local; reinicia tablas y carga registros de prueba para validar los módulos.
 USE club_deportivo;
 
 -- =====================================

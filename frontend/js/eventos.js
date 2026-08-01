@@ -1,3 +1,4 @@
+// Interfaz de actividades: CRUD, filtros, cierre y alimentación del selector usado por asistencia.
 // =====================================
 // VARIABLES GLOBALES EVENTOS
 // =====================================

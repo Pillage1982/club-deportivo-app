@@ -1,3 +1,4 @@
+// Middleware de autorización: permite continuar solo a los roles indicados por cada ruta.
 // =====================================
 // MIDDLEWARE AUTORIZACION POR ROLES
 // =====================================

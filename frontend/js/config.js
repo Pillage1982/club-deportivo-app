@@ -1,3 +1,4 @@
+// Configuración visual y funcional del cliente; concentra marca, textos, roles y tipos de actividad visibles.
 window.APP_CONFIG = {
   producto: {
     nombre: 'GDC.APP',

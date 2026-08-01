@@ -1,3 +1,5 @@
+// Consultas agregadas del dashboard: reúne métricas financieras, personas, actividades y asistencias.
+// Consultas agregadas del dashboard: reúne métricas financieras, personas, actividades y asistencias.
 const db = require('../config/db');
 
 exports.obtenerResumen = (callback) => {

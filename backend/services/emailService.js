@@ -1,3 +1,4 @@
+// Servicio de correo: crea el transporte y notifica ausencias sin bloquear el cierre de una actividad.
 let nodemailer = null;
 
 try {

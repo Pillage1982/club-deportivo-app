@@ -1,3 +1,4 @@
+// Exportaciones cliente: genera archivos Excel y PDF a partir de los datos ya cargados por cada módulo.
 // =====================================
 // REPORTES — EXPORTACIÓN PDF / EXCEL
 // =====================================

@@ -1,3 +1,5 @@
+// Acceso MySQL de cuotas: consultas de mensualidades, generación masiva, estados y vínculos con pagos.
+// Acceso MySQL de cuotas: consultas de mensualidades, generación masiva, estados y vínculos con pagos.
 const db = require('../config/db');
 
 // =====================================

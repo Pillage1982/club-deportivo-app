@@ -1,3 +1,4 @@
+// Interfaz de puntaje GDC: carga ranking/detalle, filtra resultados y prepara exportaciones.
 // =====================================
 // PUNTAJE GDC
 // =====================================

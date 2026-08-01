@@ -1,3 +1,4 @@
+-- Triggers MySQL históricos para automatizar multas y vencimientos; revisar duplicidad con la lógica Node antes de instalarlos.
 DELIMITER $$
 
 CREATE TRIGGER trg_generar_multa_insert

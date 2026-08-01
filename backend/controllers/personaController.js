@@ -1,3 +1,4 @@
+// Controlador HTTP de integrantes: normaliza y valida RUT/datos antes de usar personaModel.
 const personaModel = require('../models/personaModel');
 
 function limpiarTexto(valor) {

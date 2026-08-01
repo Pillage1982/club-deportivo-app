@@ -1,3 +1,4 @@
+-- Datos de demostración para Hostinger; vacía tablas antes de cargar y nunca debe ejecutarse en producción real.
 USE u193403304_club_deportivo;
 
 SET FOREIGN_KEY_CHECKS = 0;

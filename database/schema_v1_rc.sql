@@ -1,3 +1,4 @@
+-- Esquema completo de la versión V1 RC; referencia de instalación anterior a las migraciones actuales.
 CREATE DATABASE IF NOT EXISTS club_deportivo
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;

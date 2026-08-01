@@ -1,3 +1,4 @@
+// Middleware de autenticación: valida el JWT y deja el usuario autenticado disponible en req.user.
 // =====================================
 // LIBRERIA JWT AUTENTICACION
 // =====================================

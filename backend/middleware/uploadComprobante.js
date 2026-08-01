@@ -1,3 +1,4 @@
+// Carga de comprobantes de gastos con Multer: valida destino, extensión y disponibilidad de la dependencia.
 const path = require('path');
 const fs = require('fs');
 

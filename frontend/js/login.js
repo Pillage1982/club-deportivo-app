@@ -1,3 +1,4 @@
+// Pantalla de acceso: envía credenciales, guarda JWT/usuario y gestiona mensajes de sesión.
 const API_URL = window.API_URL || window.location.origin;
 
 if (sessionStorage.getItem('sesion_expirada')) {

@@ -1,3 +1,4 @@
+// Acceso MySQL de usuarios: busca credenciales para el proceso de autenticación.
 const db = require('../config/db');
 
 exports.buscarUsuario = (usuario, callback) => {

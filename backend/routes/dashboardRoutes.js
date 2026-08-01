@@ -1,3 +1,4 @@
+// Ruta /api/dashboard: entrega el resumen permitido a los roles de la aplicación.
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/dashboardController');

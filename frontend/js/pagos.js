@@ -1,3 +1,4 @@
+// Interfaz de pagos: CRUD, filtros, selección de cuotas y actualización de módulos financieros relacionados.
 let pagoEditando = null;
 let pagosCargados = [];
 

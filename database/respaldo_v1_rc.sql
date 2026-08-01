@@ -1,3 +1,4 @@
+-- Respaldo estructural de la versión V1 RC; se conserva como referencia histórica, no como migración actual.
 CREATE DATABASE IF NOT EXISTS club_deportivo
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;

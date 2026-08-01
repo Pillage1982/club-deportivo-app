@@ -1,3 +1,4 @@
+// Interfaz del estado financiero: carga, filtra y representa deuda, cuotas, pagos y multas informativas.
 // =====================================
 // CARGAR ESTADO FINANCIERO
 // =====================================

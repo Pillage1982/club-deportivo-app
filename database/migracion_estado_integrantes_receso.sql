@@ -1,3 +1,4 @@
+-- Migración puntual y manual para incorporar el estado receso sin reconstruir el esquema completo.
 -- Agrega estado operacional a integrantes existentes.
 -- activo: participa en asistencia y generacion de cuotas.
 -- receso: permanece en la agrupacion, pero queda pausado para asistencia y cuotas nuevas.

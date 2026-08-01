@@ -46,7 +46,8 @@ El lector QR nunca debe bloquearse. Toda captura debe guardarse siempre, y la as
 Cuando se selecciona un evento o se abre el panel "Sin asignar":
 - Comparar fecha local del escaneo con fecha del evento
 - 1 evento ese día → asignar automáticamente
-- 0 o más de 1 → dejar para asignación manual
+- Si hay varios eventos ese día → usar cercanía horaria cuando exista un candidato inequívoco
+- Si no existe un candidato inequívoco → dejar para asignación manual
 
 ### 3. Panel "Sin asignar"
 - Tabla de registros sin evento en IndexedDB
@@ -78,6 +79,7 @@ Cuando se selecciona un evento o se abre el panel "Sin asignar":
 - [x] Badge clickeable → sincronizarManual
 - [x] Retry backoff 30s → 60s → 300s
 - [x] Timezone fix (fecha local vs UTC)
+- [x] Matching por cercanía horaria cuando hay varias actividades el mismo día
 - [ ] Background Sync API (SyncManager) — fallback manual ya existe
 - [ ] Creación de eventos offline (UUID temporal → ID real al sync)
 - [ ] Panel "Eventos duplicados" en admin
@@ -92,6 +94,17 @@ Los registros `sin_evento` viven solo en el IndexedDB del dispositivo que escane
 **Solución actual:** El operador abre la app y selecciona el evento → matching local → sync automático.
 
 **Solución futura (no implementada):** Endpoint `POST /api/asistencia/matching` para que el servidor asigne registros huérfanos subidos por cualquier dispositivo.
+
+---
+
+## Tolerancia de atraso — en espera del cliente
+
+Existe una configuración global en `frontend/js/config.js`, actualmente con valor `0`. No se debe implementar un campo por actividad ni fijar otro valor hasta que el cliente confirme:
+
+- si desea aplicar tolerancia;
+- la cantidad de minutos;
+- si será global o diferente por actividad;
+- cómo afectará el estado de asistencia y el puntaje.
 
 ---
 

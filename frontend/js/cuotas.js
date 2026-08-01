@@ -1,3 +1,4 @@
+// Interfaz de cuotas: generación mensual, filtros, tabla y comunicación con /api/cuotas.
 // =====================================
 // GENERAR CUOTAS MENSUALES
 // =====================================

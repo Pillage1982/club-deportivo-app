@@ -1,3 +1,4 @@
+// Interfaz del dashboard: carga el resumen de la API y administra las instancias de gráficos Chart.js.
 // =====================================
 // INSTANCIAS GRAFICOS CHART.JS
 // =====================================

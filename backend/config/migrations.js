@@ -1,3 +1,4 @@
+// Migraciones idempotentes de arranque: detectan columnas/tablas existentes antes de adaptar la base activa.
 const db = require('./db');
 
 function ejecutar(sql, params = []) {
