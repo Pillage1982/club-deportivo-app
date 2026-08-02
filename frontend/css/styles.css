@@ -734,7 +734,7 @@ img[data-config-img="cliente.logo"] {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(2); /* coincide con QR_ZOOM_CROP 0.5 — lo que se ve = lo que se escanea */
+  transform: scale(2); /* facilita centrar el QR; el lector analiza cuadro completo y recortes */
   transform-origin: center;
 }
 

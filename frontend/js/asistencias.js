@@ -232,11 +232,13 @@ async function iniciarEscaneoAsistencia() {
     qrAsistenciaStream =
       await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'environment',
-          width:  { ideal: 1280 },
-          height: { ideal: 720 }
+          facingMode: { ideal: 'environment' },
+          width:  { ideal: 1920 },
+          height: { ideal: 1080 }
         }
       });
+
+    await configurarCamaraQrAsistencia(qrAsistenciaStream);
 
     video.srcObject = qrAsistenciaStream;
     await video.play();
@@ -249,8 +251,8 @@ async function iniciarEscaneoAsistencia() {
     qrAsistenciaUltimaLectura = '';
     actualizarEstadoQrAsistencia(
       qrAsistenciaDetector
-        ? 'Camara activa. Acerque la credencial o carnet al lector.'
-        : 'Camara activa en modo compatible. Acerque bien el QR al lector.',
+        ? 'Camara activa. Centre el QR, evite reflejos e incline levemente la cedula.'
+        : 'Camara activa en modo compatible. Centre el QR, evite reflejos e incline levemente la cedula.',
       'primary'
     );
 
@@ -261,6 +263,34 @@ async function iniciarEscaneoAsistencia() {
       'No se pudo iniciar la camara. Revise permisos o use lectura manual.',
       'danger'
     );
+  }
+}
+
+async function configurarCamaraQrAsistencia(stream) {
+  const track = stream?.getVideoTracks?.()[0];
+
+  if (!track || typeof track.getCapabilities !== 'function') {
+    return;
+  }
+
+  const capacidades = track.getCapabilities();
+  const avanzadas = {};
+
+  if (
+    Array.isArray(capacidades.focusMode) &&
+    capacidades.focusMode.includes('continuous')
+  ) {
+    avanzadas.focusMode = 'continuous';
+  }
+
+  if (Object.keys(avanzadas).length === 0) {
+    return;
+  }
+
+  try {
+    await track.applyConstraints({ advanced: [avanzadas] });
+  } catch (err) {
+    console.warn('No se pudieron aplicar mejoras de enfoque a la camara', err);
   }
 }
 
@@ -307,12 +337,24 @@ async function escanearFrameAsistencia() {
   }
 
   try {
-    const lectura =
-      qrAsistenciaDetector
-        ? await detectarLecturaNativaAsistencia(video)
-        : detectarLecturaCompatibleAsistencia(video);
+    let lectura = '';
 
-    if (lectura && lectura !== qrAsistenciaUltimaLectura) {
+    if (qrAsistenciaDetector) {
+      lectura = await detectarLecturaNativaAsistencia(video);
+      if (lectura && !lecturaIdentificableAsistencia(lectura)) {
+        lectura = '';
+      }
+    }
+
+    if (!lectura) {
+      lectura = detectarLecturaCompatibleAsistencia(video);
+    }
+
+    if (
+      lectura &&
+      lectura !== qrAsistenciaUltimaLectura &&
+      lecturaIdentificableAsistencia(lectura)
+    ) {
       qrAsistenciaUltimaLectura = lectura;
       detenerEscaneoAsistencia();
       procesarLecturaAsistencia(lectura);
@@ -336,10 +378,7 @@ function prepararCanvasCompletoAsistencia(video) {
   return qrAsistenciaCanvasFull;
 }
 
-// Recorta el centro del frame (zoom digital) para mejorar detección en webcams de escritorio
-const QR_ZOOM_CROP = 0.5;
-
-function prepararCanvasCroppedAsistencia(video) {
+function prepararCanvasCroppedAsistencia(video, proporcion = 0.5) {
   if (
     video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
     video.videoWidth === 0 ||
@@ -350,10 +389,10 @@ function prepararCanvasCroppedAsistencia(video) {
     qrAsistenciaCanvas = document.createElement('canvas');
   }
 
-  const srcX = video.videoWidth  * (1 - QR_ZOOM_CROP) / 2;
-  const srcY = video.videoHeight * (1 - QR_ZOOM_CROP) / 2;
-  const srcW = video.videoWidth  * QR_ZOOM_CROP;
-  const srcH = video.videoHeight * QR_ZOOM_CROP;
+  const srcX = video.videoWidth  * (1 - proporcion) / 2;
+  const srcY = video.videoHeight * (1 - proporcion) / 2;
+  const srcW = video.videoWidth  * proporcion;
+  const srcH = video.videoHeight * proporcion;
 
   qrAsistenciaCanvas.width  = srcW;
   qrAsistenciaCanvas.height = srcH;
@@ -366,21 +405,45 @@ function prepararCanvasCroppedAsistencia(video) {
 }
 
 async function detectarLecturaNativaAsistencia(video) {
-  // Canvas completo: el crop corta PDF417 del CI (banda ancha horizontal)
-  const canvas = prepararCanvasCompletoAsistencia(video);
-  if (!canvas) return '';
-  const codigos = await qrAsistenciaDetector.detect(canvas);
-  return codigos.length > 0 ? (codigos[0].rawValue || '') : '';
+  const proporciones = [1, 0.75, 0.5];
+
+  for (const proporcion of proporciones) {
+    const canvas = proporcion === 1
+      ? prepararCanvasCompletoAsistencia(video)
+      : prepararCanvasCroppedAsistencia(video, proporcion);
+    if (!canvas) continue;
+    const codigos = await qrAsistenciaDetector.detect(canvas);
+    const lectura = codigos.find(codigo => codigo.rawValue)?.rawValue || '';
+    if (lectura) return lectura;
+  }
+
+  return '';
 }
 
 function detectarLecturaCompatibleAsistencia(video) {
   if (typeof jsQR !== 'function') return '';
-  const canvas = prepararCanvasCroppedAsistencia(video);
-  if (!canvas) return '';
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  const imagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const codigo = jsQR(imagen.data, imagen.width, imagen.height, { inversionAttempts: 'dontInvert' });
-  return codigo ? codigo.data : '';
+
+  const proporciones = [1, 0.75, 0.5];
+
+  for (const proporcion of proporciones) {
+    const canvas = proporcion === 1
+      ? prepararCanvasCompletoAsistencia(video)
+      : prepararCanvasCroppedAsistencia(video, proporcion);
+    if (!canvas) continue;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const imagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const codigo = jsQR(imagen.data, imagen.width, imagen.height, {
+      inversionAttempts: 'attemptBoth'
+    });
+    if (codigo?.data) return codigo.data;
+  }
+
+  return '';
+}
+
+function lecturaIdentificableAsistencia(lectura) {
+  const datos = extraerDatosLecturaAsistencia(lectura);
+  return Boolean(datos.rut || datos.personaId);
 }
 
 function procesarLecturaAsistenciaManual() {
