@@ -1017,5 +1017,36 @@ img[data-config-img="cliente.logo"] {
   color: var(--accent);
 }
 
+.ultimos-registros-wrapper {
+  margin-top: 1rem;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  padding-top: 0.75rem;
+}
+
+.ultimos-registros-titulo {
+  color: rgba(255,255,255,0.55);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.ultimos-registros-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.ultimos-registros-tabla td {
+  padding: 4px 6px;
+  color: rgba(255,255,255,0.85);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.ultimos-registros-tabla td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+
 
 

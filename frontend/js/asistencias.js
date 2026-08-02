@@ -7,6 +7,7 @@ let qrAsistenciaDetector = null;
 let qrAsistenciaEscaneando = false;
 let qrAsistenciaUltimaLectura = '';
 let qrAsistenciaCanvas = null;
+let qrAsistenciaCanvasFull = null;
 
 async function registrarAsistencia() {
 
@@ -222,9 +223,13 @@ async function iniciarEscaneoAsistencia() {
     qrAsistenciaStream =
       await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'environment'
+          facingMode: { ideal: 'environment' },
+          width:  { ideal: 1920 },
+          height: { ideal: 1080 }
         }
       });
+
+    await configurarCamaraQrAsistencia(qrAsistenciaStream);
 
     video.srcObject = qrAsistenciaStream;
     await video.play();
@@ -237,8 +242,8 @@ async function iniciarEscaneoAsistencia() {
     qrAsistenciaUltimaLectura = '';
     actualizarEstadoQrAsistencia(
       qrAsistenciaDetector
-        ? 'Camara activa. Acerque la credencial o carnet al lector.'
-        : 'Camara activa en modo compatible. Acerque bien el QR al lector.',
+        ? 'Camara activa. Centre el QR, evite reflejos e incline levemente la cedula.'
+        : 'Camara activa en modo compatible. Centre el QR, evite reflejos e incline levemente la cedula.',
       'primary'
     );
 
@@ -249,6 +254,20 @@ async function iniciarEscaneoAsistencia() {
       'No se pudo iniciar la cámara. Revise permisos o use lectura manual.',
       'danger'
     );
+  }
+}
+
+async function configurarCamaraQrAsistencia(stream) {
+  const track = stream?.getVideoTracks?.()[0];
+  if (!track || typeof track.getCapabilities !== 'function') return;
+
+  const capacidades = track.getCapabilities();
+  if (!Array.isArray(capacidades.focusMode) || !capacidades.focusMode.includes('continuous')) return;
+
+  try {
+    await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+  } catch (err) {
+    console.warn('No se pudo aplicar enfoque continuo a la camara', err);
   }
 }
 
@@ -295,12 +314,16 @@ async function escanearFrameAsistencia() {
   }
 
   try {
-    const lectura =
-      qrAsistenciaDetector
-        ? await detectarLecturaNativaAsistencia(video)
-        : detectarLecturaCompatibleAsistencia(video);
+    let lectura = '';
 
-    if (lectura && lectura !== qrAsistenciaUltimaLectura) {
+    if (qrAsistenciaDetector) {
+      lectura = await detectarLecturaNativaAsistencia(video);
+      if (lectura && !lecturaIdentificableAsistencia(lectura)) lectura = '';
+    }
+
+    if (!lectura) lectura = detectarLecturaCompatibleAsistencia(video);
+
+    if (lectura && lectura !== qrAsistenciaUltimaLectura && lecturaIdentificableAsistencia(lectura)) {
       qrAsistenciaUltimaLectura = lectura;
       detenerEscaneoAsistencia();
       procesarLecturaAsistencia(lectura);
@@ -314,9 +337,16 @@ async function escanearFrameAsistencia() {
 }
 
 // Zoom digital: recorta el centro del frame para mejorar detección en webcams de escritorio
-const QR_ZOOM_CROP = 0.5;
+function prepararCanvasCompletoAsistencia(video) {
+  if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.videoWidth === 0) return null;
+  if (!qrAsistenciaCanvasFull) qrAsistenciaCanvasFull = document.createElement('canvas');
+  qrAsistenciaCanvasFull.width = video.videoWidth;
+  qrAsistenciaCanvasFull.height = video.videoHeight;
+  qrAsistenciaCanvasFull.getContext('2d', { willReadFrequently: true }).drawImage(video, 0, 0);
+  return qrAsistenciaCanvasFull;
+}
 
-function prepararCanvasCroppedAsistencia(video) {
+function prepararCanvasCroppedAsistencia(video, proporcion = 0.5) {
   if (
     video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
     video.videoWidth === 0 ||
@@ -325,10 +355,10 @@ function prepararCanvasCroppedAsistencia(video) {
 
   if (!qrAsistenciaCanvas) qrAsistenciaCanvas = document.createElement('canvas');
 
-  const srcX = video.videoWidth  * (1 - QR_ZOOM_CROP) / 2;
-  const srcY = video.videoHeight * (1 - QR_ZOOM_CROP) / 2;
-  const srcW = video.videoWidth  * QR_ZOOM_CROP;
-  const srcH = video.videoHeight * QR_ZOOM_CROP;
+  const srcX = video.videoWidth  * (1 - proporcion) / 2;
+  const srcY = video.videoHeight * (1 - proporcion) / 2;
+  const srcW = video.videoWidth  * proporcion;
+  const srcH = video.videoHeight * proporcion;
 
   qrAsistenciaCanvas.width  = srcW;
   qrAsistenciaCanvas.height = srcH;
@@ -341,10 +371,16 @@ function prepararCanvasCroppedAsistencia(video) {
 }
 
 async function detectarLecturaNativaAsistencia(video) {
-  const canvas = prepararCanvasCroppedAsistencia(video);
-  if (!canvas) return '';
-  const codigos = await qrAsistenciaDetector.detect(canvas);
-  return codigos.length > 0 ? (codigos[0].rawValue || '') : '';
+  for (const proporcion of [1, 0.75, 0.5]) {
+    const canvas = proporcion === 1
+      ? prepararCanvasCompletoAsistencia(video)
+      : prepararCanvasCroppedAsistencia(video, proporcion);
+    if (!canvas) continue;
+    const codigos = await qrAsistenciaDetector.detect(canvas);
+    const lectura = codigos.find(codigo => codigo.rawValue)?.rawValue || '';
+    if (lectura) return lectura;
+  }
+  return '';
 }
 
 function detectarLecturaCompatibleAsistencia(video) {
@@ -356,14 +392,22 @@ function detectarLecturaCompatibleAsistencia(video) {
     return '';
   }
 
-  const canvas = prepararCanvasCroppedAsistencia(video);
-  if (!canvas) return '';
+  for (const proporcion of [1, 0.75, 0.5]) {
+    const canvas = proporcion === 1
+      ? prepararCanvasCompletoAsistencia(video)
+      : prepararCanvasCroppedAsistencia(video, proporcion);
+    if (!canvas) continue;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const imagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const codigo = jsQR(imagen.data, imagen.width, imagen.height, { inversionAttempts: 'attemptBoth' });
+    if (codigo?.data) return codigo.data;
+  }
+  return '';
+}
 
-  const ctx    = canvas.getContext('2d', { willReadFrequently: true });
-  const imagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const codigo = jsQR(imagen.data, imagen.width, imagen.height, { inversionAttempts: 'dontInvert' });
-
-  return codigo ? codigo.data : '';
+function lecturaIdentificableAsistencia(lectura) {
+  const datos = extraerDatosLecturaAsistencia(lectura);
+  return Boolean(datos.rut || datos.personaId);
 }
 
 function procesarLecturaAsistenciaManual() {
@@ -690,9 +734,12 @@ function aplicarAtrasoAsistencia(evento, fechaEscaneo) {
       )
       : 0;
 
+  const toleranciaMinutos =
+    Number((window.APP_CONFIG || {}).asistencia?.toleranciaMinutosAtraso) || 0;
+
   if (estado) {
     estado.value =
-      minutosAtraso > 0
+      minutosAtraso > toleranciaMinutos
         ? 'atrasado'
         : 'presente';
   }
@@ -709,6 +756,15 @@ function extraerDatosLecturaAsistencia(lectura) {
     personaId: null,
     rut: null
   };
+
+  const matchRUN = texto.match(/[?&]RUN=([0-9]{7,8}-[0-9Kk])/i);
+  if (matchRUN) {
+    const rut = normalizarRutAsistencia(matchRUN[1]);
+    if (validarRutLecturaAsistencia(rut)) {
+      datos.rut = rut;
+      return datos;
+    }
+  }
 
   datos.rut =
     extraerRutAsistencia(texto);
@@ -871,16 +927,24 @@ function renderizarTablaAsistencias(asistencias) {
     return;
   }
 
-  asistencias.forEach(a => {
-    tabla.innerHTML += `
-      <tr>
-        <td>${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}</td>
-        <td>${a.evento}</td>
-        <td>${obtenerBadgeAsistencia(a.estado)}</td>
-        <td>${a.minutos_atraso}</td>
-      </tr>
-    `;
-  });
+  const grupos = new Map();
+  for (const a of asistencias) {
+    const key = a.evento_id;
+    if (!grupos.has(key)) grupos.set(key, { nombre: a.evento, fecha: a.fecha_evento, filas: [] });
+    grupos.get(key).filas.push(a);
+  }
+
+  let html = '';
+  for (const grupo of grupos.values()) {
+    const fecha = grupo.fecha
+      ? new Date(String(grupo.fecha).replace(' ', 'T')).toLocaleDateString('es-CL')
+      : '';
+    html += `<tr class="table-active border-top border-2"><td colspan="4"><strong>${grupo.nombre}</strong><span class="text-muted small ms-2">${fecha}</span><span class="badge bg-secondary ms-2">${grupo.filas.length}</span></td></tr>`;
+    for (const a of grupo.filas) {
+      html += `<tr><td>${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}</td><td class="text-muted small">—</td><td>${obtenerBadgeAsistencia(a.estado)}</td><td>${a.minutos_atraso}</td></tr>`;
+    }
+  }
+  tabla.innerHTML = html;
 }
 
 function configurarFiltrosAsistencias() {
@@ -913,6 +977,7 @@ function cargarAsistencias() {
 
       asistenciasTabla = data;
       renderizarTablaAsistencias(filtrarAsistencias());
+      cargarUltimosRegistros();
 
     })
     .catch(err => console.error(err));
@@ -1016,6 +1081,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (eventoSelect) {
     eventoSelect.addEventListener('change', () => {
       actualizarBotonesEscaneoQr();
+      cargarUltimosRegistros();
       ocultarAvisoSinEvento();
       const opt = eventoSelect.options[eventoSelect.selectedIndex];
       if (opt && opt.value) {
@@ -1047,6 +1113,36 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+function cargarUltimosRegistros() {
+  const eventoId = document.getElementById('evento_id')?.value;
+  const wrapper = document.getElementById('ultimos_registros_wrapper');
+  const tbody = document.getElementById('ultimos_registros_body');
+  if (!wrapper || !tbody) return;
+
+  if (!eventoId) {
+    wrapper.classList.add('d-none');
+    return;
+  }
+
+  const registros = asistenciasTabla
+    .filter(a => String(a.evento_id) === String(eventoId))
+    .slice(0, 5);
+
+  if (registros.length === 0) {
+    wrapper.classList.add('d-none');
+    return;
+  }
+
+  tbody.innerHTML = registros.map(a => {
+    const dt = a.fecha_registro ? new Date(String(a.fecha_registro).replace(' ', 'T')) : null;
+    const hora = dt && !Number.isNaN(dt.getTime())
+      ? dt.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+      : '';
+    return `<tr><td>${a.nombres} ${a.apellido_paterno}</td><td>${obtenerBadgeAsistencia(a.estado)}</td><td>${hora}</td></tr>`;
+  }).join('');
+  wrapper.classList.remove('d-none');
+}
+
 // =====================================
 // ASISTENCIAS SIN EVENTO — OFFLINE
 // =====================================
@@ -1059,6 +1155,26 @@ function ocultarAvisoSinEvento() {
   document.getElementById('aviso_sin_evento')?.classList.add('d-none');
 }
 
+const MARGEN_AMBIGUEDAD_MATCHING_MS = 15 * 60 * 1000;
+
+function eventoMasCercano(regTimestamp, eventosDelDia) {
+  if (!eventosDelDia || eventosDelDia.length === 0) return null;
+  if (eventosDelDia.length === 1) return eventosDelDia[0];
+
+  const regTime = new Date(regTimestamp).getTime();
+  const candidatos = eventosDelDia
+    .map(ev => {
+      const evTime = new Date(String(ev.fecha).replace(' ', 'T')).getTime();
+      return { ev, diff: Number.isNaN(evTime) ? Infinity : Math.abs(regTime - evTime) };
+    })
+    .sort((a, b) => a.diff - b.diff);
+
+  const [mejor, siguiente] = candidatos;
+  return siguiente && (siguiente.diff - mejor.diff) >= MARGEN_AMBIGUEDAD_MATCHING_MS
+    ? mejor.ev
+    : null;
+}
+
 // Cuando se selecciona un evento, intenta asignar los registros sin_evento
 // cuyo timestamp coincide con la fecha del evento seleccionado.
 async function intentarMatchingSinEvento(eventoId, fechaEvento) {
@@ -1067,18 +1183,24 @@ async function intentarMatchingSinEvento(eventoId, fechaEvento) {
   if (sinEvento.length === 0) return;
 
   const fechaDia = String(fechaEvento).substring(0, 10);
+  const eventosDelDia = (eventosAsistencia || []).filter(ev =>
+    String(ev.fecha || '').substring(0, 10) === fechaDia
+  );
   let asignados = 0;
 
   for (const reg of sinEvento) {
     const dt = new Date(reg.timestamp);
     const fechaReg = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-    if (fechaReg === fechaDia) {
-      await actualizarRegistroOffline(reg.id, {
-        evento_id:  Number(eventoId),
-        estadoSync: 'pendiente'
-      });
-      asignados++;
-    }
+    if (fechaReg !== fechaDia) continue;
+
+    const evento = eventoMasCercano(reg.timestamp, eventosDelDia);
+    if (!evento || String(evento.id) !== String(eventoId)) continue;
+
+    await actualizarRegistroOffline(reg.id, {
+      evento_id:  Number(eventoId),
+      estadoSync: 'pendiente'
+    });
+    asignados++;
   }
 
   if (asignados > 0) {
@@ -1119,10 +1241,11 @@ async function autoMatchingSinEvento() {
       String(ev.fecha || '').substring(0, 10) === fecha
     );
 
-    if (eventosDelDia.length !== 1) continue;
+    if (eventosDelDia.length === 0) continue;
 
-    const evento = eventosDelDia[0];
     for (const reg of registros) {
+      const evento = eventoMasCercano(reg.timestamp, eventosDelDia);
+      if (!evento) continue;
       await actualizarRegistroOffline(reg.id, {
         evento_id:  Number(evento.id),
         estadoSync: 'pendiente'

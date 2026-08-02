@@ -2,8 +2,8 @@
 // SERVICE WORKER — NexoComunidad PWA
 // =====================================
 
-const CACHE_STATIC = 'nexo-static-v5';
-const CACHE_API    = 'nexo-api-v5';
+const CACHE_STATIC = 'nexo-static-v6';
+const CACHE_API    = 'nexo-api-v6';
 
 const LOCAL_ASSETS = [
   '/index.html',
@@ -35,7 +35,16 @@ const CDN_ASSETS = [
   'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js'
 ];
 
-const API_CACHE_PATHS = ['/api/personas', '/api/eventos'];
+const API_PATHS = [
+  '/asistencia', '/personas', '/eventos', '/multas', '/usuarios',
+  '/dashboard', '/finanzas', '/pagos', '/cuotas', '/gastos'
+];
+
+const API_CACHE_PATHS = ['/personas', '/eventos'];
+
+function coincideRuta(pathname, ruta) {
+  return pathname === ruta || pathname.startsWith(`${ruta}/`);
+}
 
 // ─── INSTALL ─────────────────────────────────────────────────────────────────
 self.addEventListener('install', event => {
@@ -73,7 +82,7 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  if (request.method === 'POST') return;
+  if (request.method !== 'GET') return;
 
   // Navegación HTML — siempre intentar red, caer a index.html cacheado
   if (request.mode === 'navigate') {
@@ -81,9 +90,15 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // GET a rutas de API cacheadas
-  if (API_CACHE_PATHS.some(p => url.pathname.startsWith(p))) {
+  const esRutaApi = API_PATHS.some(path => coincideRuta(url.pathname, path));
+
+  if (API_CACHE_PATHS.some(path => coincideRuta(url.pathname, path))) {
     event.respondWith(networkFirstAPI(request));
+    return;
+  }
+
+  if (esRutaApi) {
+    event.respondWith(networkOnlyAPI(request));
     return;
   }
 
@@ -135,6 +150,17 @@ async function networkFirstAPI(request) {
   } catch {
     const cached = await caches.match(request);
     return cached || new Response(JSON.stringify([]), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function networkOnlyAPI(request) {
+  try {
+    return await fetch(request);
+  } catch {
+    return new Response(JSON.stringify({ mensaje: 'Sin conexion' }), {
+      status: 503,
       headers: { 'Content-Type': 'application/json' }
     });
   }
