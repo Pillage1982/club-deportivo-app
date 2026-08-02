@@ -244,12 +244,17 @@ function decodificarJwt(token) {
 
 function cerrarSesionPorExpiracion() {
   if (_sesionCerrandose) return;
+
+  if (navigator.onLine === false) return;
+
   _sesionCerrandose = true;
   localStorage.removeItem('token');
   localStorage.removeItem('usuario');
   sessionStorage.setItem('sesion_expirada', '1');
   window.location.href = 'login.html';
 }
+
+window.addEventListener('online', verificarExpiracionToken);
 
 function verificarExpiracionToken() {
   const token = localStorage.getItem('token');
