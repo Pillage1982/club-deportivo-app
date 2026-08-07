@@ -17,8 +17,6 @@ async function inicializarFormaciones() {
   const puedeEditar = ['admin', 'entrenador'].includes(obtenerRolActual());
   document.getElementById('formacion_generador')?.classList.toggle('d-none', !puedeEditar);
   if (!formacionesInicializadas) {
-    const selectorEvento = document.getElementById('formacion_evento_id');
-    selectorEvento?.addEventListener('change', cargarFormaciones);
     await Promise.all([cargarEventosFormacion(), cargarBloquesFormacion()]);
     formacionesInicializadas = true;
   }
@@ -71,15 +69,10 @@ async function generarFormacion() {
 
 async function cargarFormaciones() {
   const contenedor = document.getElementById('contenedor_formaciones');
-  const eventoId = Number(document.getElementById('formacion_evento_id')?.value);
   if (!contenedor) return;
-  if (!eventoId) {
-    contenedor.innerHTML = '<div class="text-center text-muted py-4">Seleccione una actividad para ver sus formaciones.</div>';
-    return;
-  }
   contenedor.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm"></div> Cargando...</div>';
   try {
-    const formaciones = await respuestaFormacion(await fetch(`${API_URL}/formaciones?evento_id=${eventoId}`, { headers: getAuthHeaders() }));
+    const formaciones = await respuestaFormacion(await fetch(`${API_URL}/formaciones`, { headers: getAuthHeaders() }));
     renderizarFormaciones(formaciones);
   } catch (error) {
     contenedor.innerHTML = `<div class="alert alert-danger">${escaparFormacion(error.message)}</div>`;
@@ -110,8 +103,8 @@ function renderizarFormaciones(formaciones) {
       : '';
     return `<section class="card mb-4 shadow-sm">
       <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <div><strong>${escaparFormacion(formacion.bloque)}</strong> <span class="badge ${confirmada ? 'bg-success' : 'bg-warning text-dark'}">${escaparFormacion(formacion.estado)}</span>
-          <div class="small text-muted">Ranking: ${escaparFormacion(String(formacion.fecha_ranking || '').replace('T', ' '))} · ${formacion.posiciones.length} bailarines</div></div>
+        <div><strong>${escaparFormacion(formacion.evento)}</strong> · ${escaparFormacion(formacion.bloque)} <span class="badge ${confirmada ? 'bg-success' : 'bg-warning text-dark'}">${escaparFormacion(formacion.estado)}</span>
+          <div class="small text-muted">Actividad: ${escaparFormacion(String(formacion.fecha || '').substring(0, 16).replace('T', ' '))} · Ranking: ${escaparFormacion(String(formacion.fecha_ranking || '').replace('T', ' '))} · ${formacion.posiciones.length} bailarines</div></div>
         <div class="d-flex gap-2">${acciones}</div>
       </div>
       <div class="card-body">${filas.join('')}${formacion.observaciones ? `<div class="small text-muted mt-2"><strong>Observaciones:</strong> ${escaparFormacion(formacion.observaciones)}</div>` : ''}</div>
