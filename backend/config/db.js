@@ -69,5 +69,6 @@ pool.getConnection((err, connection) => {
 });
 
 module.exports = {
-  query
+  query,
+  getConnection: callback => pool.getConnection(callback)
 };

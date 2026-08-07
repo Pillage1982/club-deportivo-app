@@ -262,6 +262,10 @@ CREATE TABLE pagos (
 
     fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
 
+    referencia_externa CHAR(64),
+
+    fecha_precision ENUM('exacta', 'mensual') NOT NULL DEFAULT 'exacta',
+
     FOREIGN KEY (persona_id)
         REFERENCES personas(id)
 );
@@ -303,6 +307,44 @@ ON pagos(persona_id);
 
 CREATE INDEX idx_cuotas_periodo
 ON cuotas(mes, anio);
+
+-- ==========================
+-- FORMACIONES POR PUNTAJE
+-- ==========================
+
+CREATE TABLE formaciones (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  evento_id BIGINT NOT NULL,
+  bloque VARCHAR(100) NOT NULL,
+  estado ENUM('borrador','confirmada') NOT NULL DEFAULT 'borrador',
+  fecha_ranking DATETIME NOT NULL,
+  creado_por INT NOT NULL,
+  confirmado_por INT NULL,
+  observaciones TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  confirmed_at DATETIME NULL,
+  UNIQUE KEY uk_formacion_evento_bloque (evento_id, bloque),
+  KEY idx_formacion_estado (estado),
+  CONSTRAINT fk_formacion_evento FOREIGN KEY (evento_id) REFERENCES eventos(id),
+  CONSTRAINT fk_formacion_creador FOREIGN KEY (creado_por) REFERENCES usuarios(id),
+  CONSTRAINT fk_formacion_confirmador FOREIGN KEY (confirmado_por) REFERENCES usuarios(id)
+);
+
+CREATE TABLE formacion_posiciones (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  formacion_id INT NOT NULL,
+  persona_id BIGINT NOT NULL,
+  orden_general INT NOT NULL,
+  puntaje_utilizado INT NOT NULL DEFAULT 0,
+  ajuste_manual TINYINT(1) NOT NULL DEFAULT 0,
+  motivo_ajuste VARCHAR(255) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_formacion_orden (formacion_id, orden_general),
+  UNIQUE KEY uk_formacion_persona (formacion_id, persona_id),
+  CONSTRAINT fk_posicion_formacion FOREIGN KEY (formacion_id) REFERENCES formaciones(id) ON DELETE CASCADE,
+  CONSTRAINT fk_posicion_persona FOREIGN KEY (persona_id) REFERENCES personas(id)
+);
 
 -- ==========================
 -- VISTA ESTADO FINANCIERO
@@ -359,11 +401,6 @@ LEFT JOIN (
     SUM(monto) AS total_cuotas
 
   FROM cuotas
-
-  WHERE estado IN (
-    'pendiente',
-    'vencido'
-  )
 
   GROUP BY persona_id
 

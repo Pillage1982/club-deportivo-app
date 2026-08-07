@@ -55,7 +55,8 @@ function actualizarEstadisticasAsistenciaDashboard(asistencias) {
     if (!porBloque[bloque]) {
       porBloque[bloque] = {
         ensayos:        { presentes: 0, total: 0 },
-        presentaciones: { presentes: 0, total: 0 }
+        presentaciones: { presentes: 0, total: 0 },
+        otras:          { presentes: 0, total: 0 }
       };
     }
     const presente = ['presente', 'atrasado'].includes(a.estado);
@@ -65,6 +66,9 @@ function actualizarEstadisticasAsistenciaDashboard(asistencias) {
     } else if (a.tipo_evento === 'partido') {
       porBloque[bloque].presentaciones.total++;
       if (presente) porBloque[bloque].presentaciones.presentes++;
+    } else {
+      porBloque[bloque].otras.total++;
+      if (presente) porBloque[bloque].otras.presentes++;
     }
   });
 
@@ -73,10 +77,13 @@ function actualizarEstadisticasAsistenciaDashboard(asistencias) {
   const filas = bloques.map(bloque => {
     const e    = porBloque[bloque].ensayos;
     const p    = porBloque[bloque].presentaciones;
+    const o    = porBloque[bloque].otras;
     const pctE = e.total > 0 ? Math.round((e.presentes / e.total) * 100) : 0;
     const pctP = p.total > 0 ? Math.round((p.presentes / p.total) * 100) : 0;
+    const pctO = o.total > 0 ? Math.round((o.presentes / o.total) * 100) : 0;
     const clsE = pctE >= 70 ? 'bg-success' : pctE >= 40 ? 'bg-warning text-dark' : 'bg-danger';
     const clsP = pctP >= 70 ? 'bg-success' : pctP >= 40 ? 'bg-warning text-dark' : 'bg-danger';
+    const clsO = pctO >= 70 ? 'bg-success' : pctO >= 40 ? 'bg-warning text-dark' : 'bg-danger';
     return `
       <tr>
         <td><strong>${bloque}</strong></td>
@@ -87,6 +94,10 @@ function actualizarEstadisticasAsistenciaDashboard(asistencias) {
         <td class="text-center">
           <span class="badge ${clsP}">${pctP}%</span>
           <small class="text-muted ms-1">${p.presentes}/${p.total}</small>
+        </td>
+        <td class="text-center">
+          <span class="badge ${clsO}">${pctO}%</span>
+          <small class="text-muted ms-1">${o.presentes}/${o.total}</small>
         </td>
       </tr>`;
   }).join('');
@@ -99,6 +110,7 @@ function actualizarEstadisticasAsistenciaDashboard(asistencias) {
             <th>Bloque</th>
             <th class="text-center">Ensayos</th>
             <th class="text-center">Presentaciones</th>
+            <th class="text-center">Otras actividades</th>
           </tr>
         </thead>
         <tbody>${filas}</tbody>

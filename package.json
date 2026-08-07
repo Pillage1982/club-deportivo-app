@@ -1,7 +1,9 @@
 {
   "scripts": {
     "build": "echo build complete",
-    "start": "node backend/server.js"
+    "start": "node backend/server.js",
+    "test": "node --test backend/scripts/gdc-migration/*.test.js",
+    "gdc:dry-run": "node backend/scripts/gdc-migration/cli.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -10,6 +12,7 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
-    "mysql2": "^3.22.3"
+    "mysql2": "^3.22.3",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   }
 }

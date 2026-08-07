@@ -1,0 +1,14 @@
+'use strict';
+const router=require('express').Router();
+const controller=require('../controllers/formacionController');
+const auth=require('../middleware/authMiddleware');
+const roles=require('../middleware/roleMiddleware');
+router.get('/',auth,controller.listar);
+router.get('/bloques',auth,controller.bloques);
+router.get('/eventos',auth,controller.eventos);
+router.post('/generar',auth,roles('admin','entrenador'),controller.generar);
+router.patch('/:id/mover',auth,roles('admin','entrenador'),controller.mover);
+router.patch('/:id/confirmar',auth,roles('admin'),controller.confirmar);
+router.patch('/:id/reabrir',auth,roles('admin'),controller.reabrir);
+router.delete('/:id',auth,roles('admin'),controller.eliminar);
+module.exports=router;

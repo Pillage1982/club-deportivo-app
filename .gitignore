@@ -125,3 +125,8 @@ Desktop.ini
 
 .codex-*
 .pnpm-store/
+
+# ConfiguraciÃ³n local y artefactos generados por migraciones
+.claude/
+output/
+reports/

@@ -43,7 +43,7 @@ function cargarCuotasPendientesPago(persona_id) {
       cuotas.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.id;
-        opt.textContent = `${MESES[c.mes]} ${c.anio} — ${formatearMonto(c.monto)} (${c.estado})`;
+        opt.textContent = `${MESES[c.mes]} ${c.anio} — saldo ${formatearMonto(c.saldo)} (${c.estado})`;
         select.appendChild(opt);
       });
     })
@@ -217,14 +217,17 @@ function renderizarTablaPagos(pagos) {
       <td>${pago.nombres} ${pago.apellido_paterno} ${pago.apellido_materno || ''}</td>
       <td>${formatearMonto(pago.monto_total)}</td>
       <td>${pago.metodo}</td>
-      <td>${formatearFecha(pago.fecha)}</td>
+      <td>${pago.fecha_precision === 'mensual'
+        ? new Intl.DateTimeFormat('es-CL', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${String(pago.fecha).substring(0, 10)}T00:00:00Z`))
+        : formatearFecha(pago.fecha)}</td>
       <td class="text-nowrap">
+        ${pago.referencia_externa || Number(pago.tiene_detalle) ? '<span class="badge bg-secondary">Histórico vinculado</span>' : `
         <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
           <button type="button" class="btn btn-outline-warning" title="Editar" aria-label="Editar"
             onclick='editarPago(${JSON.stringify(pago)})'>&#9998;</button>
           <button type="button" class="btn btn-outline-danger" title="Eliminar" aria-label="Eliminar"
             onclick='eliminarPago(${pago.id})'>&times;</button>
-        </div>
+        </div>`}
       </td>
     </tr>
   `).join('');

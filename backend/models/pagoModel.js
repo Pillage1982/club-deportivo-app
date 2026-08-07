@@ -70,7 +70,10 @@ exports.obtenerPagos = (
 
       pa.monto_total,
       pa.metodo,
-      pa.fecha
+      pa.fecha,
+      COALESCE(pa.fecha_precision, 'exacta') AS fecha_precision,
+      pa.referencia_externa,
+      EXISTS(SELECT 1 FROM pago_detalle d WHERE d.pago_id=pa.id) AS tiene_detalle
 
     FROM pagos pa
     JOIN personas p
@@ -84,6 +87,19 @@ exports.obtenerPagos = (
     callback
   );
 
+};
+
+exports.crearDetalleCuota = (pagoId, cuotaId, monto, callback) => {
+  db.query(
+    "INSERT INTO pago_detalle (pago_id,tipo,referencia_id,monto_pagado) VALUES (?,'cuota',?,?)",
+    [pagoId, cuotaId, monto],
+    callback
+  );
+};
+
+exports.tieneDetalles = (id, callback) => {
+  db.query('SELECT EXISTS(SELECT 1 FROM pago_detalle WHERE pago_id=?) AS tiene', [id],
+    (err, rows) => callback(err, rows ? Boolean(rows[0].tiene) : false));
 };
 
 // =====================================

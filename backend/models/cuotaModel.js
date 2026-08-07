@@ -124,10 +124,14 @@ exports.generarMensualidadMasiva = (data, callback) => {
 
 exports.obtenerCuotasPendientesPorPersona = (persona_id, callback) => {
   db.query(
-    `SELECT id, mes, anio, monto, fecha_vencimiento, estado
-     FROM cuotas
-     WHERE persona_id = ? AND estado IN ('pendiente', 'vencido')
-     ORDER BY anio ASC, mes ASC`,
+    `SELECT c.id,c.mes,c.anio,c.monto,c.fecha_vencimiento,c.estado,
+            GREATEST(c.monto-COALESCE(SUM(d.monto_pagado),0),0) AS saldo
+     FROM cuotas c
+     LEFT JOIN pago_detalle d ON d.tipo='cuota' AND d.referencia_id=c.id
+     WHERE c.persona_id=? AND c.estado IN ('pendiente','vencido')
+     GROUP BY c.id,c.mes,c.anio,c.monto,c.fecha_vencimiento,c.estado
+     HAVING saldo>0
+     ORDER BY c.anio ASC,c.mes ASC`,
     [persona_id],
     callback
   );
@@ -145,6 +149,20 @@ exports.obtenerCuotaPorId = (id, callback) => {
       if (err) return callback(err);
       callback(null, rows[0] || null);
     }
+  );
+};
+
+exports.obtenerCuotaConSaldo = (id, callback) => {
+  db.query(
+    `SELECT c.id,c.persona_id,c.mes,c.anio,c.monto,c.estado,
+            COALESCE(SUM(d.monto_pagado),0) AS monto_pagado,
+            GREATEST(c.monto-COALESCE(SUM(d.monto_pagado),0),0) AS saldo
+     FROM cuotas c
+     LEFT JOIN pago_detalle d ON d.tipo='cuota' AND d.referencia_id=c.id
+     WHERE c.id=?
+     GROUP BY c.id,c.persona_id,c.mes,c.anio,c.monto,c.estado`,
+    [id],
+    (err, rows) => callback(err, rows ? rows[0] : null)
   );
 };
 

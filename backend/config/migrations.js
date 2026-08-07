@@ -73,7 +73,7 @@ async function reconstruirVistaEstadoFinanciero() {
 
     LEFT JOIN (
       SELECT persona_id, SUM(monto) AS total_cuotas
-      FROM cuotas WHERE estado IN ('pendiente', 'vencido')
+      FROM cuotas
       GROUP BY persona_id
     ) c ON p.id = c.persona_id
 
@@ -184,6 +184,71 @@ async function asegurarTablaGastos() {
   `);
 }
 
+async function asegurarTablasFormaciones() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS formaciones (
+      id              INT AUTO_INCREMENT PRIMARY KEY,
+      evento_id       BIGINT NOT NULL,
+      bloque          VARCHAR(100) NOT NULL,
+      estado          ENUM('borrador','confirmada') NOT NULL DEFAULT 'borrador',
+      fecha_ranking   DATETIME NOT NULL,
+      creado_por      INT NOT NULL,
+      confirmado_por INT NULL,
+      observaciones   TEXT NULL,
+      created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      confirmed_at    DATETIME NULL,
+      UNIQUE KEY uk_formacion_evento_bloque (evento_id, bloque),
+      KEY idx_formacion_estado (estado),
+      CONSTRAINT fk_formacion_evento FOREIGN KEY (evento_id) REFERENCES eventos(id),
+      CONSTRAINT fk_formacion_creador FOREIGN KEY (creado_por) REFERENCES usuarios(id),
+      CONSTRAINT fk_formacion_confirmador FOREIGN KEY (confirmado_por) REFERENCES usuarios(id)
+    )
+  `);
+
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS formacion_posiciones (
+      id                INT AUTO_INCREMENT PRIMARY KEY,
+      formacion_id      INT NOT NULL,
+      persona_id        BIGINT NOT NULL,
+      orden_general     INT NOT NULL,
+      puntaje_utilizado INT NOT NULL DEFAULT 0,
+      ajuste_manual     TINYINT(1) NOT NULL DEFAULT 0,
+      motivo_ajuste     VARCHAR(255) NULL,
+      created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uk_formacion_orden (formacion_id, orden_general),
+      UNIQUE KEY uk_formacion_persona (formacion_id, persona_id),
+      CONSTRAINT fk_posicion_formacion FOREIGN KEY (formacion_id) REFERENCES formaciones(id) ON DELETE CASCADE,
+      CONSTRAINT fk_posicion_persona FOREIGN KEY (persona_id) REFERENCES personas(id)
+    )
+  `);
+}
+
+async function asegurarCamposPagos() {
+  const cols = await columnasExistentes('pagos');
+  if (!cols.has('referencia_externa')) {
+    await ejecutar('ALTER TABLE pagos ADD COLUMN referencia_externa CHAR(64) NULL');
+  }
+  if (!cols.has('fecha_precision')) {
+    await ejecutar("ALTER TABLE pagos ADD COLUMN fecha_precision ENUM('exacta','mensual') NOT NULL DEFAULT 'exacta'");
+  }
+}
+
+async function consolidarTiposCuota() {
+  const mensualidades = await ejecutar("SELECT id FROM tipos_cuotas WHERE nombre='Mensualidad' ORDER BY id");
+  if (!mensualidades.length) {
+    await ejecutar("INSERT INTO tipos_cuotas (nombre,monto_base,descripcion) VALUES ('Mensualidad',10000,'Cuota mensual GDC')");
+    return;
+  }
+  const canonico = mensualidades[0].id;
+  for (const duplicado of mensualidades.slice(1)) {
+    await ejecutar('UPDATE IGNORE cuotas SET tipo_cuota_id=? WHERE tipo_cuota_id=?', [canonico, duplicado.id]);
+    await ejecutar('DELETE FROM cuotas WHERE tipo_cuota_id=?', [duplicado.id]);
+    await ejecutar('DELETE FROM tipos_cuotas WHERE id=?', [duplicado.id]);
+  }
+  await ejecutar("UPDATE tipos_cuotas SET monto_base=10000, descripcion='Cuota mensual GDC' WHERE id=?", [canonico]);
+}
+
 async function reconstruirVistaRankingPuntaje() {
   await ejecutar(`
     CREATE OR REPLACE VIEW vista_ranking_puntaje AS
@@ -217,6 +282,9 @@ async function ejecutarMigraciones() {
   await asegurarTablaPuntajes();
   await asegurarCamposPuntajes();
   await asegurarTablaGastos();
+  await asegurarTablasFormaciones();
+  await asegurarCamposPagos();
+  await consolidarTiposCuota();
   await reconstruirVistaRankingPuntaje();
   await reconstruirVistaEstadoFinanciero();
 }

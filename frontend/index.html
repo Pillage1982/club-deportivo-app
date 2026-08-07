@@ -277,6 +277,11 @@
             <i class="bi bi-trophy"></i> Puntaje
           </a>
         </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_formaciones">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_formaciones" role="tab">
+            <i class="bi bi-grid-3x3-gap"></i> Formaciones
+          </a>
+        </li>
         <li class="nav-item" role="presentation" id="nav_subtab_finanzas">
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_finanzas" role="tab">
             <i class="bi bi-graph-up"></i> Finanzas
@@ -545,6 +550,37 @@
               </thead>
               <tbody id="tabla_puntaje"></tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- Formaciones finales por ranking -->
+        <div class="tab-pane fade" id="subtab_formaciones" role="tabpanel">
+          <div id="formacion_generador" class="card border-0 bg-light mb-3">
+            <div class="card-body">
+              <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                  <label for="formacion_evento_id" class="form-label">Actividad</label>
+                  <select id="formacion_evento_id" class="form-select"><option value="">Seleccione una actividad</option></select>
+                </div>
+                <div class="col-md-3">
+                  <label for="formacion_bloque" class="form-label">Bloque de bailarines</label>
+                  <select id="formacion_bloque" class="form-select"><option value="">Seleccione un bloque</option></select>
+                </div>
+                <div class="col-md-3">
+                  <label for="formacion_observaciones" class="form-label">Observaciones</label>
+                  <input id="formacion_observaciones" class="form-control" maxlength="500" placeholder="Opcional">
+                </div>
+                <div class="col-md-2">
+                  <button id="btn_generar_formacion" type="button" class="btn btn-primary w-100" onclick="generarFormacion()">
+                    <i class="bi bi-magic"></i> Generar
+                  </button>
+                </div>
+              </div>
+              <small class="text-muted d-block mt-2">Ordenado por puntaje. Cada frente o fila admite hasta 8 bailarines. Socios y socios honorarios no participan.</small>
+            </div>
+          </div>
+          <div id="contenedor_formaciones">
+            <div class="text-center text-muted py-4">Seleccione una actividad para ver sus formaciones.</div>
           </div>
         </div>
 
@@ -1008,6 +1044,7 @@
   <script src="js/gastos.js"></script>
   <script src="js/multas.js"></script>
   <script src="js/puntaje.js"></script>
+  <script src="js/formaciones.js"></script>
   <script src="js/finanzas.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="js/asistencias.js"></script>

@@ -132,7 +132,7 @@ exports.obtenerAsistencias = (callback) => {
     JOIN personas p ON a.persona_id = p.id
     JOIN eventos e ON a.evento_id = e.id
     ORDER BY a.id DESC
-    LIMIT 500
+    LIMIT 5000
   `;
 
   db.query(query, callback);

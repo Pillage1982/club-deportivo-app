@@ -85,21 +85,30 @@ function validarPago(body) {
       return res.status(403).json({ mensaje: 'Los integrantes honorarios están exentos de pagos' });
     }
 
-    // Inserta pago en base datos
-    pagoModel.crearPago(req.body, (err, result) => {
+    const cuotaId = req.body.cuota_id ? Number(req.body.cuota_id) : null;
+    const guardar = cuota => pagoModel.crearPago(req.body, (err, result) => {
       if (err) return res.status(500).json(err);
-
-      const cuota_id = req.body.cuota_id ? Number(req.body.cuota_id) : null;
-
-      if (cuota_id) {
-        cuotaModel.marcarCuotaPagada(cuota_id, (errC) => {
-          if (errC) console.error('Error marcando cuota:', errC);
+      if (!cuota) return res.json({ mensaje: 'Pago registrado' });
+      pagoModel.crearDetalleCuota(result.insertId, cuota.id, Number(req.body.monto_total), errDetalle => {
+        if (errDetalle) {
+          return pagoModel.eliminarPago(result.insertId, () => res.status(500).json({ mensaje: 'No se pudo vincular el pago a la cuota' }));
+        }
+        const completa = Number(req.body.monto_total) === Number(cuota.saldo);
+        if (!completa) return res.json({ mensaje: `Pago parcial registrado. Saldo pendiente: $${Number(cuota.saldo)-Number(req.body.monto_total)}` });
+        cuotaModel.marcarCuotaPagada(cuota.id, errC => {
+          if (errC) return res.status(500).json({ mensaje: 'Pago registrado, pero no se pudo cerrar la cuota' });
+          procesarPuntajeCuota(Number(req.body.persona_id), cuota.id);
+          res.json({ mensaje: 'Pago registrado y cuota marcada como pagada' });
         });
-        procesarPuntajeCuota(Number(req.body.persona_id), cuota_id);
-        return res.json({ mensaje: 'Pago registrado y cuota marcada como pagada' });
-      }
-
-      res.json({ mensaje: 'Pago registrado' });
+      });
+    });
+    if (!cuotaId) return guardar(null);
+    cuotaModel.obtenerCuotaConSaldo(cuotaId, (errCuota, cuota) => {
+      if (errCuota || !cuota) return res.status(400).json({ mensaje: 'Cuota no encontrada' });
+      if (Number(cuota.persona_id) !== Number(req.body.persona_id)) return res.status(400).json({ mensaje: 'La cuota no pertenece al integrante seleccionado' });
+      if (Number(cuota.saldo) <= 0 || cuota.estado === 'pagado') return res.status(409).json({ mensaje: 'La cuota ya está pagada' });
+      if (Number(req.body.monto_total) > Number(cuota.saldo)) return res.status(400).json({ mensaje: `El monto supera el saldo de la cuota ($${cuota.saldo})` });
+      guardar(cuota);
     });
   });
 
@@ -144,8 +153,10 @@ exports.actualizar = (req, res) => {
     });
   }
 
-  // Actualiza registro pago existente
-  pagoModel.actualizarPago(
+  pagoModel.tieneDetalles(req.params.id, (errDetalle, tieneDetalle) => {
+    if (errDetalle) return res.status(500).json({ mensaje: 'No se pudo verificar el pago' });
+    if (tieneDetalle) return res.status(409).json({ mensaje: 'Los pagos vinculados a cuotas no se pueden editar; registre un ajuste separado' });
+    pagoModel.actualizarPago(
 
     req.params.id,
 
@@ -166,7 +177,8 @@ exports.actualizar = (req, res) => {
 
     }
 
-  );
+    );
+  });
 
 };
 
@@ -175,9 +187,10 @@ exports.actualizar = (req, res) => {
 // =====================================
 
 exports.eliminar = (req, res) => {
-
-  // Elimina pago desde base datos
-  pagoModel.eliminarPago(
+  pagoModel.tieneDetalles(req.params.id, (errDetalle, tieneDetalle) => {
+    if (errDetalle) return res.status(500).json({ mensaje: 'No se pudo verificar el pago' });
+    if (tieneDetalle) return res.status(409).json({ mensaje: 'Los pagos vinculados a cuotas no se pueden eliminar; registre un ajuste separado' });
+    pagoModel.eliminarPago(
 
     req.params.id,
 
@@ -196,6 +209,7 @@ exports.eliminar = (req, res) => {
 
     }
 
-  );
+    );
+  });
 
 };

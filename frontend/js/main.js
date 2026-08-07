@@ -86,6 +86,11 @@ window.onload = () => {
     });
   }
 
+  const tabFormaciones = document.querySelector('[href="#subtab_formaciones"]');
+  if (tabFormaciones) {
+    tabFormaciones.addEventListener('shown.bs.tab', () => inicializarFormaciones());
+  }
+
 };
 
 function aplicarRolesTabs() {
