@@ -555,34 +555,10 @@
 
         <!-- Formaciones finales por ranking -->
         <div class="tab-pane fade" id="subtab_formaciones" role="tabpanel">
-          <div id="formacion_generador" class="card border-0 bg-light mb-3">
-            <div class="card-body">
-              <div class="row g-2 align-items-end">
-                <div class="col-md-4">
-                  <label for="formacion_evento_id" class="form-label">Actividad para la nueva formación</label>
-                  <select id="formacion_evento_id" class="form-select"><option value="">Seleccione una actividad</option></select>
-                </div>
-                <div class="col-md-3">
-                  <label for="formacion_bloque" class="form-label">Bloque de bailarines</label>
-                  <select id="formacion_bloque" class="form-select"><option value="">Seleccione un bloque</option></select>
-                </div>
-                <div class="col-md-3">
-                  <label for="formacion_observaciones" class="form-label">Observaciones</label>
-                  <input id="formacion_observaciones" class="form-control" maxlength="500" placeholder="Opcional">
-                </div>
-                <div class="col-md-2">
-                  <button id="btn_generar_formacion" type="button" class="btn btn-primary w-100" onclick="generarFormacion()">
-                    <i class="bi bi-magic"></i> Generar
-                  </button>
-                </div>
-              </div>
-              <small class="text-muted d-block mt-2">Ordenado por puntaje. Cada frente o fila admite hasta 8 bailarines. Socios y socios honorarios no participan.</small>
-            </div>
-          </div>
           <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
-              <h5 class="mb-0">Formaciones registradas</h5>
-              <small class="text-muted">Se muestran todas las actividades y bloques, sin filtro por evento.</small>
+              <h5 class="mb-0">Formación vigente por puntaje</h5>
+              <small class="text-muted">Se actualiza automáticamente según el ranking. Socios y socios honorarios no participan.</small>
             </div>
             <button type="button" class="btn btn-sm btn-outline-primary" onclick="cargarFormaciones()">
               <i class="bi bi-arrow-clockwise"></i> Actualizar

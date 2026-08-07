@@ -6,6 +6,18 @@ const marcadoresExclusion = CATEGORIAS_EXCLUIDAS.map(() => '?').join(',');
 
 exports.listarEventos = callback => db.query('SELECT id,nombre,fecha,finalizado FROM eventos ORDER BY fecha DESC,nombre', callback);
 
+exports.obtenerFormacionActual = callback => db.query(`
+  SELECT p.id AS persona_id,p.rut,p.nombres,p.apellido_paterno,p.apellido_materno,p.bloque,
+         COALESCE(SUM(pt.puntos),0) AS puntaje_utilizado
+  FROM personas p
+  LEFT JOIN puntajes pt ON pt.persona_id=p.id
+  WHERE p.activo=1 AND COALESCE(p.estado,'activo')='activo' AND COALESCE(p.es_honorario,0)=0
+    AND p.bloque IS NOT NULL AND TRIM(p.bloque)<>''
+    AND LOWER(TRIM(p.bloque)) NOT IN (${marcadoresExclusion})
+  GROUP BY p.id,p.rut,p.nombres,p.apellido_paterno,p.apellido_materno,p.bloque,p.fecha_ingreso
+  ORDER BY p.bloque, puntaje_utilizado DESC,p.fecha_ingreso ASC,p.apellido_paterno ASC,p.nombres ASC`,
+  CATEGORIAS_EXCLUIDAS, callback);
+
 exports.listarBloquesElegibles = callback => db.query(`
   SELECT DISTINCT bloque
   FROM personas

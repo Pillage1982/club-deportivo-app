@@ -6,6 +6,7 @@ const roles=require('../middleware/roleMiddleware');
 router.get('/',auth,controller.listar);
 router.get('/bloques',auth,controller.bloques);
 router.get('/eventos',auth,controller.eventos);
+router.get('/actual',auth,controller.actual);
 router.post('/generar',auth,roles('admin','entrenador'),controller.generar);
 router.patch('/:id/mover',auth,roles('admin','entrenador'),controller.mover);
 router.patch('/:id/confirmar',auth,roles('admin'),controller.confirmar);

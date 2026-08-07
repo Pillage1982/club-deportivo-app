@@ -14,6 +14,19 @@ function cargarConPosiciones(formaciones, res) {
 
 exports.bloques = (req,res) => model.listarBloquesElegibles((err,rows) => err ? res.status(500).json({mensaje:'No se pudieron cargar los bloques'}) : res.json(rows));
 exports.eventos = (req,res) => model.listarEventos((err,rows) => err ? res.status(500).json({mensaje:'No se pudieron cargar las actividades'}) : res.json(rows));
+exports.actual = (req,res) => model.obtenerFormacionActual((err,rows) => {
+  if (err) return res.status(500).json({mensaje:'No se pudo calcular la formación vigente'});
+  const bloques=[]; const indice=new Map();
+  rows.forEach(persona => {
+    if (!indice.has(persona.bloque)) {
+      indice.set(persona.bloque,bloques.length);
+      bloques.push({bloque:persona.bloque,posiciones:[]});
+    }
+    const formacion=bloques[indice.get(persona.bloque)];
+    formacion.posiciones.push({...persona,orden_general:formacion.posiciones.length+1,ajuste_manual:0});
+  });
+  res.json(bloques);
+});
 exports.listar = (req,res) => model.obtenerPorEvento(req.query.evento_id ? Number(req.query.evento_id) : null,
   (err,rows) => err ? res.status(500).json({mensaje:'No se pudieron cargar las formaciones'}) : cargarConPosiciones(rows,res));
 
