@@ -1,12 +1,11 @@
 'use strict';
 
 const PERIODS = [
-  { month: 10, year: 2025, amount: 10000 }, { month: 11, year: 2025, amount: 10000 },
-  { month: 12, year: 2025, amount: 10000 }, { month: 1, year: 2026, amount: 10000 },
-  { month: 2, year: 2026, amount: 10000 }, { month: 3, year: 2026, amount: 10000 },
-  { month: 4, year: 2026, amount: 10000 }, { month: 5, year: 2026, amount: 10000 },
-  { month: 6, year: 2026, amount: 10000 }, { month: 7, year: 2026, amount: 10000 },
-  { month: 8, year: 2026, amount: 10000 }, { month: 9, year: 2026, amount: 10000 }
+  { month: 10, year: 2025, amount: 12000 }, { month: 11, year: 2025, amount: 12000 },
+  { month: 12, year: 2025, amount: 12000 }, { month: 1, year: 2026, amount: 12000 },
+  { month: 2, year: 2026, amount: 12000 }, { month: 3, year: 2026, amount: 12000 },
+  { month: 4, year: 2026, amount: 12000 }, { month: 5, year: 2026, amount: 12000 },
+  { month: 6, year: 2026, amount: 12000 }, { month: 7, year: 2026, amount: 12000 }
 ];
 
 function periodKey(year, month) { return `${year}-${String(month).padStart(2, '0')}`; }

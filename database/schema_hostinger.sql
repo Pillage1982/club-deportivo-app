@@ -195,7 +195,7 @@ INSERT INTO tipos_cuotas (
     nombre,
     monto_base
 ) VALUES
-('Mensualidad', 10000),
+('Mensualidad', 12000),
 ('Inscripción', 20000);
 
 -- ==========================

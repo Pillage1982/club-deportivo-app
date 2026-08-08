@@ -113,13 +113,13 @@ ALTER TABLE pagos ADD COLUMN IF NOT EXISTS fecha_precision ENUM('exacta','mensua
     .replace(
       "INSERT INTO tipos_cuotas (nombre,monto_base,descripcion) SELECT 'Mensualidad',10000,'Cuota mensual GDC' WHERE NOT EXISTS (SELECT 1 FROM tipos_cuotas WHERE nombre='Mensualidad');\nSET @tipo_mensualidad = (SELECT id FROM tipos_cuotas WHERE nombre='Mensualidad' ORDER BY id LIMIT 1);\nUPDATE tipos_cuotas SET monto_base=10000 WHERE id=@tipo_mensualidad;",
       `INSERT INTO tipos_cuotas (nombre,monto_base,descripcion)
-SELECT 'Mensualidad',10000,'Cuota mensual GDC'
+SELECT 'Mensualidad',12000,'Cuota mensual GDC'
 WHERE NOT EXISTS (SELECT 1 FROM tipos_cuotas WHERE nombre='Mensualidad');
 SET @tipo_mensualidad = (SELECT MIN(id) FROM tipos_cuotas WHERE nombre='Mensualidad');
 UPDATE cuotas c JOIN tipos_cuotas t ON t.id=c.tipo_cuota_id
 SET c.tipo_cuota_id=@tipo_mensualidad WHERE t.nombre='Mensualidad' AND t.id<>@tipo_mensualidad;
 DELETE FROM tipos_cuotas WHERE nombre='Mensualidad' AND id<>@tipo_mensualidad;
-UPDATE tipos_cuotas SET monto_base=10000, descripcion='Cuota mensual GDC' WHERE id=@tipo_mensualidad;`
+UPDATE tipos_cuotas SET monto_base=12000, descripcion='Cuota mensual GDC' WHERE id=@tipo_mensualidad;`
     )
     .replace(
       "INSERT INTO pagos (persona_id,monto_total,metodo,fecha,tipo_pago) SELECT p.id,s.monto,s.metodo,NULL,'cuota' FROM gdc_pagos s JOIN personas p ON p.rut=s.rut WHERE NOT EXISTS (SELECT 1 FROM pagos pg WHERE pg.metodo=s.metodo);",
@@ -131,6 +131,28 @@ WHERE NOT EXISTS (SELECT 1 FROM pagos pg WHERE pg.referencia_externa=s.ref);`
     .replace(
       'JOIN pagos pg ON pg.metodo=s.metodo',
       'JOIN pagos pg ON pg.referencia_externa=s.ref'
+    )
+    .replace(
+      "INSERT IGNORE INTO cuotas (persona_id,tipo_cuota_id,monto,mes,anio,fecha_vencimiento,estado,origen) SELECT p.id,@tipo_mensualidad,q.monto,q.mes,q.anio,q.vencimiento,'pendiente','externo' FROM gdc_cuotas q JOIN personas p ON p.rut=q.rut;",
+      `INSERT IGNORE INTO cuotas (persona_id,tipo_cuota_id,monto,mes,anio,fecha_vencimiento,estado,origen)
+SELECT p.id,@tipo_mensualidad,q.monto,q.mes,q.anio,q.vencimiento,'pendiente','externo'
+FROM gdc_cuotas q JOIN personas p ON p.rut=q.rut;
+UPDATE cuotas c JOIN personas p ON p.id=c.persona_id JOIN gdc_cuotas q
+  ON q.rut=p.rut AND q.anio=c.anio AND q.mes=c.mes
+SET c.monto=q.monto,c.fecha_vencimiento=q.vencimiento,c.tipo_cuota_id=@tipo_mensualidad;`
+    )
+    .replace(
+      "INSERT INTO pago_detalle (pago_id,tipo,referencia_id,monto_pagado) SELECT pg.id,'cuota',c.id,a.monto FROM gdc_asignaciones a",
+      `DELETE pt FROM puntajes pt JOIN cuotas c ON c.id=pt.cuota_id JOIN personas p ON p.id=c.persona_id
+WHERE p.rut IN (SELECT rut FROM gdc_personas) AND c.anio IN (2025,2026);
+DELETE d FROM pago_detalle d JOIN pagos pg ON pg.id=d.pago_id
+WHERE pg.referencia_externa IN (SELECT ref FROM gdc_pagos)
+   OR (pg.fecha_precision='mensual' AND DATE_FORMAT(pg.fecha,'%Y-%m')='2026-08');
+DELETE FROM pagos WHERE fecha_precision='mensual' AND DATE_FORMAT(fecha,'%Y-%m')='2026-08' AND referencia_externa IS NOT NULL;
+DELETE c FROM cuotas c JOIN personas p ON p.id=c.persona_id
+WHERE p.rut IN (SELECT rut FROM gdc_personas) AND c.anio=2026 AND c.mes IN (8,9) AND c.origen='externo';
+
+INSERT INTO pago_detalle (pago_id,tipo,referencia_id,monto_pagado) SELECT pg.id,'cuota',c.id,a.monto FROM gdc_asignaciones a`
     )
     .replace(
       "UPDATE importacion_lotes SET estado='aplicado' WHERE identificador=@gdc_lote;",

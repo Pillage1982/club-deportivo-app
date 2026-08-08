@@ -89,7 +89,7 @@ function parseMembers(file) {
 
 function parseFinances(file) {
   const wb = read(file), sheet = wb.SheetNames[0], ws = wb.Sheets[sheet]; const rows = [], payments = [], months = [];
-  for (let col = 14; col <= 24; col += 1) months.push({ col, name: String(value(ws, 2, col) || '').trim(), month: ((col - 14 + 9) % 12) + 1, year: col <= 16 ? 2025 : 2026 });
+  for (let col = 14; col <= 23; col += 1) months.push({ col, name: String(value(ws, 2, col) || '').trim(), month: ((col - 14 + 9) % 12) + 1, year: col <= 16 ? 2025 : 2026 });
   const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
   for (let row = 3; row <= range.e.r + 1; row += 1) {
     const originalRut = value(ws, row, 1), first = value(ws, row, 2), last = value(ws, row, 3);
