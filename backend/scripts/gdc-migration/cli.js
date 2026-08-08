@@ -6,7 +6,7 @@ const { parseMembers, parseFinances, parseAttendance, parsePositions, ATTENDANCE
 const { parsePeopleSnapshot } = require('./snapshot');
 const { compareMembers, indexByRut, reconcileAttendanceRuts } = require('./core');
 const { generateReports } = require('./reports');
-const { allocatePaymentsToQuotas } = require('./paymentAllocation');
+const { PERIODS, periodKey, allocatePaymentsToQuotas } = require('./paymentAllocation');
 
 function args(argv) { const out = {}; for (const arg of argv) { const match = arg.match(/^--([^=]+)(?:=(.*))?$/); if (match) out[match[1]] = match[2] ?? true; } return out; }
 function required(options, key) { if (!options[key]) throw new Error(`Falta --${key}=<ruta>`); return path.resolve(options[key]); }
@@ -20,9 +20,29 @@ function groupEvents(rows) {
 }
 function calculateScores(people, attendance, payments) {
   const scores = new Map(); const add = (rut, points) => scores.set(rut, (scores.get(rut) || 0) + points);
-  const paid = new Set(payments.filter(p=>p.monto).map(p=>`${p.rut}|${p.anio}-${String(p.mes).padStart(2,'0')}`));
-  for (const mark of attendance) add(mark.rut, paid.has(`${mark.rut}|${mark.fecha.slice(0,7)}`) ? 10 : 5);
-  for (const payment of payments) if (payment.monto) add(payment.rut, 0); // fecha exacta ausente: no inventar puntos de oportunidad.
+  const allocation = allocatePaymentsToQuotas(payments, people);
+  const paidQuotas = new Set(allocation.quotaStatus
+    .filter(row => row.estado_cuota === 'pagado')
+    .map(row => `${row.rut}|${row.cuota_periodo}`));
+  const isCurrent = (rut, period) => {
+    const target = PERIODS.findIndex(item => periodKey(item.year, item.month) === period);
+    if (target < 0) return false;
+    return PERIODS.slice(0, target + 1).every(item => paidQuotas.has(`${rut}|${periodKey(item.year, item.month)}`));
+  };
+  for (const mark of attendance) add(mark.rut, isCurrent(mark.rut, mark.fecha.slice(0,7)) ? 10 : 5);
+
+  const quotaAllocations = new Map();
+  for (const row of allocation.allocations.filter(item => item.cuota_periodo !== 'EXCEDENTE')) {
+    const key = `${row.rut}|${row.cuota_periodo}`;
+    if (!quotaAllocations.has(key)) quotaAllocations.set(key, []);
+    quotaAllocations.get(key).push(row);
+  }
+  for (const [key, rows] of quotaAllocations) {
+    if (!paidQuotas.has(key)) continue;
+    const completion = rows.at(-1);
+    if (completion.oportunidad === 'anticipado') add(completion.rut, 20);
+    if (completion.oportunidad === 'oportuno') add(completion.rut, 10);
+  }
   return scores;
 }
 
@@ -87,6 +107,7 @@ function run(argv = process.argv.slice(2)) {
     pagos_con_diferencias:paymentReview.length,asistencias_importadas:cleanAttendance.length,asistencias_duplicadas:duplicates.length,
     cuotas_periodo:12,monto_anual_cuotas:120000,monto_cuota_mensual:10000,
     periodo_financiero:'2025-10 a 2026-09',cuota_septiembre_debe_pagarse_antes_evento_anual:true,
+    politica_fecha_pago_temporada:'Cada monto se considera pagado el dia 1 del mes de la columna de origen; fecha inferida, exclusiva para 2025-2026.',
     asignaciones_pago_cuota:paymentAllocation.allocations.filter(row=>row.cuota_periodo!=='EXCEDENTE').length,
     pagos_con_excedente:paymentAllocation.allocations.filter(row=>row.cuota_periodo==='EXCEDENTE').length,
     cuotas_pagadas_calculadas:paymentAllocation.quotaStatus.filter(row=>row.estado_cuota==='pagado').length,
@@ -104,7 +125,7 @@ function run(argv = process.argv.slice(2)) {
     advertencias:['No se escribió en la base de datos.','Asistencia no contiene nombres de evento.',
       initialEvent ? 'Se encontraron marcaciones del evento inicial 10-10-2025; su nombre queda pendiente.' : 'No hay marcaciones fechadas 10-10-2025 en el Excel de asistencia.',
       lastJune ? 'Se detectó el último registro real de junio de 2026.' : 'No hay registros fechados en junio de 2026; no se inventó un cierre.',
-      'Planilla de posiciones se usa sólo como referencia estructural para el resultado 2025-2026; no se comparan sus puntajes históricos.','La oportunidad de pago se clasifica con precisión mensual; el día exacto permanece desconocido.'],
+      'Planilla de posiciones se usa sólo como referencia estructural para el resultado 2025-2026; no se comparan sus puntajes históricos.','Los pagos se fechan convencionalmente el día 1 del mes informado; esta fecha es inferida y no debe reutilizarse en otra temporada.'],
     uso_planilla_posiciones:'Referencia de estructura y presentación para generar el resultado actual 2025-2026; no es fuente maestra ni objetivo numérico.' };
   generateReports(reportDir,{comparison,invalidRuts,attendanceValid:cleanAttendance,attendanceBefore:attendance.filter(x=>x.fecha<ATTENDANCE_CUTOFF),attendanceDuplicates:duplicates,
     attendanceInvalid:attendance.filter(x=>!x.rut_valido),attendanceRutCorrected:rutReconciliation.corrected.filter(x=>x.incluido),attendanceUnmatched,events,scoreComparison,payments,paymentReview,

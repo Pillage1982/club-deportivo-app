@@ -1,6 +1,6 @@
 -- Semilla GDC 2025-2026. Generada desde fuentes oficiales.
 -- No borra datos. Ejecutar primero en una copia respaldada.
--- Nombres de eventos provisionales: Actividad + fecha. Pagos sin día exacto: fecha NULL.
+-- Nombres de eventos provisionales: Actividad + fecha. Regla excepcional 2025-2026: pagos fechados el día 1 del mes informado, con precisión mensual.
 SET NAMES utf8mb4;
 SET @gdc_lote = 'gdc-2025-2026-v1';
 START TRANSACTION;
@@ -14,29 +14,6 @@ ALTER TABLE personas ADD COLUMN IF NOT EXISTS es_honorario TINYINT(1) NOT NULL D
 ALTER TABLE eventos ADD COLUMN IF NOT EXISTS finalizado TINYINT(1) NOT NULL DEFAULT 0;
 ALTER TABLE pagos ADD COLUMN IF NOT EXISTS referencia_externa CHAR(64) NULL;
 ALTER TABLE pagos ADD COLUMN IF NOT EXISTS fecha_precision ENUM('exacta','mensual') NOT NULL DEFAULT 'exacta';
-
-CREATE TABLE IF NOT EXISTS formaciones (
-  id INT AUTO_INCREMENT PRIMARY KEY, evento_id BIGINT NOT NULL, bloque VARCHAR(100) NOT NULL,
-  estado ENUM('borrador','confirmada') NOT NULL DEFAULT 'borrador', fecha_ranking DATETIME NOT NULL,
-  creado_por INT NOT NULL, confirmado_por INT NULL, observaciones TEXT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  confirmed_at DATETIME NULL,
-  UNIQUE KEY uk_formacion_evento_bloque (evento_id,bloque), KEY idx_formacion_estado (estado),
-  CONSTRAINT fk_formacion_evento FOREIGN KEY (evento_id) REFERENCES eventos(id),
-  CONSTRAINT fk_formacion_creador FOREIGN KEY (creado_por) REFERENCES usuarios(id),
-  CONSTRAINT fk_formacion_confirmador FOREIGN KEY (confirmado_por) REFERENCES usuarios(id)
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS formacion_posiciones (
-  id INT AUTO_INCREMENT PRIMARY KEY, formacion_id INT NOT NULL, persona_id BIGINT NOT NULL,
-  orden_general INT NOT NULL, puntaje_utilizado INT NOT NULL DEFAULT 0,
-  ajuste_manual TINYINT(1) NOT NULL DEFAULT 0, motivo_ajuste VARCHAR(255) NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uk_formacion_orden (formacion_id,orden_general),
-  UNIQUE KEY uk_formacion_persona (formacion_id,persona_id),
-  CONSTRAINT fk_posicion_formacion FOREIGN KEY (formacion_id) REFERENCES formaciones(id) ON DELETE CASCADE,
-  CONSTRAINT fk_posicion_persona FOREIGN KEY (persona_id) REFERENCES personas(id)
-) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS importacion_lotes (id BIGINT AUTO_INCREMENT PRIMARY KEY, identificador VARCHAR(100) NOT NULL UNIQUE, organizacion VARCHAR(100) NOT NULL, estado ENUM('preparado','aplicado','revertido','fallido') NOT NULL DEFAULT 'preparado', proceso_usuario VARCHAR(150) NOT NULL, fecha_importacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB;
 INSERT IGNORE INTO importacion_lotes (identificador, organizacion, estado, proceso_usuario) VALUES (@gdc_lote, 'gdc', 'preparado', 'semilla-generada-codex');
@@ -9820,7 +9797,9 @@ SELECT a.persona_id,a.id,a.evento_id,
   CASE WHEN EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') THEN 10 ELSE 5 END,
   CASE WHEN EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') THEN 'Presente + cuota al día (migración mensual)' ELSE 'Presente sin cuota al día (migración mensual)' END,
   DATE(e.fecha)
-FROM asistencias a JOIN eventos e ON e.id=a.evento_id WHERE a.estado='presente';
+FROM asistencias a JOIN eventos e ON e.id=a.evento_id
+WHERE a.estado='presente'
+  AND e.nombre NOT LIKE 'Actividad %'; -- Excluye eventos provisionales hasta su clasificación estatutaria.
 
 INSERT IGNORE INTO puntajes (persona_id,cuota_id,puntos,detalle,fecha)
 SELECT c.persona_id,c.id,

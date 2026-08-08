@@ -560,9 +560,20 @@
               <h5 class="mb-0">Formación vigente por puntaje</h5>
               <small class="text-muted">Se actualiza automáticamente según el ranking. Socios y socios honorarios no participan.</small>
             </div>
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="cargarFormaciones()">
-              <i class="bi bi-arrow-clockwise"></i> Actualizar
-            </button>
+            <div class="d-flex gap-2">
+              <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Exportar">
+                  <i class="bi bi-download"></i> Exportar
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="#" onclick="exportarFormacionesPDF();return false;"><i class="bi bi-file-earmark-pdf text-danger me-2"></i>PDF</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="exportarFormacionesExcel();return false;"><i class="bi bi-file-earmark-excel text-success me-2"></i>Excel</a></li>
+                </ul>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="cargarFormaciones()">
+                <i class="bi bi-arrow-clockwise"></i> Actualizar
+              </button>
+            </div>
           </div>
           <div id="contenedor_formaciones">
             <div class="text-center text-muted py-4">Cargando formaciones...</div>

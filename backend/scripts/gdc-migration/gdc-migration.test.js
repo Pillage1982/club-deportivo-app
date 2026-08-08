@@ -12,7 +12,17 @@ test('honorario y receso no generan pagos propuestos', () => { const people=[{ru
 test('socio activo puede recibir puntaje de asistencia', () => { const scores=calculateScores([{rut:'12345678-5',estado:'activo'}],[{rut:'12345678-5',fecha:'2025-09-27'}],[]); assert.equal(scores.get('12345678-5'),5); });
 test('corte incluye 10-10-2025 y excluye eventos previos', () => { const events=groupEvents([{fecha:'2025-10-09',fecha_hora:'2025-10-09 10:00:00',rut:'1',evento:'Anterior',incluido:false},{fecha:ATTENDANCE_CUTOFF,fecha_hora:'2025-10-10 10:00:00',rut:'2',evento:'Evento pendiente',incluido:true}]); assert.equal(events[0].incluido_en_temporada,false); assert.equal(events[1].incluido_en_temporada,true); });
 test('detecta último evento real de junio por orden', () => { const events=groupEvents([{fecha:'2026-06-01',fecha_hora:'2026-06-01 10:00:00',rut:'1',evento:'A',incluido:true},{fecha:'2026-06-29',fecha_hora:'2026-06-29 20:00:00',rut:'2',evento:'B',incluido:true}]); assert.equal(events.at(-1).fecha_ultima_marcacion,'2026-06-29 20:00:00'); });
-test('pagos parciales no se convierten en texto', () => { const scores=calculateScores([],[{rut:'12345678-5',fecha:'2026-01-01'}],[{rut:'12345678-5',anio:2026,mes:1,monto:5000}]); assert.equal(scores.get('12345678-5'),10); });
+test('pago parcial no deja al integrante al dia ni genera puntos de cuota', () => { const scores=calculateScores([],[{rut:'12345678-5',fecha:'2026-01-01'}],[{rut:'12345678-5',anio:2026,mes:1,monto:5000,fila_origen:1}]); assert.equal(scores.get('12345678-5'),5); });
+test('pago mensual inferido al dia uno puntua por cuota completa y oportunidad', () => {
+  const payments=[{rut:'12345678-5',anio:2025,mes:10,monto:20000,fila_origen:1,referencia_externa:'oct'}];
+  const scores=calculateScores([{rut:'12345678-5',rut_valido:true,estado:'Activo'}],[],payments);
+  assert.equal(scores.get('12345678-5'),30);
+});
+test('pago atrasado cubre deuda pero no genera puntos de oportunidad', () => {
+  const payments=[{rut:'12345678-5',anio:2026,mes:1,monto:10000,fila_origen:1,referencia_externa:'ene'}];
+  const scores=calculateScores([{rut:'12345678-5',rut_valido:true,estado:'Activo'}],[],payments);
+  assert.equal(scores.has('12345678-5'),false);
+});
 test('fecha Excel conserva el día sin desplazamiento de zona horaria', () => { assert.equal(dateOnly(new Date('2025-09-27T00:00:00.000Z')),'2025-09-27'); });
 test('acepta fecha de asistencia escrita como texto dd/mm/aaaa', () => { assert.equal(parseAttendanceDate('   27/06/2026'),'2026-06-27'); });
 test('no confunde un RUT numérico con fecha u hora', () => { assert.equal(parseAttendanceDate(203052103),null); });

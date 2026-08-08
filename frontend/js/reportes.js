@@ -115,6 +115,31 @@ function exportarPuntajeExcel() {
   mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
 }
 
+// ── Excel: Formaciones ────────────────────────────────────────────────────────
+
+function exportarFormacionesExcel() {
+  if (!_xlsxDisponible()) return;
+  const formaciones = Array.isArray(formacionesCargadas) ? formacionesCargadas : [];
+  const rows = formaciones.flatMap(formacion =>
+    (formacion.posiciones || []).map(posicion => {
+      const orden = Number(posicion.orden_general || 0);
+      return {
+        'Bloque': formacion.bloque || '',
+        'Posición': orden,
+        'Fila': orden <= 8 ? 'Frente' : `Fila ${Math.ceil(orden / 8) - 1}`,
+        'Integrante': `${posicion.nombres} ${posicion.apellido_paterno} ${posicion.apellido_materno || ''}`.trim(),
+        'Puntaje': Number(posicion.puntaje_utilizado || 0)
+      };
+    })
+  );
+  if (rows.length === 0) {
+    mostrarAlerta('No hay formaciones para exportar.', 'warning');
+    return;
+  }
+  _descargarExcel(rows, 'Formaciones', 'formaciones_vigentes');
+  mostrarAlerta(`Excel generado: ${rows.length} posición(es).`, 'success');
+}
+
 // ── Excel: Gastos ─────────────────────────────────────────────────────────────
 
 function exportarGastosExcel() {
@@ -253,6 +278,60 @@ function exportarPuntajePDF() {
   });
   doc.save(`puntaje_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
   mostrarAlerta(`PDF generado: ${rankingCargado.length} integrante(s).`, 'success');
+}
+
+// ── PDF: Formaciones ──────────────────────────────────────────────────────────
+
+function exportarFormacionesPDF() {
+  if (!_pdfDisponible()) return;
+  const formaciones = Array.isArray(formacionesCargadas) ? formacionesCargadas : [];
+  const totalPosiciones = formaciones.reduce(
+    (total, formacion) => total + (formacion.posiciones || []).length,
+    0
+  );
+  if (totalPosiciones === 0) {
+    mostrarAlerta('No hay formaciones para exportar.', 'warning');
+    return;
+  }
+
+  const doc = _crearDocPDF('Formación Vigente por Puntaje');
+  let inicioY = 30;
+  formaciones.forEach(formacion => {
+    const posiciones = formacion.posiciones || [];
+    if (!posiciones.length) return;
+    if (inicioY > 235) {
+      doc.addPage();
+      inicioY = 18;
+    }
+    doc.setFontSize(11);
+    doc.setTextColor(30, 30, 30);
+    doc.text(`${formacion.bloque || 'Sin bloque'} (${posiciones.length})`, 14, inicioY);
+    doc.autoTable({
+      startY: inicioY + 3,
+      head: [['Posición', 'Fila', 'Integrante', 'Puntaje']],
+      body: posiciones.map(posicion => {
+        const orden = Number(posicion.orden_general || 0);
+        return [
+          orden,
+          orden <= 8 ? 'Frente' : `Fila ${Math.ceil(orden / 8) - 1}`,
+          `${posicion.nombres} ${posicion.apellido_paterno} ${posicion.apellido_materno || ''}`.trim(),
+          Number(posicion.puntaje_utilizado || 0)
+        ];
+      }),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      columnStyles: {
+        0: { cellWidth: 20, halign: 'center' },
+        1: { cellWidth: 25, halign: 'center' },
+        3: { cellWidth: 25, halign: 'center', fontStyle: 'bold' }
+      }
+    });
+    inicioY = doc.lastAutoTable.finalY + 10;
+  });
+
+  doc.save(`formaciones_vigentes_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
+  mostrarAlerta(`PDF generado: ${totalPosiciones} posición(es).`, 'success');
 }
 
 // ── PDF: Gastos (respaldo para asamblea) ──────────────────────────────────────

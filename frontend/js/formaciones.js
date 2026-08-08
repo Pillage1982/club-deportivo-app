@@ -1,4 +1,6 @@
 // Formación vigente GDC: se calcula en tiempo real desde el ranking de cada bloque.
+let formacionesCargadas = [];
+
 function escaparFormacion(valor) {
   return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -17,8 +19,10 @@ async function cargarFormaciones() {
     const respuesta = await fetch(`${API_URL}/formaciones/actual`, { headers: getAuthHeaders() });
     const data = await respuesta.json().catch(() => ({}));
     if (!respuesta.ok) throw new Error(data.mensaje || 'No se pudo cargar la formación vigente');
-    renderizarFormacionActual(Array.isArray(data) ? data : []);
+    formacionesCargadas = Array.isArray(data) ? data : [];
+    renderizarFormacionActual(formacionesCargadas);
   } catch (error) {
+    formacionesCargadas = [];
     contenedor.innerHTML = `<div class="alert alert-danger">${escaparFormacion(error.message)}</div>`;
   }
 }
