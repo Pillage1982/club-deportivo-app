@@ -119,7 +119,7 @@ function exportarPuntajeExcel() {
 
 function exportarFormacionesExcel() {
   if (!_xlsxDisponible()) return;
-  const formaciones = Array.isArray(formacionesCargadas) ? formacionesCargadas : [];
+  const formaciones = Array.isArray(window.formacionesCargadas) ? window.formacionesCargadas : [];
   const rows = formaciones.flatMap(formacion =>
     (formacion.posiciones || []).map(posicion => {
       const orden = Number(posicion.orden_general || 0);
@@ -284,7 +284,7 @@ function exportarPuntajePDF() {
 
 function exportarFormacionesPDF() {
   if (!_pdfDisponible()) return;
-  const formaciones = Array.isArray(formacionesCargadas) ? formacionesCargadas : [];
+  const formaciones = Array.isArray(window.formacionesCargadas) ? window.formacionesCargadas : [];
   const totalPosiciones = formaciones.reduce(
     (total, formacion) => total + (formacion.posiciones || []).length,
     0
