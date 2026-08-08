@@ -117,9 +117,26 @@ function exportarPuntajeExcel() {
 
 // ── Excel: Formaciones ────────────────────────────────────────────────────────
 
-function exportarFormacionesExcel() {
+async function _obtenerFormacionesParaExportar() {
+  if (Array.isArray(window.formacionesCargadas) && window.formacionesCargadas.length) {
+    return window.formacionesCargadas;
+  }
+  const respuesta = await fetch(`${API_URL}/formaciones/actual`, { headers: getAuthHeaders() });
+  const data = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok) throw new Error(data.mensaje || 'No se pudieron cargar las formaciones');
+  window.formacionesCargadas = Array.isArray(data) ? data : [];
+  return window.formacionesCargadas;
+}
+
+async function exportarFormacionesExcel() {
   if (!_xlsxDisponible()) return;
-  const formaciones = Array.isArray(window.formacionesCargadas) ? window.formacionesCargadas : [];
+  let formaciones;
+  try {
+    formaciones = await _obtenerFormacionesParaExportar();
+  } catch (error) {
+    mostrarAlerta(error.message, 'danger');
+    return;
+  }
   const rows = formaciones.flatMap(formacion =>
     (formacion.posiciones || []).map(posicion => {
       const orden = Number(posicion.orden_general || 0);
@@ -282,9 +299,15 @@ function exportarPuntajePDF() {
 
 // ── PDF: Formaciones ──────────────────────────────────────────────────────────
 
-function exportarFormacionesPDF() {
+async function exportarFormacionesPDF() {
   if (!_pdfDisponible()) return;
-  const formaciones = Array.isArray(window.formacionesCargadas) ? window.formacionesCargadas : [];
+  let formaciones;
+  try {
+    formaciones = await _obtenerFormacionesParaExportar();
+  } catch (error) {
+    mostrarAlerta(error.message, 'danger');
+    return;
+  }
   const totalPosiciones = formaciones.reduce(
     (total, formacion) => total + (formacion.posiciones || []).length,
     0
