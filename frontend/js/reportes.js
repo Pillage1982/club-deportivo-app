@@ -137,24 +137,41 @@ async function exportarFormacionesExcel() {
     mostrarAlerta(error.message, 'danger');
     return;
   }
-  const rows = formaciones.flatMap(formacion =>
-    (formacion.posiciones || []).map(posicion => {
+  const bloquesConPosiciones = formaciones.filter(formacion => (formacion.posiciones || []).length);
+  if (bloquesConPosiciones.length === 0) {
+    mostrarAlerta('No hay formaciones para exportar.', 'warning');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+  const nombresUsados = new Set();
+  let totalPosiciones = 0;
+  bloquesConPosiciones.forEach((formacion, indice) => {
+    const rows = formacion.posiciones.map(posicion => {
       const orden = Number(posicion.orden_general || 0);
       return {
-        'Bloque': formacion.bloque || '',
         'Posición': orden,
         'Fila': orden <= 8 ? 'Frente' : `Fila ${Math.ceil(orden / 8) - 1}`,
         'Integrante': `${posicion.nombres} ${posicion.apellido_paterno} ${posicion.apellido_materno || ''}`.trim(),
         'Puntaje': Number(posicion.puntaje_utilizado || 0)
       };
-    })
-  );
-  if (rows.length === 0) {
-    mostrarAlerta('No hay formaciones para exportar.', 'warning');
-    return;
-  }
-  _descargarExcel(rows, 'Formaciones', 'formaciones_vigentes');
-  mostrarAlerta(`Excel generado: ${rows.length} posición(es).`, 'success');
+    });
+    totalPosiciones += rows.length;
+    const base = String(formacion.bloque || `Bloque ${indice + 1}`)
+      .replace(/[\\/?*\[\]:]/g, ' ')
+      .trim()
+      .substring(0, 31) || `Bloque ${indice + 1}`;
+    let nombreHoja = base;
+    let correlativo = 2;
+    while (nombresUsados.has(nombreHoja.toLowerCase())) {
+      const sufijo = ` ${correlativo++}`;
+      nombreHoja = `${base.substring(0, 31 - sufijo.length)}${sufijo}`;
+    }
+    nombresUsados.add(nombreHoja.toLowerCase());
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), nombreHoja);
+  });
+  XLSX.writeFile(wb, `formaciones_vigentes_${_fechaHoy().replace(/\//g, '-')}.xlsx`);
+  mostrarAlerta(`Excel generado: ${bloquesConPosiciones.length} bloque(s), ${totalPosiciones} posición(es).`, 'success');
 }
 
 // ── Excel: Gastos ─────────────────────────────────────────────────────────────
@@ -318,14 +335,13 @@ async function exportarFormacionesPDF() {
   }
 
   const doc = _crearDocPDF('Formación Vigente por Puntaje');
-  let inicioY = 30;
+  let primerBloque = true;
   formaciones.forEach(formacion => {
     const posiciones = formacion.posiciones || [];
     if (!posiciones.length) return;
-    if (inicioY > 235) {
-      doc.addPage();
-      inicioY = 18;
-    }
+    if (!primerBloque) doc.addPage();
+    const inicioY = primerBloque ? 30 : 18;
+    primerBloque = false;
     doc.setFontSize(11);
     doc.setTextColor(30, 30, 30);
     doc.text(`${formacion.bloque || 'Sin bloque'} (${posiciones.length})`, 14, inicioY);
@@ -350,7 +366,6 @@ async function exportarFormacionesPDF() {
         3: { cellWidth: 25, halign: 'center', fontStyle: 'bold' }
       }
     });
-    inicioY = doc.lastAutoTable.finalY + 10;
   });
 
   doc.save(`formaciones_vigentes_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
