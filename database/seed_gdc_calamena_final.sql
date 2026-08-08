@@ -8516,6 +8516,7 @@ INSERT INTO gdc_asignaciones (ref, rut, anio, mes, monto) VALUES
 ('c64ff708bcda9283577b924862cf100680d1754f15440d495873ba01446dfad0', '9778766-2', 2025, 12, 12000),
 ('c64ff708bcda9283577b924862cf100680d1754f15440d495873ba01446dfad0', '9778766-2', 2026, 1, 12000),
 ('c64ff708bcda9283577b924862cf100680d1754f15440d495873ba01446dfad0', '9778766-2', 2026, 2, 12000);
+DELETE FROM puntajes WHERE detalle='Bonificación pago anual en un solo pago (temporada 2025-2026)';
 DELETE pt FROM puntajes pt JOIN cuotas c ON c.id=pt.cuota_id JOIN personas p ON p.id=c.persona_id
 WHERE p.rut IN (SELECT rut FROM gdc_personas) AND c.anio IN (2025,2026);
 DELETE d FROM pago_detalle d JOIN pagos pg ON pg.id=d.pago_id
@@ -8549,6 +8550,16 @@ JOIN gdc_pagos gp ON gp.ref=ga.ref
 WHERE c.estado='pagado'
 GROUP BY c.id,c.persona_id,c.anio,c.mes
 HAVING MAX(gp.anio*100+gp.mes)<=c.anio*100+c.mes;
+
+INSERT INTO puntajes (persona_id,puntos,detalle,fecha)
+SELECT p.id,100,'Bonificación pago anual en un solo pago (temporada 2025-2026)',
+  STR_TO_DATE(CONCAT(gp.anio,'-',LPAD(gp.mes,2,'0'),'-01'),'%Y-%m-%d')
+FROM gdc_pagos gp
+JOIN personas p ON p.rut=gp.rut
+JOIN gdc_asignaciones ga ON ga.ref=gp.ref
+WHERE gp.monto>=120000
+GROUP BY p.id,gp.ref,gp.anio,gp.mes
+HAVING SUM(ga.monto)=120000 AND COUNT(DISTINCT CONCAT(ga.anio,'-',LPAD(ga.mes,2,'0')))=10;
 
 CREATE OR REPLACE VIEW vista_estado_financiero AS
 SELECT p.id,p.nombres,p.apellido_paterno,p.apellido_materno,

@@ -43,6 +43,16 @@ function calculateScores(people, attendance, payments) {
     if (completion.oportunidad === 'anticipado') add(completion.rut, 20);
     if (completion.oportunidad === 'oportuno') add(completion.rut, 10);
   }
+  const annualBonusRuts = new Set();
+  for (const payment of payments.filter(item => Number(item.monto) >= 120000)) {
+    const rows = allocation.allocations.filter(item =>
+      item.referencia_externa_pago === payment.referencia_externa && item.cuota_periodo !== 'EXCEDENTE'
+    );
+    const totalAssigned = rows.reduce((sum, item) => sum + Number(item.monto_asignado || 0), 0);
+    const coveredPeriods = new Set(rows.filter(item => Number(item.monto_asignado) > 0).map(item => item.cuota_periodo));
+    if (totalAssigned === 120000 && coveredPeriods.size === PERIODS.length) annualBonusRuts.add(payment.rut);
+  }
+  for (const rut of annualBonusRuts) add(rut, 100);
   return scores;
 }
 
@@ -107,6 +117,7 @@ function run(argv = process.argv.slice(2)) {
     pagos_con_diferencias:paymentReview.length,asistencias_importadas:cleanAttendance.length,asistencias_duplicadas:duplicates.length,
     cuotas_periodo:10,monto_anual_cuotas:120000,monto_cuota_mensual:12000,
     periodo_financiero:'2025-10 a 2026-07',
+    bonificacion_pago_anual:100,
     politica_fecha_pago_temporada:'Cada monto se considera pagado el dia 1 del mes de la columna de origen; fecha inferida, exclusiva para 2025-2026.',
     asignaciones_pago_cuota:paymentAllocation.allocations.filter(row=>row.cuota_periodo!=='EXCEDENTE').length,
     pagos_con_excedente:paymentAllocation.allocations.filter(row=>row.cuota_periodo==='EXCEDENTE').length,

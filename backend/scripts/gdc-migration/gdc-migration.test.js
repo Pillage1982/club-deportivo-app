@@ -23,6 +23,19 @@ test('pago atrasado cubre deuda pero no genera puntos de oportunidad', () => {
   const scores=calculateScores([{rut:'12345678-5',rut_valido:true,estado:'Activo'}],[],payments);
   assert.equal(scores.has('12345678-5'),false);
 });
+test('pago anual unico recibe bonificacion de 100 puntos', () => {
+  const payments=[{rut:'12345678-5',anio:2025,mes:10,monto:120000,fila_origen:1,referencia_externa:'anual'}];
+  const scores=calculateScores([{rut:'12345678-5',rut_valido:true,estado:'Activo'}],[],payments);
+  assert.equal(scores.get('12345678-5'),290);
+});
+test('dos pagos parciales que completan el anio no reciben bonificacion anual', () => {
+  const payments=[
+    {rut:'12345678-5',anio:2025,mes:10,monto:60000,fila_origen:1,referencia_externa:'parte-1'},
+    {rut:'12345678-5',anio:2025,mes:11,monto:60000,fila_origen:2,referencia_externa:'parte-2'}
+  ];
+  const scores=calculateScores([{rut:'12345678-5',rut_valido:true,estado:'Activo'}],[],payments);
+  assert.equal(scores.get('12345678-5'),190);
+});
 test('fecha Excel conserva el día sin desplazamiento de zona horaria', () => { assert.equal(dateOnly(new Date('2025-09-27T00:00:00.000Z')),'2025-09-27'); });
 test('acepta fecha de asistencia escrita como texto dd/mm/aaaa', () => { assert.equal(parseAttendanceDate('   27/06/2026'),'2026-06-27'); });
 test('no confunde un RUT numérico con fecha u hora', () => { assert.equal(parseAttendanceDate(203052103),null); });
