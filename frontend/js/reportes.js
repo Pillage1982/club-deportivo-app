@@ -78,20 +78,52 @@ function exportarAsistenciasExcel() {
 
 // ── Excel: Deudores ───────────────────────────────────────────────────────────
 
-function exportarDeudoresExcel() {
+const PERIODOS_FINANCIEROS_GDC = [
+  { anio: 2025, mes: 10, nombre: 'Octubre 2025' },
+  { anio: 2025, mes: 11, nombre: 'Noviembre 2025' },
+  { anio: 2025, mes: 12, nombre: 'Diciembre 2025' },
+  { anio: 2026, mes: 1, nombre: 'Enero 2026' },
+  { anio: 2026, mes: 2, nombre: 'Febrero 2026' },
+  { anio: 2026, mes: 3, nombre: 'Marzo 2026' },
+  { anio: 2026, mes: 4, nombre: 'Abril 2026' },
+  { anio: 2026, mes: 5, nombre: 'Mayo 2026' },
+  { anio: 2026, mes: 6, nombre: 'Junio 2026' },
+  { anio: 2026, mes: 7, nombre: 'Julio 2026' }
+];
+
+async function _obtenerCuotasParaReporteDeudores() {
+  const respuesta = await fetch(`${API_URL}/cuotas`, { headers: getAuthHeaders() });
+  const data = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok || !Array.isArray(data)) throw new Error(data.mensaje || 'No se pudieron cargar los pagos mensuales');
+  return data;
+}
+
+function _detalleMensualDeudor(deudor, cuotas) {
+  return PERIODOS_FINANCIEROS_GDC.map(periodo => {
+    const cuota = cuotas.find(item => Number(item.persona_id) === Number(deudor.id) &&
+      Number(item.anio) === periodo.anio && Number(item.mes) === periodo.mes);
+    return { periodo: periodo.nombre, cuota: Number(cuota?.monto || 0),
+      pagado: Number(cuota?.monto_pagado || 0), saldo: Number(cuota?.saldo ?? cuota?.monto ?? 0),
+      estado: cuota?.estado || 'sin_registro' };
+  });
+}
+
+async function exportarDeudoresExcel() {
   if (!_xlsxDisponible()) return;
   const deudores = (finanzasCargadas || []).filter(f => Number(f.deuda_actual) > 0);
   if (deudores.length === 0) {
     mostrarAlerta('No hay integrantes con deuda para exportar.', 'warning');
     return;
   }
-  const rows = deudores.map(f => ({
-    'Integrante':   `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`.trim(),
-    'Total Multas': Number(f.total_multas || 0),
-    'Total Cuotas': Number(f.total_cuotas || 0),
-    'Total Pagado': Number(f.total_pagado || 0),
-    'Deuda Actual': Number(f.deuda_actual || 0)
-  }));
+  let cuotas;
+  try { cuotas = await _obtenerCuotasParaReporteDeudores(); }
+  catch (error) { mostrarAlerta(error.message, 'danger'); return; }
+  const rows = deudores.flatMap(f => _detalleMensualDeudor(f, cuotas).map(detalle => ({
+    'Integrante': `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`.trim(),
+    'Mes': detalle.periodo, 'Cuota': detalle.cuota, 'Pagado': detalle.pagado,
+    'Saldo': detalle.saldo, 'Estado': detalle.estado,
+    'Multas': Number(f.total_multas || 0), 'Deuda Total': Number(f.deuda_actual || 0)
+  })));
   _descargarExcel(rows, 'Deudores', 'deudores');
   mostrarAlerta(`Excel generado: ${rows.length} deudor(es).`, 'success');
 }
@@ -406,7 +438,7 @@ function exportarGastosPDF() {
 
 // ── PDF: Reporte de Deudores ──────────────────────────────────────────────────
 
-function exportarDeudoresPDF() {
+async function exportarDeudoresPDF() {
   if (!window.jspdf) {
     mostrarAlerta('Librería PDF no disponible. Verifica tu conexión e intenta de nuevo.', 'danger');
     return;
@@ -418,6 +450,10 @@ function exportarDeudoresPDF() {
     mostrarAlerta('No hay integrantes con deuda para exportar.', 'warning');
     return;
   }
+
+  let cuotas;
+  try { cuotas = await _obtenerCuotasParaReporteDeudores(); }
+  catch (error) { mostrarAlerta(error.message, 'danger'); return; }
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -460,6 +496,26 @@ function exportarDeudoresPDF() {
       4: { halign: 'right' },
       5: { halign: 'right', fontStyle: 'bold' }
     }
+  });
+
+  deudores.forEach(f => {
+    doc.addPage();
+    const nombre = `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`.trim();
+    doc.setFontSize(11); doc.setTextColor(30, 30, 30); doc.text(nombre, 14, 18);
+    doc.setFontSize(9); doc.setTextColor(90);
+    doc.text(`Deuda total: ${formatearMonto(f.deuda_actual)}  ·  Multas: ${formatearMonto(f.total_multas)}`, 14, 24);
+    doc.autoTable({
+      startY: 28,
+      head: [['Mes', 'Cuota', 'Pagado', 'Saldo', 'Estado']],
+      body: _detalleMensualDeudor(f, cuotas).map(detalle => [
+        detalle.periodo, formatearMonto(detalle.cuota), formatearMonto(detalle.pagado),
+        formatearMonto(detalle.saldo), detalle.estado.replace('_', ' ')
+      ]),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right', fontStyle: 'bold' } }
+    });
   });
 
   doc.save(`deudores_${fecha.replace(/\//g, '-')}.pdf`);
