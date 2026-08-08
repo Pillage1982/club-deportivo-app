@@ -197,4 +197,36 @@ function parsePositions(file) {
   return rows;
 }
 
-module.exports = { parseMembers, parseFinances, parseAttendance, parsePositions, dateOnly, parseAttendanceDate, parseAttendanceTime, assignRepresentativeEventTimes, ATTENDANCE_CUTOFF, PENDING_INITIAL_EVENT, ATTENDANCE_DATE_CORRECTIONS };
+function parsePositionAttendance(file) {
+  const wb = read(file), sheet = 'Puntaje 2025', ws = wb.Sheets[sheet];
+  if (!ws) return [];
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1'), activities = [], rows = [];
+  for (let column = 6; column <= 33; column += 1) {
+    const header = String(value(ws, 1, column) || '').replace(/\s+/g, ' ').trim();
+    const match = header.match(/(\d{1,2})[-/](\d{1,2})[-/](20\d{1,2}|\d{2})/);
+    if (!match) continue;
+    let year = Number(match[3]);
+    if (year < 100) year += 2000;
+    if (year === 205) year = 2025; // Encabezado original: 21-06-205.
+    const date = `${year}-${String(Number(match[2])).padStart(2, '0')}-${String(Number(match[1])).padStart(2, '0')}`;
+    const name = header.replace(match[0], '').replace(/[-–—]+\s*$/, '').trim() || `Actividad ${date}`;
+    const type = /ensayo/i.test(name) ? 'entrenamiento' : /salida|romeria|v[ií]a crucis/i.test(name) ? 'partido' : 'reunion';
+    activities.push({ column, date, name, type, sourceId: `${sheet}:C${column}` });
+  }
+  for (let row = 2; row <= range.e.r + 1; row += 1) {
+    const originalRut = value(ws, row, 1), rut = normalizeRut(originalRut);
+    if (!rut || !validateRut(originalRut)) continue;
+    for (const activity of activities) {
+      const points = Number(value(ws, row, activity.column) || 0);
+      if (points <= 0) continue;
+      rows.push({ rut, rut_valido: true, fecha: activity.date, fecha_hora: `${activity.date} 18:00:00`,
+        evento: activity.name, tipo_evento: activity.type, evento_origen_id: activity.sourceId,
+        estado: 'presente', puntos_planilla: points, fila_origen: row,
+        referencia_externa: hashMovement([fileName(file), sheet, row, activity.column, rut, points]),
+        ...sourceMeta(fileName(file), sheet, row, points) });
+    }
+  }
+  return rows;
+}
+
+module.exports = { parseMembers, parseFinances, parseAttendance, parsePositions, parsePositionAttendance, dateOnly, parseAttendanceDate, parseAttendanceTime, assignRepresentativeEventTimes, ATTENDANCE_CUTOFF, PENDING_INITIAL_EVENT, ATTENDANCE_DATE_CORRECTIONS };

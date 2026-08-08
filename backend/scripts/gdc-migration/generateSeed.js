@@ -3,7 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { parseMembers, parseFinances, parseAttendance, parsePositions } = require('./excel');
+const { parseMembers, parseFinances, parseAttendance, parsePositions, parsePositionAttendance } = require('./excel');
 const { parsePeopleSnapshot } = require('./snapshot');
 const { reconcileAttendanceRuts } = require('./core');
 const { allocatePaymentsToQuotas, PERIODS } = require('./paymentAllocation');
@@ -49,6 +49,11 @@ function build(argv = process.argv.slice(2)) {
   const finance = parseFinances(files.payments);
   const positions = parsePositions(files.positions);
   const attendanceRaw = parseAttendance(files.attendance);
+  const positionAttendanceRaw = parsePositionAttendance(files.positions);
+  const attendanceSourceKeys = new Set(attendanceRaw.filter(row => row.rut_valido).map(row => `${row.rut}|${row.fecha}`));
+  const rescuedPositionRuts = new Set(positionAttendanceRaw
+    .filter(row => !attendanceSourceKeys.has(`${row.rut}|${row.fecha}`))
+    .map(row => row.rut));
   const reconciled = reconcileAttendanceRuts(attendanceRaw, [
     ...snapshot.map(row => ({ ...row, source: 'BD' })), ...members.map(row => ({ ...row, source: 'NOMINA' })),
     ...finance.rows.map(row => ({ ...row, source: 'FINANZAS' })), ...positions.map(row => ({ ...row, source: 'POSICIONES' }))
@@ -62,6 +67,11 @@ function build(argv = process.argv.slice(2)) {
       estado: normalizeState(row.estado), activo: /inactiv/i.test(String(row.estado || '')) ? 0 : 1, es_honorario: /honorario/i.test(String(row.estado || '')) ? 1 : 0 });
   }
   for (const row of members.filter(row => row.rut_valido && !people.has(row.rut))) people.set(row.rut, { ...splitName(row.nombre), rut: row.rut, bloque: row.bloque, estado: 'activo', activo: 1 });
+  let historicalPeopleCreated = 0;
+  for (const row of positions.filter(row => row.rut_valido && rescuedPositionRuts.has(row.rut) && !people.has(row.rut))) {
+    people.set(row.rut, { ...splitName(row.nombre), rut: row.rut, bloque: row.bloque, estado: 'inactivo', activo: 0 });
+    historicalPeopleCreated += 1;
+  }
   const personRows = [...people.values()].map(row => ({ rut: row.rut, nombres: row.nombres || splitName(row.nombre).nombres,
     apellido_paterno: row.apellido_paterno || splitName(row.nombre).apellido_paterno, apellido_materno: row.apellido_materno || splitName(row.nombre).apellido_materno,
     bloque: row.bloque || null, sexo: row.sexo || null, direccion: row.direccion || null, email: row.email || null, telefono: row.telefono || null,
@@ -69,17 +79,26 @@ function build(argv = process.argv.slice(2)) {
     es_honorario: row.es_honorario ? 1 : 0 }));
 
   const seen = new Set();
-  const attendance = reconciled.rows.filter(row => row.incluido && row.rut_valido && people.has(row.rut)).filter(row => {
+  const seasonAttendance = reconciled.rows.filter(row => row.incluido && row.rut_valido && people.has(row.rut)).filter(row => {
     const key = `${row.evento_origen_id}|${row.rut}`; if (seen.has(key)) return false; seen.add(key); return true;
   });
+  const rescuedPositionAttendance = positionAttendanceRaw.filter(row =>
+    people.has(row.rut) && !attendanceSourceKeys.has(`${row.rut}|${row.fecha}`)
+  );
+  const attendance = [...seasonAttendance, ...rescuedPositionAttendance];
   const eventGroups = new Map();
   for (const row of attendance) if (!eventGroups.has(row.evento_origen_id)) eventGroups.set(row.evento_origen_id, row);
   const byDate = new Map();
   for (const row of eventGroups.values()) { if (!byDate.has(row.fecha)) byDate.set(row.fecha, []); byDate.get(row.fecha).push(row); }
   const events = [];
   for (const [date, rows] of byDate) rows.sort((a, b) => a.fila_inicio_evento - b.fila_inicio_evento).forEach((row, index) => events.push({
-    source_id: row.evento_origen_id, nombre: `Actividad ${date}${rows.length > 1 ? ` ${index + 1}` : ''}`, fecha: row.fecha_hora,
-    descripcion: `Migración GDC; origen ${row.evento_origen_id}; nombre provisional por fecha`, tipo: 'reunion'
+    source_id: row.evento_origen_id,
+    nombre: row.evento_pendiente ? `Actividad ${date}${rows.length > 1 ? ` ${index + 1}` : ''}` : row.evento,
+    fecha: row.fecha_hora,
+    descripcion: row.evento_pendiente
+      ? `Migración GDC; origen ${row.evento_origen_id}; nombre provisional por fecha`
+      : `Migración GDC; origen ${row.evento_origen_id}; asistencia recuperada de Planilla Posiciones 2025`,
+    tipo: row.tipo_evento || 'reunion'
   }));
 
   const eligible = new Set(finance.rows.filter(row => row.rut_valido && !/honorario|receso|inactiv/i.test(String(row.estado || ''))).map(row => row.rut).filter(rut => people.has(rut)));
@@ -213,9 +232,11 @@ UPDATE importacion_lotes SET estado='aplicado' WHERE identificador=@gdc_lote;`
     );
   fs.mkdirSync(path.dirname(files.output), { recursive: true });
   fs.writeFileSync(files.output, compatibleSeed, 'utf8');
-  const summary = { output: files.output, personas: personRows.length, eventos: events.length, asistencias: attendance.length, cuotas: quotaRows.length,
+  const summary = { output: files.output, personas: personRows.length, eventos: events.length, asistencias: attendance.length,
+    asistencias_temporada: seasonAttendance.length, asistencias_rescatadas_posiciones: rescuedPositionAttendance.length, cuotas: quotaRows.length,
     pagos: paymentRows.length, asignaciones: allocationRows.length, ruts_asistencia_sin_resolver: reconciled.unresolved.filter(row => row.incluido).length,
-    eventos_con_nombre_provisional: events.length };
+    integrantes_historicos_creados: historicalPeopleCreated,
+    eventos_con_nombre_provisional: events.filter(event => /^Actividad \d{4}-\d{2}-\d{2}/.test(event.nombre)).length };
   console.log(JSON.stringify(summary, null, 2));
   return summary;
 }

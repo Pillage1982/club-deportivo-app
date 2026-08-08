@@ -2,7 +2,7 @@
 'use strict';
 
 const path = require('path');
-const { parseMembers, parseFinances, parseAttendance, parsePositions, ATTENDANCE_CUTOFF } = require('./excel');
+const { parseMembers, parseFinances, parseAttendance, parsePositions, parsePositionAttendance, ATTENDANCE_CUTOFF } = require('./excel');
 const { parsePeopleSnapshot } = require('./snapshot');
 const { compareMembers, indexByRut, reconcileAttendanceRuts } = require('./core');
 const { generateReports } = require('./reports');
@@ -63,6 +63,9 @@ function run(argv = process.argv.slice(2)) {
   const files = { members: required(options,'members-file'), payments: required(options,'payments-file'), attendance: required(options,'attendance-file'), positions: required(options,'positions-file') };
   const reportDir = path.resolve(options['report-dir'] || 'reports/gdc'); const snapshot = required(options,'db-snapshot');
   const db = parsePeopleSnapshot(snapshot), members = parseMembers(files.members), finance = parseFinances(files.payments), attendanceRaw = parseAttendance(files.attendance), positions = parsePositions(files.positions);
+  const positionAttendance = parsePositionAttendance(files.positions);
+  const attendanceSourceKeys = new Set(attendanceRaw.filter(row=>row.rut_valido).map(row=>`${row.rut}|${row.fecha}`));
+  const rescuedPositionAttendance = positionAttendance.filter(row=>!attendanceSourceKeys.has(`${row.rut}|${row.fecha}`));
   const rutReconciliation = reconcileAttendanceRuts(attendanceRaw, [
     ...db.map(row=>({...row,source:'BD'})), ...members.map(row=>({...row,source:'NOMINA'})),
     ...finance.rows.map(row=>({...row,source:'FINANZAS'})), ...positions.map(row=>({...row,source:'POSICIONES'}))
@@ -115,6 +118,7 @@ function run(argv = process.argv.slice(2)) {
     integrantes_actualizados:comparison.filter(x=>x.accion_recomendada==='ACTUALIZAR').length, integrantes_omitidos:comparison.filter(x=>x.accion_recomendada==='SOLO_EN_BD').length,
     integrantes_en_revision:comparison.filter(x=>/REVISAR|SOLO_/.test(x.accion_recomendada)).length,pagos_importados:payments.length,pagos_omitidos:paymentReview.length,
     pagos_con_diferencias:paymentReview.length,asistencias_importadas:cleanAttendance.length,asistencias_duplicadas:duplicates.length,
+    asistencias_rescatadas_planilla_posiciones:rescuedPositionAttendance.length,
     cuotas_periodo:10,monto_anual_cuotas:120000,monto_cuota_mensual:12000,
     periodo_financiero:'2025-10 a 2026-07',
     bonificacion_pago_anual:100,
