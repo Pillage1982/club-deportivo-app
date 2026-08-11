@@ -193,6 +193,30 @@ async function eliminarBonificacionPagoAnual() {
   `);
 }
 
+// Art. 9.3, escenario a: las diez cuotas del pago anual al inicio valen 20
+// puntos cada una. Las futuras ya tienen 20; esta migracion corrige octubre.
+async function ajustarPagoAnualInicioCiclo() {
+  await ejecutar(`
+    UPDATE puntajes pt
+    JOIN cuotas c ON c.id = pt.cuota_id
+    JOIN pago_detalle d ON d.tipo = 'cuota' AND d.referencia_id = c.id
+    JOIN pagos pg ON pg.id = d.pago_id
+    JOIN (
+      SELECT d2.pago_id
+      FROM pago_detalle d2
+      WHERE d2.tipo = 'cuota'
+      GROUP BY d2.pago_id
+      HAVING COUNT(DISTINCT d2.referencia_id) = 10
+         AND SUM(d2.monto_pagado) >= 120000
+    ) anual ON anual.pago_id = pg.id
+    SET pt.puntos = 20,
+        pt.detalle = 'Cuota pagada anticipadamente (art. 9.3, pago anual al inicio)'
+    WHERE c.anio = 2025 AND c.mes = 10
+      AND YEAR(pg.fecha) = 2025 AND MONTH(pg.fecha) = 10
+      AND pg.monto_total >= 120000
+  `);
+}
+
 async function asegurarTablasFormaciones() {
   await ejecutar(`
     CREATE TABLE IF NOT EXISTS formaciones (
@@ -291,6 +315,7 @@ async function ejecutarMigraciones() {
   await asegurarTablaPuntajes();
   await asegurarCamposPuntajes();
   await eliminarBonificacionPagoAnual();
+  await ajustarPagoAnualInicioCiclo();
   await asegurarTablaGastos();
   await asegurarTablasFormaciones();
   await asegurarCamposPagos();
