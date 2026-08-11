@@ -35,10 +35,10 @@ function renderizarFormacionActual(bloques) {
   }
   contenedor.innerHTML = bloques.map(formacion => {
     const filas=[];
-    for (let inicio=0; inicio<formacion.posiciones.length; inicio+=8) {
-      const posiciones=formacion.posiciones.slice(inicio,inicio+8);
+    for (let inicio=0; inicio<formacion.posiciones.length; inicio+=12) {
+      const posiciones=formacion.posiciones.slice(inicio,inicio+12);
       filas.push(`<div class="mb-3"><div class="small fw-bold text-uppercase text-muted mb-2">${inicio===0?'Frente':`Fila ${inicio/8}`}</div>
-        <div class="row row-cols-2 row-cols-md-4 row-cols-xl-8 g-2">${posiciones.map(tarjetaFormacionActual).join('')}</div></div>`);
+        <div class="formacion-fila-estatutaria">${posiciones.map(tarjetaFormacionActual).join('')}</div></div>`);
     }
     return `<section class="card mb-4 shadow-sm"><div class="card-header">
       <strong>${escaparFormacion(formacion.bloque)}</strong>
@@ -50,7 +50,7 @@ function renderizarFormacionActual(bloques) {
 function tarjetaFormacionActual(posicion) {
   const nombre=`${posicion.nombres} ${posicion.apellido_paterno} ${posicion.apellido_materno || ''}`.trim();
   return `<div class="col"><div class="card h-100 text-center"><div class="card-body p-2">
-    <div class="badge bg-dark mb-1">${posicion.orden_general}</div>
+    <div class="badge bg-dark mb-1">${posicion.posicion_ranking || posicion.orden_general}</div>
     <div class="small fw-semibold">${escaparFormacion(nombre)}</div>
     <div class="small text-muted">${Number(posicion.puntaje_utilizado)} pts</div>
   </div></div></div>`;

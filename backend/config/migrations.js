@@ -184,6 +184,15 @@ async function asegurarTablaGastos() {
   `);
 }
 
+// Esta bonificacion se cargo por una interpretacion incorrecta de los estatutos.
+// Se elimina de forma idempotente sin afectar los puntos normales de cada cuota.
+async function eliminarBonificacionPagoAnual() {
+  await ejecutar(`
+    DELETE FROM puntajes
+    WHERE detalle = 'Bonificación pago anual en un solo pago (temporada 2025-2026)'
+  `);
+}
+
 async function asegurarTablasFormaciones() {
   await ejecutar(`
     CREATE TABLE IF NOT EXISTS formaciones (
@@ -237,7 +246,7 @@ async function asegurarCamposPagos() {
 async function consolidarTiposCuota() {
   const mensualidades = await ejecutar("SELECT id FROM tipos_cuotas WHERE nombre='Mensualidad' ORDER BY id");
   if (!mensualidades.length) {
-    await ejecutar("INSERT INTO tipos_cuotas (nombre,monto_base,descripcion) VALUES ('Mensualidad',10000,'Cuota mensual GDC')");
+    await ejecutar("INSERT INTO tipos_cuotas (nombre,monto_base,descripcion) VALUES ('Mensualidad',12000,'Cuota mensual GDC')");
     return;
   }
   const canonico = mensualidades[0].id;
@@ -246,7 +255,7 @@ async function consolidarTiposCuota() {
     await ejecutar('DELETE FROM cuotas WHERE tipo_cuota_id=?', [duplicado.id]);
     await ejecutar('DELETE FROM tipos_cuotas WHERE id=?', [duplicado.id]);
   }
-  await ejecutar("UPDATE tipos_cuotas SET monto_base=10000, descripcion='Cuota mensual GDC' WHERE id=?", [canonico]);
+  await ejecutar("UPDATE tipos_cuotas SET monto_base=12000, descripcion='Cuota mensual GDC' WHERE id=?", [canonico]);
 }
 
 async function reconstruirVistaRankingPuntaje() {
@@ -281,6 +290,7 @@ async function ejecutarMigraciones() {
   await asegurarEstadosAsistencia(colsAsistencias);
   await asegurarTablaPuntajes();
   await asegurarCamposPuntajes();
+  await eliminarBonificacionPagoAnual();
   await asegurarTablaGastos();
   await asegurarTablasFormaciones();
   await asegurarCamposPagos();

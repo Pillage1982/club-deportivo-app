@@ -60,4 +60,24 @@ LEFT JOIN cuotas c ON d.tipo='cuota' AND c.id=d.referencia_id
 WHERE pg.id IS NULL OR (d.tipo='cuota' AND c.id IS NULL);
 ```
 
+## Actualizacion posterior de puntajes
+
+> **No genera aun un resultado oficial:** el archivo fue contrastado con los
+> articulos 8.4 y 9.3, pero faltan las transformaciones y cortes de 9.1, la
+> disposicion de 9.1.3, la ponderacion de 12.2 y clasificar los eventos
+> provisionales. Consulte `documentacion/matriz_validacion_estatuto_puntajes.md`.
+
+Si la semilla ya estaba cargada antes de incorporar la regla acumulada de
+cuota al dia, importar desde phpMyAdmin el archivo
+`actualizar_puntajes_asistencia_post_pagos.sql`.
+
+Este archivo no vuelve a cargar personas, pagos, cuotas ni asistencias. Crea
+primero la tabla `respaldo_puntajes_antes_recalculo`, elimina la bonificacion
+anual incorrecta, conserva fuera del ranking los eventos con nombre provisional
+y muestra al final los controles y el ranking por bloque.
+
+El control `asistencias_sin_puntaje` debe resultar en `0`. Los eventos
+provisionales pueden ser mayores que cero y seguiran excluidos hasta que sean
+clasificados con su nombre oficial.
+
 Los dos conteos de registros huérfanos deben ser cero. Si la importación muestra un error antes del `COMMIT`, ejecutar `ROLLBACK;`, guardar la captura completa del error y no volver a ejecutar otra semilla hasta corregirla.

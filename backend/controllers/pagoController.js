@@ -36,6 +36,12 @@ function procesarPuntajeCuota(persona_id, cuota_id) {
   });
 }
 
+function recalcularAsistenciasPersona(personaId) {
+  return puntajeModel.eliminarPuntajesAsistenciasAusentes(personaId)
+    .then(() => puntajeModel.recalcularPuntajesAsistencia(personaId))
+    .catch(error => console.error('Error recalculando puntaje de asistencias:', error));
+}
+
   const metodosPermitidos = [
   'efectivo',
   'transferencia',
@@ -98,6 +104,7 @@ function validarPago(body) {
         cuotaModel.marcarCuotaPagada(cuota.id, errC => {
           if (errC) return res.status(500).json({ mensaje: 'Pago registrado, pero no se pudo cerrar la cuota' });
           procesarPuntajeCuota(Number(req.body.persona_id), cuota.id);
+          recalcularAsistenciasPersona(Number(req.body.persona_id));
           res.json({ mensaje: 'Pago registrado y cuota marcada como pagada' });
         });
       });

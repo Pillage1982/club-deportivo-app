@@ -176,14 +176,15 @@ INSERT INTO pago_detalle (pago_id,tipo,referencia_id,monto_pagado) SELECT pg.id,
     )
     .replace(
       "UPDATE importacion_lotes SET estado='aplicado' WHERE identificador=@gdc_lote;",
-      `INSERT IGNORE INTO puntajes (persona_id,asistencia_id,evento_id,puntos,detalle,fecha)
+      `INSERT INTO puntajes (persona_id,asistencia_id,evento_id,puntos,detalle,fecha)
 SELECT a.persona_id,a.id,a.evento_id,
-  CASE WHEN EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') THEN 10 ELSE 5 END,
-  CASE WHEN EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') THEN 'Presente + cuota al día (migración mensual)' ELSE 'Presente sin cuota al día (migración mensual)' END,
+  CASE WHEN EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') AND NOT EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND (c.anio<YEAR(e.fecha) OR (c.anio=YEAR(e.fecha) AND c.mes<=MONTH(e.fecha))) AND c.estado<>'pagado') THEN 10 ELSE 5 END,
+  CASE WHEN EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') AND NOT EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND (c.anio<YEAR(e.fecha) OR (c.anio=YEAR(e.fecha) AND c.mes<=MONTH(e.fecha))) AND c.estado<>'pagado') THEN 'Presente + cuota al día (migración mensual)' ELSE 'Presente sin cuota al día (migración mensual)' END,
   DATE(e.fecha)
 FROM asistencias a JOIN eventos e ON e.id=a.evento_id
 WHERE a.estado='presente'
-  AND e.nombre NOT LIKE 'Actividad %'; -- Excluye eventos provisionales hasta su clasificación estatutaria.
+  AND e.nombre NOT LIKE 'Actividad %'
+ON DUPLICATE KEY UPDATE puntos=VALUES(puntos),detalle=VALUES(detalle),fecha=VALUES(fecha); -- Excluye eventos provisionales hasta su clasificación estatutaria.
 
 INSERT IGNORE INTO puntajes (persona_id,cuota_id,puntos,detalle,fecha)
 SELECT c.persona_id,c.id,
@@ -197,16 +198,6 @@ JOIN gdc_pagos gp ON gp.ref=ga.ref
 WHERE c.estado='pagado'
 GROUP BY c.id,c.persona_id,c.anio,c.mes
 HAVING MAX(gp.anio*100+gp.mes)<=c.anio*100+c.mes;
-
-INSERT INTO puntajes (persona_id,puntos,detalle,fecha)
-SELECT p.id,100,'Bonificación pago anual en un solo pago (temporada 2025-2026)',
-  STR_TO_DATE(CONCAT(gp.anio,'-',LPAD(gp.mes,2,'0'),'-01'),'%Y-%m-%d')
-FROM gdc_pagos gp
-JOIN personas p ON p.rut=gp.rut
-JOIN gdc_asignaciones ga ON ga.ref=gp.ref
-WHERE gp.monto>=120000
-GROUP BY p.id,gp.ref,gp.anio,gp.mes
-HAVING SUM(ga.monto)=120000 AND COUNT(DISTINCT CONCAT(ga.anio,'-',LPAD(ga.mes,2,'0')))=10;
 
 CREATE OR REPLACE VIEW vista_estado_financiero AS
 SELECT p.id,p.nombres,p.apellido_paterno,p.apellido_materno,

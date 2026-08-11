@@ -23,12 +23,12 @@ test('pago atrasado cubre deuda pero no genera puntos de oportunidad', () => {
   const scores=calculateScores([{rut:'12345678-5',rut_valido:true,estado:'Activo'}],[],payments);
   assert.equal(scores.has('12345678-5'),false);
 });
-test('pago anual unico recibe bonificacion de 100 puntos', () => {
+test('pago anual unico recibe solo los puntos normales de sus cuotas', () => {
   const payments=[{rut:'12345678-5',anio:2025,mes:10,monto:120000,fila_origen:1,referencia_externa:'anual'}];
   const scores=calculateScores([{rut:'12345678-5',rut_valido:true,estado:'Activo'}],[],payments);
-  assert.equal(scores.get('12345678-5'),290);
+  assert.equal(scores.get('12345678-5'),190);
 });
-test('dos pagos parciales que completan el anio no reciben bonificacion anual', () => {
+test('dos pagos parciales que completan el anio reciben los mismos puntos por cuota', () => {
   const payments=[
     {rut:'12345678-5',anio:2025,mes:10,monto:60000,fila_origen:1,referencia_externa:'parte-1'},
     {rut:'12345678-5',anio:2025,mes:11,monto:60000,fila_origen:2,referencia_externa:'parte-2'}

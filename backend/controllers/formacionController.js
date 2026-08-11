@@ -1,6 +1,7 @@
 'use strict';
 
 const model = require('../models/formacionModel');
+const { ordenarFormacionEstatutaria } = require('../utils/estatutoGdcRules');
 
 function cargarConPosiciones(formaciones, res) {
   if (!formaciones.length) return res.json([]);
@@ -23,7 +24,11 @@ exports.actual = (req,res) => model.obtenerFormacionActual((err,rows) => {
       bloques.push({bloque:persona.bloque,posiciones:[]});
     }
     const formacion=bloques[indice.get(persona.bloque)];
-    formacion.posiciones.push({...persona,orden_general:formacion.posiciones.length+1,ajuste_manual:0});
+    formacion.posiciones.push({...persona,ajuste_manual:0});
+  });
+  bloques.forEach(formacion => {
+    formacion.posiciones = ordenarFormacionEstatutaria(formacion.posiciones)
+      .map((persona, indice) => ({ ...persona, orden_general: indice + 1 }));
   });
   res.json(bloques);
 });
@@ -44,7 +49,8 @@ exports.generar = (req,res) => {
         if (formacion.estado==='confirmada') return res.status(409).json({mensaje:'La formación está confirmada; debe reabrirse antes de regenerar'});
         model.actualizarBorrador(id,req.usuario.id,req.body.observaciones,err4 => {
           if (err4) return res.status(500).json({mensaje:'No se pudo actualizar el borrador'});
-          model.reemplazarPosiciones(id,candidatos,err5 => err5 ? res.status(500).json({mensaje:'No se pudieron guardar las posiciones'}) : res.json({mensaje:'Formación generada desde el ranking',id,cantidad:candidatos.length}));
+        const posiciones=ordenarFormacionEstatutaria(candidatos);
+        model.reemplazarPosiciones(id,posiciones,err5 => err5 ? res.status(500).json({mensaje:'No se pudieron guardar las posiciones'}) : res.json({mensaje:'Formación generada desde el ranking',id,cantidad:candidatos.length}));
         });
       });
     });

@@ -9071,14 +9071,15 @@ WHERE p.rut IN (SELECT rut FROM gdc_personas) AND c.anio=2026 AND c.mes IN (8,9)
 INSERT INTO pago_detalle (pago_id,tipo,referencia_id,monto_pagado) SELECT pg.id,'cuota',c.id,a.monto FROM gdc_asignaciones a JOIN gdc_pagos s ON s.ref=a.ref JOIN pagos pg ON pg.referencia_externa=s.ref JOIN personas p ON p.rut=a.rut JOIN cuotas c ON c.persona_id=p.id AND c.tipo_cuota_id=@tipo_mensualidad AND c.anio=a.anio AND c.mes=a.mes WHERE NOT EXISTS (SELECT 1 FROM pago_detalle d WHERE d.pago_id=pg.id AND d.tipo='cuota' AND d.referencia_id=c.id);
 UPDATE cuotas c LEFT JOIN (SELECT referencia_id,SUM(monto_pagado) pagado FROM pago_detalle WHERE tipo='cuota' GROUP BY referencia_id) d ON d.referencia_id=c.id SET c.estado=CASE WHEN COALESCE(d.pagado,0)>=c.monto THEN 'pagado' WHEN c.fecha_vencimiento<CURDATE() THEN 'vencido' ELSE 'pendiente' END WHERE c.tipo_cuota_id=@tipo_mensualidad AND c.anio IN (2025,2026);
 
-INSERT IGNORE INTO puntajes (persona_id,asistencia_id,evento_id,puntos,detalle,fecha)
+INSERT INTO puntajes (persona_id,asistencia_id,evento_id,puntos,detalle,fecha)
 SELECT a.persona_id,a.id,a.evento_id,
-  CASE WHEN EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') THEN 10 ELSE 5 END,
-  CASE WHEN EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') THEN 'Presente + cuota al día (migración mensual)' ELSE 'Presente sin cuota al día (migración mensual)' END,
+  CASE WHEN EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') AND NOT EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND (c.anio<YEAR(e.fecha) OR (c.anio=YEAR(e.fecha) AND c.mes<=MONTH(e.fecha))) AND c.estado<>'pagado') THEN 10 ELSE 5 END,
+  CASE WHEN EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') AND NOT EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND (c.anio<YEAR(e.fecha) OR (c.anio=YEAR(e.fecha) AND c.mes<=MONTH(e.fecha))) AND c.estado<>'pagado') THEN 'Presente + cuota al día (migración mensual)' ELSE 'Presente sin cuota al día (migración mensual)' END,
   DATE(e.fecha)
 FROM asistencias a JOIN eventos e ON e.id=a.evento_id
 WHERE a.estado='presente'
-  AND e.nombre NOT LIKE 'Actividad %'; -- Excluye eventos provisionales hasta su clasificación estatutaria.
+  AND e.nombre NOT LIKE 'Actividad %'
+ON DUPLICATE KEY UPDATE puntos=VALUES(puntos),detalle=VALUES(detalle),fecha=VALUES(fecha); -- Excluye eventos provisionales hasta su clasificación estatutaria.
 
 INSERT IGNORE INTO puntajes (persona_id,cuota_id,puntos,detalle,fecha)
 SELECT c.persona_id,c.id,
@@ -9092,16 +9093,6 @@ JOIN gdc_pagos gp ON gp.ref=ga.ref
 WHERE c.estado='pagado'
 GROUP BY c.id,c.persona_id,c.anio,c.mes
 HAVING MAX(gp.anio*100+gp.mes)<=c.anio*100+c.mes;
-
-INSERT INTO puntajes (persona_id,puntos,detalle,fecha)
-SELECT p.id,100,'Bonificación pago anual en un solo pago (temporada 2025-2026)',
-  STR_TO_DATE(CONCAT(gp.anio,'-',LPAD(gp.mes,2,'0'),'-01'),'%Y-%m-%d')
-FROM gdc_pagos gp
-JOIN personas p ON p.rut=gp.rut
-JOIN gdc_asignaciones ga ON ga.ref=gp.ref
-WHERE gp.monto>=120000
-GROUP BY p.id,gp.ref,gp.anio,gp.mes
-HAVING SUM(ga.monto)=120000 AND COUNT(DISTINCT CONCAT(ga.anio,'-',LPAD(ga.mes,2,'0')))=10;
 
 CREATE OR REPLACE VIEW vista_estado_financiero AS
 SELECT p.id,p.nombres,p.apellido_paterno,p.apellido_materno,
