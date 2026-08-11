@@ -23,10 +23,17 @@ test('pago atrasado cubre deuda pero no genera puntos de oportunidad', () => {
   const scores=calculateScores([{rut:'12345678-5',rut_valido:true,estado:'Activo'}],[],payments);
   assert.equal(scores.has('12345678-5'),false);
 });
-test('pago anual unico recibe solo los puntos normales de sus cuotas', () => {
+test('pago anual al inicio del ciclo suma 200 segun tabla del articulo 9.3', () => {
   const payments=[{rut:'12345678-5',anio:2025,mes:10,monto:120000,fila_origen:1,referencia_externa:'anual'}];
   const scores=calculateScores([{rut:'12345678-5',rut_valido:true,estado:'Activo'}],[],payments);
-  assert.equal(scores.get('12345678-5'),190);
+  assert.equal(scores.get('12345678-5'),200);
+});
+test('pago anual posterior conserva solo anticipos reales de la tabla', () => {
+  const mayo=[{rut:'12345678-5',anio:2026,mes:5,monto:120000,fila_origen:1,referencia_externa:'mayo'}];
+  const julio=[{rut:'12345678-5',anio:2026,mes:7,monto:120000,fila_origen:1,referencia_externa:'julio'}];
+  const persona=[{rut:'12345678-5',rut_valido:true,estado:'Activo'}];
+  assert.equal(calculateScores(persona,[],mayo).get('12345678-5'),50);
+  assert.equal(calculateScores(persona,[],julio).get('12345678-5'),10);
 });
 test('dos pagos parciales que completan el anio reciben los mismos puntos por cuota', () => {
   const payments=[

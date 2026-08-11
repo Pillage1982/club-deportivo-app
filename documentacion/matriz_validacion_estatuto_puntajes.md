@@ -35,7 +35,7 @@ pendientes indicadas en esta matriz**.
 | 9.1.2 | Segundo proceso adiciona actividades anteriores al primer ensayo; define lugar individual y suma por bloque/fila | Acumulado por ciclo y subtotal por bloque | Pendiente |
 | 9.1.3 | Ranking alterna guias: primero sector A/impares, segundo sector B/pares y continua segun figura | Disposicion espacial de 12 puestos por fila | Pendiente; UI actual usa grupos de 8 |
 | 9.2 | Puntaje se asocia al pago oportuno de cuotas y compromisos financieros definidos | Incluir conceptos puntuables explicitamente | Cuotas implementadas; otros compromisos no modelados |
-| 9.3 | Cuota pagada en su mes: 10; cada mes anticipado: 10 adicional | 10 oportuno, 20 anticipado, 0 atrasado | Implementado para cuotas importadas |
+| 9.3 | Cuota pagada en su mes: 10; cada mes anticipado: 10 adicional | Aplicar estrictamente la tabla: pago anual completo al inicio suma 200; oportuno 10, anticipado 20 y atrasado 0 | Implementado para cuotas importadas |
 | 10.1-10.2 | Faltas y sanciones tienen reincidencia y consecuencias disciplinarias/economicas | Modulo disciplinario separado; no inventar descuento de puntaje | Pendiente; no sumar multas actuales al ranking |
 | 12.2 | Ponderacion de bloque solo desempata la posicion del bloque en formacion | Ordenar bloques por suma y usar ponderacion unicamente en empate | Pendiente |
 | 12.3 | Ninos, figurines y Condor quedan fuera de ponderacion; posicion ya definida | Condor mantiene puesto fijo; especiales fuera de ponderacion | Regla confirmada; falta registrar posiciones exactas |

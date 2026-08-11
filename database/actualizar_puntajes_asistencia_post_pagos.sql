@@ -18,9 +18,29 @@ UPDATE tipos_cuotas
 SET monto_base = 12000, descripcion = 'Cuota mensual GDC'
 WHERE nombre = 'Mensualidad';
 
--- El pago anual solo recibe los puntos normales de las cuotas cubiertas.
+-- Elimina la antigua bonificacion plana de 100, que producia 290 puntos.
 DELETE FROM puntajes
 WHERE detalle = 'Bonificación pago anual en un solo pago (temporada 2025-2026)';
+
+-- Art. 9.3, escenario a: pago anual completo en octubre = 200 puntos.
+-- Las nueve cuotas futuras ya tienen 20; se corrige octubre de 10 a 20.
+UPDATE puntajes pt
+JOIN cuotas c ON c.id = pt.cuota_id
+JOIN pago_detalle d ON d.tipo = 'cuota' AND d.referencia_id = c.id
+JOIN pagos pg ON pg.id = d.pago_id
+JOIN (
+  SELECT d2.pago_id
+  FROM pago_detalle d2
+  WHERE d2.tipo = 'cuota'
+  GROUP BY d2.pago_id
+  HAVING COUNT(DISTINCT d2.referencia_id) = 10
+     AND SUM(d2.monto_pagado) >= 120000
+) anual ON anual.pago_id = pg.id
+SET pt.puntos = 20,
+    pt.detalle = 'Cuota pagada anticipadamente (art. 9.3, pago anual al inicio)'
+WHERE c.anio = 2025 AND c.mes = 10
+  AND YEAR(pg.fecha) = 2025 AND MONTH(pg.fecha) = 10
+  AND pg.monto_total >= 120000;
 
 -- Ausencias y eventos provisionales no participan del ranking oficial.
 DELETE pt

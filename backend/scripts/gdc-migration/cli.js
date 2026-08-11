@@ -6,7 +6,7 @@ const { parseMembers, parseFinances, parseAttendance, parsePositions, parsePosit
 const { parsePeopleSnapshot } = require('./snapshot');
 const { compareMembers, indexByRut, reconcileAttendanceRuts } = require('./core');
 const { generateReports } = require('./reports');
-const { PERIODS, periodKey, allocatePaymentsToQuotas } = require('./paymentAllocation');
+const { PERIODS, periodKey, periodIndex, allocatePaymentsToQuotas } = require('./paymentAllocation');
 
 function args(argv) { const out = {}; for (const arg of argv) { const match = arg.match(/^--([^=]+)(?:=(.*))?$/); if (match) out[match[1]] = match[2] ?? true; } return out; }
 function required(options, key) { if (!options[key]) throw new Error(`Falta --${key}=<ruta>`); return path.resolve(options[key]); }
@@ -42,6 +42,18 @@ function calculateScores(people, attendance, payments) {
     const completion = rows.at(-1);
     if (completion.oportunidad === 'anticipado') add(completion.rut, 20);
     if (completion.oportunidad === 'oportuno') add(completion.rut, 10);
+  }
+  // Art. 9.3, escenario a: el pago anual completo al inicio del ciclo
+  // obtiene 100 puntos normales y 100 adicionales (200 en total).
+  for (const payment of payments) {
+    if (periodIndex(payment.anio, payment.mes) !== 0 || Number(payment.monto) < 120000) continue;
+    const asignadas = allocation.allocations.filter(row =>
+      row.referencia_externa_pago === payment.referencia_externa && row.cuota_periodo !== 'EXCEDENTE'
+    );
+    const total = asignadas.reduce((suma, row) => suma + Number(row.monto_asignado || 0), 0);
+    if (total === 120000 && new Set(asignadas.map(row => row.cuota_periodo)).size === PERIODS.length) {
+      add(payment.rut, 10);
+    }
   }
   return scores;
 }

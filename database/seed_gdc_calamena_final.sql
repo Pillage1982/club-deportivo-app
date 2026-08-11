@@ -9083,8 +9083,12 @@ ON DUPLICATE KEY UPDATE puntos=VALUES(puntos),detalle=VALUES(detalle),fecha=VALU
 
 INSERT IGNORE INTO puntajes (persona_id,cuota_id,puntos,detalle,fecha)
 SELECT c.persona_id,c.id,
-  CASE WHEN MAX(gp.anio*100+gp.mes)<c.anio*100+c.mes THEN 20 ELSE 10 END,
-  CASE WHEN MAX(gp.anio*100+gp.mes)<c.anio*100+c.mes THEN 'Cuota pagada anticipadamente (migración mensual)' ELSE 'Cuota pagada oportunamente (migración mensual)' END,
+  CASE WHEN MAX(gp.anio*100+gp.mes)<c.anio*100+c.mes
+         OR (c.anio=2025 AND c.mes=10 AND MAX(CASE WHEN gp.anio=2025 AND gp.mes=10 AND gp.monto>=120000 THEN 1 ELSE 0 END)=1)
+       THEN 20 ELSE 10 END,
+  CASE WHEN MAX(gp.anio*100+gp.mes)<c.anio*100+c.mes
+         OR (c.anio=2025 AND c.mes=10 AND MAX(CASE WHEN gp.anio=2025 AND gp.mes=10 AND gp.monto>=120000 THEN 1 ELSE 0 END)=1)
+       THEN 'Cuota pagada anticipadamente (migración mensual)' ELSE 'Cuota pagada oportunamente (migración mensual)' END,
   STR_TO_DATE(CONCAT(FLOOR(MAX(gp.anio*100+gp.mes)/100),'-',LPAD(MOD(MAX(gp.anio*100+gp.mes),100),2,'0'),'-01'),'%Y-%m-%d')
 FROM cuotas c
 JOIN personas p ON p.id=c.persona_id
