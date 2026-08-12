@@ -29,7 +29,7 @@ pendientes indicadas en esta matriz**.
 | 8.7-8.9 | Justificaciones se reciben hasta cierre y requieren respaldo/canal oficial | Fecha, medio y documento de respaldo | Pendiente |
 | 9.1.1 a | Primer proceso: primer ensayo general a Despedida; cada actividad maximo 10; suma de ensayos dividida por 3 | En 2025-2026 los ensayos generales comienzan el primer sabado de junio; division con redondeo convencional | Regla de temporada confirmada |
 | 9.1.1 b | Actividades de Fiesta de Ayquina valen 1 punto cada una | Excluirlas excepcionalmente del calculo 2025-2026 | Regla de temporada confirmada |
-| 9.1.1 c | Antiguedad: 1 punto por ano, sin limite | Calculo descontando recesos | Pendiente por historial de recesos |
+| 9.1.1 c | Antiguedad: 1 punto por ano, sin limite | Se suma un punto por cada ano cumplido desde `fecha_ingreso` | Implementado sin descuento de recesos; pendiente historial de recesos |
 | 9.1.1 d | Sumar actividades oficiales post Ayquina hasta procesion del 8 de diciembre | Clasificar eventos y fecha de corte | Pendiente |
 | 9.1.1 e | Bailarin nuevo recibe 1 punto al final | Nuevo: menos de un ano al corte o ingreso desde el 1 de septiembre que inicia la temporada | Regla confirmada; falta depurar fechas de ingreso |
 | 9.1.2 | Segundo proceso adiciona actividades anteriores al primer ensayo; define lugar individual y suma por bloque/fila | Acumulado por ciclo y subtotal por bloque | Pendiente |

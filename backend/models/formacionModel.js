@@ -8,7 +8,10 @@ exports.listarEventos = callback => db.query('SELECT id,nombre,fecha,finalizado 
 
 exports.obtenerFormacionActual = callback => db.query(`
   SELECT p.id AS persona_id,p.rut,p.nombres,p.apellido_paterno,p.apellido_materno,p.bloque,
-         COALESCE(SUM(pt.puntos),0) AS puntaje_utilizado
+         COALESCE(SUM(pt.puntos),0) + CASE
+           WHEN p.fecha_ingreso IS NULL OR p.fecha_ingreso > CURDATE() THEN 0
+           ELSE TIMESTAMPDIFF(YEAR,p.fecha_ingreso,CURDATE())
+         END AS puntaje_utilizado
   FROM personas p
   LEFT JOIN puntajes pt ON pt.persona_id=p.id
   WHERE p.activo=1 AND COALESCE(p.estado,'activo')='activo' AND COALESCE(p.es_honorario,0)=0
@@ -28,13 +31,16 @@ exports.listarBloquesElegibles = callback => db.query(`
 
 exports.obtenerCandidatos = (bloque, callback) => db.query(`
   SELECT p.id,p.rut,p.nombres,p.apellido_paterno,p.apellido_materno,p.bloque,
-         COALESCE(SUM(pt.puntos),0) AS puntaje
+         COALESCE(SUM(pt.puntos),0) + CASE
+           WHEN p.fecha_ingreso IS NULL OR p.fecha_ingreso > CURDATE() THEN 0
+           ELSE TIMESTAMPDIFF(YEAR,p.fecha_ingreso,CURDATE())
+         END AS puntaje
   FROM personas p
   LEFT JOIN puntajes pt ON pt.persona_id=p.id
   WHERE p.activo=1 AND COALESCE(p.estado,'activo')='activo' AND COALESCE(p.es_honorario,0)=0
     AND p.bloque=?
     AND LOWER(TRIM(p.bloque)) NOT IN (${marcadoresExclusion})
-  GROUP BY p.id,p.rut,p.nombres,p.apellido_paterno,p.apellido_materno,p.bloque
+  GROUP BY p.id,p.rut,p.nombres,p.apellido_paterno,p.apellido_materno,p.bloque,p.fecha_ingreso
   ORDER BY puntaje DESC,p.fecha_ingreso ASC,p.apellido_paterno ASC,p.nombres ASC`, [bloque, ...CATEGORIAS_EXCLUIDAS], callback);
 
 exports.obtenerPorEvento = (eventoId, callback) => db.query(`

@@ -291,12 +291,19 @@ async function reconstruirVistaRankingPuntaje() {
       p.apellido_paterno,
       p.apellido_materno,
       p.bloque,
-      COALESCE(SUM(pt.puntos), 0) AS puntaje_total,
+      CASE
+        WHEN p.fecha_ingreso IS NULL OR p.fecha_ingreso > CURDATE() THEN 0
+        ELSE TIMESTAMPDIFF(YEAR, p.fecha_ingreso, CURDATE())
+      END AS puntos_antiguedad,
+      COALESCE(SUM(pt.puntos), 0) + CASE
+        WHEN p.fecha_ingreso IS NULL OR p.fecha_ingreso > CURDATE() THEN 0
+        ELSE TIMESTAMPDIFF(YEAR, p.fecha_ingreso, CURDATE())
+      END AS puntaje_total,
       COUNT(pt.id)                AS total_registros
     FROM personas p
     LEFT JOIN puntajes pt ON p.id = pt.persona_id
     WHERE p.activo = 1 AND COALESCE(p.estado, 'activo') = 'activo'
-    GROUP BY p.id, p.nombres, p.apellido_paterno, p.apellido_materno, p.bloque
+    GROUP BY p.id, p.nombres, p.apellido_paterno, p.apellido_materno, p.bloque, p.fecha_ingreso
     ORDER BY puntaje_total DESC
   `);
 }
