@@ -296,6 +296,8 @@ async function reconstruirVistaRankingPuntaje() {
         WHEN p.fecha_ingreso IS NULL OR p.fecha_ingreso > CURDATE() THEN 0
         ELSE TIMESTAMPDIFF(YEAR, p.fecha_ingreso, CURDATE())
       END AS puntos_antiguedad,
+      COALESCE(SUM(CASE WHEN pt.cuota_id IS NOT NULL THEN pt.puntos ELSE 0 END), 0) AS puntos_cuotas,
+      COALESCE(SUM(CASE WHEN pt.asistencia_id IS NOT NULL THEN pt.puntos ELSE 0 END), 0) AS puntos_asistencia,
       COALESCE(SUM(pt.puntos), 0) + CASE
         WHEN p.fecha_ingreso IS NULL OR p.fecha_ingreso > CURDATE() THEN 0
         ELSE TIMESTAMPDIFF(YEAR, p.fecha_ingreso, CURDATE())

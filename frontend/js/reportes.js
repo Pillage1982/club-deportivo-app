@@ -322,14 +322,16 @@ async function exportarPuntajeExcel() {
     return;
   }
   const rows = rankingCargado.map((r, i) => ({
-    '#':                i + 1,
-    'RUT':              r.rut || '',
-    'Apellido paterno': r.apellido_paterno || '',
-    'Apellido materno': r.apellido_materno || '',
-    'Nombres':          r.nombres || '',
-    'Bloque':           r.bloque || '',
-    'Puntaje':          Number(r.puntaje_total),
-    'Registros':        Number(r.total_registros)
+    '#':                  i + 1,
+    'RUT':                r.rut || '',
+    'Apellido paterno':   r.apellido_paterno || '',
+    'Apellido materno':   r.apellido_materno || '',
+    'Nombres':            r.nombres || '',
+    'Bloque':             r.bloque || '',
+    'Puntos cuotas':      Number(r.puntos_cuotas || 0),
+    'Puntos asistencia':  Number(r.puntos_asistencia || 0),
+    'Puntaje':            Number(r.puntaje_total),
+    'Registros':          Number(r.total_registros)
   }));
   await _descargarExcel(rows, 'Puntaje', 'ranking_puntaje');
   mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
@@ -625,7 +627,7 @@ function exportarPuntajePDF() {
   const totalPuntos = rankingCargado.reduce((s, r) => s + Number(r.puntaje_total), 0);
   doc.autoTable({
     startY: 30,
-    head: [['#', 'RUT', 'Apellido paterno', 'Apellido materno', 'Nombres', 'Bloque', 'Puntaje', 'Registros']],
+    head: [['#', 'RUT', 'Apellido paterno', 'Apellido materno', 'Nombres', 'Bloque', 'Puntos cuotas', 'Puntos asistencia', 'Puntaje', 'Registros']],
     body: rankingCargado.map((r, i) => [
       i + 1,
       r.rut || '',
@@ -633,18 +635,22 @@ function exportarPuntajePDF() {
       r.apellido_materno || '',
       r.nombres || '',
       r.bloque || '',
+      Number(r.puntos_cuotas || 0),
+      Number(r.puntos_asistencia || 0),
       r.puntaje_total,
       r.total_registros
     ]),
-    foot: [['', '', '', '', `${rankingCargado.length} integrante(s)`, '', totalPuntos, '']],
+    foot: [['', '', '', '', `${rankingCargado.length} integrante(s)`, '', '', '', totalPuntos, '']],
     styles:             { fontSize: 7, cellPadding: 2 },
     headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
     footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [250, 250, 250] },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
-      6: { halign: 'center', fontStyle: 'bold' },
-      7: { halign: 'center' }
+      6: { halign: 'center' },
+      7: { halign: 'center' },
+      8: { halign: 'center', fontStyle: 'bold' },
+      9: { halign: 'center' }
     }
   });
   doc.save(`puntaje_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
