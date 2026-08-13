@@ -314,6 +314,20 @@ async function _obtenerFormacionesParaExportar() {
   return window.formacionesCargadas;
 }
 
+// Agrupa en filas de hasta 12 integrantes, en el mismo orden e igual etiqueta
+// (Frente / Fila N) que usa frontend/js/formaciones.js para pintar la formación
+// en pantalla — así el export queda igual a lo que se ve en la app.
+function _agruparFormacionPorFilas(posiciones) {
+  const grupos = [];
+  for (let inicio = 0; inicio < posiciones.length; inicio += 12) {
+    grupos.push({
+      etiqueta: inicio === 0 ? 'Frente' : `Fila ${Math.ceil(inicio / 12)}`,
+      integrantes: posiciones.slice(inicio, inicio + 12)
+    });
+  }
+  return grupos;
+}
+
 async function exportarFormacionesExcel() {
   if (!_excelDisponible()) return;
   let formaciones;
@@ -332,18 +346,10 @@ async function exportarFormacionesExcel() {
   const workbook = new ExcelJS.Workbook();
   const nombresUsados = new Set();
   let totalPosiciones = 0;
-  const headers = ['Posición', 'Fila', 'Integrante', 'Puntaje'];
+  const bordeDelgado = { style: 'thin' };
+
   bloquesConPosiciones.forEach((formacion, indice) => {
-    const rows = formacion.posiciones.map(posicion => {
-      const orden = Number(posicion.orden_general || 0);
-      return [
-        orden,
-        orden <= 8 ? 'Frente' : `Fila ${Math.ceil(orden / 8) - 1}`,
-        `${posicion.nombres} ${posicion.apellido_paterno} ${posicion.apellido_materno || ''}`.trim(),
-        Number(posicion.puntaje_utilizado || 0)
-      ];
-    });
-    totalPosiciones += rows.length;
+    totalPosiciones += formacion.posiciones.length;
     const base = String(formacion.bloque || `Bloque ${indice + 1}`)
       .replace(/[\\/?*\[\]:]/g, ' ')
       .trim()
@@ -355,12 +361,33 @@ async function exportarFormacionesExcel() {
       nombreHoja = `${base.substring(0, 31 - sufijo.length)}${sufijo}`;
     }
     nombresUsados.add(nombreHoja.toLowerCase());
+
     const sheet = workbook.addWorksheet(nombreHoja);
-    sheet.addRow(headers);
-    rows.forEach(row => sheet.addRow(row));
-    _estilizarEncabezado(sheet.getRow(1));
-    _aplicarBordesYFiltro(sheet, headers.length, rows.length + 1);
+    let fila = 1;
+    _agruparFormacionPorFilas(formacion.posiciones).forEach(grupo => {
+      const columnas = grupo.integrantes.length;
+      const filaEtiqueta = sheet.getRow(fila);
+      filaEtiqueta.getCell(1).value = grupo.etiqueta;
+      filaEtiqueta.getCell(1).font = { bold: true };
+      if (columnas > 1) sheet.mergeCells(fila, 1, fila, columnas);
+      fila++;
+
+      const filaPos = fila, filaNom = fila + 1, filaPts = fila + 2;
+      grupo.integrantes.forEach((p, i) => {
+        const col = i + 1;
+        sheet.getCell(filaPos, col).value = `Pos. ${p.posicion_ranking || p.orden_general}`;
+        sheet.getCell(filaNom, col).value = `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno || ''}`.trim();
+        sheet.getCell(filaPts, col).value = Number(p.puntaje_utilizado || 0);
+        [filaPos, filaNom, filaPts].forEach(f => {
+          sheet.getCell(f, col).border = { top: bordeDelgado, left: bordeDelgado, bottom: bordeDelgado, right: bordeDelgado };
+        });
+      });
+      _estilizarEncabezado(sheet.getRow(filaPos));
+      fila = filaPts + 2;
+    });
+    sheet.columns.forEach(col => { col.width = 18; });
   });
+
   const buffer = await workbook.xlsx.writeBuffer();
   _descargarBlob(buffer, `formaciones_vigentes_${_fechaHoy().replace(/\//g, '-')}.xlsx`);
   mostrarAlerta(`Excel generado: ${bloquesConPosiciones.length} bloque(s), ${totalPosiciones} posición(es).`, 'success');
@@ -610,37 +637,36 @@ async function exportarFormacionesPDF() {
     return;
   }
 
-  const doc = _crearDocPDF('Formación Vigente por Puntaje');
+  const doc = _crearDocPDF('Formación Vigente por Puntaje', true);
   let primerBloque = true;
   formaciones.forEach(formacion => {
     const posiciones = formacion.posiciones || [];
     if (!posiciones.length) return;
     if (!primerBloque) doc.addPage();
-    const inicioY = primerBloque ? 30 : 18;
+    let y = primerBloque ? 30 : 18;
     primerBloque = false;
-    doc.setFontSize(11);
+    doc.setFontSize(13);
     doc.setTextColor(30, 30, 30);
-    doc.text(`${formacion.bloque || 'Sin bloque'} (${posiciones.length})`, 14, inicioY);
-    doc.autoTable({
-      startY: inicioY + 3,
-      head: [['Posición', 'Fila', 'Integrante', 'Puntaje']],
-      body: posiciones.map(posicion => {
-        const orden = Number(posicion.orden_general || 0);
-        return [
-          orden,
-          orden <= 8 ? 'Frente' : `Fila ${Math.ceil(orden / 8) - 1}`,
-          `${posicion.nombres} ${posicion.apellido_paterno} ${posicion.apellido_materno || ''}`.trim(),
-          Number(posicion.puntaje_utilizado || 0)
-        ];
-      }),
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [250, 250, 250] },
-      columnStyles: {
-        0: { cellWidth: 20, halign: 'center' },
-        1: { cellWidth: 25, halign: 'center' },
-        3: { cellWidth: 25, halign: 'center', fontStyle: 'bold' }
-      }
+    doc.text(`${formacion.bloque || 'Sin bloque'} (${posiciones.length})`, 14, y);
+    y += 6;
+
+    _agruparFormacionPorFilas(posiciones).forEach(grupo => {
+      doc.setFontSize(10);
+      doc.setTextColor(90, 90, 90);
+      doc.text(grupo.etiqueta, 14, y);
+      doc.autoTable({
+        startY: y + 2,
+        head: [grupo.integrantes.map(p => `Pos. ${p.posicion_ranking || p.orden_general}`)],
+        body: [
+          grupo.integrantes.map(p => `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno || ''}`.trim()),
+          grupo.integrantes.map(p => `${Number(p.puntaje_utilizado || 0)} pts`)
+        ],
+        styles: { fontSize: 7, cellPadding: 2, halign: 'center' },
+        headStyles: { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [250, 250, 250] },
+        margin: { left: 14, right: 14 }
+      });
+      y = doc.lastAutoTable.finalY + 8;
     });
   });
 

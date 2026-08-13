@@ -37,7 +37,7 @@ function renderizarFormacionActual(bloques) {
     const filas=[];
     for (let inicio=0; inicio<formacion.posiciones.length; inicio+=12) {
       const posiciones=formacion.posiciones.slice(inicio,inicio+12);
-      filas.push(`<div class="mb-3"><div class="small fw-bold text-uppercase text-muted mb-2">${inicio===0?'Frente':`Fila ${inicio/8}`}</div>
+      filas.push(`<div class="mb-3"><div class="small fw-bold text-uppercase text-muted mb-2">${inicio===0?'Frente':`Fila ${Math.ceil(inicio/12)}`}</div>
         <div class="formacion-fila-estatutaria">${posiciones.map(tarjetaFormacionActual).join('')}</div></div>`);
     }
     return `<section class="card mb-4 shadow-sm"><div class="card-header">
