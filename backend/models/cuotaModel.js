@@ -98,12 +98,22 @@ exports.crearCuotaMensual = (
 
 };
 
-// Un solo INSERT SELECT reemplaza N inserts individuales (uno por socio)
+// Un solo INSERT SELECT reemplaza N inserts individuales (uno por socio).
+// Art. 2.1.B Estatutos GDC 2016: bailarines de 0 a 11 años, 11 meses y 29 días
+// cancelan el 50% del valor de la cuota de adulto. La edad se calcula a la
+// fecha de vencimiento de cada cuota (no a la fecha en que se genera), para
+// que el cambio de tramo ocurra el mes del cumpleaños número 12.
 exports.generarMensualidadMasiva = (data, callback) => {
   const query = `
     INSERT IGNORE INTO cuotas
       (persona_id, tipo_cuota_id, monto, mes, anio, fecha_vencimiento, estado, origen)
-    SELECT id, ?, ?, ?, ?, ?, 'pendiente', 'interno'
+    SELECT id, ?,
+      CASE
+        WHEN fecha_nacimiento IS NOT NULL AND TIMESTAMPDIFF(YEAR, fecha_nacimiento, ?) < 12
+        THEN ROUND(? / 2)
+        ELSE ?
+      END,
+      ?, ?, ?, 'pendiente', 'interno'
     FROM personas
     WHERE activo = 1
       AND COALESCE(estado, 'activo') = 'activo'
@@ -111,6 +121,8 @@ exports.generarMensualidadMasiva = (data, callback) => {
   `;
   db.query(query, [
     data.tipo_cuota_id,
+    data.fecha_vencimiento,
+    data.monto,
     data.monto,
     data.mes,
     data.anio,
