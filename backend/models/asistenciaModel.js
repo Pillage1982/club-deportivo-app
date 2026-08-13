@@ -118,19 +118,23 @@ exports.obtenerAsistencias = (callback) => {
       a.id,
       a.persona_id,
       a.evento_id,
+      p.rut,
       p.nombres,
       p.apellido_paterno,
       p.apellido_materno,
       p.bloque,
+      COALESCE(p.estado, 'activo') AS estado_persona,
       e.nombre AS evento,
       e.tipo AS tipo_evento,
       e.fecha AS fecha_evento,
       a.fecha_registro,
       a.estado,
-      a.minutos_atraso
+      a.minutos_atraso,
+      pt.puntos
     FROM asistencias a
     JOIN personas p ON a.persona_id = p.id
     JOIN eventos e ON a.evento_id = e.id
+    LEFT JOIN puntajes pt ON pt.asistencia_id = a.id
     ORDER BY a.id DESC
     LIMIT 5000
   `;

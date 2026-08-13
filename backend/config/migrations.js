@@ -287,6 +287,7 @@ async function reconstruirVistaRankingPuntaje() {
     CREATE OR REPLACE VIEW vista_ranking_puntaje AS
     SELECT
       p.id,
+      p.rut,
       p.nombres,
       p.apellido_paterno,
       p.apellido_materno,
@@ -303,7 +304,7 @@ async function reconstruirVistaRankingPuntaje() {
     FROM personas p
     LEFT JOIN puntajes pt ON p.id = pt.persona_id
     WHERE p.activo = 1 AND COALESCE(p.estado, 'activo') = 'activo'
-    GROUP BY p.id, p.nombres, p.apellido_paterno, p.apellido_materno, p.bloque, p.fecha_ingreso
+    GROUP BY p.id, p.rut, p.nombres, p.apellido_paterno, p.apellido_materno, p.bloque, p.fecha_ingreso
     ORDER BY puntaje_total DESC
   `);
 }

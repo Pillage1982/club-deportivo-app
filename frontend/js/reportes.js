@@ -37,43 +37,107 @@ function exportarIntegrantesExcel() {
     return;
   }
   const rows = personasTabla.map(p => ({
-    'Nombre':         `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno || ''}`.trim(),
-    'RUT':            p.rut || '',
-    'Bloque':         p.bloque || '',
-    'Sexo':           p.sexo || '',
-    'Email':          p.email || '',
-    'Teléfono':       p.telefono || '',
-    'Dirección':      p.direccion || '',
-    'F. Nacimiento':  p.fecha_nacimiento ? String(p.fecha_nacimiento).substring(0, 10) : '',
-    'F. Ingreso':     p.fecha_ingreso    ? String(p.fecha_ingreso).substring(0, 10)    : '',
-    'Estado':         p.estado || 'activo',
-    'Honorario':      p.es_honorario ? 'Sí' : 'No',
-    'Apoderado':      p.nombre_apoderado   || '',
-    'Tel. Apoderado': p.telefono_apoderado || ''
+    'RUT':              p.rut || '',
+    'Apellido paterno': p.apellido_paterno || '',
+    'Apellido materno': p.apellido_materno || '',
+    'Nombres':          p.nombres || '',
+    'Bloque':           p.bloque || '',
+    'Sexo':             p.sexo || '',
+    'Email':            p.email || '',
+    'Teléfono':         p.telefono || '',
+    'Dirección':        p.direccion || '',
+    'F. Nacimiento':    p.fecha_nacimiento ? String(p.fecha_nacimiento).substring(0, 10) : '',
+    'F. Ingreso':       p.fecha_ingreso    ? String(p.fecha_ingreso).substring(0, 10)    : '',
+    'Estado':           p.estado || 'activo',
+    'Honorario':        p.es_honorario ? 'Sí' : 'No',
+    'Apoderado':        p.nombre_apoderado   || '',
+    'Tel. Apoderado':   p.telefono_apoderado || ''
   }));
   _descargarExcel(rows, 'Integrantes', 'integrantes');
   mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
 }
 
-// ── Excel: Asistencias ────────────────────────────────────────────────────────
+// ── Excel: Asistencia (matriz por actividad) ────────────────────────────────────
 
-function exportarAsistenciasExcel() {
+async function _obtenerDatosMatrizAsistencia() {
+  const [resPersonas, resEventos, resAsistencia] = await Promise.all([
+    fetch(`${API_URL}/personas`,  { headers: getAuthHeaders() }),
+    fetch(`${API_URL}/eventos`,   { headers: getAuthHeaders() }),
+    fetch(`${API_URL}/asistencia`, { headers: getAuthHeaders() })
+  ]);
+  const [personas, eventos, asistencias] = await Promise.all([
+    resPersonas.json().catch(() => ({})),
+    resEventos.json().catch(() => ({})),
+    resAsistencia.json().catch(() => ({}))
+  ]);
+  if (!resPersonas.ok  || !Array.isArray(personas))    throw new Error(personas.mensaje    || 'No se pudieron cargar los integrantes');
+  if (!resEventos.ok   || !Array.isArray(eventos))     throw new Error(eventos.mensaje     || 'No se pudieron cargar las actividades');
+  if (!resAsistencia.ok || !Array.isArray(asistencias)) throw new Error(asistencias.mensaje || 'No se pudieron cargar las asistencias');
+  return { personas, eventos, asistencias };
+}
+
+// Una columna por fecha de actividad; si hay varias actividades el mismo día se
+// numeran (Actividad AAAA-MM-DD 1, 2...), igual que la planilla de referencia del cliente.
+function _columnasEventosAsistencia(eventos) {
+  const ordenados = [...eventos].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  const totalPorFecha = new Map();
+  ordenados.forEach(ev => {
+    const fecha = String(ev.fecha || '').substring(0, 10);
+    totalPorFecha.set(fecha, (totalPorFecha.get(fecha) || 0) + 1);
+  });
+  const contadorPorFecha = new Map();
+  return ordenados.map(ev => {
+    const fecha = String(ev.fecha || '').substring(0, 10);
+    const indice = (contadorPorFecha.get(fecha) || 0) + 1;
+    contadorPorFecha.set(fecha, indice);
+    const sufijo = totalPorFecha.get(fecha) > 1 ? ` ${indice}` : '';
+    return { id: ev.id, columna: `Actividad ${fecha}${sufijo}` };
+  });
+}
+
+async function exportarAsistenciasExcel() {
   if (!_xlsxDisponible()) return;
-  if (!asistenciasTabla || asistenciasTabla.length === 0) {
-    mostrarAlerta('No hay asistencias para exportar.', 'warning');
+  let datos;
+  try { datos = await _obtenerDatosMatrizAsistencia(); }
+  catch (error) { mostrarAlerta(error.message, 'danger'); return; }
+
+  const { personas, eventos, asistencias } = datos;
+  if (personas.length === 0) {
+    mostrarAlerta('No hay integrantes para exportar.', 'warning');
     return;
   }
-  const rows = asistenciasTabla.map(a => ({
-    'Integrante':  `${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}`.trim(),
-    'Bloque':      a.bloque       || '',
-    'Actividad':   a.evento       || '',
-    'Tipo':        a.tipo_evento  || '',
-    'Fecha':       a.fecha_evento ? String(a.fecha_evento).substring(0, 10) : '',
-    'Estado':      a.estado       || '',
-    'Min. Atraso': Number(a.minutos_atraso || 0)
-  }));
-  _descargarExcel(rows, 'Asistencias', 'asistencias');
-  mostrarAlerta(`Excel generado: ${rows.length} registro(s).`, 'success');
+
+  const columnas = _columnasEventosAsistencia(eventos);
+  const puntosPorPersonaEvento = new Map();
+  asistencias.forEach(a => {
+    if (a.puntos === null || a.puntos === undefined || a.puntos === '') return;
+    puntosPorPersonaEvento.set(`${a.persona_id}_${a.evento_id}`, Number(a.puntos));
+  });
+
+  const rows = personas.map(p => {
+    const fila = {
+      'RUT':              p.rut || '',
+      'Apellido paterno': p.apellido_paterno || '',
+      'Apellido materno': p.apellido_materno || '',
+      'Nombres':          p.nombres || '',
+      'Bloque':           p.bloque || '',
+      'Estado':           p.estado || 'activo'
+    };
+    let totalPuntajes = 0;
+    columnas.forEach(col => {
+      const puntos = puntosPorPersonaEvento.get(`${p.id}_${col.id}`);
+      fila[col.columna] = puntos === undefined ? '' : puntos;
+      if (puntos) totalPuntajes += puntos;
+    });
+    fila['Total Puntajes'] = totalPuntajes;
+    fila['Ponderación Puntaje Pago'] = '';
+    fila['Ponderación Puntaje Pago/Asistencia TOTAL'] = totalPuntajes;
+    fila['PAGO SI O NO'] = '';
+    return fila;
+  });
+
+  _descargarExcel(rows, 'Asistencia', 'asistencia');
+  mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
 }
 
 // ── Excel: Deudores ───────────────────────────────────────────────────────────
@@ -108,24 +172,66 @@ function _detalleMensualDeudor(deudor, cuotas) {
   });
 }
 
+async function _obtenerPersonasParaReporte() {
+  const respuesta = await fetch(`${API_URL}/personas`, { headers: getAuthHeaders() });
+  const data = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok || !Array.isArray(data)) throw new Error(data.mensaje || 'No se pudieron cargar los integrantes');
+  return data;
+}
+
+const NOMBRES_MESES_GDC = ['', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+
+// Una columna por cada mes con cuotas generadas (orden cronológico), en vez de una
+// lista fija: evita que la planilla quede desactualizada si cambia la cantidad de meses.
+function _columnasMesesPago(cuotas) {
+  const periodos = new Map();
+  cuotas.forEach(c => periodos.set(`${c.anio}_${c.mes}`, { anio: Number(c.anio), mes: Number(c.mes) }));
+  return Array.from(periodos.values())
+    .sort((a, b) => a.anio - b.anio || a.mes - b.mes)
+    .map(p => ({ ...p, columna: NOMBRES_MESES_GDC[p.mes] }));
+}
+
 async function exportarDeudoresExcel() {
   if (!_xlsxDisponible()) return;
-  const deudores = (finanzasCargadas || []).filter(f => Number(f.deuda_actual) > 0);
-  if (deudores.length === 0) {
-    mostrarAlerta('No hay integrantes con deuda para exportar.', 'warning');
+  let personas, cuotas;
+  try {
+    [personas, cuotas] = await Promise.all([_obtenerPersonasParaReporte(), _obtenerCuotasParaReporteDeudores()]);
+  } catch (error) { mostrarAlerta(error.message, 'danger'); return; }
+
+  if (personas.length === 0) {
+    mostrarAlerta('No hay integrantes para exportar.', 'warning');
     return;
   }
-  let cuotas;
-  try { cuotas = await _obtenerCuotasParaReporteDeudores(); }
-  catch (error) { mostrarAlerta(error.message, 'danger'); return; }
-  const rows = deudores.flatMap(f => _detalleMensualDeudor(f, cuotas).map(detalle => ({
-    'Integrante': `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`.trim(),
-    'Mes': detalle.periodo, 'Cuota': detalle.cuota, 'Pagado': detalle.pagado,
-    'Saldo': detalle.saldo, 'Estado': detalle.estado,
-    'Multas': Number(f.total_multas || 0), 'Deuda Total': Number(f.deuda_actual || 0)
-  })));
-  _descargarExcel(rows, 'Deudores', 'deudores');
-  mostrarAlerta(`Excel generado: ${rows.length} deudor(es).`, 'success');
+
+  const columnas = _columnasMesesPago(cuotas);
+  const cuotaPorClave = new Map();
+  cuotas.forEach(c => cuotaPorClave.set(`${c.persona_id}_${c.anio}_${c.mes}`, c));
+
+  const rows = personas.map(p => {
+    const fila = {
+      'RUT':              p.rut || '',
+      'Apellido paterno': p.apellido_paterno || '',
+      'Apellido materno': p.apellido_materno || '',
+      'Nombres':          p.nombres || '',
+      'Bloque':           p.bloque || '',
+      'Estado':           p.estado || 'activo'
+    };
+    let real = 0;
+    let totalCuotas = 0;
+    columnas.forEach(col => {
+      const cuota  = cuotaPorClave.get(`${p.id}_${col.anio}_${col.mes}`);
+      const pagado = Number(cuota?.monto_pagado || 0);
+      fila[col.columna] = pagado > 0 ? pagado : '';
+      real += pagado;
+      totalCuotas += Number(cuota?.monto || 0);
+    });
+    fila['$ REAL'] = real;
+    fila['SALDO'] = Math.max(0, totalCuotas - real);
+    return fila;
+  });
+
+  _descargarExcel(rows, 'Pago Cuotas', 'pago_cuotas');
+  mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
 }
 
 // ── Excel: Puntaje ────────────────────────────────────────────────────────────
@@ -137,11 +243,14 @@ function exportarPuntajeExcel() {
     return;
   }
   const rows = rankingCargado.map((r, i) => ({
-    '#':          i + 1,
-    'Integrante': `${r.nombres} ${r.apellido_paterno} ${r.apellido_materno || ''}`.trim(),
-    'Bloque':     r.bloque || '',
-    'Puntaje':    Number(r.puntaje_total),
-    'Registros':  Number(r.total_registros)
+    '#':                i + 1,
+    'RUT':              r.rut || '',
+    'Apellido paterno': r.apellido_paterno || '',
+    'Apellido materno': r.apellido_materno || '',
+    'Nombres':          r.nombres || '',
+    'Bloque':           r.bloque || '',
+    'Puntaje':          Number(r.puntaje_total),
+    'Registros':        Number(r.total_registros)
   }));
   _descargarExcel(rows, 'Puntaje', 'ranking_puntaje');
   mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
@@ -236,9 +345,9 @@ function _pdfDisponible() {
   return true;
 }
 
-function _crearDocPDF(titulo) {
+function _crearDocPDF(titulo, landscape = false) {
   const { jsPDF } = window.jspdf;
-  const doc  = new jsPDF();
+  const doc  = new jsPDF(landscape ? { orientation: 'landscape' } : undefined);
   const fecha = _fechaHoy();
   const org   = _nombreOrg();
   doc.setFontSize(16);
@@ -249,6 +358,43 @@ function _crearDocPDF(titulo) {
   doc.text(`${org}  ·  ${fecha}`, 14, 25);
   doc._fechaArchivo = fecha;
   return doc;
+}
+
+// Cumplimiento por bloque: combina asistencia (registros distintos de ausente/retiro
+// sin aviso) y pago de cuotas (estado pagado) sobre el total de oportunidades de cada uno.
+function _calcularCumplimientoPorBloque(personas, asistencias, cuotas) {
+  const bloquePorPersona = new Map(personas.map(p => [String(p.id), p.bloque || 'Sin bloque']));
+  const stats = new Map();
+
+  function sumar(bloque, campo) {
+    if (!stats.has(bloque)) stats.set(bloque, { asistOk: 0, asistTotal: 0, pagoOk: 0, pagoTotal: 0 });
+    stats.get(bloque)[campo]++;
+  }
+
+  asistencias.forEach(a => {
+    const bloque = a.bloque || bloquePorPersona.get(String(a.persona_id)) || 'Sin bloque';
+    sumar(bloque, 'asistTotal');
+    if (a.estado !== 'ausente' && a.estado !== 'retiro_sin_aviso') sumar(bloque, 'asistOk');
+  });
+
+  cuotas.forEach(c => {
+    const bloque = bloquePorPersona.get(String(c.persona_id)) || 'Sin bloque';
+    sumar(bloque, 'pagoTotal');
+    if (c.estado === 'pagado') sumar(bloque, 'pagoOk');
+  });
+
+  return Array.from(stats.entries())
+    .map(([bloque, s]) => {
+      const totalOportunidades = s.asistTotal + s.pagoTotal;
+      const totalCumplidas     = s.asistOk + s.pagoOk;
+      return {
+        bloque,
+        asistenciaPct:   s.asistTotal ? (s.asistOk / s.asistTotal) * 100 : null,
+        pagoPct:         s.pagoTotal  ? (s.pagoOk  / s.pagoTotal)  * 100 : null,
+        cumplimientoPct: totalOportunidades ? (totalCumplidas / totalOportunidades) * 100 : null
+      };
+    })
+    .sort((a, b) => (b.cumplimientoPct ?? -1) - (a.cumplimientoPct ?? -1));
 }
 
 // ── PDF: Integrantes ──────────────────────────────────────────────────────────
@@ -262,17 +408,19 @@ function exportarIntegrantesPDF() {
   const doc = _crearDocPDF('Listado de Integrantes');
   doc.autoTable({
     startY: 30,
-    head: [['Nombre', 'RUT', 'Bloque', 'Sexo', 'Email', 'Estado']],
+    head: [['RUT', 'Apellido paterno', 'Apellido materno', 'Nombres', 'Bloque', 'Sexo', 'Email', 'Estado']],
     body: personasTabla.map(p => [
-      `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno || ''}`.trim(),
       p.rut || '',
+      p.apellido_paterno || '',
+      p.apellido_materno || '',
+      p.nombres || '',
       p.bloque || '',
       p.sexo || '',
       p.email || '',
       p.estado || 'activo'
     ]),
-    foot: [['', '', '', '', `Total: ${personasTabla.length} integrante(s)`, '']],
-    styles:             { fontSize: 8, cellPadding: 2 },
+    foot: [['', '', '', '', '', '', `Total: ${personasTabla.length} integrante(s)`, '']],
+    styles:             { fontSize: 7, cellPadding: 2 },
     headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
     footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [250, 250, 250] }
@@ -281,34 +429,76 @@ function exportarIntegrantesPDF() {
   mostrarAlerta(`PDF generado: ${personasTabla.length} integrante(s).`, 'success');
 }
 
-// ── PDF: Asistencias ──────────────────────────────────────────────────────────
+// ── PDF: Asistencia (resumen por bloque + matriz por actividad) ────────────────
 
-function exportarAsistenciasPDF() {
+async function exportarAsistenciasPDF() {
   if (!_pdfDisponible()) return;
-  if (!asistenciasTabla || asistenciasTabla.length === 0) {
-    mostrarAlerta('No hay asistencias para exportar.', 'warning');
+  let datos, cuotas;
+  try {
+    [datos, cuotas] = await Promise.all([_obtenerDatosMatrizAsistencia(), _obtenerCuotasParaReporteDeudores()]);
+  } catch (error) { mostrarAlerta(error.message, 'danger'); return; }
+
+  const { personas, eventos, asistencias } = datos;
+  if (personas.length === 0) {
+    mostrarAlerta('No hay integrantes para exportar.', 'warning');
     return;
   }
-  const doc = _crearDocPDF('Historial de Asistencias');
+
+  const doc = _crearDocPDF('Resumen de Cumplimiento por Bloque', true);
+  const resumenBloques = _calcularCumplimientoPorBloque(personas, asistencias, cuotas);
   doc.autoTable({
     startY: 30,
-    head: [['Integrante', 'Actividad', 'Fecha', 'Estado', 'Min.']],
-    body: asistenciasTabla.map(a => [
-      `${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}`.trim(),
-      a.evento || '',
-      a.fecha_evento ? String(a.fecha_evento).substring(0, 10) : '',
-      a.estado || '',
-      a.minutos_atraso || 0
+    head: [['Bloque', 'Asistencia', 'Pago de cuotas', 'Cumplimiento']],
+    body: resumenBloques.map(b => [
+      b.bloque,
+      b.asistenciaPct   === null ? '—' : `${b.asistenciaPct.toFixed(1)}%`,
+      b.pagoPct         === null ? '—' : `${b.pagoPct.toFixed(1)}%`,
+      b.cumplimientoPct === null ? '—' : `${b.cumplimientoPct.toFixed(1)}%`
     ]),
-    foot: [['', '', '', `Total: ${asistenciasTabla.length} registro(s)`, '']],
-    styles:             { fontSize: 8, cellPadding: 2 },
+    styles:             { fontSize: 9, cellPadding: 3 },
     headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
-    footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [250, 250, 250] },
-    columnStyles:       { 4: { halign: 'center' } }
+    columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'center', fontStyle: 'bold' } }
   });
-  doc.save(`asistencias_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
-  mostrarAlerta(`PDF generado: ${asistenciasTabla.length} registro(s).`, 'success');
+
+  const columnas = _columnasEventosAsistencia(eventos);
+  const puntosPorPersonaEvento = new Map();
+  asistencias.forEach(a => {
+    if (a.puntos === null || a.puntos === undefined || a.puntos === '') return;
+    puntosPorPersonaEvento.set(`${a.persona_id}_${a.evento_id}`, Number(a.puntos));
+  });
+
+  doc.addPage();
+  doc.setFontSize(13);
+  doc.setTextColor(30, 30, 30);
+  doc.text('Detalle de Asistencia por Actividad', 14, 18);
+  doc.autoTable({
+    startY: 24,
+    head: [[
+      'RUT', 'Ap. paterno', 'Ap. materno', 'Nombres', 'Bloque', 'Estado',
+      ...columnas.map(c => c.columna.replace('Actividad ', '')),
+      'Total'
+    ]],
+    body: personas.map(p => {
+      let total = 0;
+      const celdas = columnas.map(col => {
+        const puntos = puntosPorPersonaEvento.get(`${p.id}_${col.id}`);
+        if (puntos) total += puntos;
+        return puntos === undefined ? '' : puntos;
+      });
+      return [
+        p.rut || '', p.apellido_paterno || '', p.apellido_materno || '', p.nombres || '',
+        p.bloque || '', p.estado || 'activo', ...celdas, total
+      ];
+    }),
+    styles:             { fontSize: 5.5, cellPadding: 1 },
+    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold', fontSize: 5.5 },
+    alternateRowStyles: { fillColor: [250, 250, 250] },
+    columnStyles:       { [6 + columnas.length]: { fontStyle: 'bold', halign: 'center' } }
+  });
+
+  doc.save(`asistencia_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
+  mostrarAlerta(`PDF generado: ${personas.length} integrante(s).`, 'success');
 }
 
 // ── PDF: Puntaje ──────────────────────────────────────────────────────────────
@@ -323,23 +513,26 @@ function exportarPuntajePDF() {
   const totalPuntos = rankingCargado.reduce((s, r) => s + Number(r.puntaje_total), 0);
   doc.autoTable({
     startY: 30,
-    head: [['#', 'Integrante', 'Bloque', 'Puntaje', 'Registros']],
+    head: [['#', 'RUT', 'Apellido paterno', 'Apellido materno', 'Nombres', 'Bloque', 'Puntaje', 'Registros']],
     body: rankingCargado.map((r, i) => [
       i + 1,
-      `${r.nombres} ${r.apellido_paterno} ${r.apellido_materno || ''}`.trim(),
+      r.rut || '',
+      r.apellido_paterno || '',
+      r.apellido_materno || '',
+      r.nombres || '',
       r.bloque || '',
       r.puntaje_total,
       r.total_registros
     ]),
-    foot: [['', `${rankingCargado.length} integrante(s)`, '', totalPuntos, '']],
-    styles:             { fontSize: 8, cellPadding: 2 },
+    foot: [['', '', '', '', `${rankingCargado.length} integrante(s)`, '', totalPuntos, '']],
+    styles:             { fontSize: 7, cellPadding: 2 },
     headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
     footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [250, 250, 250] },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
-      3: { halign: 'center', fontStyle: 'bold' },
-      4: { halign: 'center' }
+      6: { halign: 'center', fontStyle: 'bold' },
+      7: { halign: 'center' }
     }
   });
   doc.save(`puntaje_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
@@ -436,88 +629,52 @@ function exportarGastosPDF() {
   mostrarAlerta(`PDF generado: ${gastosCargados.length} gasto(s).`, 'success');
 }
 
-// ── PDF: Reporte de Deudores ──────────────────────────────────────────────────
+// ── PDF: Pago Cuotas (matriz por mes) ───────────────────────────────────────────
 
 async function exportarDeudoresPDF() {
-  if (!window.jspdf) {
-    mostrarAlerta('Librería PDF no disponible. Verifica tu conexión e intenta de nuevo.', 'danger');
+  if (!_pdfDisponible()) return;
+  let personas, cuotas;
+  try {
+    [personas, cuotas] = await Promise.all([_obtenerPersonasParaReporte(), _obtenerCuotasParaReporteDeudores()]);
+  } catch (error) { mostrarAlerta(error.message, 'danger'); return; }
+
+  if (personas.length === 0) {
+    mostrarAlerta('No hay integrantes para exportar.', 'warning');
     return;
   }
 
-  const deudores = (finanzasCargadas || []).filter(f => Number(f.deuda_actual) > 0);
+  const columnas = _columnasMesesPago(cuotas);
+  const cuotaPorClave = new Map();
+  cuotas.forEach(c => cuotaPorClave.set(`${c.persona_id}_${c.anio}_${c.mes}`, c));
 
-  if (deudores.length === 0) {
-    mostrarAlerta('No hay integrantes con deuda para exportar.', 'warning');
-    return;
-  }
-
-  let cuotas;
-  try { cuotas = await _obtenerCuotasParaReporteDeudores(); }
-  catch (error) { mostrarAlerta(error.message, 'danger'); return; }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const fecha = _fechaHoy();
-  const org   = _nombreOrg();
-
-  // Encabezado
-  doc.setFontSize(16);
-  doc.setTextColor(30, 30, 30);
-  doc.text('Reporte de Deudores', 14, 18);
-  doc.setFontSize(10);
-  doc.setTextColor(100);
-  doc.text(`${org}  ·  ${fecha}`, 14, 25);
-
-  const totalDeuda = deudores.reduce((sum, f) => sum + Number(f.deuda_actual || 0), 0);
-
+  const doc = _crearDocPDF('Pago de Cuotas', true);
   doc.autoTable({
     startY: 30,
-    head: [['N°', 'Integrante', 'Multas', 'Cuotas', 'Pagado', 'Deuda']],
-    body: deudores.map((f, i) => [
-      i + 1,
-      `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`.trim(),
-      formatearMonto(f.total_multas),
-      formatearMonto(f.total_cuotas),
-      formatearMonto(f.total_pagado),
-      formatearMonto(f.deuda_actual)
-    ]),
-    foot: [[
-      '', `${deudores.length} integrante(s) con deuda`, '', '', 'Total deuda:',
-      formatearMonto(totalDeuda)
+    head: [[
+      'RUT', 'Ap. paterno', 'Ap. materno', 'Nombres', 'Bloque', 'Estado',
+      ...columnas.map(c => c.columna), '$ REAL', 'SALDO'
     ]],
-    styles:              { fontSize: 9, cellPadding: 3 },
-    headStyles:          { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
-    footStyles:          { fillColor: [30, 30, 30], textColor: 255, fontStyle: 'bold' },
-    alternateRowStyles:  { fillColor: [250, 250, 250] },
-    columnStyles: {
-      0: { cellWidth: 10, halign: 'center' },
-      2: { halign: 'right' },
-      3: { halign: 'right' },
-      4: { halign: 'right' },
-      5: { halign: 'right', fontStyle: 'bold' }
-    }
+    body: personas.map(p => {
+      let real = 0;
+      let totalCuotas = 0;
+      const celdas = columnas.map(col => {
+        const cuota  = cuotaPorClave.get(`${p.id}_${col.anio}_${col.mes}`);
+        const pagado = Number(cuota?.monto_pagado || 0);
+        real += pagado;
+        totalCuotas += Number(cuota?.monto || 0);
+        return pagado > 0 ? formatearMonto(pagado) : '';
+      });
+      return [
+        p.rut || '', p.apellido_paterno || '', p.apellido_materno || '', p.nombres || '',
+        p.bloque || '', p.estado || 'activo', ...celdas,
+        formatearMonto(real), formatearMonto(Math.max(0, totalCuotas - real))
+      ];
+    }),
+    styles:             { fontSize: 6, cellPadding: 1.5 },
+    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold', fontSize: 6 },
+    alternateRowStyles: { fillColor: [250, 250, 250] }
   });
 
-  deudores.forEach(f => {
-    doc.addPage();
-    const nombre = `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`.trim();
-    doc.setFontSize(11); doc.setTextColor(30, 30, 30); doc.text(nombre, 14, 18);
-    doc.setFontSize(9); doc.setTextColor(90);
-    doc.text(`Deuda total: ${formatearMonto(f.deuda_actual)}  ·  Multas: ${formatearMonto(f.total_multas)}`, 14, 24);
-    doc.autoTable({
-      startY: 28,
-      head: [['Mes', 'Cuota', 'Pagado', 'Saldo', 'Estado']],
-      body: _detalleMensualDeudor(f, cuotas).map(detalle => [
-        detalle.periodo, formatearMonto(detalle.cuota), formatearMonto(detalle.pagado),
-        formatearMonto(detalle.saldo), detalle.estado.replace('_', ' ')
-      ]),
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [250, 250, 250] },
-      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right', fontStyle: 'bold' } }
-    });
-  });
-
-  doc.save(`deudores_${fecha.replace(/\//g, '-')}.pdf`);
-  mostrarAlerta(`PDF generado: ${deudores.length} deudores.`, 'success');
+  doc.save(`pago_cuotas_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
+  mostrarAlerta(`PDF generado: ${personas.length} integrante(s).`, 'success');
 }
