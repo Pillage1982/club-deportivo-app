@@ -53,18 +53,67 @@ function cargarCuotasPendientesPago(persona_id) {
 function configurarSelectorCuotaPago() {
   const sel = document.getElementById('pago_persona_id');
   if (!sel) return;
-  sel.addEventListener('change', () => cargarCuotasPendientesPago(sel.value));
+  sel.addEventListener('change', () => {
+    cargarCuotasPendientesPago(sel.value);
+    if (document.getElementById('pago_anual_check')?.checked) cargarPagoAnual();
+  });
+}
+
+// =====================================
+// PAGO ANUAL (varias cuotas en un solo pago — art. 9.3)
+// =====================================
+
+let cuotasPendientesParaAnual = [];
+
+function actualizarModoPagoAnual() {
+  const activo       = Boolean(document.getElementById('pago_anual_check')?.checked);
+  const selectCuota  = document.getElementById('pago_cuota_id');
+  const inputMonto   = document.getElementById('pago_monto');
+
+  if (selectCuota) selectCuota.disabled = activo;
+  if (inputMonto)  inputMonto.readOnly  = activo;
+
+  if (activo) {
+    cargarPagoAnual();
+  } else {
+    cuotasPendientesParaAnual = [];
+    if (inputMonto) inputMonto.value = '';
+    const aviso = document.getElementById('pago_anual_aviso');
+    if (aviso) aviso.textContent = '';
+  }
+}
+
+function cargarPagoAnual() {
+  const personaId = document.getElementById('pago_persona_id')?.value;
+  const inputMonto = document.getElementById('pago_monto');
+  const aviso = document.getElementById('pago_anual_aviso');
+
+  cuotasPendientesParaAnual = [];
+  if (inputMonto) inputMonto.value = '';
+  if (aviso) aviso.textContent = '';
+  if (!personaId) return;
+
+  fetch(`${API_URL}/cuotas/pendientes/${personaId}`, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(cuotas => {
+      if (!Array.isArray(cuotas)) return;
+      cuotasPendientesParaAnual = cuotas;
+      const total = cuotas.reduce((suma, c) => suma + Number(c.saldo), 0);
+      if (inputMonto) inputMonto.value = total;
+      if (aviso) {
+        aviso.textContent = cuotas.length >= 2
+          ? `${cuotas.length} cuota(s) pendiente(s) por ${formatearMonto(total)}`
+          : 'Este integrante no tiene al menos dos cuotas pendientes para un pago anual.';
+      }
+    })
+    .catch(() => {});
 }
 
 function crearPago() {
-  const data = {
-    persona_id: document.getElementById('pago_persona_id').value,
-    monto_total: document.getElementById('pago_monto').value,
-    metodo: document.getElementById('pago_metodo').value,
-    cuota_id: document.getElementById('pago_cuota_id')?.value || null
-  };
-
-  data.monto_total = Number(data.monto_total);
+  const esAnual    = Boolean(document.getElementById('pago_anual_check')?.checked);
+  const personaId  = document.getElementById('pago_persona_id').value;
+  const montoTotal = Number(document.getElementById('pago_monto').value);
+  const metodo     = document.getElementById('pago_metodo').value;
 
   const metodosPermitidos = [
     'efectivo',
@@ -72,20 +121,36 @@ function crearPago() {
     'debito'
   ];
 
-  if (!data.persona_id) {
+  if (!personaId) {
     mostrarAlerta('Seleccione un integrante', 'warning');
     return;
   }
 
-  if (!Number.isFinite(data.monto_total) || data.monto_total <= 0) {
+  if (!Number.isFinite(montoTotal) || montoTotal <= 0) {
     mostrarAlerta('El monto debe ser mayor a 0', 'warning');
     return;
   }
 
-  if (!metodosPermitidos.includes(data.metodo)) {
+  if (!metodosPermitidos.includes(metodo)) {
     mostrarAlerta('Seleccione un metodo de pago valido', 'warning');
     return;
   }
+
+  if (esAnual) {
+    if (cuotasPendientesParaAnual.length < 2) {
+      mostrarAlerta('Se necesitan al menos dos cuotas pendientes para un pago anual.', 'warning');
+      return;
+    }
+    guardarPagoAnual(personaId, montoTotal, metodo);
+    return;
+  }
+
+  const data = {
+    persona_id: personaId,
+    monto_total: montoTotal,
+    metodo,
+    cuota_id: document.getElementById('pago_cuota_id')?.value || null
+  };
 
   let url = `${API_URL}/pagos`;
   let method = 'POST';
@@ -150,6 +215,59 @@ function crearPago() {
         estadoBoton,
         pagoEditando ? 'Actualizar Pago' : 'Guardar Pago'
       );
+    });
+}
+
+function guardarPagoAnual(personaId, montoTotal, metodo) {
+  const data = {
+    persona_id: personaId,
+    monto_total: montoTotal,
+    metodo,
+    cuota_ids: cuotasPendientesParaAnual.map(c => c.id)
+  };
+
+  const estadoBoton = bloquearBoton('btn_guardar_pago', 'Guardando...');
+  if (!estadoBoton) return;
+
+  fetch(`${API_URL}/pagos/anual`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  })
+    .then(async res => {
+      const respuesta = await leerRespuestaJson(res);
+      if (!res.ok) {
+        throw new Error(respuesta.mensaje || 'No se pudo guardar el pago anual');
+      }
+      return respuesta;
+    })
+    .then(data => {
+      mostrarAlerta(data.mensaje, 'success');
+
+      document.getElementById('pago_monto').value  = '';
+      document.getElementById('pago_metodo').value = 'efectivo';
+      const check = document.getElementById('pago_anual_check');
+      if (check) {
+        check.checked = false;
+        actualizarModoPagoAnual();
+      }
+      cuotasPendientesParaAnual = [];
+
+      cargarTablaPagos();
+      cargarMultas();
+      cargarFinanzas();
+      cargarCuotas();
+      cargarDashboard();
+      cargarGraficos();
+    })
+    .catch(err => {
+      mostrarAlerta(
+        obtenerMensajeError(err, 'No se pudo guardar el pago anual'),
+        'danger'
+      );
+    })
+    .finally(() => {
+      restaurarBoton(estadoBoton, 'Guardar Pago');
     });
 }
 

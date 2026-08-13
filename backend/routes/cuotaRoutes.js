@@ -26,4 +26,11 @@ router.post(
   controller.generarMensualidad
 );
 
+router.post(
+  '/generar-temporada',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.generarTemporadaCompleta
+);
+
 module.exports = router;

@@ -152,6 +152,23 @@ exports.obtenerCuotaPorId = (id, callback) => {
   );
 };
 
+// Usado por el pago anual: verifica saldo real de varias cuotas a la vez antes de
+// marcarlas pagadas, para no confiar en lo que envía el cliente.
+exports.obtenerCuotasConSaldoPorIds = (ids, callback) => {
+  if (!Array.isArray(ids) || ids.length === 0) return callback(null, []);
+  db.query(
+    `SELECT c.id,c.persona_id,c.mes,c.anio,c.monto,c.estado,
+            COALESCE(SUM(d.monto_pagado),0) AS monto_pagado,
+            GREATEST(c.monto-COALESCE(SUM(d.monto_pagado),0),0) AS saldo
+     FROM cuotas c
+     LEFT JOIN pago_detalle d ON d.tipo='cuota' AND d.referencia_id=c.id
+     WHERE c.id IN (?)
+     GROUP BY c.id,c.persona_id,c.mes,c.anio,c.monto,c.estado`,
+    [ids],
+    callback
+  );
+};
+
 exports.obtenerCuotaConSaldo = (id, callback) => {
   db.query(
     `SELECT c.id,c.persona_id,c.mes,c.anio,c.monto,c.estado,

@@ -82,6 +82,45 @@ function ejecutarGeneracionCuotas() {
 
 }
 
+// Genera de una vez las cuotas de los 10 meses de la temporada (incluidos meses
+// futuros): necesario para poder registrar un pago anual completo (art. 9.3),
+// ya que un pago no puede vincularse a una cuota que todavía no existe.
+function generarCuotasTemporada() {
+  mostrarConfirmacion(
+    'Esta acción generará las cuotas de toda la temporada (los 10 meses) para todos los integrantes activos, incluidos los meses futuros. ¿Deseas continuar?',
+    ejecutarGeneracionCuotasTemporada
+  );
+}
+
+function ejecutarGeneracionCuotasTemporada() {
+  const estadoBoton = bloquearBoton('btn_generar_temporada', 'Generando...');
+  if (!estadoBoton) return;
+
+  fetch(`${API_URL}/cuotas/generar-temporada`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(async res => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mensaje || 'Error al generar las cuotas de la temporada');
+      return data;
+    })
+    .then(data => {
+      mostrarAlerta(`${data.mensaje}. Cuotas creadas: ${data.cuotas_creadas || 0}`, 'success');
+      cargarFinanzas();
+      cargarDashboard();
+      cargarGraficos();
+      cargarCuotas();
+    })
+    .catch(err => {
+      console.error(err);
+      mostrarAlerta(err.message || 'No se pudieron generar las cuotas de la temporada. Intenta nuevamente.', 'danger');
+    })
+    .finally(() => {
+      restaurarBoton(estadoBoton, 'Generar cuotas de toda la temporada');
+    });
+}
+
 // =====================================
 // CARGAR TABLA CUOTAS
 // =====================================

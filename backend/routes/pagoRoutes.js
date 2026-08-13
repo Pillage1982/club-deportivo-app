@@ -19,6 +19,13 @@ router.post(
   controller.crear
 );
 
+router.post(
+  '/anual',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.crearAnual
+);
+
 router.put(
   '/:id',
   authMiddleware,

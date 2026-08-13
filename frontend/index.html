@@ -584,9 +584,12 @@
         <div class="tab-pane fade" id="subtab_finanzas" role="tabpanel">
           <div id="modulo_finanzas">
 
-            <div class="mb-3">
+            <div class="mb-3 d-flex flex-wrap gap-2">
               <button type="button" id="btn_generar_cuotas" class="btn btn-success" onclick="generarCuotasMensuales()" data-config-text="etiquetas.botones.generarCuotas">
                 Generar cuotas del mes
+              </button>
+              <button type="button" id="btn_generar_temporada" class="btn btn-outline-success" onclick="generarCuotasTemporada()">
+                Generar cuotas de toda la temporada
               </button>
             </div>
 
@@ -928,6 +931,13 @@
                     <option value="debito">Débito</option>
                   </select>
                 </div>
+              </div>
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="pago_anual_check" onchange="actualizarModoPagoAnual()">
+                <label class="form-check-label" for="pago_anual_check">
+                  Pago anual (cubre todas las cuotas pendientes del integrante en un solo pago)
+                </label>
+                <div id="pago_anual_aviso" class="form-text"></div>
               </div>
               <button type="button" id="btn_guardar_pago" class="btn btn-success w-100" onclick="crearPago()" data-config-text="etiquetas.botones.guardarPago">
                 Guardar Pago

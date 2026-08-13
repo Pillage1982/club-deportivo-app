@@ -92,6 +92,31 @@ const POLITICA_TEMPORADA_2025_2026 = Object.freeze({
   ajuste_caporal_requiere_asamblea: true
 });
 
+// Art. 9.3: los 10 periodos de cuota de la temporada vigente. Se actualiza cada
+// temporada (ver tambien POLITICA_TEMPORADA_2025_2026 y PERIODOS_FINANCIEROS_GDC
+// en frontend/js/reportes.js, que deben moverse juntos al pasar de temporada).
+const PERIODOS_CUOTAS_2025_2026 = Object.freeze([
+  { mes: 10, anio: 2025 }, { mes: 11, anio: 2025 }, { mes: 12, anio: 2025 },
+  { mes: 1, anio: 2026 }, { mes: 2, anio: 2026 }, { mes: 3, anio: 2026 },
+  { mes: 4, anio: 2026 }, { mes: 5, anio: 2026 }, { mes: 6, anio: 2026 }, { mes: 7, anio: 2026 }
+]);
+
+// Art. 9.3, escenario (a) de la tabla de simulacion de pagos: cancelar las cuotas
+// completas de la temporada al inicio del ciclo anual otorga el bono de anticipado
+// a las 10 cuotas -incluida la del propio mes de inicio- en vez del calculo mes a
+// mes (200 puntos totales en vez de 100 oportuno + 90 anticipado).
+function esPagoAnualInicioCiclo(periodosPagados, periodosTemporada, fechaHoy) {
+  if (!Array.isArray(periodosPagados) || periodosPagados.length !== periodosTemporada.length) return false;
+  const cubreTemporadaCompleta = periodosTemporada.every(periodo =>
+    periodosPagados.some(p => Number(p.mes) === periodo.mes && Number(p.anio) === periodo.anio)
+  );
+  if (!cubreTemporadaCompleta) return false;
+  const [primerPeriodo] = periodosTemporada;
+  const anioHoy = fechaHoy.getFullYear();
+  const mesHoy  = fechaHoy.getMonth() + 1;
+  return anioHoy < primerPeriodo.anio || (anioHoy === primerPeriodo.anio && mesHoy <= primerPeriodo.mes);
+}
+
 const PONDERACION_BLOQUES = Object.freeze({
   'naupas - chinas naupas (satanas)': 100,
   'huari (luciferes)': 90,
@@ -112,5 +137,7 @@ module.exports = {
   primerSabadoDeJunio,
   calcularPuntajeEnsayos,
   POLITICA_TEMPORADA_2025_2026,
-  PONDERACION_BLOQUES
+  PONDERACION_BLOQUES,
+  PERIODOS_CUOTAS_2025_2026,
+  esPagoAnualInicioCiclo
 };

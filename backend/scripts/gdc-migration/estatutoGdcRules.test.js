@@ -8,7 +8,9 @@ const {
   esBailarinNuevo,
   primerSabadoDeJunio,
   calcularPuntajeEnsayos,
-  POLITICA_TEMPORADA_2025_2026
+  POLITICA_TEMPORADA_2025_2026,
+  PERIODOS_CUOTAS_2025_2026,
+  esPagoAnualInicioCiclo
 } = require('../../utils/estatutoGdcRules');
 
 test('articulo 8.4 aplica puntajes exactos de asistencia', () => {
@@ -52,6 +54,21 @@ test('tambien considera nuevo a quien aun no cumple un ano al corte', () => {
   assert.equal(esBailarinNuevo('2024-08-15', 2024, '2025-08-01'), true);
   assert.equal(esBailarinNuevo('2024-08-01', 2024, '2025-08-01'), false);
   assert.equal(esBailarinNuevo(null, 2024, '2025-08-01'), false);
+});
+
+test('articulo 9.3 escenario a: pagar las 10 cuotas antes del inicio del ciclo cuenta como pago anual', () => {
+  const hoyAntesDeOctubre = new Date('2025-09-15T12:00:00Z');
+  const hoyMismoMesInicio = new Date('2025-10-31T12:00:00Z');
+  assert.equal(esPagoAnualInicioCiclo(PERIODOS_CUOTAS_2025_2026, PERIODOS_CUOTAS_2025_2026, hoyAntesDeOctubre), true);
+  assert.equal(esPagoAnualInicioCiclo(PERIODOS_CUOTAS_2025_2026, PERIODOS_CUOTAS_2025_2026, hoyMismoMesInicio), true);
+});
+
+test('articulo 9.3 escenario a: no aplica si el mes de inicio ya paso o falta algun periodo', () => {
+  const hoyDespuesDeOctubre = new Date('2025-11-05T12:00:00Z');
+  assert.equal(esPagoAnualInicioCiclo(PERIODOS_CUOTAS_2025_2026, PERIODOS_CUOTAS_2025_2026, hoyDespuesDeOctubre), false);
+
+  const periodosIncompletos = PERIODOS_CUOTAS_2025_2026.slice(0, 9);
+  assert.equal(esPagoAnualInicioCiclo(periodosIncompletos, PERIODOS_CUOTAS_2025_2026, new Date('2025-09-15T12:00:00Z')), false);
 });
 
 test('articulo 9.1.3 alterna ranking entre sectores A y B', () => {
