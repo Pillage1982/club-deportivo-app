@@ -12,26 +12,53 @@ function _fechaHoy() {
 }
 
 // ── Excel helpers ─────────────────────────────────────────────────────────────
+// ExcelJS (no SheetJS): la versión gratuita de SheetJS no escribe colores de
+// celda, y la fila 1 necesita el naranja corporativo de la agrupación.
 
-function _xlsxDisponible() {
-  if (!window.XLSX) {
+const COLOR_NARANJA_CORPORATIVO = 'FFF47A22';
+
+function _excelDisponible() {
+  if (!window.ExcelJS) {
     mostrarAlerta('Librería Excel no disponible. Verifica tu conexión e intenta de nuevo.', 'danger');
     return false;
   }
   return true;
 }
 
-function _descargarExcel(rows, nombreHoja, nombreArchivo) {
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(rows);
-  XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
-  XLSX.writeFile(wb, `${nombreArchivo}_${_fechaHoy().replace(/\//g, '-')}.xlsx`);
+function _descargarBlob(buffer, nombreArchivo) {
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = nombreArchivo;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function _estilizarEncabezado(fila) {
+  fila.eachCell(cell => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_NARANJA_CORPORATIVO } };
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  });
+}
+
+async function _descargarExcel(rows, nombreHoja, nombreArchivo) {
+  const workbook = new ExcelJS.Workbook();
+  const sheet    = workbook.addWorksheet(nombreHoja);
+  const headers  = Object.keys(rows[0] || {});
+  sheet.addRow(headers);
+  rows.forEach(row => sheet.addRow(headers.map(h => row[h])));
+  _estilizarEncabezado(sheet.getRow(1));
+  const buffer = await workbook.xlsx.writeBuffer();
+  _descargarBlob(buffer, `${nombreArchivo}_${_fechaHoy().replace(/\//g, '-')}.xlsx`);
 }
 
 // ── Excel: Integrantes ────────────────────────────────────────────────────────
 
-function exportarIntegrantesExcel() {
-  if (!_xlsxDisponible()) return;
+async function exportarIntegrantesExcel() {
+  if (!_excelDisponible()) return;
   if (!personasTabla || personasTabla.length === 0) {
     mostrarAlerta('No hay integrantes para exportar.', 'warning');
     return;
@@ -53,7 +80,7 @@ function exportarIntegrantesExcel() {
     'Apoderado':        p.nombre_apoderado   || '',
     'Tel. Apoderado':   p.telefono_apoderado || ''
   }));
-  _descargarExcel(rows, 'Integrantes', 'integrantes');
+  await _descargarExcel(rows, 'Integrantes', 'integrantes');
   mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
 }
 
@@ -96,7 +123,7 @@ function _columnasEventosAsistencia(eventos) {
 }
 
 async function exportarAsistenciasExcel() {
-  if (!_xlsxDisponible()) return;
+  if (!_excelDisponible()) return;
   let datos;
   try { datos = await _obtenerDatosMatrizAsistencia(); }
   catch (error) { mostrarAlerta(error.message, 'danger'); return; }
@@ -136,7 +163,7 @@ async function exportarAsistenciasExcel() {
     return fila;
   });
 
-  _descargarExcel(rows, 'Asistencia', 'asistencia');
+  await _descargarExcel(rows, 'Asistencia', 'asistencia');
   mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
 }
 
@@ -192,7 +219,7 @@ function _columnasMesesPago(cuotas) {
 }
 
 async function exportarDeudoresExcel() {
-  if (!_xlsxDisponible()) return;
+  if (!_excelDisponible()) return;
   let personas, cuotas;
   try {
     [personas, cuotas] = await Promise.all([_obtenerPersonasParaReporte(), _obtenerCuotasParaReporteDeudores()]);
@@ -230,14 +257,14 @@ async function exportarDeudoresExcel() {
     return fila;
   });
 
-  _descargarExcel(rows, 'Pago Cuotas', 'pago_cuotas');
+  await _descargarExcel(rows, 'Pago Cuotas', 'pago_cuotas');
   mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
 }
 
 // ── Excel: Puntaje ────────────────────────────────────────────────────────────
 
-function exportarPuntajeExcel() {
-  if (!_xlsxDisponible()) return;
+async function exportarPuntajeExcel() {
+  if (!_excelDisponible()) return;
   if (!rankingCargado || rankingCargado.length === 0) {
     mostrarAlerta('No hay datos de puntaje para exportar.', 'warning');
     return;
@@ -252,7 +279,7 @@ function exportarPuntajeExcel() {
     'Puntaje':          Number(r.puntaje_total),
     'Registros':        Number(r.total_registros)
   }));
-  _descargarExcel(rows, 'Puntaje', 'ranking_puntaje');
+  await _descargarExcel(rows, 'Puntaje', 'ranking_puntaje');
   mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
 }
 
@@ -270,7 +297,7 @@ async function _obtenerFormacionesParaExportar() {
 }
 
 async function exportarFormacionesExcel() {
-  if (!_xlsxDisponible()) return;
+  if (!_excelDisponible()) return;
   let formaciones;
   try {
     formaciones = await _obtenerFormacionesParaExportar();
@@ -284,18 +311,19 @@ async function exportarFormacionesExcel() {
     return;
   }
 
-  const wb = XLSX.utils.book_new();
+  const workbook = new ExcelJS.Workbook();
   const nombresUsados = new Set();
   let totalPosiciones = 0;
+  const headers = ['Posición', 'Fila', 'Integrante', 'Puntaje'];
   bloquesConPosiciones.forEach((formacion, indice) => {
     const rows = formacion.posiciones.map(posicion => {
       const orden = Number(posicion.orden_general || 0);
-      return {
-        'Posición': orden,
-        'Fila': orden <= 8 ? 'Frente' : `Fila ${Math.ceil(orden / 8) - 1}`,
-        'Integrante': `${posicion.nombres} ${posicion.apellido_paterno} ${posicion.apellido_materno || ''}`.trim(),
-        'Puntaje': Number(posicion.puntaje_utilizado || 0)
-      };
+      return [
+        orden,
+        orden <= 8 ? 'Frente' : `Fila ${Math.ceil(orden / 8) - 1}`,
+        `${posicion.nombres} ${posicion.apellido_paterno} ${posicion.apellido_materno || ''}`.trim(),
+        Number(posicion.puntaje_utilizado || 0)
+      ];
     });
     totalPosiciones += rows.length;
     const base = String(formacion.bloque || `Bloque ${indice + 1}`)
@@ -309,16 +337,20 @@ async function exportarFormacionesExcel() {
       nombreHoja = `${base.substring(0, 31 - sufijo.length)}${sufijo}`;
     }
     nombresUsados.add(nombreHoja.toLowerCase());
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), nombreHoja);
+    const sheet = workbook.addWorksheet(nombreHoja);
+    sheet.addRow(headers);
+    rows.forEach(row => sheet.addRow(row));
+    _estilizarEncabezado(sheet.getRow(1));
   });
-  XLSX.writeFile(wb, `formaciones_vigentes_${_fechaHoy().replace(/\//g, '-')}.xlsx`);
+  const buffer = await workbook.xlsx.writeBuffer();
+  _descargarBlob(buffer, `formaciones_vigentes_${_fechaHoy().replace(/\//g, '-')}.xlsx`);
   mostrarAlerta(`Excel generado: ${bloquesConPosiciones.length} bloque(s), ${totalPosiciones} posición(es).`, 'success');
 }
 
 // ── Excel: Gastos ─────────────────────────────────────────────────────────────
 
-function exportarGastosExcel() {
-  if (!_xlsxDisponible()) return;
+async function exportarGastosExcel() {
+  if (!_excelDisponible()) return;
   if (!gastosCargados || gastosCargados.length === 0) {
     mostrarAlerta('No hay gastos para exportar.', 'warning');
     return;
@@ -331,7 +363,7 @@ function exportarGastosExcel() {
     'Responsable': g.responsable || '',
     'Comprobante': g.comprobante_path ? 'Sí' : 'No'
   }));
-  _descargarExcel(rows, 'Gastos', 'gastos');
+  await _descargarExcel(rows, 'Gastos', 'gastos');
   mostrarAlerta(`Excel generado: ${rows.length} gasto(s).`, 'success');
 }
 
