@@ -44,6 +44,23 @@ function _estilizarEncabezado(fila) {
   });
 }
 
+// Bordea todas las celdas con datos (encabezado + filas) y activa el filtro
+// desplegable en la fila 1, equivalente a seleccionar la tabla y usar Ctrl+Shift+L.
+function _aplicarBordesYFiltro(sheet, totalColumnas, totalFilas) {
+  const bordeDelgado = { style: 'thin' };
+  for (let fila = 1; fila <= totalFilas; fila++) {
+    for (let columna = 1; columna <= totalColumnas; columna++) {
+      sheet.getCell(fila, columna).border = {
+        top: bordeDelgado, left: bordeDelgado, bottom: bordeDelgado, right: bordeDelgado
+      };
+    }
+  }
+  sheet.autoFilter = {
+    from: { row: 1, column: 1 },
+    to:   { row: totalFilas, column: totalColumnas }
+  };
+}
+
 async function _descargarExcel(rows, nombreHoja, nombreArchivo) {
   const workbook = new ExcelJS.Workbook();
   const sheet    = workbook.addWorksheet(nombreHoja);
@@ -51,6 +68,7 @@ async function _descargarExcel(rows, nombreHoja, nombreArchivo) {
   sheet.addRow(headers);
   rows.forEach(row => sheet.addRow(headers.map(h => row[h])));
   _estilizarEncabezado(sheet.getRow(1));
+  _aplicarBordesYFiltro(sheet, headers.length, rows.length + 1);
   const buffer = await workbook.xlsx.writeBuffer();
   _descargarBlob(buffer, `${nombreArchivo}_${_fechaHoy().replace(/\//g, '-')}.xlsx`);
 }
@@ -341,6 +359,7 @@ async function exportarFormacionesExcel() {
     sheet.addRow(headers);
     rows.forEach(row => sheet.addRow(row));
     _estilizarEncabezado(sheet.getRow(1));
+    _aplicarBordesYFiltro(sheet, headers.length, rows.length + 1);
   });
   const buffer = await workbook.xlsx.writeBuffer();
   _descargarBlob(buffer, `formaciones_vigentes_${_fechaHoy().replace(/\//g, '-')}.xlsx`);
