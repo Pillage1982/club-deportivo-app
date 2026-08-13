@@ -330,6 +330,7 @@ async function exportarPuntajeExcel() {
     'Bloque':             r.bloque || '',
     'Puntos cuotas':      Number(r.puntos_cuotas || 0),
     'Puntos asistencia':  Number(r.puntos_asistencia || 0),
+    'Puntos antiguedad':  Number(r.puntos_antiguedad || 0),
     'Puntaje':            Number(r.puntaje_total),
     'Registros':          Number(r.total_registros)
   }));
@@ -627,7 +628,7 @@ function exportarPuntajePDF() {
   const totalPuntos = rankingCargado.reduce((s, r) => s + Number(r.puntaje_total), 0);
   doc.autoTable({
     startY: 30,
-    head: [['#', 'RUT', 'Apellido paterno', 'Apellido materno', 'Nombres', 'Bloque', 'Puntos cuotas', 'Puntos asistencia', 'Puntaje', 'Registros']],
+    head: [['#', 'RUT', 'Apellido paterno', 'Apellido materno', 'Nombres', 'Bloque', 'Puntos cuotas', 'Puntos asistencia', 'Puntos antiguedad', 'Puntaje', 'Registros']],
     body: rankingCargado.map((r, i) => [
       i + 1,
       r.rut || '',
@@ -637,10 +638,11 @@ function exportarPuntajePDF() {
       r.bloque || '',
       Number(r.puntos_cuotas || 0),
       Number(r.puntos_asistencia || 0),
+      Number(r.puntos_antiguedad || 0),
       r.puntaje_total,
       r.total_registros
     ]),
-    foot: [['', '', '', '', `${rankingCargado.length} integrante(s)`, '', '', '', totalPuntos, '']],
+    foot: [['', '', '', '', `${rankingCargado.length} integrante(s)`, '', '', '', '', totalPuntos, '']],
     styles:             { fontSize: 7, cellPadding: 2 },
     headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
     footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
@@ -649,8 +651,9 @@ function exportarPuntajePDF() {
       0: { cellWidth: 10, halign: 'center' },
       6: { halign: 'center' },
       7: { halign: 'center' },
-      8: { halign: 'center', fontStyle: 'bold' },
-      9: { halign: 'center' }
+      8: { halign: 'center' },
+      9: { halign: 'center', fontStyle: 'bold' },
+      10: { halign: 'center' }
     }
   });
   doc.save(`puntaje_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
