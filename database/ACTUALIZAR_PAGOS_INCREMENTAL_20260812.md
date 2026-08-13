@@ -9,6 +9,11 @@ Generado a partir de comparar `Estado Financiero Cuotas GDC 2026 a julio actuali
 - Corrige el valor de mayo de la persona 24692998-K a $60.000 (confirmado como correcto); el archivo actualizado traía $30.000 por error de digitación. Ese mes específico **no se toca** en este script porque ya debería existir así en la base.
 - El puntaje usa la misma regla que ya quedó aplicada en la consolidación del 12 de agosto (10 puntos base por cuota completada sin importar si fue atrasada, +10 de bono cuando un pago cubre más de un mes, 200 en el escenario de pago anual en octubre).
 
+## Errores de datos detectados en el archivo fuente (no aplicados)
+
+- **24692998-K** (Constanza Ayabire Romero): mayo figuraba en $30.000 en el archivo actualizado; el valor correcto es $60.000 (confirmado por el cliente). No se toca porque ya debería existir así en la base desde antes.
+- **18234880-5** (Daniela Dubos Rojas): el archivo actualizado agrega $12.000 en julio, pero ya tenía sus 10 cuotas completas ($120.000, saldo $0) con el archivo anterior. Ese excedente no tiene ninguna cuota pendiente a la cual aplicarse, así que el cálculo de incremento le asignó $0 en todos los períodos y **no aparece en este parche** (verificado: su RUT no figura en `actualizar_pagos_incremental_20260812.sql`). No corresponde generar ningún pago ni cuota adicional para ella a partir de este archivo.
+
 ## Cómo aplicarlo
 
 1. En phpMyAdmin, exportar un respaldo completo de la base (además de las tablas `respaldo_incremental_20260812_*` que el script crea automáticamente).
