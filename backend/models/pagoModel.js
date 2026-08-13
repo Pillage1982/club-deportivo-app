@@ -97,6 +97,24 @@ exports.crearDetalleCuota = (pagoId, cuotaId, monto, callback) => {
   );
 };
 
+// Suma pagada a cuotas agrupada por el mes REAL en que se hizo el pago (pa.fecha),
+// no por el mes de la cuota que cubre. Un pago anticipado que cubre varias cuotas
+// queda concentrado en un solo mes, en vez de repartido entre los meses cubiertos.
+exports.obtenerPagosCuotaPorMesReal = callback => {
+  const query = `
+    SELECT
+      pg.persona_id,
+      YEAR(pg.fecha)  AS anio,
+      MONTH(pg.fecha) AS mes,
+      SUM(pd.monto_pagado) AS monto
+    FROM pago_detalle pd
+    JOIN pagos pg ON pg.id = pd.pago_id
+    WHERE pd.tipo = 'cuota'
+    GROUP BY pg.persona_id, YEAR(pg.fecha), MONTH(pg.fecha)
+  `;
+  db.query(query, callback);
+};
+
 exports.tieneDetalles = (id, callback) => {
   db.query('SELECT EXISTS(SELECT 1 FROM pago_detalle WHERE pago_id=?) AS tiene', [id],
     (err, rows) => callback(err, rows ? Boolean(rows[0].tiene) : false));

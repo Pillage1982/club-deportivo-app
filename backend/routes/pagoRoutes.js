@@ -12,6 +12,13 @@ router.get(
   controller.obtener
 );
 
+router.get(
+  '/reporte-cuotas',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.obtenerReporteCuotas
+);
+
 router.post(
   '/',
   authMiddleware,

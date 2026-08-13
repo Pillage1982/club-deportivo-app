@@ -226,21 +226,52 @@ async function _obtenerPersonasParaReporte() {
 
 const NOMBRES_MESES_GDC = ['', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
 
-// Una columna por cada mes con cuotas generadas (orden cronológico), en vez de una
-// lista fija: evita que la planilla quede desactualizada si cambia la cantidad de meses.
-function _columnasMesesPago(cuotas) {
+// Una columna por cada mes con cuotas generadas o con pagos reales (orden
+// cronológico), en vez de una lista fija: evita que la planilla quede
+// desactualizada si cambia la cantidad de meses, y no pierde pagos hechos
+// fuera de los periodos de cuotas (ej. pago anticipado de toda la temporada).
+function _columnasMesesPago(cuotas, pagosPorMes) {
   const periodos = new Map();
   cuotas.forEach(c => periodos.set(`${c.anio}_${c.mes}`, { anio: Number(c.anio), mes: Number(c.mes) }));
+  (pagosPorMes || []).forEach(pg => periodos.set(`${pg.anio}_${pg.mes}`, { anio: Number(pg.anio), mes: Number(pg.mes) }));
   return Array.from(periodos.values())
     .sort((a, b) => a.anio - b.anio || a.mes - b.mes)
     .map(p => ({ ...p, columna: NOMBRES_MESES_GDC[p.mes] }));
 }
 
+async function _obtenerReporteCuotasReal() {
+  const respuesta = await fetch(`${API_URL}/pagos/reporte-cuotas`, { headers: getAuthHeaders() });
+  const data = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok) throw new Error(data.mensaje || 'No se pudo cargar el reporte de pagos');
+  return {
+    pagosPorMes:  Array.isArray(data.pagosPorMes)  ? data.pagosPorMes  : [],
+    puntosCuotas: Array.isArray(data.puntosCuotas) ? data.puntosCuotas : []
+  };
+}
+
+// Clave persona+mes real de pago -> monto pagado de cuotas ese mes (mes en que
+// se hizo la transacción, no el mes de la cuota cubierta).
+function _pagoRealPorClave(pagosPorMes) {
+  const mapa = new Map();
+  pagosPorMes.forEach(pg => mapa.set(`${pg.persona_id}_${pg.anio}_${pg.mes}`, Number(pg.monto || 0)));
+  return mapa;
+}
+
+function _puntosCuotasPorPersona(puntosCuotas) {
+  const mapa = new Map();
+  puntosCuotas.forEach(pt => mapa.set(Number(pt.persona_id), Number(pt.puntos_cuotas || 0)));
+  return mapa;
+}
+
 async function exportarDeudoresExcel() {
   if (!_excelDisponible()) return;
-  let personas, cuotas;
+  let personas, cuotas, reporte;
   try {
-    [personas, cuotas] = await Promise.all([_obtenerPersonasParaReporte(), _obtenerCuotasParaReporteDeudores()]);
+    [personas, cuotas, reporte] = await Promise.all([
+      _obtenerPersonasParaReporte(),
+      _obtenerCuotasParaReporteDeudores(),
+      _obtenerReporteCuotasReal()
+    ]);
   } catch (error) { mostrarAlerta(error.message, 'danger'); return; }
 
   if (personas.length === 0) {
@@ -248,9 +279,11 @@ async function exportarDeudoresExcel() {
     return;
   }
 
-  const columnas = _columnasMesesPago(cuotas);
+  const columnas = _columnasMesesPago(cuotas, reporte.pagosPorMes);
   const cuotaPorClave = new Map();
   cuotas.forEach(c => cuotaPorClave.set(`${c.persona_id}_${c.anio}_${c.mes}`, c));
+  const pagoRealPorClave       = _pagoRealPorClave(reporte.pagosPorMes);
+  const puntosCuotasPorPersona = _puntosCuotasPorPersona(reporte.puntosCuotas);
 
   const rows = personas.map(p => {
     const fila = {
@@ -264,14 +297,15 @@ async function exportarDeudoresExcel() {
     let real = 0;
     let totalCuotas = 0;
     columnas.forEach(col => {
-      const cuota  = cuotaPorClave.get(`${p.id}_${col.anio}_${col.mes}`);
-      const pagado = Number(cuota?.monto_pagado || 0);
+      const pagado = pagoRealPorClave.get(`${p.id}_${col.anio}_${col.mes}`) || 0;
       fila[col.columna] = pagado > 0 ? pagado : '';
       real += pagado;
+      const cuota = cuotaPorClave.get(`${p.id}_${col.anio}_${col.mes}`);
       totalCuotas += Number(cuota?.monto || 0);
     });
     fila['$ REAL'] = real;
     fila['SALDO'] = Math.max(0, totalCuotas - real);
+    fila['TOTAL PUNTOS CUOTAS'] = puntosCuotasPorPersona.get(p.id) || 0;
     return fila;
   });
 
@@ -710,9 +744,13 @@ function exportarGastosPDF() {
 
 async function exportarDeudoresPDF() {
   if (!_pdfDisponible()) return;
-  let personas, cuotas;
+  let personas, cuotas, reporte;
   try {
-    [personas, cuotas] = await Promise.all([_obtenerPersonasParaReporte(), _obtenerCuotasParaReporteDeudores()]);
+    [personas, cuotas, reporte] = await Promise.all([
+      _obtenerPersonasParaReporte(),
+      _obtenerCuotasParaReporteDeudores(),
+      _obtenerReporteCuotasReal()
+    ]);
   } catch (error) { mostrarAlerta(error.message, 'danger'); return; }
 
   if (personas.length === 0) {
@@ -720,31 +758,34 @@ async function exportarDeudoresPDF() {
     return;
   }
 
-  const columnas = _columnasMesesPago(cuotas);
+  const columnas = _columnasMesesPago(cuotas, reporte.pagosPorMes);
   const cuotaPorClave = new Map();
   cuotas.forEach(c => cuotaPorClave.set(`${c.persona_id}_${c.anio}_${c.mes}`, c));
+  const pagoRealPorClave       = _pagoRealPorClave(reporte.pagosPorMes);
+  const puntosCuotasPorPersona = _puntosCuotasPorPersona(reporte.puntosCuotas);
 
   const doc = _crearDocPDF('Pago de Cuotas', true);
   doc.autoTable({
     startY: 30,
     head: [[
       'RUT', 'Ap. paterno', 'Ap. materno', 'Nombres', 'Bloque', 'Estado',
-      ...columnas.map(c => c.columna), '$ REAL', 'SALDO'
+      ...columnas.map(c => c.columna), '$ REAL', 'SALDO', 'PUNTOS CUOTAS'
     ]],
     body: personas.map(p => {
       let real = 0;
       let totalCuotas = 0;
       const celdas = columnas.map(col => {
-        const cuota  = cuotaPorClave.get(`${p.id}_${col.anio}_${col.mes}`);
-        const pagado = Number(cuota?.monto_pagado || 0);
+        const pagado = pagoRealPorClave.get(`${p.id}_${col.anio}_${col.mes}`) || 0;
         real += pagado;
+        const cuota = cuotaPorClave.get(`${p.id}_${col.anio}_${col.mes}`);
         totalCuotas += Number(cuota?.monto || 0);
         return pagado > 0 ? formatearMonto(pagado) : '';
       });
       return [
         p.rut || '', p.apellido_paterno || '', p.apellido_materno || '', p.nombres || '',
         p.bloque || '', p.estado || 'activo', ...celdas,
-        formatearMonto(real), formatearMonto(Math.max(0, totalCuotas - real))
+        formatearMonto(real), formatearMonto(Math.max(0, totalCuotas - real)),
+        puntosCuotasPorPersona.get(p.id) || 0
       ];
     }),
     styles:             { fontSize: 6, cellPadding: 1.5 },

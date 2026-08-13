@@ -17,6 +17,16 @@ function ejecutar(sql, params = []) {
 exports.obtenerRanking = () =>
   ejecutar('SELECT * FROM vista_ranking_puntaje');
 
+// Total de puntos generados por pagos de cuotas (Fase 2, Art. 9.2/9.3), sin
+// mezclar con los puntos de asistencia o antigüedad.
+exports.obtenerPuntosCuotasPorPersona = () =>
+  ejecutar(`
+    SELECT persona_id, COALESCE(SUM(puntos),0) AS puntos_cuotas
+    FROM puntajes
+    WHERE cuota_id IS NOT NULL
+    GROUP BY persona_id
+  `);
+
 exports.obtenerHistorial = (persona_id) =>
   ejecutar(`
     SELECT

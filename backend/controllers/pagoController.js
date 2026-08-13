@@ -256,6 +256,21 @@ exports.obtener = (req, res) => {
 };
 
 // =====================================
+// REPORTE DE PAGOS DE CUOTAS (para exportaciones Excel/PDF)
+// =====================================
+// Pagos agrupados por el mes REAL en que se hicieron (no el mes de la cuota
+// cubierta) + total de puntos generados por pagos de cuotas por persona.
+
+exports.obtenerReporteCuotas = (req, res) => {
+  pagoModel.obtenerPagosCuotaPorMesReal((err, pagosPorMes) => {
+    if (err) return res.status(500).json(err);
+    puntajeModel.obtenerPuntosCuotasPorPersona()
+      .then(puntosCuotas => res.json({ pagosPorMes, puntosCuotas }))
+      .catch(() => res.status(500).json({ mensaje: 'No se pudieron obtener los puntos de cuotas' }));
+  });
+};
+
+// =====================================
 // ACTUALIZAR PAGO
 // =====================================
 
