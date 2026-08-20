@@ -9,9 +9,9 @@
   "theme_color": "#050505",
   "icons": [
     {
-      "src": "img/logo-nexocomunidad.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "img/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }

@@ -2,8 +2,8 @@
 // SERVICE WORKER — NexoComunidad PWA
 // =====================================
 
-const CACHE_STATIC = 'nexo-static-v8';
-const CACHE_API    = 'nexo-api-v8';
+const CACHE_STATIC = 'nexo-static-v9';
+const CACHE_API    = 'nexo-api-v9';
 
 const LOCAL_ASSETS = [
   '/index.html',
@@ -21,8 +21,8 @@ const LOCAL_ASSETS = [
   '/js/dashboard.js',
   '/js/reportes.js',
   '/js/main.js',
-  '/img/logo-nexocomunidad.svg',
-  '/favicon.svg'
+  '/img/logo.png',
+  '/favicon.png'
 ];
 
 const CDN_ASSETS = [
