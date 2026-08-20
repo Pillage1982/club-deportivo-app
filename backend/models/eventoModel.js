@@ -139,9 +139,12 @@ exports.obtenerEventoPorId = (id, callback) => {
   );
 };
 
+// WHERE finalizado = 0: hace el cierre atómico. Si dos peticiones llegan casi
+// simultáneas (doble clic), solo una obtiene affectedRows=1 y avanza a generar
+// ausentes/multas/email; la otra ve 0 filas afectadas y sabe que perdió la carrera.
 exports.cerrarEvento = (id, callback) => {
   db.query(
-    'UPDATE eventos SET finalizado = 1 WHERE id = ?',
+    'UPDATE eventos SET finalizado = 1 WHERE id = ? AND finalizado = 0',
     [id],
     callback
   );

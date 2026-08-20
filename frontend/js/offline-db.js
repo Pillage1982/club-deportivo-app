@@ -121,6 +121,7 @@ async function sincronizarAsistenciasOffline() {
   if (!token) return;
 
   let sincronizados = 0;
+  let descartados = 0;
 
   for (const registro of pendientes) {
     const { id, timestamp, estadoSync, creadoOffline, ...data } = registro;
@@ -131,10 +132,21 @@ async function sincronizarAsistenciasOffline() {
         body:    JSON.stringify(data)
       });
 
-      if (res.ok) {
+      if (res.ok || res.status === 409) {
+        // 409 = el servidor ya tiene esta asistencia (duplicado); no es un
+        // error real, solo evita que el registro quede reintentando para
+        // siempre cuando la respuesta original se perdió por corte de red.
         await eliminarAsistenciaOffline(id);
         sincronizados++;
+      } else if (res.status >= 400 && res.status < 500) {
+        // Cualquier otro 4xx (evento finalizado, actividad no encontrada,
+        // integrante inactivo) es un rechazo definitivo del servidor:
+        // reintentar no lo va a resolver, así que se descarta en vez de
+        // quedar "pendiente" reintentando para siempre.
+        await eliminarAsistenciaOffline(id);
+        descartados++;
       }
+      // 5xx: se deja "pendiente" para reintentar, puede ser transitorio del servidor.
     } catch {
       break; // sin red, reintentar al próximo evento online
     }
@@ -142,6 +154,11 @@ async function sincronizarAsistenciasOffline() {
 
   if (sincronizados > 0) {
     mostrarAlerta(`${sincronizados} asistencia(s) sincronizada(s) al recuperar conexión`, 'success');
+  }
+  if (descartados > 0) {
+    mostrarAlerta(`${descartados} asistencia(s) offline no se pudieron sincronizar (evento finalizado o no encontrado) y fueron descartadas`, 'warning');
+  }
+  if (sincronizados > 0 || descartados > 0) {
     actualizarBadgeOffline();
     cargarAsistencias();
     cargarDashboard();

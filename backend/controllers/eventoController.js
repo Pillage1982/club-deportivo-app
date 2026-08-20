@@ -170,24 +170,32 @@ exports.cerrar = (req, res) => {
       return res.status(400).json({ mensaje: 'La actividad ya está finalizada' });
     }
 
-    asistenciaModel.registrarAusentesEvento(id, (ausErr, ausResult) => {
+    // Cierre atómico primero (WHERE finalizado=0 en el modelo): si dos
+    // peticiones casi simultáneas (doble clic) llegan aquí, solo una gana la
+    // carrera y genera ausentes/multas/email; la otra corta de inmediato en
+    // vez de duplicar ambos efectos.
+    eventoModel.cerrarEvento(id, (cerrarErr, cerrarResult) => {
 
-      if (ausErr) {
-        return res.status(500).json({ mensaje: 'Error al registrar ausentes' });
+      if (cerrarErr) {
+        return res.status(500).json({ mensaje: 'Error al finalizar actividad' });
       }
 
-      const totalAusentes = ausResult ? ausResult.affectedRows : 0;
+      if (!cerrarResult || cerrarResult.affectedRows === 0) {
+        return res.status(400).json({ mensaje: 'La actividad ya está finalizada' });
+      }
 
-      multaModel.crearMultasAusentes(id, (multaErr) => {
+      asistenciaModel.registrarAusentesEvento(id, (ausErr, ausResult) => {
 
-        if (multaErr) {
-          return res.status(500).json({ mensaje: 'Error al generar multas por inasistencia' });
+        if (ausErr) {
+          return res.status(500).json({ mensaje: 'Error al registrar ausentes' });
         }
 
-        eventoModel.cerrarEvento(id, (cerrarErr) => {
+        const totalAusentes = ausResult ? ausResult.affectedRows : 0;
 
-          if (cerrarErr) {
-            return res.status(500).json({ mensaje: 'Error al finalizar actividad' });
+        multaModel.crearMultasAusentes(id, (multaErr) => {
+
+          if (multaErr) {
+            return res.status(500).json({ mensaje: 'Error al generar multas por inasistencia' });
           }
 
           const detalle = totalAusentes > 0
