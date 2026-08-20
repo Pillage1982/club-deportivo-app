@@ -902,10 +902,6 @@ function refrescarFinanzasPorAsistencia() {
 
 let asistenciasTabla = [];
 
-function normalizarTextoAsistencia(valor) {
-  return String(valor || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-}
-
 function filtrarAsistencias() {
   const busqueda = normalizarTextoAsistencia(document.getElementById('buscar_asistencias')?.value);
   const estado   = document.getElementById('filtro_asistencia_estado')?.value || '';
@@ -939,9 +935,9 @@ function renderizarTablaAsistencias(asistencias) {
     const fecha = grupo.fecha
       ? new Date(String(grupo.fecha).replace(' ', 'T')).toLocaleDateString('es-CL')
       : '';
-    html += `<tr class="table-active border-top border-2"><td colspan="4"><strong>${grupo.nombre}</strong><span class="text-muted small ms-2">${fecha}</span><span class="badge bg-secondary ms-2">${grupo.filas.length}</span></td></tr>`;
+    html += `<tr class="table-active border-top border-2"><td colspan="4"><strong>${escaparHtml(grupo.nombre)}</strong><span class="text-muted small ms-2">${fecha}</span><span class="badge bg-secondary ms-2">${grupo.filas.length}</span></td></tr>`;
     for (const a of grupo.filas) {
-      html += `<tr><td>${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}</td><td class="text-muted small">—</td><td>${obtenerBadgeAsistencia(a.estado)}</td><td>${a.minutos_atraso}</td></tr>`;
+      html += `<tr><td>${escaparHtml(a.nombres)} ${escaparHtml(a.apellido_paterno)} ${escaparHtml(a.apellido_materno || '')}</td><td class="text-muted small">—</td><td>${obtenerBadgeAsistencia(a.estado)}</td><td>${a.minutos_atraso}</td></tr>`;
     }
   }
   tabla.innerHTML = html;
@@ -989,10 +985,6 @@ function cargarAsistencias() {
 // =====================================
 
 let multasTabla = [];
-
-function normalizarTextoMulta(valor) {
-  return String(valor || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-}
 
 function filtrarMultas() {
   const busqueda = normalizarTextoMulta(document.getElementById('buscar_multas')?.value);
@@ -1138,7 +1130,7 @@ function cargarUltimosRegistros() {
     const hora = dt && !Number.isNaN(dt.getTime())
       ? dt.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
       : '';
-    return `<tr><td>${a.nombres} ${a.apellido_paterno}</td><td>${obtenerBadgeAsistencia(a.estado)}</td><td>${hora}</td></tr>`;
+    return `<tr><td>${escaparHtml(a.nombres)} ${escaparHtml(a.apellido_paterno)}</td><td>${obtenerBadgeAsistencia(a.estado)}</td><td>${hora}</td></tr>`;
   }).join('');
   wrapper.classList.remove('d-none');
 }

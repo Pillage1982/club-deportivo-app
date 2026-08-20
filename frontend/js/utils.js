@@ -4,6 +4,30 @@
 
 const API_URL = window.API_URL || window.location.origin;
 
+// Escapa texto antes de insertarlo en innerHTML (evita XSS con datos que
+// vienen de la API, ej. nombres de eventos o personas escritos por otro usuario).
+function escaparHtml(valor) {
+  return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[caracter]);
+}
+
+// Normaliza texto para comparar en buscadores/filtros (minúsculas, sin tildes).
+// Fuente única: antes estaba copiada con distinto nombre en personas.js,
+// pagos.js, asistencias.js (x2) y gastos.js.
+function normalizarTexto(valor) {
+  return String(valor || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim();
+}
+const normalizarTextoBusqueda   = normalizarTexto;
+const normalizarTextoPago       = normalizarTexto;
+const normalizarTextoAsistencia = normalizarTexto;
+const normalizarTextoMulta      = normalizarTexto;
+const normalizarTextoGasto      = normalizarTexto;
+
 
 /// =====================================
 // ALERTAS VISUALES BOOTSTRAP

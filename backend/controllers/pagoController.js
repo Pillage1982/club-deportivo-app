@@ -46,6 +46,8 @@ function validarPago(body) {
     });
   }
 
+  const cuota_id = req.body.cuota_id ? Number(req.body.cuota_id) : null;
+
   personaModel.obtenerPersonaPorId(Number(req.body.persona_id), (errPersona, persona) => {
     if (errPersona || !persona) {
       return res.status(400).json({ mensaje: 'Integrante no encontrado' });
@@ -55,37 +57,53 @@ function validarPago(body) {
       return res.status(403).json({ mensaje: 'Los integrantes honorarios están exentos de pagos' });
     }
 
-    // Inserta pago en base datos
-    pagoModel.crearPago(
+    const continuarConPago = () => {
+      // Inserta pago en base datos
+      pagoModel.crearPago(
 
-    req.body,
+      req.body,
 
-    // Manejo errores backend pagos
-    (err, result) => {
+      // Manejo errores backend pagos
+      (err, result) => {
 
-      if (err) {
+        if (err) {
 
-        return res.status(500).json(err);
+          return res.status(500).json(err);
 
-      }
+        }
 
-      const cuota_id = req.body.cuota_id ? Number(req.body.cuota_id) : null;
+        if (!cuota_id) {
+          return res.json({ mensaje: 'Pago registrado' });
+        }
 
-      if (cuota_id) {
         cuotaModel.marcarCuotaPagada(cuota_id, (errC) => {
-          if (errC) console.error('Error marcando cuota:', errC);
+          if (errC) {
+            console.error('Error marcando cuota:', errC);
+            return res.status(500).json({ mensaje: 'Pago registrado, pero no se pudo marcar la cuota como pagada' });
+          }
+          res.json({ mensaje: 'Pago registrado y cuota marcada como pagada' });
         });
-        return res.json({ mensaje: 'Pago registrado y cuota marcada como pagada' });
+
       }
 
-      // Respuesta exitosa frontend
-      res.json({
-        mensaje: 'Pago registrado'
-      });
+    );
+    };
 
+    if (!cuota_id) {
+      return continuarConPago();
     }
 
-  );
+    // Verifica que la cuota exista y pertenezca al integrante del pago antes
+    // de vincularla, para no marcar como pagada una cuota de otra persona.
+    cuotaModel.obtenerCuotaPorId(cuota_id, (errCuota, cuota) => {
+      if (errCuota) {
+        return res.status(500).json({ mensaje: 'Error al verificar la cuota' });
+      }
+      if (!cuota || Number(cuota.persona_id) !== Number(req.body.persona_id)) {
+        return res.status(400).json({ mensaje: 'La cuota seleccionada no corresponde a este integrante' });
+      }
+      continuarConPago();
+    });
 
   }); // obtenerPersonaPorId
 

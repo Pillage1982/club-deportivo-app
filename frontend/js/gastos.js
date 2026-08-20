@@ -1,22 +1,5 @@
 let gastosCargados = [];
 
-function normalizarTextoGasto(valor) {
-  return String(valor || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .trim();
-}
-
-function escaparHtmlGasto(valor) {
-  return String(valor ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
 function crearGasto() {
   const descripcion = document.getElementById('gasto_descripcion').value.trim();
   const categoria   = document.getElementById('gasto_categoria').value.trim();
@@ -152,10 +135,10 @@ function renderizarTablaGastos(gastos) {
   tabla.innerHTML = gastos.map(gasto => `
     <tr>
       <td>${formatearFecha(gasto.fecha)}</td>
-      <td>${escaparHtmlGasto(gasto.categoria)}</td>
-      <td>${escaparHtmlGasto(gasto.descripcion)}</td>
+      <td>${escaparHtml(gasto.categoria)}</td>
+      <td>${escaparHtml(gasto.descripcion)}</td>
       <td>${formatearMonto(gasto.monto)}</td>
-      <td>${gasto.responsable ? escaparHtmlGasto(gasto.responsable) : '—'}</td>
+      <td>${gasto.responsable ? escaparHtml(gasto.responsable) : '—'}</td>
       <td class="text-nowrap">
         ${gasto.comprobante_path
           ? `<button type="button" class="btn btn-sm btn-outline-primary" title="Ver comprobante" onclick="verComprobanteGasto(${gasto.id})">

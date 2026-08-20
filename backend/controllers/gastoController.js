@@ -1,12 +1,21 @@
 const path = require('path');
 const fs = require('fs');
 const gastoModel = require('../models/gastoModel');
+const uploadComprobante = require('../middleware/uploadComprobante');
+
+// Inverso de extensionPorMime (uploadComprobante.js): misma fuente de verdad
+// para no desincronizar los tipos permitidos si se agrega uno nuevo ahí.
+const MIME_POR_EXTENSION = Object.fromEntries(
+  Object.entries(uploadComprobante.extensionPorMime).map(([mime, ext]) => [ext, mime])
+);
 
 function textoValido(valor, minimo = 3) {
   if (typeof valor !== 'string') return false;
   const texto = valor.trim();
   if (texto.length < minimo) return false;
-  return /[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/.test(texto);
+  const tieneLetrasONumeros = /[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/.test(texto);
+  const caracteresPermitidos = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,#°-]+$/.test(texto);
+  return tieneLetrasONumeros && caracteresPermitidos;
 }
 
 function validarGasto(body) {
@@ -44,12 +53,25 @@ exports.listar = (req, res) => {
   });
 };
 
-exports.crear = (req, res) => {
+exports.crear = async (req, res) => {
   const errorValidacion = validarGasto(req.body);
 
   if (errorValidacion) {
     if (req.file) fs.unlink(req.file.path, () => {});
     return res.status(400).json({ mensaje: errorValidacion });
+  }
+
+  if (req.file) {
+    let firmaValida = false;
+    try {
+      firmaValida = await uploadComprobante.verificarFirmaArchivo(req.file.path, req.file.mimetype);
+    } catch (e) {
+      firmaValida = false;
+    }
+    if (!firmaValida) {
+      fs.unlink(req.file.path, () => {});
+      return res.status(400).json({ mensaje: 'El archivo no corresponde a una imagen o PDF válido' });
+    }
   }
 
   const data = {
@@ -111,6 +133,14 @@ exports.descargarComprobante = (req, res) => {
     }
 
     const rutaArchivo = path.join(__dirname, '..', 'uploads', gasto.comprobante_path);
+    const extension = path.extname(rutaArchivo).toLowerCase();
+    const mimeSeguro = MIME_POR_EXTENSION[extension] || 'application/octet-stream';
+
+    // Content-Type explícito (nunca inferido de una extensión no controlada) y
+    // Content-Disposition: attachment como defensa adicional si el archivo se
+    // abre por navegación directa en vez de vía fetch()+blob() del frontend.
+    res.set('Content-Disposition', `attachment; filename="comprobante${extension}"`);
+    res.type(mimeSeguro);
     res.sendFile(rutaArchivo, (sendErr) => {
       if (sendErr && !res.headersSent) {
         res.status(404).json({ mensaje: 'Comprobante no encontrado' });
