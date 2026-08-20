@@ -67,10 +67,11 @@ exports.crearPersona = (
       email,
       telefono,
       fecha_nacimiento,
-      estado
+      estado,
+      es_honorario
     )
 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 
   `;
 
@@ -86,7 +87,8 @@ exports.crearPersona = (
       data.email,
       data.telefono,
       data.fecha_nacimiento || null,
-      data.estado || 'activo'
+      data.estado || 'activo',
+      data.es_honorario ? 1 : 0
     ],
 
     callback
@@ -202,7 +204,8 @@ exports.actualizarPersona = (
       email = ?,
       telefono = ?,
       fecha_nacimiento = ?,
-      estado = ?
+      estado = ?,
+      es_honorario = ?
 
     WHERE id = ?
 
@@ -222,6 +225,7 @@ exports.actualizarPersona = (
       data.telefono,
       data.fecha_nacimiento || null,
       data.estado || 'activo',
+      data.es_honorario ? 1 : 0,
 
       id
 

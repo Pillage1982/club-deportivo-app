@@ -102,6 +102,11 @@ function cargarPersonas() {
         'persona_estado'
       ).value,
 
+    es_honorario:
+      document.getElementById(
+        'persona_es_honorario'
+      ).checked,
+
   };
 
   // =====================================
@@ -213,6 +218,10 @@ document.getElementById(
   'persona_estado'
 ).value = 'activo';
 
+document.getElementById(
+  'persona_es_honorario'
+).checked = false;
+
 // Refresca selectores y tabla personas
     invalidarCacheApi('personas');
     cargarPersonas();
@@ -295,14 +304,6 @@ function obtenerTerminoBusquedaPersonas() {
     document.getElementById('buscar_personas');
 
   return input ? input.value : '';
-}
-
-function normalizarTextoBusqueda(valor) {
-  return String(valor || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim();
 }
 
 function filtrarPersonas(termino) {
@@ -507,6 +508,10 @@ function editarPersona(persona) {
   document.getElementById(
     'persona_estado'
   ).value = persona.estado || 'activo';
+
+  document.getElementById(
+    'persona_es_honorario'
+  ).checked = Boolean(persona.es_honorario);
 
   document.getElementById(
     'btn_guardar_persona'

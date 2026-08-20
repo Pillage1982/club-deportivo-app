@@ -335,7 +335,7 @@
               <input type="date" id="filtro_evento_fecha" class="form-control">
             </div>
             <div class="col-12 col-md-2">
-              <button id="btn_limpiar_filtros_eventos" class="btn btn-outline-secondary w-100">Limpiar</button>
+              <button id="btn_limpiar_filtros_eventos" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosEventos()">Limpiar</button>
             </div>
           </div>
           <div id="tabla_eventos_wrapper" class="table-responsive tabla-scroll">
@@ -442,7 +442,7 @@
               </select>
             </div>
             <div class="col-6 col-md-2">
-              <button id="btn_limpiar_filtros_pagos" class="btn btn-outline-secondary w-100">Limpiar</button>
+              <button id="btn_limpiar_filtros_pagos" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosPagos()">Limpiar</button>
             </div>
           </div>
           <div id="tabla_pagos_wrapper" class="table-responsive tabla-scroll">
@@ -514,7 +514,7 @@
               <input type="number" id="filtro_cuota_anio" class="form-control" placeholder="Año">
             </div>
             <div class="col-6 col-md-2">
-              <button id="btn_limpiar_filtros_cuotas" class="btn btn-outline-secondary w-100">Limpiar</button>
+              <button id="btn_limpiar_filtros_cuotas" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosCuotas()">Limpiar</button>
             </div>
           </div>
           <div id="tabla_cuotas_wrapper" class="table-responsive tabla-scroll">
@@ -543,7 +543,7 @@
               </select>
             </div>
             <div class="col-6 col-md-2">
-              <button id="btn_limpiar_filtros_finanzas" class="btn btn-outline-secondary w-100">Limpiar</button>
+              <button id="btn_limpiar_filtros_finanzas" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosFinanzas()">Limpiar</button>
             </div>
             <div class="col-auto d-flex align-items-end">
               <div class="dropdown">
@@ -687,6 +687,14 @@
                   <option value="activo">Activo</option>
                   <option value="receso">Receso</option>
                 </select>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check">
+                  <input type="checkbox" id="persona_es_honorario" class="form-check-input">
+                  <label class="form-check-label" for="persona_es_honorario">
+                    Integrante honorario (exento de pagos)
+                  </label>
+                </div>
               </div>
 
               <!-- Apoderado — visible solo si menor de 18 años -->
