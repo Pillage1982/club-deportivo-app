@@ -114,23 +114,25 @@ function validarPago(body) {
     }
 
     const cuotaId = req.body.cuota_id ? Number(req.body.cuota_id) : null;
-    const guardar = cuota => pagoModel.crearPago(req.body, (err, result) => {
-      if (err) return res.status(500).json(err);
-      if (!cuota) return res.json({ mensaje: 'Pago registrado' });
-      pagoModel.crearDetalleCuota(result.insertId, cuota.id, Number(req.body.monto_total), errDetalle => {
-        if (errDetalle) {
-          return pagoModel.eliminarPago(result.insertId, () => res.status(500).json({ mensaje: 'No se pudo vincular el pago a la cuota' }));
+    const guardar = cuota => {
+      const completa = cuota ? Number(req.body.monto_total) === Number(cuota.saldo) : false;
+      const detalles = cuota
+        ? [{ cuotaId: cuota.id, monto: Number(req.body.monto_total), marcarPagada: completa }]
+        : [];
+
+      pagoModel.crearPagoConDetalles(req.body, detalles, err => {
+        if (err) {
+          return res.status(500).json({
+            mensaje: cuota ? 'No se pudo vincular el pago a la cuota' : 'No se pudo registrar el pago'
+          });
         }
-        const completa = Number(req.body.monto_total) === Number(cuota.saldo);
+        if (!cuota) return res.json({ mensaje: 'Pago registrado' });
         if (!completa) return res.json({ mensaje: `Pago parcial registrado. Saldo pendiente: $${Number(cuota.saldo)-Number(req.body.monto_total)}` });
-        cuotaModel.marcarCuotaPagada(cuota.id, errC => {
-          if (errC) return res.status(500).json({ mensaje: 'Pago registrado, pero no se pudo cerrar la cuota' });
-          procesarPuntajeCuota(Number(req.body.persona_id), cuota.id);
-          recalcularAsistenciasPersona(Number(req.body.persona_id));
-          res.json({ mensaje: 'Pago registrado y cuota marcada como pagada' });
-        });
+        procesarPuntajeCuota(Number(req.body.persona_id), cuota.id);
+        recalcularAsistenciasPersona(Number(req.body.persona_id));
+        res.json({ mensaje: 'Pago registrado y cuota marcada como pagada' });
       });
-    });
+    };
     if (!cuotaId) return guardar(null);
     cuotaModel.obtenerCuotaConSaldo(cuotaId, (errCuota, cuota) => {
       if (errCuota || !cuota) return res.status(400).json({ mensaje: 'Cuota no encontrada' });
@@ -194,36 +196,19 @@ exports.crearAnual = (req, res) => {
         });
       }
 
-      pagoModel.crearPago(req.body, (errPago, resultPago) => {
-        if (errPago) return res.status(500).json(errPago);
-        const pagoId = resultPago.insertId;
+      const detalles = cuotas.map(cuota => ({
+        cuotaId: cuota.id,
+        monto: Number(cuota.saldo),
+        marcarPagada: true
+      }));
 
-        let pendientes  = cuotas.length;
-        let huboError   = false;
-
-        cuotas.forEach(cuota => {
-          pagoModel.crearDetalleCuota(pagoId, cuota.id, Number(cuota.saldo), errDetalle => {
-            if (huboError) return;
-            if (errDetalle) {
-              huboError = true;
-              return pagoModel.eliminarPago(pagoId, () =>
-                res.status(500).json({ mensaje: 'No se pudo vincular el pago a las cuotas' }));
-            }
-            cuotaModel.marcarCuotaPagada(cuota.id, errMarcar => {
-              if (huboError) return;
-              if (errMarcar) {
-                huboError = true;
-                return res.status(500).json({ mensaje: 'Pago registrado, pero no se pudieron cerrar todas las cuotas' });
-              }
-              pendientes--;
-              if (pendientes === 0) {
-                procesarPuntajeCuotasAnual(Number(req.body.persona_id), cuotas);
-                recalcularAsistenciasPersona(Number(req.body.persona_id));
-                res.json({ mensaje: `Pago anual registrado: ${cuotas.length} cuota(s) marcadas como pagadas` });
-              }
-            });
-          });
-        });
+      pagoModel.crearPagoConDetalles(req.body, detalles, errPago => {
+        if (errPago) {
+          return res.status(500).json({ mensaje: 'No se pudo registrar el pago anual' });
+        }
+        procesarPuntajeCuotasAnual(Number(req.body.persona_id), cuotas);
+        recalcularAsistenciasPersona(Number(req.body.persona_id));
+        res.json({ mensaje: `Pago anual registrado: ${cuotas.length} cuota(s) marcadas como pagadas` });
       });
     });
   });

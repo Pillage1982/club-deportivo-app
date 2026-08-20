@@ -97,6 +97,68 @@ exports.crearDetalleCuota = (pagoId, cuotaId, monto, callback) => {
   );
 };
 
+// =====================================
+// REGISTRAR PAGO + VÍNCULOS A CUOTAS (TRANSACCIONAL)
+// =====================================
+// Inserta el pago y, si corresponde, sus filas de pago_detalle y el cambio de
+// estado de cada cuota, todo dentro de una misma transacción. Si algún paso
+// falla se revierte todo: evita que una cuota quede marcada "pagado" sin su
+// pago_detalle (o viceversa) cuando un pago cubre varias cuotas y una falla
+// a mitad de camino.
+// detalles: [{ cuotaId, monto, marcarPagada }]
+exports.crearPagoConDetalles = (data, detalles, callback) => {
+  db.getConnection((err, conexion) => {
+    if (err) return callback(err);
+
+    const liberar = () => conexion.release();
+    const fallar = errFinal => conexion.rollback(() => { liberar(); callback(errFinal); });
+
+    conexion.beginTransaction(errTx => {
+      if (errTx) { liberar(); return callback(errTx); }
+
+      conexion.query(
+        'INSERT INTO pagos (persona_id, monto_total, metodo) VALUES (?, ?, ?)',
+        [data.persona_id, data.monto_total, data.metodo],
+        (errPago, resultPago) => {
+          if (errPago) return fallar(errPago);
+          const pagoId = resultPago.insertId;
+
+          const finalizar = () => conexion.commit(errCommit => {
+            if (errCommit) return fallar(errCommit);
+            liberar();
+            callback(null, { pagoId });
+          });
+
+          const procesarDetalle = index => {
+            if (index === detalles.length) return finalizar();
+            const { cuotaId, monto, marcarPagada } = detalles[index];
+
+            conexion.query(
+              "INSERT INTO pago_detalle (pago_id,tipo,referencia_id,monto_pagado) VALUES (?,'cuota',?,?)",
+              [pagoId, cuotaId, monto],
+              errDetalle => {
+                if (errDetalle) return fallar(errDetalle);
+                if (!marcarPagada) return procesarDetalle(index + 1);
+
+                conexion.query(
+                  "UPDATE cuotas SET estado='pagado' WHERE id=? AND estado IN ('pendiente','vencido')",
+                  [cuotaId],
+                  errMarcar => {
+                    if (errMarcar) return fallar(errMarcar);
+                    procesarDetalle(index + 1);
+                  }
+                );
+              }
+            );
+          };
+
+          procesarDetalle(0);
+        }
+      );
+    });
+  });
+};
+
 // Suma pagada a cuotas agrupada por el mes REAL en que se hizo el pago (pa.fecha),
 // no por el mes de la cuota que cubre. Un pago anticipado que cubre varias cuotas
 // queda concentrado en un solo mes, en vez de repartido entre los meses cubiertos.

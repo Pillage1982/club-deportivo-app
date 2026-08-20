@@ -27,6 +27,9 @@ exports.obtenerPuntosCuotasPorPersona = () =>
     GROUP BY persona_id
   `);
 
+// LEFT JOIN: los puntos por pago de cuota (insertarPuntajeCuota) no tienen
+// evento_id (es NULL), así que un INNER JOIN los descartaba silenciosamente
+// del historial aunque sí sumaran al puntaje_total del ranking.
 exports.obtenerHistorial = (persona_id) =>
   ejecutar(`
     SELECT
@@ -34,10 +37,10 @@ exports.obtenerHistorial = (persona_id) =>
       pt.puntos,
       pt.detalle,
       pt.fecha,
-      e.nombre AS evento,
-      e.tipo   AS tipo_evento
+      COALESCE(e.nombre, IF(pt.cuota_id IS NOT NULL, 'Pago de cuota', 'Evento eliminado')) AS evento,
+      e.tipo AS tipo_evento
     FROM puntajes pt
-    JOIN eventos e ON pt.evento_id = e.id
+    LEFT JOIN eventos e ON pt.evento_id = e.id
     WHERE pt.persona_id = ?
     ORDER BY pt.fecha DESC, pt.id DESC
     LIMIT 200

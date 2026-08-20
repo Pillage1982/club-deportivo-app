@@ -144,10 +144,10 @@ function renderizarTablaGastos(gastos) {
   tabla.innerHTML = gastos.map(gasto => `
     <tr>
       <td>${formatearFecha(gasto.fecha)}</td>
-      <td>${gasto.categoria}</td>
-      <td>${gasto.descripcion}</td>
+      <td>${escaparHtml(gasto.categoria)}</td>
+      <td>${escaparHtml(gasto.descripcion)}</td>
       <td>${formatearMonto(gasto.monto)}</td>
-      <td>${gasto.responsable || '—'}</td>
+      <td>${gasto.responsable ? escaparHtml(gasto.responsable) : '—'}</td>
       <td class="text-nowrap">
         ${gasto.comprobante_path
           ? `<button type="button" class="btn btn-sm btn-outline-primary" title="Ver comprobante" onclick="verComprobanteGasto(${gasto.id})">

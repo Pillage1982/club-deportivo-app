@@ -132,7 +132,10 @@ async function sincronizarAsistenciasOffline() {
         body:    JSON.stringify(data)
       });
 
-      if (res.ok) {
+      if (res.ok || res.status === 409) {
+        // 409 = el servidor ya tiene esta asistencia (duplicado); no es un
+        // error real, solo evita que el registro quede reintentando para
+        // siempre cuando la respuesta original se perdió por corte de red.
         await eliminarAsistenciaOffline(id);
         sincronizados++;
       }
