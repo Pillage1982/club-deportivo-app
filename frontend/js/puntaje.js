@@ -68,8 +68,8 @@ function verHistorialPuntaje(persona_id, nombre) {
         return `
         <tr>
           <td>${fecha}</td>
-          <td>${h.evento}</td>
-          <td>${h.detalle}</td>
+          <td>${escaparHtml(h.evento)}</td>
+          <td>${escaparHtml(h.detalle)}</td>
           <td class="text-center fw-bold ${clsPts}">${signo}${pts}</td>
         </tr>`;
       }).join('');

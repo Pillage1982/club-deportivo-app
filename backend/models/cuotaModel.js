@@ -195,17 +195,6 @@ exports.obtenerCuotaConSaldo = (id, callback) => {
   );
 };
 
-// =====================================
-// MARCAR CUOTA COMO PAGADA
-// =====================================
-
-exports.marcarCuotaPagada = (id, callback) => {
-  db.query(
-    `UPDATE cuotas SET estado = 'pagado' WHERE id = ? AND estado IN ('pendiente', 'vencido')`,
-    [id],
-    callback
-  );
-};
 
 // =====================================
 // OBTENER CUOTAS

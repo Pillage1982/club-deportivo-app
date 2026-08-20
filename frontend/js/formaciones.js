@@ -1,12 +1,6 @@
 // Formación vigente GDC: se calcula en tiempo real desde el ranking de cada bloque.
 window.formacionesCargadas = [];
 
-function escaparFormacion(valor) {
-  return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  })[caracter]);
-}
-
 async function inicializarFormaciones() {
   cargarFormaciones();
 }
@@ -23,7 +17,7 @@ async function cargarFormaciones() {
     renderizarFormacionActual(window.formacionesCargadas);
   } catch (error) {
     window.formacionesCargadas = [];
-    contenedor.innerHTML = `<div class="alert alert-danger">${escaparFormacion(error.message)}</div>`;
+    contenedor.innerHTML = `<div class="alert alert-danger">${escaparHtml(error.message)}</div>`;
   }
 }
 
@@ -41,7 +35,7 @@ function renderizarFormacionActual(bloques) {
         <div class="formacion-fila-estatutaria">${posiciones.map(tarjetaFormacionActual).join('')}</div></div>`);
     }
     return `<section class="card mb-4 shadow-sm"><div class="card-header">
-      <strong>${escaparFormacion(formacion.bloque)}</strong>
+      <strong>${escaparHtml(formacion.bloque)}</strong>
       <span class="badge bg-primary ms-1">${formacion.posiciones.length} bailarines</span>
     </div><div class="card-body">${filas.join('')}</div></section>`;
   }).join('');
@@ -51,7 +45,7 @@ function tarjetaFormacionActual(posicion) {
   const nombre=`${posicion.nombres} ${posicion.apellido_paterno} ${posicion.apellido_materno || ''}`.trim();
   return `<div class="col"><div class="card h-100 text-center"><div class="card-body p-2">
     <div class="badge bg-dark mb-1">${posicion.posicion_ranking || posicion.orden_general}</div>
-    <div class="small fw-semibold">${escaparFormacion(nombre)}</div>
+    <div class="small fw-semibold">${escaparHtml(nombre)}</div>
     <div class="small text-muted">${Number(posicion.puntaje_utilizado)} pts</div>
   </div></div></div>`;
 }

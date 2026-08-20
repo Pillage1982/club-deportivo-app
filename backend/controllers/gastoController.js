@@ -4,13 +4,11 @@ const fs = require('fs');
 const gastoModel = require('../models/gastoModel');
 const uploadComprobante = require('../middleware/uploadComprobante');
 
-const MIME_POR_EXTENSION = {
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-  '.webp': 'image/webp',
-  '.pdf': 'application/pdf'
-};
+// Inverso de extensionPorMime (uploadComprobante.js): misma fuente de verdad
+// para no desincronizar los tipos permitidos si se agrega uno nuevo ahí.
+const MIME_POR_EXTENSION = Object.fromEntries(
+  Object.entries(uploadComprobante.extensionPorMime).map(([mime, ext]) => [ext, mime])
+);
 
 function textoValido(valor, minimo = 3) {
   if (typeof valor !== 'string') return false;

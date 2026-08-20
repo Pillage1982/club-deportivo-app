@@ -103,5 +103,6 @@ if (multer) {
 }
 
 uploadComprobante.verificarFirmaArchivo = verificarFirmaArchivo;
+uploadComprobante.extensionPorMime = extensionPorMime;
 
 module.exports = uploadComprobante;

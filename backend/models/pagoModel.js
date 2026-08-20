@@ -7,46 +7,6 @@ const db =
   require('../config/db');
 
 // =====================================
-// INSERTAR PAGO EN BASE DATOS
-// =====================================
-
-exports.crearPago = (
-  data,
-  callback
-) => {
-
-  // Registra pago asociado a socio
-  const query = `
-
-    INSERT INTO pagos
-    (
-      persona_id,
-      monto_total,
-      metodo
-    )
-
-    VALUES (?, ?, ?)
-
-  `;
-
-  // Ejecuta inserción MySQL
-  db.query(
-
-    query,
-
-    [
-      data.persona_id,
-      data.monto_total,
-      data.metodo
-    ],
-
-    callback
-
-  );
-
-};
-
-// =====================================
 // OBTENER HISTORIAL PAGOS
 // =====================================
 
@@ -89,14 +49,6 @@ exports.obtenerPagos = (
 
 };
 
-exports.crearDetalleCuota = (pagoId, cuotaId, monto, callback) => {
-  db.query(
-    "INSERT INTO pago_detalle (pago_id,tipo,referencia_id,monto_pagado) VALUES (?,'cuota',?,?)",
-    [pagoId, cuotaId, monto],
-    callback
-  );
-};
-
 // =====================================
 // REGISTRAR PAGO + VÍNCULOS A CUOTAS (TRANSACCIONAL)
 // =====================================
@@ -111,10 +63,14 @@ exports.crearPagoConDetalles = (data, detalles, callback) => {
     if (err) return callback(err);
 
     const liberar = () => conexion.release();
-    const fallar = errFinal => conexion.rollback(() => { liberar(); callback(errFinal); });
+    // Una conexión fatal (ECONNRESET, PROTOCOL_CONNECTION_LOST) no debe volver
+    // al pool con release() como si estuviera sana — se destruye, igual que
+    // hace config/db.js en su propio retry de conexiones fatales.
+    const cerrar = errFinal => (errFinal && errFinal.fatal) ? conexion.destroy() : liberar();
+    const fallar = errFinal => conexion.rollback(() => { cerrar(errFinal); callback(errFinal); });
 
     conexion.beginTransaction(errTx => {
-      if (errTx) { liberar(); return callback(errTx); }
+      if (errTx) { cerrar(errTx); return callback(errTx); }
 
       conexion.query(
         'INSERT INTO pagos (persona_id, monto_total, metodo) VALUES (?, ?, ?)',
