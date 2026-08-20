@@ -30,14 +30,6 @@ function configurarSelectorCuotaPago() {
   sel.addEventListener('change', () => cargarCuotasPendientesPago(sel.value));
 }
 
-function normalizarTextoPago(valor) {
-  return String(valor || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim();
-}
-
 function cargarFinanzas() {
   fetch(`${API_URL}/finanzas`, {
     headers: getAuthHeaders()

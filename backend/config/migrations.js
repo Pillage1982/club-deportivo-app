@@ -38,12 +38,23 @@ async function asegurarEstadoIntegrantes() {
       ALTER TABLE personas
       ADD COLUMN estado ENUM('activo', 'receso', 'inactivo') DEFAULT 'activo' AFTER activo
     `);
+  } else {
+    // Corre en cada arranque del servidor (ejecutarMigraciones gatea app.listen),
+    // así que el MODIFY solo se ejecuta si el tipo de columna aún no coincide,
+    // en vez de un ALTER TABLE ciego en cada reinicio/redeploy.
+    const filasTipo = await ejecutar(`
+      SELECT COLUMN_TYPE
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personas' AND COLUMN_NAME = 'estado'
+    `);
+    const tipoActual = String(filasTipo[0]?.COLUMN_TYPE || '').toLowerCase();
+    if (tipoActual !== "enum('activo','receso','inactivo')") {
+      await ejecutar(`
+        ALTER TABLE personas
+        MODIFY COLUMN estado ENUM('activo', 'receso', 'inactivo') DEFAULT 'activo'
+      `);
+    }
   }
-
-  await ejecutar(`
-    ALTER TABLE personas
-    MODIFY COLUMN estado ENUM('activo', 'receso', 'inactivo') DEFAULT 'activo'
-  `);
 
   await ejecutar(`
     UPDATE personas
@@ -142,9 +153,17 @@ async function asegurarCamposPersonas() {
     }
   ];
 
+  // Una sola consulta batcheada en vez de 5 round trips independientes
+  // (una por columna) en cada arranque del servidor.
+  const filasExistentes = await ejecutar(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personas' AND COLUMN_NAME IN (?)`,
+    [columnas.map(col => col.nombre)]
+  );
+  const existentes = new Set(filasExistentes.map(f => f.COLUMN_NAME));
+
   for (const col of columnas) {
-    const existe = await columnaExiste('personas', col.nombre);
-    if (!existe) {
+    if (!existentes.has(col.nombre)) {
       await ejecutar(`ALTER TABLE personas ${col.sql}`);
     }
   }
