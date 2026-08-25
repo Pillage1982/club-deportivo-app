@@ -1,6 +1,9 @@
 // Acceso MySQL de cuotas: consultas de mensualidades, generación masiva, estados y vínculos con pagos.
 // Acceso MySQL de cuotas: consultas de mensualidades, generación masiva, estados y vínculos con pagos.
 const db = require('../config/db');
+const { CATEGORIAS_HONORARIAS, CATEGORIAS_SOCIO_REDUCIDO } = require('../utils/formacionRules');
+const marcadoresHonorarios    = CATEGORIAS_HONORARIAS.map(() => '?').join(',');
+const marcadoresSocioReducido = CATEGORIAS_SOCIO_REDUCIDO.map(() => '?').join(',');
 
 // =====================================
 // OBTENER TIPO CUOTA MENSUALIDAD
@@ -103,13 +106,17 @@ exports.crearCuotaMensual = (
 // cancelan el 50% del valor de la cuota de adulto. La edad se calcula a la
 // fecha de vencimiento de cada cuota (no a la fecha en que se genera), para
 // que el cambio de tramo ocurra el mes del cumpleaños número 12.
+// Los socios (bloque "Socios"/"Socio", sin honorario) pagan el mismo 50% que
+// los menores. Los socios honorarios (bloque con "Honorario") no pagan cuota,
+// igual que quienes tienen el flag es_honorario=1 — ver formacionRules.js.
 exports.generarMensualidadMasiva = (data, callback) => {
   const query = `
     INSERT IGNORE INTO cuotas
       (persona_id, tipo_cuota_id, monto, mes, anio, fecha_vencimiento, estado, origen)
     SELECT id, ?,
       CASE
-        WHEN fecha_nacimiento IS NOT NULL AND TIMESTAMPDIFF(YEAR, fecha_nacimiento, ?) < 12
+        WHEN (fecha_nacimiento IS NOT NULL AND TIMESTAMPDIFF(YEAR, fecha_nacimiento, ?) < 12)
+          OR LOWER(TRIM(bloque)) IN (${marcadoresSocioReducido})
         THEN ROUND(? / 2)
         ELSE ?
       END,
@@ -118,15 +125,18 @@ exports.generarMensualidadMasiva = (data, callback) => {
     WHERE activo = 1
       AND COALESCE(estado, 'activo') = 'activo'
       AND COALESCE(es_honorario, 0) = 0
+      AND LOWER(TRIM(COALESCE(bloque, ''))) NOT IN (${marcadoresHonorarios})
   `;
   db.query(query, [
     data.tipo_cuota_id,
     data.fecha_vencimiento,
+    ...CATEGORIAS_SOCIO_REDUCIDO,
     data.monto,
     data.monto,
     data.mes,
     data.anio,
-    data.fecha_vencimiento
+    data.fecha_vencimiento,
+    ...CATEGORIAS_HONORARIAS
   ], callback);
 };
 
