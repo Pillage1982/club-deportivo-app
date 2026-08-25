@@ -37,9 +37,8 @@ window.APP_CONFIG = {
   asistencia: {
     // Minutos de gracia desde la hora de inicio del evento antes de marcar "atrasado"
     // automáticamente en el escaneo QR (ver aplicarAtrasoAsistencia en asistencias.js).
-    // PENDIENTE: valor a confirmar por el cliente (GDC). Mientras tanto queda en 0
-    // (cualquier atraso marca "atrasado", comportamiento actual sin tolerancia).
-    toleranciaMinutosAtraso: 0
+    // Confirmado por el cliente (GDC).
+    toleranciaMinutosAtraso: 30
   },
 
   etiquetas: {

@@ -790,7 +790,7 @@ function aplicarAtrasoAsistencia(evento, fechaEscaneo) {
       : 0;
 
   // Margen de gracia antes de marcar "atrasado" (config.js → asistencia.toleranciaMinutosAtraso,
-  // pendiente de confirmación del cliente; por ahora en 0 = sin tolerancia).
+  // confirmado por el cliente en 30 minutos).
   const toleranciaMinutos =
     Number((window.APP_CONFIG || {}).asistencia?.toleranciaMinutosAtraso) || 0;
 
