@@ -729,6 +729,13 @@ img[data-config-img="cliente.logo"] {
   flex-shrink: 0;
 }
 
+/* Móvil: recuadro de cámara más alto — el 4/3 quedaba muy chico en pantalla angosta */
+@media (max-width: 767px) {
+  .scanner-video-wrapper {
+    aspect-ratio: 3 / 4;
+  }
+}
+
 .scanner-video {
   display: block;
   width: 100%;
