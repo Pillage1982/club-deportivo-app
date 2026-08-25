@@ -6,6 +6,17 @@
 let chartMultas = null;
 let chartDeuda  = null;
 
+// Mismos bloques que excluye Formaciones (backend/utils/formacionRules.js):
+// socios y socios honorarios no bailan, no deben mezclarse en el desglose por bloque.
+const BLOQUES_EXCLUIDOS_DASHBOARD = [
+  'socios', 'socio', 'socios honorario', 'socios honorarios',
+  'socio honorario', 'socio honorarios'
+];
+
+function esBloqueExcluidoDashboard(bloque) {
+  return BLOQUES_EXCLUIDOS_DASHBOARD.includes(String(bloque || '').trim().toLocaleLowerCase('es'));
+}
+
 // =====================================
 // CARGAR RESUMEN GENERAL DASHBOARD
 // =====================================
@@ -51,6 +62,7 @@ function actualizarEstadisticasAsistenciaDashboard(asistencias) {
   const porBloque = {};
 
   asistencias.forEach(a => {
+    if (esBloqueExcluidoDashboard(a.bloque)) return;
     const bloque = a.bloque || 'Sin Bloque';
     if (!porBloque[bloque]) {
       porBloque[bloque] = {
@@ -148,6 +160,7 @@ function cargarGraficos() {
       const porBloque = {};
       finanzas.forEach(f => {
         const bloque = bloqueMap[f.id] || 'Sin Bloque';
+        if (esBloqueExcluidoDashboard(bloque)) return;
         if (!porBloque[bloque]) porBloque[bloque] = { multas: 0, cuotas: 0, deuda: 0 };
         porBloque[bloque].multas += Number(f.total_multas || 0);
         porBloque[bloque].cuotas += Number(f.total_cuotas  || 0);
