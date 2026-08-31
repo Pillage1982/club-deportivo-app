@@ -65,18 +65,26 @@ function cargarEventos() {
         return;
       }
 
-      eventosAsistencia = data;
+      const datosOrdenados = data
+        .filter(evento => !evento.finalizado)
+        .sort((a, b) => {
+          const fechaA = new Date(String(a.fecha || '').replace(' ', 'T'));
+          const fechaB = new Date(String(b.fecha || '').replace(' ', 'T'));
+          const tiempoA = Number.isNaN(fechaA.getTime()) ? 0 : fechaA.getTime();
+          const tiempoB = Number.isNaN(fechaB.getTime()) ? 0 : fechaB.getTime();
+          return tiempoA - tiempoB;
+        });
 
-      data.forEach(evento => {
+      eventosAsistencia = datosOrdenados;
+
+      datosOrdenados.forEach(evento => {
 
         const option = document.createElement('option');
 
         option.value = evento.id;
-        option.textContent = evento.finalizado
-          ? `${evento.nombre} (Cerrado)`
-          : evento.nombre;
+        option.textContent = evento.nombre;
         option.dataset.fecha = evento.fecha || '';
-        option.dataset.finalizado = evento.finalizado ? '1' : '0';
+        option.dataset.finalizado = '0';
 
         select.appendChild(option);
 
