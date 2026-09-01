@@ -38,7 +38,23 @@ window.APP_CONFIG = {
     // Minutos de gracia desde la hora de inicio del evento antes de marcar "atrasado"
     // automáticamente en el escaneo QR (ver aplicarAtrasoAsistencia en asistencias.js).
     // Confirmado por el cliente (GDC).
-    toleranciaMinutosAtraso: 30
+    toleranciaMinutosAtraso: 30,
+
+    // Ayudas para escanear el QR en poca luz (ver asistencias.js).
+    qrPocaLuz: {
+      // Luminancia media del cuadro (0–255) bajo la cual se considera "poca luz".
+      umbralLuminancia: 80,
+      // Segundos sin lograr una lectura antes de mostrar el primer consejo (acercar, limpiar lente).
+      segundosAviso: 4,
+      // Segundos sin lectura antes de encender la linterna sola
+      // (solo dispositivos que permiten controlarla; iOS no).
+      segundosLinternaAuto: 6,
+      // Segundos sin lectura antes del aviso final (última prioridad): pedir ingreso manual del RUT.
+      // Siempre se muestra después de haber intentado la linterna automática.
+      segundosAvisoManual: 10,
+      // Bajar la resolución de captura al detectar poca luz (píxeles más grandes, menos ruido).
+      bajarResolucion: true
+    }
   },
 
   etiquetas: {

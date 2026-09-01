@@ -9,6 +9,29 @@ let qrAsistenciaEscaneando = false;
 let qrAsistenciaUltimaLectura = '';
 let qrAsistenciaCanvas = null;
 let qrAsistenciaCanvasFull = null;
+let qrAsistenciaTrack = null;
+let qrAsistenciaTorchOn = false;
+let qrAsistenciaRealceContador = 0;
+let qrAsistenciaLumMedia = 0;          // luminancia media del último cuadro analizado (0 = sin medir)
+let qrAsistenciaTorchDisponible = false;
+let qrAsistenciaResBajada = false;     // ya se bajó la resolución por poca luz
+let qrAsistenciaAvisoLuzTimer = null;
+let qrAsistenciaLinternaAutoTimer = null;
+let qrAsistenciaAvisoManualTimer = null;
+
+function configPocaLuzQr() {
+  const c = (window.APP_CONFIG || {}).asistencia?.qrPocaLuz || {};
+  const sLinterna = Number(c.segundosLinternaAuto) || 6;
+  const sManual = Number(c.segundosAvisoManual) || 10;
+  return {
+    umbralLuminancia: Number(c.umbralLuminancia) || 80,
+    msAviso: (Number(c.segundosAviso) || 4) * 1000,
+    msLinternaAuto: sLinterna * 1000,
+    // El aviso de ingreso manual es la última prioridad: siempre después de la linterna automática.
+    msAvisoManual: Math.max(sManual, sLinterna + 2) * 1000,
+    bajarResolucion: c.bajarResolucion !== false
+  };
+}
 
 async function registrarAsistencia() {
 
@@ -249,6 +272,8 @@ async function iniciarEscaneoAsistencia() {
 
     qrAsistenciaEscaneando = true;
     qrAsistenciaUltimaLectura = '';
+    qrAsistenciaLumMedia = 0;
+    qrAsistenciaResBajada = false;
     actualizarEstadoQrAsistencia(
       qrAsistenciaDetector
         ? 'Camara activa. Centre el QR, evite reflejos e incline levemente la cedula.'
@@ -257,6 +282,7 @@ async function iniciarEscaneoAsistencia() {
     );
 
     escanearFrameAsistencia();
+    programarAyudasPocaLuzQr();
   } catch (err) {
     console.error(err);
     actualizarEstadoQrAsistencia(
@@ -268,6 +294,8 @@ async function iniciarEscaneoAsistencia() {
 
 async function configurarCamaraQrAsistencia(stream) {
   const track = stream?.getVideoTracks?.()[0];
+  qrAsistenciaTrack = track || null;
+  qrAsistenciaTorchOn = false;
 
   if (!track || typeof track.getCapabilities !== 'function') {
     return;
@@ -283,19 +311,220 @@ async function configurarCamaraQrAsistencia(stream) {
     avanzadas.focusMode = 'continuous';
   }
 
-  if (Object.keys(avanzadas).length === 0) {
+  // Exposición automática continua: deja que la cámara se adapte a poca luz
+  if (
+    Array.isArray(capacidades.exposureMode) &&
+    capacidades.exposureMode.includes('continuous')
+  ) {
+    avanzadas.exposureMode = 'continuous';
+  }
+
+  // Compensación de exposición al máximo disponible: aclara el cuadro en penumbra
+  const ec = capacidades.exposureCompensation;
+  if (ec && typeof ec.max === 'number') {
+    avanzadas.exposureCompensation = ec.max;
+  }
+
+  // Brillo y contraste del driver, si el dispositivo los expone (Android)
+  const brillo = capacidades.brightness;
+  if (brillo && typeof brillo.max === 'number') {
+    avanzadas.brightness = brillo.max;
+  }
+
+  const contraste = capacidades.contrast;
+  if (contraste && typeof contraste.max === 'number' && typeof contraste.min === 'number') {
+    // Un contraste algo por encima del medio ayuda a separar el patrón del QR
+    avanzadas.contrast = contraste.min + (contraste.max - contraste.min) * 0.7;
+  }
+
+  // Menos fotogramas por segundo permiten exposiciones más largas (el sensor capta más luz)
+  if (
+    capacidades.frameRate &&
+    typeof capacidades.frameRate.min === 'number'
+  ) {
+    try {
+      await track.applyConstraints({
+        frameRate: { ideal: Math.max(15, capacidades.frameRate.min) }
+      });
+    } catch (err) {
+      console.warn('No se pudo ajustar el frameRate de la camara', err);
+    }
+  }
+
+  if (Object.keys(avanzadas).length > 0) {
+    try {
+      await track.applyConstraints({ advanced: [avanzadas] });
+    } catch (err) {
+      console.warn('No se pudieron aplicar mejoras de camara', err);
+    }
+  }
+
+  configurarBotonLinternaQr(track);
+}
+
+function configurarBotonLinternaQr(track) {
+  const capacidades =
+    typeof track.getCapabilities === 'function'
+      ? track.getCapabilities()
+      : {};
+
+  // iOS/Safari no expone 'torch' en getCapabilities: la linterna (manual y
+  // automática) solo queda disponible en dispositivos que sí permiten controlarla.
+  qrAsistenciaTorchDisponible = capacidades.torch === true;
+
+  const btn = document.getElementById('btn_linterna_qr');
+  if (!btn) return;
+
+  if (!qrAsistenciaTorchDisponible) {
+    btn.classList.add('d-none');
     return;
   }
 
+  btn.classList.remove('d-none');
+  actualizarBotonLinternaQr();
+}
+
+// Ayudas para poca luz: aviso de tips y, en dispositivos capaces, linterna
+// automática si tras unos segundos no se logra ninguna lectura.
+function programarAyudasPocaLuzQr() {
+  clearTimeout(qrAsistenciaAvisoLuzTimer);
+  clearTimeout(qrAsistenciaLinternaAutoTimer);
+  clearTimeout(qrAsistenciaAvisoManualTimer);
+
+  const cfg = configPocaLuzQr();
+
+  qrAsistenciaAvisoLuzTimer = setTimeout(() => {
+    if (!qrAsistenciaEscaneando) return;
+    const oscuro =
+      qrAsistenciaLumMedia > 0 &&
+      qrAsistenciaLumMedia < cfg.umbralLuminancia;
+    actualizarEstadoQrAsistencia(
+      (oscuro ? 'Poca luz. ' : '') +
+      'Acerque la cedula, evite reflejos y limpie el lente' +
+      (qrAsistenciaTorchDisponible ? ', o toque LINTERNA.' : ', o mejore la iluminacion.'),
+      'warning'
+    );
+  }, cfg.msAviso);
+
+  qrAsistenciaLinternaAutoTimer = setTimeout(async () => {
+    if (
+      !qrAsistenciaEscaneando ||
+      qrAsistenciaTorchOn ||
+      !qrAsistenciaTorchDisponible ||
+      !qrAsistenciaTrack
+    ) return;
+
+    // Si ya medimos la luz y el cuadro no está oscuro, no encender sola.
+    if (
+      qrAsistenciaLumMedia > 0 &&
+      qrAsistenciaLumMedia >= cfg.umbralLuminancia
+    ) return;
+
+    try {
+      await qrAsistenciaTrack.applyConstraints({ advanced: [{ torch: true }] });
+      qrAsistenciaTorchOn = true;
+      actualizarBotonLinternaQr();
+      actualizarEstadoQrAsistencia(
+        'Linterna encendida automaticamente para mejorar la lectura.',
+        'primary'
+      );
+    } catch (err) {
+      console.warn('No se pudo encender la linterna automaticamente', err);
+    }
+  }, cfg.msLinternaAuto);
+
+  // Aviso final (última prioridad): solo cuando ya no hay forma de escanear por
+  // falta de luz. Se exige luminancia medida bajo el umbral (independiente del SO);
+  // si el cuadro no está oscuro, la causa es otra y este aviso no se muestra.
+  qrAsistenciaAvisoManualTimer = setTimeout(() => {
+    if (!qrAsistenciaEscaneando) return;
+
+    const sinLuz =
+      qrAsistenciaLumMedia > 0 &&
+      qrAsistenciaLumMedia < cfg.umbralLuminancia;
+    if (!sinLuz) return;
+
+    actualizarEstadoQrAsistencia(
+      'Poca luz: no se puede leer el QR. Escriba el RUT o el N° de carnet en el campo de abajo y presione enviar.',
+      'warning'
+    );
+  }, cfg.msAvisoManual);
+}
+
+// Baja la resolución de captura una sola vez cuando se detecta poca luz:
+// píxeles efectivos más grandes => menos ruido y frames más baratos de procesar.
+async function ajustarResolucionPorLuzQr() {
+  if (qrAsistenciaResBajada || !qrAsistenciaTrack) return;
+
+  const cfg = configPocaLuzQr();
+  if (!cfg.bajarResolucion) return;
+  if (!(qrAsistenciaLumMedia > 0 && qrAsistenciaLumMedia < cfg.umbralLuminancia)) return;
+
+  qrAsistenciaResBajada = true;
   try {
-    await track.applyConstraints({ advanced: [avanzadas] });
+    await qrAsistenciaTrack.applyConstraints({
+      width:  { ideal: 1280 },
+      height: { ideal: 720 }
+    });
   } catch (err) {
-    console.warn('No se pudieron aplicar mejoras de enfoque a la camara', err);
+    console.warn('No se pudo bajar la resolucion de la camara', err);
   }
+}
+
+async function alternarLinternaQr() {
+  if (!qrAsistenciaTrack) return;
+
+  const nuevoEstado = !qrAsistenciaTorchOn;
+
+  try {
+    await qrAsistenciaTrack.applyConstraints({
+      advanced: [{ torch: nuevoEstado }]
+    });
+    qrAsistenciaTorchOn = nuevoEstado;
+    actualizarBotonLinternaQr();
+  } catch (err) {
+    console.warn('No se pudo alternar la linterna', err);
+    mostrarAlerta(
+      'Este dispositivo no permite controlar la linterna desde el navegador.',
+      'warning'
+    );
+  }
+}
+
+function actualizarBotonLinternaQr() {
+  const btn = document.getElementById('btn_linterna_qr');
+  if (!btn) return;
+
+  btn.classList.toggle('activo', qrAsistenciaTorchOn);
+  btn.innerHTML = qrAsistenciaTorchOn
+    ? '<i class="bi bi-lightbulb-fill"></i> LINTERNA ENCENDIDA'
+    : '<i class="bi bi-lightbulb"></i> LINTERNA';
 }
 
 function detenerEscaneoAsistencia() {
   qrAsistenciaEscaneando = false;
+
+  clearTimeout(qrAsistenciaAvisoLuzTimer);
+  clearTimeout(qrAsistenciaLinternaAutoTimer);
+  clearTimeout(qrAsistenciaAvisoManualTimer);
+
+  // Apagar la linterna antes de soltar la cámara
+  if (qrAsistenciaTrack && qrAsistenciaTorchOn) {
+    qrAsistenciaTrack
+      .applyConstraints({ advanced: [{ torch: false }] })
+      .catch(() => {});
+  }
+  qrAsistenciaTorchOn = false;
+  qrAsistenciaTorchDisponible = false;
+  qrAsistenciaResBajada = false;
+  qrAsistenciaLumMedia = 0;
+  qrAsistenciaTrack = null;
+
+  const btnLinterna = document.getElementById('btn_linterna_qr');
+  if (btnLinterna) {
+    btnLinterna.classList.add('d-none');
+    btnLinterna.classList.remove('activo');
+  }
 
   if (qrAsistenciaStream) {
     qrAsistenciaStream
@@ -349,6 +578,10 @@ async function escanearFrameAsistencia() {
     if (!lectura) {
       lectura = detectarLecturaCompatibleAsistencia(video);
     }
+
+    // detectarLecturaCompatibleAsistencia actualiza qrAsistenciaLumMedia;
+    // si el cuadro sale oscuro, bajar la resolución de captura una vez.
+    ajustarResolucionPorLuzQr();
 
     if (
       lectura &&
@@ -423,6 +656,9 @@ async function detectarLecturaNativaAsistencia(video) {
 function detectarLecturaCompatibleAsistencia(video) {
   if (typeof jsQR !== 'function') return '';
 
+  // El realce de contraste es costoso; se intenta 1 de cada 3 frames
+  const intentarRealce = (++qrAsistenciaRealceContador % 3) === 0;
+
   const proporciones = [1, 0.75, 0.5];
 
   for (const proporcion of proporciones) {
@@ -432,13 +668,93 @@ function detectarLecturaCompatibleAsistencia(video) {
     if (!canvas) continue;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const imagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const codigo = jsQR(imagen.data, imagen.width, imagen.height, {
+
+    // 1er intento: cuadro tal cual sale de la cámara
+    let codigo = jsQR(imagen.data, imagen.width, imagen.height, {
       inversionAttempts: 'attemptBoth'
     });
     if (codigo?.data) return codigo.data;
+
+    // 2do intento: binarización adaptativa (umbral de Otsu sobre el recorte).
+    // En poca luz el cuadro sale plano y oscuro; Otsu elige el mejor corte
+    // negro/blanco y entrega a jsQR una imagen limpia de 1 bit.
+    // Se limita a los recortes (no al cuadro completo) para acotar el costo por frame.
+    if (proporcion !== 1 && intentarRealce) {
+      const binaria = binarizarParaQr(imagen);
+      if (binaria) {
+        codigo = jsQR(binaria.data, binaria.width, binaria.height, {
+          inversionAttempts: 'attemptBoth'
+        });
+        if (codigo?.data) return codigo.data;
+      }
+    }
   }
 
   return '';
+}
+
+// Binariza el recorte con umbral de Otsu (máxima varianza entre clases).
+// Efecto secundario: deja la luminancia media del cuadro en qrAsistenciaLumMedia,
+// que usan las ayudas de poca luz (aviso, linterna automática, baja de resolución).
+// Devuelve null si el cuadro es casi uniforme (nada que rescatar).
+function binarizarParaQr(imagen) {
+  const { data, width, height } = imagen;
+  const total = width * height;
+  if (total === 0) return null;
+
+  const grises = new Uint8ClampedArray(total);
+  const hist = new Uint32Array(256);
+  let min = 255;
+  let max = 0;
+  let suma = 0;
+
+  for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+    const g = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) | 0;
+    grises[p] = g;
+    hist[g]++;
+    suma += g;
+    if (g < min) min = g;
+    if (g > max) max = g;
+  }
+
+  qrAsistenciaLumMedia = suma / total;
+
+  if (max - min < 8) return null;
+
+  // Umbral de Otsu
+  let sumaFondo = 0;
+  let pesoFondo = 0;
+  let varMax = 0;
+  let umbral = (min + max) >> 1;
+
+  for (let t = 0; t < 256; t++) {
+    pesoFondo += hist[t];
+    if (pesoFondo === 0) continue;
+
+    const pesoFrente = total - pesoFondo;
+    if (pesoFrente === 0) break;
+
+    sumaFondo += t * hist[t];
+    const mediaFondo = sumaFondo / pesoFondo;
+    const mediaFrente = (suma - sumaFondo) / pesoFrente;
+    const entreClases = pesoFondo * pesoFrente * (mediaFondo - mediaFrente) ** 2;
+
+    if (entreClases > varMax) {
+      varMax = entreClases;
+      umbral = t;
+    }
+  }
+
+  const salida = new Uint8ClampedArray(data.length);
+  for (let p = 0, i = 0; p < total; p++, i += 4) {
+    const v = grises[p] > umbral ? 255 : 0;
+    salida[i] = v;
+    salida[i + 1] = v;
+    salida[i + 2] = v;
+    salida[i + 3] = 255;
+  }
+
+  return { data: salida, width, height };
 }
 
 function lecturaIdentificableAsistencia(lectura) {
