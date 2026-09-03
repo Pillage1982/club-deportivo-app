@@ -41,6 +41,7 @@ window.APP_CONFIG = {
       asistencias: 'Asistencias',
       cuotas: 'Cuotas',
       gastos: 'Gastos',
+      ingresos: 'Ingresos',
       actas: 'Actas de Reunión'
     },
 

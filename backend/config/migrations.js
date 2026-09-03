@@ -149,11 +149,28 @@ async function asegurarTablaActasReunion() {
   `);
 }
 
+async function asegurarTablaIngresos() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS ingresos (
+      id                INT AUTO_INCREMENT PRIMARY KEY,
+      descripcion       VARCHAR(200) NOT NULL,
+      categoria         VARCHAR(100) NOT NULL,
+      entidad           VARCHAR(150) NULL,
+      monto             DECIMAL(10,2) NOT NULL,
+      fecha             DATE NOT NULL,
+      responsable       VARCHAR(150) NULL,
+      comprobante_path  VARCHAR(255) NULL,
+      created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 async function ejecutarMigraciones() {
   await asegurarEstadoIntegrantes();
   await reconstruirVistaEstadoFinanciero();
   await asegurarTablaGastos();
   await asegurarTablaActasReunion();
+  await asegurarTablaIngresos();
 }
 
 module.exports = ejecutarMigraciones;
