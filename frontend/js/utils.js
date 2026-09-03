@@ -4,6 +4,14 @@
 
 const API_URL = window.API_URL || window.location.origin;
 
+// Escapa texto antes de insertarlo en innerHTML (evita XSS con datos que
+// vienen de la API, ej. email u otros campos escritos por otro usuario).
+function escaparHtml(valor) {
+  return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[caracter]);
+}
+
 
 /// =====================================
 // ALERTAS VISUALES BOOTSTRAP

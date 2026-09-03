@@ -33,7 +33,12 @@ function validarRut(rut) {
 
 function validarEmail(email) {
   if (!email) return true;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  // La regex anterior solo excluia espacios y '@', permitiendo HTML/JS
+  // (ej. "<svg/onload=...>@a.b") que luego se guardaba tal cual y se
+  // renderizaba sin escapar en el frontend (stored XSS). Se restringe a
+  // los caracteres reales de un email, sin '<', '>', comillas ni backticks.
+  return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
 }
 
 function validarTelefono(telefono) {

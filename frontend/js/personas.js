@@ -264,7 +264,7 @@ document.getElementById(
           </td>
 
           <td>
-            ${persona.email || ''}
+            ${escaparHtml(persona.email || '')}
           </td>
 
           <td>
