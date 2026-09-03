@@ -372,7 +372,7 @@ function renderizarTablaPersonas(personas) {
         <td>${persona.rut || ''}</td>
         <td>${persona.bloque || ''}</td>
         <td>${persona.sexo || ''}</td>
-        <td>${persona.email || ''}</td>
+        <td>${escaparHtml(persona.email || '')}</td>
         <td>${persona.telefono || ''}</td>
         <td title="${dir}">${dir ? dir.substring(0, 25) + (dir.length > 25 ? '…' : '') : ''}</td>
         <td>${persona.fecha_nacimiento ? formatearFecha(persona.fecha_nacimiento) : ''}</td>
