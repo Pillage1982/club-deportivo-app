@@ -37,6 +37,7 @@ window.onload = () => {
   configurarFiltrosCuotas();
   configurarFiltrosAsistencias();
   configurarFiltrosGastos();
+  configurarFiltrosIngresos();
   configurarFiltrosActas();
 
   if (puedeVerOperacion) {
@@ -49,6 +50,7 @@ window.onload = () => {
     cargarTablaPagos();
     cargarCuotas();
     cargarTablaGastos();
+    cargarTablaIngresos();
   }
 
   // Lectura de actas abierta a todos los roles (no solo financieros/operación);

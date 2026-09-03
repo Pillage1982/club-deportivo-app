@@ -120,6 +120,13 @@
               </a>
             </li>
 
+            <li class="nav-item mb-2 nav-ingresos">
+              <a class="nav-link text-white" href="#ingresos">
+                <i class="bi bi-piggy-bank"></i>
+                Ingresos
+              </a>
+            </li>
+
             <li class="nav-item mb-2 nav-actas">
               <a class="nav-link text-white" href="#actas">
                 <i class="bi bi-journal-text"></i>
@@ -189,6 +196,13 @@
               <a class="nav-link text-white" href="#gastos">
                 <i class="bi bi-currency-dollar"></i>
                 Gastos
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-ingresos">
+              <a class="nav-link text-white" href="#ingresos">
+                <i class="bi bi-piggy-bank"></i>
+                Ingresos
               </a>
             </li>
 
@@ -969,6 +983,88 @@
           </div>
         </section>
 
+        <!-- INGRESOS -->
+        <section id="ingresos" class="mt-5">
+          <div id="modulo_ingresos" class="module-section">
+            <h2 data-config-text="etiquetas.modulos.ingresos">
+              Ingresos
+            </h2>
+
+            <div class="card p-4 shadow-sm border-0 mb-4">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Descripción</label>
+                  <input type="text" id="ingreso_descripcion" class="form-control" placeholder="Ej: Proyecto mejoramiento sede">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Categoría</label>
+                  <input type="text" id="ingreso_categoria" class="form-control" placeholder="Ej: Proyecto, Donación, Premio">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Entidad/organismo</label>
+                  <input type="text" id="ingreso_entidad" class="form-control" placeholder="Ej: Municipalidad, Gobierno Regional">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Monto</label>
+                  <input type="number" id="ingreso_monto" class="form-control" min="1" placeholder="$">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Fecha</label>
+                  <input type="date" id="ingreso_fecha" class="form-control">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Responsable</label>
+                  <input type="text" id="ingreso_responsable" class="form-control" placeholder="Opcional">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Comprobante (documento de adjudicación/depósito)</label>
+                  <input type="file" id="ingreso_comprobante" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
+                </div>
+              </div>
+
+              <button type="button" id="btn_guardar_ingreso" class="btn btn-primary" onclick="crearIngreso()">
+                Guardar Ingreso
+              </button>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-md-5">
+                <input type="search" id="buscar_ingresos" class="form-control" placeholder="Buscar por descripción, categoría, entidad o responsable...">
+              </div>
+              <div class="col-md-3">
+                <input type="date" id="filtro_ingreso_fecha" class="form-control">
+              </div>
+              <div class="col-md-2">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosIngresos()">Limpiar</button>
+              </div>
+            </div>
+
+            <div id="tabla_ingresos_wrapper" class="table-responsive">
+              <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Categoría</th>
+                    <th>Descripción</th>
+                    <th>Entidad</th>
+                    <th>Monto</th>
+                    <th>Responsable</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody id="tabla_ingresos"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <!-- GASTOS -->
         <section id="gastos" class="mt-5">
           <div id="modulo_gastos" class="module-section">
@@ -1134,6 +1230,7 @@
   <script src="js/dashboard.js"></script>
   <script src="js/cuotas.js"></script>
   <script src="js/gastos.js"></script>
+  <script src="js/ingresos.js"></script>
   <script src="js/actas.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>

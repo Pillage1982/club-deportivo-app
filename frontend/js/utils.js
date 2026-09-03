@@ -457,11 +457,13 @@ function aplicarRolesFrontend() {
     ocultarSelector('.nav-cuotas');
     ocultarSelector('.nav-pagos');
     ocultarSelector('.nav-gastos');
+    ocultarSelector('.nav-ingresos');
 
     ['form_personas',
       'modulo_cuotas',
       'modulo_pagos',
-      'modulo_gastos'
+      'modulo_gastos',
+      'modulo_ingresos'
     ].forEach(ocultarElemento);
   }
 
