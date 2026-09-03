@@ -370,7 +370,7 @@ function renderizarTablaPersonas(personas) {
           </td>
 
           <td>
-            ${persona.email || ''}
+            ${escaparHtml(persona.email || '')}
           </td>
 
           <td>
