@@ -8,8 +8,8 @@ window.APP_CONFIG = {
     nombre: 'Organizacion Demo',
     nombreCorto: 'Demo',
     fundacion: '',
-    logo: 'img/logo-nexocomunidad.svg',
-    logoOscuro: 'img/logo-nexocomunidad.svg'
+    logo: 'img/logo-jjvv.jpg',
+    logoOscuro: 'img/logo-jjvv.jpg'
   },
 
   textos: {
