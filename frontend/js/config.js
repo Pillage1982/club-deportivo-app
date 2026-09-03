@@ -16,9 +16,7 @@ window.APP_CONFIG = {
     integrantes: 'Integrantes',
     actividades: 'Actividades',
     asistencia: 'Asistencia',
-    finanzas: 'Finanzas',
-    cuotas: 'Cuotas',
-    multas: 'Multas'
+    cuotas: 'Cuotas'
   },
 
   rolesVisuales: {
@@ -41,8 +39,9 @@ window.APP_CONFIG = {
       gestionActividades: 'Gestión de Actividades',
       gestionPagos: 'Gestión de Pagos',
       asistencias: 'Asistencias',
-      multas: 'Multas',
-      estadoFinanciero: 'Estado Financiero'
+      cuotas: 'Cuotas',
+      gastos: 'Gastos',
+      actas: 'Actas de Reunión'
     },
 
     botones: {

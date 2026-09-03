@@ -37,7 +37,8 @@ function cargarDashboard() {
       finanzas: data.finanzas,
       eventos: data.eventos,
       asistencias: data.asistencias,
-      cuotas: data.cuotas
+      cuotas: data.cuotas,
+      gastos: data.gastos
     });
 
     aplicarDashboardPorRol(datos);
@@ -81,7 +82,8 @@ function obtenerSolicitudesDashboard(rol) {
     finanzas: Promise.resolve([]),
     eventos: Promise.resolve([]),
     asistencias: Promise.resolve([]),
-    cuotas: Promise.resolve([])
+    cuotas: Promise.resolve([]),
+    gastos: Promise.resolve([])
   };
 
   if (rol === 'admin' || rol === 'tesorero') {
@@ -93,6 +95,9 @@ function obtenerSolicitudesDashboard(rol) {
 
     solicitudes.cuotas =
       obtenerJsonDashboard('/cuotas');
+
+    solicitudes.gastos =
+      obtenerJsonDashboard('/gastos');
   }
 
   if (rol === 'admin' || rol === 'entrenador') {
@@ -129,6 +134,9 @@ function prepararDatosDashboard(data) {
 
   const cuotas =
     Array.isArray(data.cuotas) ? data.cuotas : [];
+
+  const gastos =
+    Array.isArray(data.gastos) ? data.gastos : [];
 
   const finanzas =
     Array.isArray(data.finanzas) ? data.finanzas : [];
@@ -186,6 +194,18 @@ function prepararDatosDashboard(data) {
         cuota.estado === 'vencido';
     }).length;
 
+  const totalGastosMes =
+    gastos
+      .filter(gasto => {
+        const fechaGasto = new Date(gasto.fecha);
+        return (
+          !Number.isNaN(fechaGasto.getTime()) &&
+          fechaGasto.getMonth() === fechaActual.getMonth() &&
+          fechaGasto.getFullYear() === fechaActual.getFullYear()
+        );
+      })
+      .reduce((suma, gasto) => suma + Number(gasto.monto || 0), 0);
+
   return {
     totalPersonas: personas.length,
     totalMultas: multas.length,
@@ -196,6 +216,7 @@ function prepararDatosDashboard(data) {
     totalAsistencias: asistencias.length,
     asistenciasConProblema,
     cuotasPendientes,
+    totalGastosMes,
     asistenciaEnsayos,
     asistenciaPresentaciones
   };
@@ -361,9 +382,9 @@ function aplicarDashboardPorRol(datos) {
         cardId: 'card_dashboard_deuda',
         labelId: 'label_dashboard_deuda',
         valueId: 'deuda_total',
-        label: '<i class="bi bi-exclamation-triangle-fill"></i> Multas',
-        value: datos.totalMultas,
-        color: 'text-bg-danger'
+        label: '<i class="bi bi-cash-coin"></i> Gastos (mes)',
+        value: formatearMonto(datos.totalGastosMes),
+        color: 'text-bg-secondary'
       }
     ],
 

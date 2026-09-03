@@ -835,6 +835,8 @@ function seleccionarPersonaAsistencia(persona) {
   select.dispatchEvent(new Event('change'));
 }
 
+// JJVV no tiene pantalla de Multas/Finanzas (ver MULTAS_ACTIVAS en
+// asistenciaController.js); esta funcion solo refresca el dashboard.
 function refrescarFinanzasPorAsistencia() {
   const rol =
     obtenerRolActual();
@@ -844,10 +846,7 @@ function refrescarFinanzasPorAsistencia() {
   }
 
   setTimeout(() => {
-    cargarMultas();
-    cargarFinanzas();
     cargarDashboard();
-    cargarGraficos();
   }, 300);
 }
 

@@ -35,6 +35,8 @@ app.use('/dashboard', require('./routes/dashboardRoutes'));
 app.use('/finanzas', require('./routes/finanzasRoutes'));
 app.use('/pagos', require('./routes/pagoRoutes'));
 app.use('/cuotas', require('./routes/cuotaRoutes'));
+app.use('/gastos', require('./routes/gastoRoutes'));
+app.use('/actas', require('./routes/actaRoutes'));
 
 const frontendPath = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendPath));

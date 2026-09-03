@@ -11,6 +11,12 @@ node_modules/
 backend/node_modules/
 
 # =========================
+# COMPROBANTES Y ADJUNTOS SUBIDOS POR EL USUARIO
+# =========================
+
+backend/uploads/
+
+# =========================
 # VARIABLES DE ENTORNO
 # =========================
 
