@@ -118,9 +118,42 @@ async function reconstruirVistaEstadoFinanciero() {
   `);
 }
 
+async function asegurarTablaGastos() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS gastos (
+      id                INT AUTO_INCREMENT PRIMARY KEY,
+      descripcion       VARCHAR(200) NOT NULL,
+      categoria         VARCHAR(100) NOT NULL,
+      monto             DECIMAL(10,2) NOT NULL,
+      fecha             DATE NOT NULL,
+      responsable       VARCHAR(150) NULL,
+      comprobante_path  VARCHAR(255) NULL,
+      created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+async function asegurarTablaActasReunion() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS actas_reunion (
+      id            INT AUTO_INCREMENT PRIMARY KEY,
+      evento_id     INT NOT NULL,
+      titulo        VARCHAR(200) NOT NULL,
+      contenido     TEXT NOT NULL,
+      archivo_path  VARCHAR(255) NULL,
+      responsable   VARCHAR(150) NULL,
+      created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uk_actas_evento (evento_id),
+      CONSTRAINT fk_actas_evento FOREIGN KEY (evento_id) REFERENCES eventos(id) ON DELETE CASCADE
+    )
+  `);
+}
+
 async function ejecutarMigraciones() {
   await asegurarEstadoIntegrantes();
   await reconstruirVistaEstadoFinanciero();
+  await asegurarTablaGastos();
+  await asegurarTablaActasReunion();
 }
 
 module.exports = ejecutarMigraciones;

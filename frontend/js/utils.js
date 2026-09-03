@@ -4,6 +4,14 @@
 
 const API_URL = window.API_URL || window.location.origin;
 
+// Escapa texto antes de insertarlo en innerHTML (evita XSS con datos que
+// vienen de la API, ej. descripciones o categorías escritas por otro usuario).
+function escaparHtml(valor) {
+  return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[caracter]);
+}
+
 
 /// =====================================
 // ALERTAS VISUALES BOOTSTRAP
@@ -153,6 +161,77 @@ function mostrarConfirmacion(mensaje, onConfirmar) {
 
 }
 
+// Modal de solo lectura (sin botones de confirmar/cancelar), para mostrar
+// contenido largo como el texto de un acta. `contenidoHtml` debe llegar ya
+// seguro (escaparHtml aplicado por quien llama) — esta función no escapa.
+function mostrarInfoModal(titulo, contenidoHtml) {
+
+  const idModal = 'modal_info_app';
+
+  const modalAnterior =
+    document.getElementById(idModal);
+
+  if (modalAnterior) {
+    modalAnterior.remove();
+  }
+
+  const modal =
+    document.createElement('div');
+
+  modal.className = 'modal fade';
+  modal.id = idModal;
+  modal.tabIndex = -1;
+
+  modal.innerHTML = `
+
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title">
+            ${escaparHtml(titulo)}
+          </h5>
+
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal">
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-0" style="white-space: pre-line;">
+            ${contenidoHtml}
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal">
+            Cerrar
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  `;
+
+  document.body.appendChild(modal);
+
+  const modalBootstrap =
+    new bootstrap.Modal(modal);
+
+  modal.addEventListener('hidden.bs.modal', () => {
+    modal.remove();
+  });
+
+  modalBootstrap.show();
+
+}
+
 // =====================================
 // HEADERS AUTENTICADOS JWT
 // =====================================
@@ -169,6 +248,14 @@ function getAuthHeaders() {
 
   };
 
+}
+
+// Para peticiones multipart/form-data (subida de archivos): sin
+// Content-Type manual, el navegador arma el boundary correcto solo.
+function getAuthHeadersMultipart() {
+  return {
+    Authorization: `Bearer ${localStorage.getItem('token')}`
+  };
 }
 
 // ==============================
@@ -357,43 +444,35 @@ function aplicarRolesFrontend() {
   }
 
   if (rol === 'tesorero') {
-  ocultarSelector('.nav-asistencias');
-  ocultarSelector('.nav-eventos');
+    ocultarSelector('.nav-asistencias');
+    ocultarSelector('.nav-eventos');
 
-  ocultarElemento('modulo_asistencia');
-  ocultarElemento('form_personas');
-  ocultarElemento('eventos');
-  ocultarElemento('asistencias');
+    ocultarElemento('modulo_asistencia');
+    ocultarElemento('form_personas');
+    ocultarElemento('eventos');
+    ocultarElemento('asistencias');
+  }
+
+  if (rol === 'entrenador') {
+    ocultarSelector('.nav-cuotas');
+    ocultarSelector('.nav-pagos');
+    ocultarSelector('.nav-gastos');
+
+    ['form_personas',
+      'modulo_cuotas',
+      'modulo_pagos',
+      'modulo_gastos'
+    ].forEach(ocultarElemento);
+  }
+
+  // Solo admin registra actas: tesorero/entrenador ven la lista, no el formulario
+  ocultarElemento('acta_form_card');
 
   document
     .querySelectorAll('#tabla_personas button')
     .forEach(btn => {
       btn.style.display = 'none';
     });
-}
-
-  if (rol === 'entrenador') {
-    ocultarSelector('.nav-multas');
-    ocultarSelector('.nav-finanzas');
-
-    ['form_personas',
-      'modulo_multas',
-      'modulo_finanzas',
-      'modulo_pagos',
-      'tabla_pagos_wrapper',
-      'grafico_multas_wrapper',
-      'grafico_deuda_wrapper',
-      'titulo_multas',
-      'titulo_finanzas',
-      'titulo_pagos'
-    ].forEach(ocultarElemento);
-
-    document
-      .querySelectorAll('#tabla_personas button')
-      .forEach(btn => {
-      btn.style.display = 'none';
-    });
-  }
 
   const btnGenerarCuotas =
     document.getElementById('btn_generar_cuotas');
@@ -404,14 +483,6 @@ function aplicarRolesFrontend() {
     rol !== 'tesorero'
   ) {
     btnGenerarCuotas.style.display = 'none';
-  }
-
-  if (rol === 'tesorero' || rol === 'entrenador') {
-  document
-    .querySelectorAll('#tabla_personas button')
-    .forEach(btn => {
-      btn.style.display = 'none';
-    });
   }
 
 }

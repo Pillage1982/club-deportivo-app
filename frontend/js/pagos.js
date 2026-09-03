@@ -237,10 +237,7 @@ function crearPago() {
       document.getElementById('pago_metodo').value = 'efectivo';
 
       cargarTablaPagos();
-      cargarMultas();
-      cargarFinanzas();
       cargarDashboard();
-      cargarGraficos();
     })
     .catch(err => {
       mostrarAlerta(
@@ -443,7 +440,6 @@ function ejecutarEliminarPago(id) {
 
     cargarTablaPagos();
     cargarDashboard();
-    cargarFinanzas();
   })
 
   .catch(err => {

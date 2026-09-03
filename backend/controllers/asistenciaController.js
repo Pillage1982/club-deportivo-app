@@ -5,6 +5,13 @@
 const asistenciaModel = require('../models/asistenciaModel');
 const multaModel = require('../models/multaModel');
 
+// JJVV no tiene pantalla de Multas: la generacion automatica de multas por
+// ausencia/atraso queda en el codigo pero inactiva. Reactivarla es cambiar
+// esta constante a true (mismo criterio que "Multas desacopladas" en
+// cliente/calamena: facil de reactivar en una linea si en algun momento
+// deciden implementar el modulo de Multas).
+const MULTAS_ACTIVAS = false;
+
 function calcularMultaAsistencia(estado, minutos) {
   if (estado === 'ausente') {
     return { monto: 5000, motivo: 'Inasistencia a actividad' };
@@ -47,7 +54,9 @@ exports.registrar = (req, res) => {
       });
     }
 
-    const multa = calcularMultaAsistencia(req.body.estado, req.body.minutos);
+    const multa = MULTAS_ACTIVAS
+      ? calcularMultaAsistencia(req.body.estado, req.body.minutos)
+      : null;
 
     if (!multa) {
       return res.json({ mensaje: 'Asistencia registrada' });

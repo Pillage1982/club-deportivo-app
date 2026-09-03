@@ -99,17 +99,31 @@
               </a>
             </li>
 
-            <li class="nav-item mb-2 nav-finanzas">
-              <a class="nav-link text-white" href="#finanzas">
+            <li class="nav-item mb-2 nav-cuotas">
+              <a class="nav-link text-white" href="#cuotas">
                 <i class="bi bi-graph-up"></i>
-                Finanzas
+                Cuotas
               </a>
             </li>
 
-            <li class="nav-item mb-2 nav-multas">
-              <a class="nav-link text-white" href="#multas">
+            <li class="nav-item mb-2 nav-pagos">
+              <a class="nav-link text-white" href="#modulo_pagos">
+                <i class="bi bi-cash-coin"></i>
+                Pagos
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-gastos">
+              <a class="nav-link text-white" href="#gastos">
                 <i class="bi bi-currency-dollar"></i>
-                Multas
+                Gastos
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-actas">
+              <a class="nav-link text-white" href="#actas">
+                <i class="bi bi-journal-text"></i>
+                Actas de Reunión
               </a>
             </li>
           </ul>
@@ -157,17 +171,31 @@
               </a>
             </li>
 
-            <li class="nav-item mb-2 nav-finanzas">
-              <a class="nav-link text-white" href="#finanzas">
+            <li class="nav-item mb-2 nav-cuotas">
+              <a class="nav-link text-white" href="#cuotas">
                 <i class="bi bi-graph-up"></i>
-                Finanzas
+                Cuotas
               </a>
             </li>
 
-            <li class="nav-item mb-2 nav-multas">
-              <a class="nav-link text-white" href="#multas">
+            <li class="nav-item mb-2 nav-pagos">
+              <a class="nav-link text-white" href="#modulo_pagos">
+                <i class="bi bi-cash-coin"></i>
+                Pagos
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-gastos">
+              <a class="nav-link text-white" href="#gastos">
                 <i class="bi bi-currency-dollar"></i>
-                Multas
+                Gastos
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-actas">
+              <a class="nav-link text-white" href="#actas">
+                <i class="bi bi-journal-text"></i>
+                Actas de Reunión
               </a>
             </li>
           </ul>
@@ -840,191 +868,247 @@
           </div>
         </section>
 
-        <!-- MULTAS -->
-        <section id="multas" class="mt-5">
-          <div id="modulo_multas" class="module-section">
-            <h2 data-config-text="etiquetas.modulos.multas">
-              Multas
+        <!-- CUOTAS -->
+        <section id="cuotas" class="mt-5">
+          <div id="modulo_cuotas" class="module-section">
+            <h2 data-config-text="etiquetas.modulos.cuotas">
+              Cuotas
             </h2>
 
-            <div class="row g-2 mb-3">
-              <div class="col-md-5">
-                <input type="search" id="buscar_multas" class="form-control" placeholder="Buscar por nombre o motivo...">
-              </div>
-              <div class="col-md-2">
-                <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosMultas()">Limpiar</button>
-              </div>
-            </div>
-            <div id="tabla_multas_wrapper" class="table-responsive">
-              <table class="table table-bordered table-striped">
-                <thead class="table-danger">
-                  <tr>
-                    <th>Nombre Completo</th>
-                    <th>Monto</th>
-                    <th>Motivo</th>
-                    <th>Fecha</th>
-                  </tr>
-                </thead>
-
-                <tbody id="tabla_multas"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- FINANZAS -->
-        <section id="finanzas">
-          <div id="modulo_finanzas" class="module-section">
-            <h2 data-config-text="etiquetas.modulos.estadoFinanciero">
-              Estado Financiero
-            </h2>
-
-            <div class="mb-3">
-              <button
+            <button
               type="button"
               id="btn_generar_cuotas"
               class="btn btn-success"
               onclick="generarCuotasMensuales()"
               data-config-text="etiquetas.botones.generarCuotas">
-                Generar cuotas del mes
-              </button>
-
-              <div
-                id="filtros_cuotas_wrapper"
-                class="row g-3 mt-2 mb-3">
-                <div class="col-md-3">
-                  <label for="buscar_cuotas" class="form-label">
-                    Buscar Cuotas
-                  </label>
-
-                  <input
-                    type="search"
-                    id="buscar_cuotas"
-                    class="form-control"
-                    placeholder="Buscar por integrante">
-                </div>
-
-                <div class="col-md-3">
-                  <label for="filtro_cuota_estado" class="form-label">
-                    Estado
-                  </label>
-
-                  <select id="filtro_cuota_estado" class="form-select">
-                    <option value="">Todos</option>
-                    <option value="pendiente">Pendiente</option>
-                    <option value="pagado">Pagado</option>
-                    <option value="vencido">Vencido</option>
-                  </select>
-                </div>
-
-                <div class="col-md-2">
-                  <label for="filtro_cuota_mes" class="form-label">
-                    Mes
-                  </label>
-
-                  <input
-                    type="number"
-                    id="filtro_cuota_mes"
-                    class="form-control"
-                    min="1"
-                    max="12"
-                    placeholder="Mes">
-                </div>
-
-                <div class="col-md-2">
-                  <label for="filtro_cuota_anio" class="form-label">
-                    Año
-                  </label>
-
-                  <input
-                    type="number"
-                    id="filtro_cuota_anio"
-                    class="form-control"
-                    min="2000"
-                    placeholder="Año">
-                </div>
-
-                <div class="col-md-2 d-flex align-items-end">
-                  <button
-                    type="button"
-                    id="btn_limpiar_filtros_cuotas"
-                    class="btn btn-outline-secondary w-100"
-                    onclick="limpiarFiltrosCuotas()">
-                    Limpiar
-                  </button>
-                </div>
-              </div>
-
-              <div id="tabla_cuotas_wrapper" class="table-responsive mt-4">
-                <table class="table table-hover align-middle">
-                  <thead>
-                    <tr>
-                      <th>Integrante</th>
-                      <th>Monto</th>
-                      <th>Mes</th>
-                      <th>Año</th>
-                      <th>Vencimiento</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-
-                  <tbody id="tabla_cuotas"></tbody>
-                </table>
-              </div>
-            </div>
+              Generar cuotas del mes
+            </button>
 
             <div
-              id="filtros_finanzas_wrapper"
+              id="filtros_cuotas_wrapper"
               class="row g-3 mt-2 mb-3">
-              <div class="col-md-5">
-                <label for="buscar_finanzas" class="form-label">
-                  Buscar Estado Financiero
+              <div class="col-md-3">
+                <label for="buscar_cuotas" class="form-label">
+                  Buscar Cuotas
                 </label>
 
                 <input
                   type="search"
-                  id="buscar_finanzas"
+                  id="buscar_cuotas"
                   class="form-control"
                   placeholder="Buscar por integrante">
               </div>
 
-              <div class="col-md-4">
-                <label for="filtro_finanzas_estado" class="form-label">
+              <div class="col-md-3">
+                <label for="filtro_cuota_estado" class="form-label">
                   Estado
                 </label>
 
-                <select id="filtro_finanzas_estado" class="form-select">
+                <select id="filtro_cuota_estado" class="form-select">
                   <option value="">Todos</option>
-                  <option value="con_deuda">Con deuda</option>
-                  <option value="al_dia">Al día</option>
-                  <option value="a_favor">A favor</option>
+                  <option value="pendiente">Pendiente</option>
+                  <option value="pagado">Pagado</option>
+                  <option value="vencido">Vencido</option>
                 </select>
               </div>
 
-              <div class="col-md-3 d-flex align-items-end">
+              <div class="col-md-2">
+                <label for="filtro_cuota_mes" class="form-label">
+                  Mes
+                </label>
+
+                <input
+                  type="number"
+                  id="filtro_cuota_mes"
+                  class="form-control"
+                  min="1"
+                  max="12"
+                  placeholder="Mes">
+              </div>
+
+              <div class="col-md-2">
+                <label for="filtro_cuota_anio" class="form-label">
+                  Año
+                </label>
+
+                <input
+                  type="number"
+                  id="filtro_cuota_anio"
+                  class="form-control"
+                  min="2000"
+                  placeholder="Año">
+              </div>
+
+              <div class="col-md-2 d-flex align-items-end">
                 <button
                   type="button"
-                  id="btn_limpiar_filtros_finanzas"
+                  id="btn_limpiar_filtros_cuotas"
                   class="btn btn-outline-secondary w-100"
-                  onclick="limpiarFiltrosFinanzas()">
+                  onclick="limpiarFiltrosCuotas()">
                   Limpiar
                 </button>
               </div>
             </div>
 
-            <div id="tabla_finanzas_wrapper" class="table-responsive">
-              <table class="table table-bordered">
-                <thead class="table-dark">
+            <div id="tabla_cuotas_wrapper" class="table-responsive mt-4">
+              <table class="table table-hover align-middle">
+                <thead>
                   <tr>
-                    <th>Nombre Completo</th>
-                    <th>Total Multas</th>
-                    <th>Total Cuotas</th>
-                    <th>Total Pagado</th>
-                    <th>Deuda Actual</th>
+                    <th>Integrante</th>
+                    <th>Monto</th>
+                    <th>Mes</th>
+                    <th>Año</th>
+                    <th>Vencimiento</th>
+                    <th>Estado</th>
                   </tr>
                 </thead>
 
-                <tbody id="tabla_finanzas"></tbody>
+                <tbody id="tabla_cuotas"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- GASTOS -->
+        <section id="gastos" class="mt-5">
+          <div id="modulo_gastos" class="module-section">
+            <h2 data-config-text="etiquetas.modulos.gastos">
+              Gastos
+            </h2>
+
+            <div class="card p-4 shadow-sm border-0 mb-4">
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Descripción</label>
+                  <input type="text" id="gasto_descripcion" class="form-control" placeholder="Ej: Compra de materiales">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Categoría</label>
+                  <input type="text" id="gasto_categoria" class="form-control" placeholder="Ej: Mantención">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Monto</label>
+                  <input type="number" id="gasto_monto" class="form-control" min="1" placeholder="$">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Fecha</label>
+                  <input type="date" id="gasto_fecha" class="form-control">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Responsable</label>
+                  <input type="text" id="gasto_responsable" class="form-control" placeholder="Opcional">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Comprobante (foto/PDF)</label>
+                  <input type="file" id="gasto_comprobante" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
+                </div>
+              </div>
+
+              <button type="button" id="btn_guardar_gasto" class="btn btn-primary" onclick="crearGasto()">
+                Guardar Gasto
+              </button>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-md-5">
+                <input type="search" id="buscar_gastos" class="form-control" placeholder="Buscar por descripción, categoría o responsable...">
+              </div>
+              <div class="col-md-3">
+                <input type="date" id="filtro_gasto_fecha" class="form-control">
+              </div>
+              <div class="col-md-2">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosGastos()">Limpiar</button>
+              </div>
+            </div>
+
+            <div id="tabla_gastos_wrapper" class="table-responsive">
+              <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Categoría</th>
+                    <th>Descripción</th>
+                    <th>Monto</th>
+                    <th>Responsable</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody id="tabla_gastos"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ACTAS DE REUNIÓN -->
+        <section id="actas" class="mt-5">
+          <div id="modulo_actas" class="module-section">
+            <h2 data-config-text="etiquetas.modulos.actas">
+              Actas de Reunión
+            </h2>
+
+            <div id="acta_form_card" class="card p-4 shadow-sm border-0 mb-4">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Reunión</label>
+                  <select id="acta_evento_id" class="form-select">
+                    <option value="">Seleccione la reunión</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Título</label>
+                  <input type="text" id="acta_titulo" class="form-control" placeholder="Ej: Acuerdos reunión mensual">
+                </div>
+
+                <div class="col-md-12 mb-3">
+                  <label class="form-label">Contenido</label>
+                  <textarea id="acta_contenido" class="form-control" rows="6" placeholder="Temas tratados, acuerdos y decisiones tomadas..."></textarea>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Responsable</label>
+                  <input type="text" id="acta_responsable" class="form-control" placeholder="Opcional">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Adjunto (foto/PDF del acta firmada)</label>
+                  <input type="file" id="acta_archivo" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
+                </div>
+              </div>
+
+              <button type="button" id="btn_guardar_acta" class="btn btn-primary" onclick="crearActa()">
+                Guardar Acta
+              </button>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-md-8">
+                <input type="search" id="buscar_actas" class="form-control" placeholder="Buscar por título, reunión o responsable...">
+              </div>
+              <div class="col-md-2">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosActas()">Limpiar</button>
+              </div>
+            </div>
+
+            <div id="tabla_actas_wrapper" class="table-responsive">
+              <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                  <tr>
+                    <th>Fecha reunión</th>
+                    <th>Reunión</th>
+                    <th>Título</th>
+                    <th>Responsable</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody id="tabla_actas"></tbody>
               </table>
             </div>
           </div>
@@ -1049,6 +1133,8 @@
   <script src="js/asistencias.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/cuotas.js"></script>
+  <script src="js/gastos.js"></script>
+  <script src="js/actas.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>

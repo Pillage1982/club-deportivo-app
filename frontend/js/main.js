@@ -35,9 +35,9 @@ window.onload = () => {
   configurarFiltrosEventos();
   configurarFiltrosPagos();
   configurarFiltrosCuotas();
-  configurarFiltrosFinanzas();
   configurarFiltrosAsistencias();
-  configurarFiltrosMultas();
+  configurarFiltrosGastos();
+  configurarFiltrosActas();
 
   if (puedeVerOperacion) {
     cargarEventos();
@@ -46,12 +46,17 @@ window.onload = () => {
   }
 
   if (puedeVerFinanzas) {
-    cargarMultas();
-    cargarFinanzas();
-    cargarGraficos();
     cargarTablaPagos();
     cargarCuotas();
+    cargarTablaGastos();
   }
+
+  // Lectura de actas abierta a todos los roles (no solo financieros/operación);
+  // el selector de reuniones disponibles solo lo necesita quien puede crear (admin)
+  if (rol === 'admin') {
+    cargarEventosDisponiblesActa();
+  }
+  cargarTablaActas();
 
   cargarDashboard();
 

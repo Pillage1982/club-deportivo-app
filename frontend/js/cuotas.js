@@ -58,9 +58,7 @@ function ejecutarGeneracionCuotas() {
       tipoAlerta
     );
 
-    cargarFinanzas();
     cargarDashboard();
-    cargarGraficos();
     cargarCuotas();
   })
 
