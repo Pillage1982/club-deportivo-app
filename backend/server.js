@@ -19,7 +19,11 @@ const app = express();
 
 const allowedOrigin = process.env.FRONTEND_URL;
 
-app.use(cors());
+// Antes se llamaba cors() sin opciones (abierto a cualquier origen) pese a
+// calcular allowedOrigin, que quedaba sin usar. Si no esta configurado el
+// origen, se deja abierto (mismo comportamiento que antes) en vez de romper
+// el arranque en ambientes que aun no definen FRONTEND_URL.
+app.use(cors(allowedOrigin ? { origin: allowedOrigin } : undefined));
 app.use(express.json());
 
 app.get('/health', (req, res) => {

@@ -378,7 +378,7 @@ function renderizarTablaPersonas(personas) {
           </td>
 
           <td>
-            ${persona.email || ''}
+            ${escapeHtml(persona.email || '')}
           </td>
 
           <td>

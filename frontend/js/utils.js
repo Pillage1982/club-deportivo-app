@@ -4,6 +4,20 @@
 
 const API_URL = window.API_URL || window.location.origin;
 
+// Escapa texto antes de insertarlo en innerHTML. Defensa en profundidad:
+// aunque el backend ya valida formato, campos como email no deberian
+// poder inyectar HTML si algun dato llega a la tabla por otra via
+// (carga masiva, ajuste directo en BD, etc.).
+function escapeHtml(texto) {
+  return String(texto ?? '').replace(/[&<>"']/g, caracter => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[caracter]);
+}
+
 
 /// =====================================
 // ALERTAS VISUALES BOOTSTRAP
