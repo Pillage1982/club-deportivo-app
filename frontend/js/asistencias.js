@@ -19,6 +19,15 @@ let qrAsistenciaAvisoLuzTimer = null;
 let qrAsistenciaLinternaAutoTimer = null;
 let qrAsistenciaAvisoManualTimer = null;
 
+// HarmonyOS Next (desde Pura 80, jun-2025) no tiene capa AOSP: el navegador
+// del sistema es un motor propio de Huawei, inmaduro para constraints de
+// cámara no estándar (exposureCompensation/brightness/contrast). Ahí se
+// evitan por completo para no desestabilizar el pipeline de cámara.
+function esNavegadorHuaweiHarmonyOs() {
+  const ua = navigator.userAgent || '';
+  return /HarmonyOS|HuaweiBrowser|HMSCore/i.test(ua);
+}
+
 function configPocaLuzQr() {
   const c = (window.APP_CONFIG || {}).asistencia?.qrPocaLuz || {};
   const sLinterna = Number(c.segundosLinternaAuto) || 6;
@@ -302,13 +311,26 @@ async function configurarCamaraQrAsistencia(stream) {
   }
 
   const capacidades = track.getCapabilities();
-  const avanzadas = {};
+
+  // Cada mejora se aplica en su propia llamada, con su propio try/catch:
+  // si una falla (o un HAL de cámara la interpreta mal) no arrastra a las demás.
+  // Antes iban todas juntas en un solo objeto "advanced"; en el navegador de
+  // HarmonyOS Next (Pura 80 en adelante, sin capa AOSP) esa combinación
+  // -enfoque y exposición continuos junto con brillo/contraste forzados al
+  // máximo- generaba una cámara errática (parpadeo/cuelgue del preview).
+  const aplicar = async (constraint, motivo) => {
+    try {
+      await track.applyConstraints({ advanced: [constraint] });
+    } catch (err) {
+      console.warn(`No se pudo aplicar mejora de camara (${motivo})`, err);
+    }
+  };
 
   if (
     Array.isArray(capacidades.focusMode) &&
     capacidades.focusMode.includes('continuous')
   ) {
-    avanzadas.focusMode = 'continuous';
+    await aplicar({ focusMode: 'continuous' }, 'focusMode');
   }
 
   // Exposición automática continua: deja que la cámara se adapte a poca luz
@@ -316,25 +338,31 @@ async function configurarCamaraQrAsistencia(stream) {
     Array.isArray(capacidades.exposureMode) &&
     capacidades.exposureMode.includes('continuous')
   ) {
-    avanzadas.exposureMode = 'continuous';
+    await aplicar({ exposureMode: 'continuous' }, 'exposureMode');
   }
 
-  // Compensación de exposición al máximo disponible: aclara el cuadro en penumbra
-  const ec = capacidades.exposureCompensation;
-  if (ec && typeof ec.max === 'number') {
-    avanzadas.exposureCompensation = ec.max;
-  }
+  // exposureCompensation/brightness/contrast son extensiones no estándar de
+  // Chromium; su soporte depende del HAL de cada fabricante. En HarmonyOS
+  // Next (Huawei) se omiten directamente: es donde se detectó el problema.
+  if (!esNavegadorHuaweiHarmonyOs()) {
+    // Compensación de exposición al máximo disponible: aclara el cuadro en penumbra
+    const ec = capacidades.exposureCompensation;
+    if (ec && typeof ec.max === 'number') {
+      await aplicar({ exposureCompensation: ec.max }, 'exposureCompensation');
+    }
 
-  // Brillo y contraste del driver, si el dispositivo los expone (Android)
-  const brillo = capacidades.brightness;
-  if (brillo && typeof brillo.max === 'number') {
-    avanzadas.brightness = brillo.max;
-  }
+    // Brillo y contraste del driver, si el dispositivo los expone (Android)
+    const brillo = capacidades.brightness;
+    if (brillo && typeof brillo.max === 'number') {
+      await aplicar({ brightness: brillo.max }, 'brightness');
+    }
 
-  const contraste = capacidades.contrast;
-  if (contraste && typeof contraste.max === 'number' && typeof contraste.min === 'number') {
-    // Un contraste algo por encima del medio ayuda a separar el patrón del QR
-    avanzadas.contrast = contraste.min + (contraste.max - contraste.min) * 0.7;
+    const contraste = capacidades.contrast;
+    if (contraste && typeof contraste.max === 'number' && typeof contraste.min === 'number') {
+      // Un contraste algo por encima del medio ayuda a separar el patrón del QR
+      const valor = contraste.min + (contraste.max - contraste.min) * 0.7;
+      await aplicar({ contrast: valor }, 'contrast');
+    }
   }
 
   // Menos fotogramas por segundo permiten exposiciones más largas (el sensor capta más luz)
@@ -348,14 +376,6 @@ async function configurarCamaraQrAsistencia(stream) {
       });
     } catch (err) {
       console.warn('No se pudo ajustar el frameRate de la camara', err);
-    }
-  }
-
-  if (Object.keys(avanzadas).length > 0) {
-    try {
-      await track.applyConstraints({ advanced: [avanzadas] });
-    } catch (err) {
-      console.warn('No se pudieron aplicar mejoras de camara', err);
     }
   }
 
