@@ -71,9 +71,20 @@ function normalizarPersona(data) {
     nombres: limpiarTexto(data.nombres),
     apellido_paterno: limpiarTexto(data.apellido_paterno),
     apellido_materno: limpiarTexto(data.apellido_materno),
+    // Estos 6 campos se agregaron a personaModel.js/frontend en jun-2026
+    // (commits 894cb62/befde70/d77e494) pero nunca se agregaron aqui: se
+    // guardaban siempre como NULL, y cada edicion de un integrante existente
+    // borraba el valor que ya tenia (actualizarPersona hace SET completo,
+    // no un patch parcial). Bug de perdida de datos activo desde entonces.
+    bloque: limpiarTexto(data.bloque),
+    sexo: data.sexo || null,
+    direccion: limpiarTexto(data.direccion),
     email: limpiarTexto(data.email).toLowerCase(),
     telefono: limpiarTexto(data.telefono),
     fecha_nacimiento: data.fecha_nacimiento,
+    fecha_ingreso: data.fecha_ingreso || null,
+    nombre_apoderado: limpiarTexto(data.nombre_apoderado),
+    telefono_apoderado: limpiarTexto(data.telefono_apoderado),
     estado: limpiarTexto(data.estado || 'activo').toLowerCase(),
     es_honorario: data.es_honorario ? 1 : 0
   };
