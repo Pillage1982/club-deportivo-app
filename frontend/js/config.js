@@ -5,8 +5,8 @@ window.APP_CONFIG = {
   },
 
   cliente: {
-    nombre: 'Organizacion Demo',
-    nombreCorto: 'Demo',
+    nombre: 'Junta de Vecinos El Aromo del Portal',
+    nombreCorto: 'El Aromo del Portal',
     fundacion: '',
     logo: 'img/logo-jjvv.jpg',
     logoOscuro: 'img/logo-jjvv.jpg'
