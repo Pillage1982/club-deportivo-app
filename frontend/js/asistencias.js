@@ -1418,6 +1418,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Tras cada registro manual el boton "enviar" queda deshabilitado (evita
+  // doble clic sobre el mismo dato ya enviado), pero nada lo reactivaba al
+  // escribir el siguiente RUT: quedaba "muerto" hasta recargar la pagina.
+  const inputManual = document.getElementById('qr_asistencia_manual');
+  if (inputManual) {
+    inputManual.addEventListener('input', () => {
+      const btn = document.getElementById('btn_usar_lectura');
+      if (btn && !eventoSeleccionadoFinalizado()) {
+        btn.disabled = inputManual.value.trim() === '';
+      }
+    });
+  }
+
   const modalEl = document.getElementById('modal_eventos_activos');
   if (modalEl) {
     modalEl.addEventListener('show.bs.modal', () => {
