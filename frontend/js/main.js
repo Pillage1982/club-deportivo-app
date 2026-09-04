@@ -82,8 +82,9 @@ window.onload = () => {
   const tabPuntaje = document.querySelector('[href="#subtab_puntaje"]');
   if (tabPuntaje) {
     tabPuntaje.addEventListener('shown.bs.tab', () => {
-      cargarRankingPuntaje();
+      cargarTemporadasPuntaje().then(cargarRankingPuntaje);
       configurarBuscadorPuntaje();
+      configurarFiltroTemporadaPuntaje();
     });
   }
 

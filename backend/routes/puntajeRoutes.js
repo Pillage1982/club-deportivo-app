@@ -13,6 +13,13 @@ router.get(
 );
 
 router.get(
+  '/temporadas',
+  authMiddleware,
+  roleMiddleware('admin', 'entrenador'),
+  controller.listarTemporadas
+);
+
+router.get(
   '/historial/:persona_id',
   authMiddleware,
   roleMiddleware('admin', 'entrenador'),

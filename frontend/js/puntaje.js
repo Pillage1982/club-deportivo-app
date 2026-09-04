@@ -4,15 +4,52 @@
 // =====================================
 
 let rankingCargado = [];
+let temporadasPuntajeCargadas = [];
+
+// Repuebla el select de temporada. Por defecto (primera carga) selecciona la
+// temporada en curso, que el backend marca con "actual"; en recargas posteriores
+// respeta lo que el usuario ya haya elegido.
+function cargarTemporadasPuntaje() {
+  const select = document.getElementById('filtro_puntaje_temporada');
+  if (!select) return Promise.resolve();
+
+  return fetch(`${API_URL}/puntaje/temporadas`, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (!Array.isArray(data)) return;
+
+      const esPrimeraCarga = select.options.length === 0;
+      const seleccionPrevia = select.value;
+      temporadasPuntajeCargadas = data;
+
+      select.innerHTML = data.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+
+      const actual = data.find(t => t.actual);
+      const seleccionValida = data.some(t => t.id === seleccionPrevia);
+      select.value = (!esPrimeraCarga && seleccionValida)
+        ? seleccionPrevia
+        : (actual ? actual.id : (data[0] ? data[0].id : ''));
+    })
+    .catch(() => mostrarAlerta('Error al cargar las temporadas de puntaje.', 'danger'));
+}
 
 function cargarRankingPuntaje() {
-  fetch(`${API_URL}/puntaje`, { headers: getAuthHeaders() })
+  const temporada = document.getElementById('filtro_puntaje_temporada')?.value || '';
+  const query = temporada ? `?temporada=${encodeURIComponent(temporada)}` : '';
+
+  fetch(`${API_URL}/puntaje${query}`, { headers: getAuthHeaders() })
     .then(res => res.json())
     .then(data => {
       rankingCargado = Array.isArray(data) ? data : [];
       renderizarRanking(rankingCargado);
     })
     .catch(() => mostrarAlerta('Error al cargar el ranking de puntaje.', 'danger'));
+}
+
+function configurarFiltroTemporadaPuntaje() {
+  const select = document.getElementById('filtro_puntaje_temporada');
+  if (!select) return;
+  select.addEventListener('change', cargarRankingPuntaje);
 }
 
 function renderizarRanking(data) {

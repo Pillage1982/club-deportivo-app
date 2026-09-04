@@ -282,6 +282,13 @@ async function consolidarTiposCuota() {
   await ejecutar("UPDATE tipos_cuotas SET monto_base=12000, descripcion='Cuota mensual GDC' WHERE id=?", [canonico]);
 }
 
+// Corte oficial de temporada (pendiente #2 de la matriz de validacion, art. 9.1.1):
+// la actividad "Despedida de Pueblo <anio>" cierra una temporada y es, a la vez,
+// la primera actividad puntuable de la siguiente. Se toma la mas reciente que ya
+// ocurrio como fecha de corte; los puntajes de esa fecha en adelante son de la
+// temporada vigente y son los unicos que suman en el ranking oficial. Si aun no
+// existe ninguna "Despedida de Pueblo" cargada, no se aplica corte (se preserva
+// el comportamiento historico) para no vaciar el ranking antes de tiempo.
 async function reconstruirVistaRankingPuntaje() {
   await ejecutar(`
     CREATE OR REPLACE VIEW vista_ranking_puntaje AS
@@ -304,7 +311,14 @@ async function reconstruirVistaRankingPuntaje() {
       END AS puntaje_total,
       COUNT(pt.id)                AS total_registros
     FROM personas p
-    LEFT JOIN puntajes pt ON p.id = pt.persona_id
+    LEFT JOIN puntajes pt
+      ON p.id = pt.persona_id
+      AND pt.fecha >= (
+        SELECT COALESCE(MAX(DATE(e.fecha)), '1900-01-01')
+        FROM eventos e
+        WHERE LOWER(e.nombre) LIKE 'despedida de pueblo%'
+          AND DATE(e.fecha) <= CURDATE()
+      )
     WHERE p.activo = 1 AND COALESCE(p.estado, 'activo') = 'activo'
     GROUP BY p.id, p.rut, p.nombres, p.apellido_paterno, p.apellido_materno, p.bloque, p.fecha_ingreso
     ORDER BY puntaje_total DESC

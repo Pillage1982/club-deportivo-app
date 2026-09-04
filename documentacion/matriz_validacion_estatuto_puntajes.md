@@ -64,9 +64,14 @@ fijo; Oso permanece en la tabla de ponderacion del articulo 12.2.
 
 1. Los 23 eventos importados como `Actividad AAAA-MM-DD` no pueden verificarse
    y quedan fuera del calculo oficial. No se inferira su categoria.
-2. Identificacion de Despedida de Pueblo y procesion del 8 de diciembre. Para
-   2025-2026, el primer ensayo general es el 6 de junio de 2026 y los siguientes
-   se realizan cada sabado.
+2. Identificacion de Despedida de Pueblo: resuelto para el corte de temporada del
+   ranking (`vista_ranking_puntaje` en `backend/config/migrations.js`) usando el
+   evento mas reciente cuyo nombre empieza con "despedida de pueblo" (ej.
+   "Despedida de Pueblo 2026") como fecha de corte; esa misma actividad cuenta
+   para la temporada que abre, no para la que cierra. Pendiente la procesion del
+   8 de diciembre (regla 9.1.1 d, corte distinto para el bloque post-Ayquina).
+   Para 2025-2026, el primer ensayo general es el 6 de junio de 2026 y los
+   siguientes se realizan cada sabado.
 3. Historial de recesos para descontar anos de antiguedad.
 4. Depuracion de fechas de ingreso nulas o no confiables. La condicion de nuevo
    ya fue definida: menos de un ano al corte o ingreso desde el 1 de septiembre

@@ -14,8 +14,54 @@ function ejecutar(sql, params = []) {
   });
 }
 
-exports.obtenerRanking = () =>
-  ejecutar('SELECT * FROM vista_ranking_puntaje');
+// Temporadas seleccionables: cada "Despedida de Pueblo <anio>" ya ocurrida abre
+// una temporada (ver reconstruirVistaRankingPuntaje en backend/config/migrations.js,
+// misma referencia de corte). Se listan de la mas antigua a la mas reciente.
+exports.obtenerTemporadas = () =>
+  ejecutar(`
+    SELECT id, nombre, DATE(fecha) AS fecha
+    FROM eventos
+    WHERE LOWER(nombre) LIKE 'despedida de pueblo%' AND DATE(fecha) <= CURDATE()
+    ORDER BY fecha ASC
+  `);
+
+// Ranking acotado a un rango [inicio, fin) de fechas de puntaje. inicio/fin nulos
+// dejan ese extremo abierto (usado para "antes de la primera Despedida" y para la
+// temporada en curso, que no tiene fin). Misma agregacion que la vista
+// vista_ranking_puntaje, parametrizada porque las vistas de MySQL no aceptan
+// argumentos: si se ajusta una, ajustar la otra.
+exports.obtenerRankingPorTemporada = (inicio, fin) => {
+  const params = [];
+  let condicionFecha = '';
+  if (inicio) { condicionFecha += ' AND pt.fecha >= ?'; params.push(inicio); }
+  if (fin)    { condicionFecha += ' AND pt.fecha < ?';  params.push(fin); }
+
+  return ejecutar(`
+    SELECT
+      p.id,
+      p.rut,
+      p.nombres,
+      p.apellido_paterno,
+      p.apellido_materno,
+      p.bloque,
+      CASE
+        WHEN p.fecha_ingreso IS NULL OR p.fecha_ingreso > CURDATE() THEN 0
+        ELSE TIMESTAMPDIFF(YEAR, p.fecha_ingreso, CURDATE())
+      END AS puntos_antiguedad,
+      COALESCE(SUM(CASE WHEN pt.cuota_id IS NOT NULL THEN pt.puntos ELSE 0 END), 0) AS puntos_cuotas,
+      COALESCE(SUM(CASE WHEN pt.asistencia_id IS NOT NULL THEN pt.puntos ELSE 0 END), 0) AS puntos_asistencia,
+      COALESCE(SUM(pt.puntos), 0) + CASE
+        WHEN p.fecha_ingreso IS NULL OR p.fecha_ingreso > CURDATE() THEN 0
+        ELSE TIMESTAMPDIFF(YEAR, p.fecha_ingreso, CURDATE())
+      END AS puntaje_total,
+      COUNT(pt.id)                AS total_registros
+    FROM personas p
+    LEFT JOIN puntajes pt ON p.id = pt.persona_id${condicionFecha}
+    WHERE p.activo = 1 AND COALESCE(p.estado, 'activo') = 'activo'
+    GROUP BY p.id, p.rut, p.nombres, p.apellido_paterno, p.apellido_materno, p.bloque, p.fecha_ingreso
+    ORDER BY puntaje_total DESC
+  `, params);
+};
 
 // Total de puntos generados por pagos de cuotas (Fase 2, Art. 9.2/9.3), sin
 // mezclar con los puntos de asistencia o antigüedad.
