@@ -79,6 +79,17 @@ function calcularPuntajeEnsayos(puntosEnsayos) {
   return Math.round(total / 3);
 }
 
+// Interruptor de fecha para el modulo Formaciones (backend/models/formacionModel.js):
+// hasta este dia (sin incluirlo) sigue ordenando por puntaje historico completo,
+// igual que hasta ahora, para no reordenar las formaciones ya definidas para
+// eventos agendados en septiembre 2026. Desde este dia en adelante usa el mismo
+// corte de temporada que el ranking oficial (Despedida de Pueblo mas reciente,
+// ver reconstruirVistaRankingPuntaje en backend/config/migrations.js). No requiere
+// reiniciar el servidor: la fecha se evalua en cada consulta (CURDATE()), asi que
+// el cambio de comportamiento ocurre solo por el paso del calendario. Editar esta
+// fecha (o adelantarla) es la unica accion necesaria para activar el corte antes.
+const FORMACION_USAR_PUNTAJE_TEMPORADA_DESDE = '2026-10-01';
+
 const POLITICA_TEMPORADA_2025_2026 = Object.freeze({
   inicio: '2025-09-01',
   fin: '2026-08-31',
@@ -136,6 +147,7 @@ module.exports = {
   esBailarinNuevo,
   primerSabadoDeJunio,
   calcularPuntajeEnsayos,
+  FORMACION_USAR_PUNTAJE_TEMPORADA_DESDE,
   POLITICA_TEMPORADA_2025_2026,
   PONDERACION_BLOQUES,
   PERIODOS_CUOTAS_2025_2026,

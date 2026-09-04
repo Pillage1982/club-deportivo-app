@@ -2,7 +2,25 @@
 
 const db = require('../config/db');
 const { CATEGORIAS_EXCLUIDAS } = require('../utils/formacionRules');
+const { FORMACION_USAR_PUNTAJE_TEMPORADA_DESDE } = require('../utils/estatutoGdcRules');
 const marcadoresExclusion = CATEGORIAS_EXCLUIDAS.map(() => '?').join(',');
+
+// Antes de FORMACION_USAR_PUNTAJE_TEMPORADA_DESDE, "CURDATE() < ?" es verdadero y
+// el OR completo se cumple siempre: se suma el puntaje historico completo, igual
+// que hasta ahora. Desde esa fecha, la condicion pasa a exigir pt.fecha dentro de
+// la temporada vigente (misma referencia de corte que vista_ranking_puntaje en
+// backend/config/migrations.js). No toca formaciones ya guardadas en
+// formacion_posiciones: esta condicion solo afecta el calculo en vivo que usan
+// "formación vigente" y "generar formación" (bloqueada ademas para formaciones
+// ya confirmadas, ver formacionController.exports.generar).
+const CONDICION_CORTE_TEMPORADA_PUNTAJE = `(
+    CURDATE() < ?
+    OR pt.fecha >= (
+      SELECT COALESCE(MAX(DATE(e.fecha)), '1900-01-01')
+      FROM eventos e
+      WHERE LOWER(e.nombre) LIKE 'despedida de pueblo%' AND DATE(e.fecha) <= CURDATE()
+    )
+  )`;
 
 exports.listarEventos = callback => db.query('SELECT id,nombre,fecha,finalizado FROM eventos ORDER BY fecha DESC,nombre', callback);
 
@@ -13,13 +31,13 @@ exports.obtenerFormacionActual = callback => db.query(`
            ELSE TIMESTAMPDIFF(YEAR,p.fecha_ingreso,CURDATE())
          END AS puntaje_utilizado
   FROM personas p
-  LEFT JOIN puntajes pt ON pt.persona_id=p.id
+  LEFT JOIN puntajes pt ON pt.persona_id=p.id AND ${CONDICION_CORTE_TEMPORADA_PUNTAJE}
   WHERE p.activo=1 AND COALESCE(p.estado,'activo')='activo' AND COALESCE(p.es_honorario,0)=0
     AND p.bloque IS NOT NULL AND TRIM(p.bloque)<>''
     AND LOWER(TRIM(p.bloque)) NOT IN (${marcadoresExclusion})
   GROUP BY p.id,p.rut,p.nombres,p.apellido_paterno,p.apellido_materno,p.bloque,p.fecha_ingreso
   ORDER BY p.bloque, puntaje_utilizado DESC,p.fecha_ingreso ASC,p.apellido_paterno ASC,p.nombres ASC`,
-  CATEGORIAS_EXCLUIDAS, callback);
+  [FORMACION_USAR_PUNTAJE_TEMPORADA_DESDE, ...CATEGORIAS_EXCLUIDAS], callback);
 
 exports.listarBloquesElegibles = callback => db.query(`
   SELECT DISTINCT bloque
@@ -36,12 +54,13 @@ exports.obtenerCandidatos = (bloque, callback) => db.query(`
            ELSE TIMESTAMPDIFF(YEAR,p.fecha_ingreso,CURDATE())
          END AS puntaje
   FROM personas p
-  LEFT JOIN puntajes pt ON pt.persona_id=p.id
+  LEFT JOIN puntajes pt ON pt.persona_id=p.id AND ${CONDICION_CORTE_TEMPORADA_PUNTAJE}
   WHERE p.activo=1 AND COALESCE(p.estado,'activo')='activo' AND COALESCE(p.es_honorario,0)=0
     AND p.bloque=?
     AND LOWER(TRIM(p.bloque)) NOT IN (${marcadoresExclusion})
   GROUP BY p.id,p.rut,p.nombres,p.apellido_paterno,p.apellido_materno,p.bloque,p.fecha_ingreso
-  ORDER BY puntaje DESC,p.fecha_ingreso ASC,p.apellido_paterno ASC,p.nombres ASC`, [bloque, ...CATEGORIAS_EXCLUIDAS], callback);
+  ORDER BY puntaje DESC,p.fecha_ingreso ASC,p.apellido_paterno ASC,p.nombres ASC`,
+  [FORMACION_USAR_PUNTAJE_TEMPORADA_DESDE, bloque, ...CATEGORIAS_EXCLUIDAS], callback);
 
 exports.obtenerPorEvento = (eventoId, callback) => db.query(`
   SELECT f.id,f.evento_id,e.nombre evento,e.fecha,f.bloque,f.estado,f.fecha_ranking,
