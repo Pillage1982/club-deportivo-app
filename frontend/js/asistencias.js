@@ -1288,13 +1288,42 @@ function normalizarTextoAsistencia(valor) {
 function filtrarAsistencias() {
   const busqueda = normalizarTextoAsistencia(document.getElementById('buscar_asistencias')?.value);
   const estado   = document.getElementById('filtro_asistencia_estado')?.value || '';
+  const evento   = document.getElementById('filtro_asistencia_evento')?.value || '';
 
   return asistenciasTabla.filter(a => {
     const texto = normalizarTextoAsistencia(
       [a.nombres, a.apellido_paterno, a.apellido_materno, a.evento].join(' ')
     );
-    return (!busqueda || texto.includes(busqueda)) && (!estado || a.estado === estado);
+    return (!busqueda || texto.includes(busqueda)) &&
+      (!estado || a.estado === estado) &&
+      (!evento || String(a.evento_id) === evento);
   });
+}
+
+// Reconstruye las opciones del filtro de actividad con los eventos presentes en la
+// tabla cargada, conservando la selección actual si sigue existiendo.
+function poblarFiltroEventoAsistencias() {
+  const select = document.getElementById('filtro_asistencia_evento');
+  if (!select) return;
+
+  const seleccionActual = select.value;
+
+  const eventos = new Map();
+  for (const a of asistenciasTabla) {
+    if (!eventos.has(a.evento_id)) {
+      eventos.set(a.evento_id, a.evento);
+    }
+  }
+
+  const opciones = Array.from(eventos.entries())
+    .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'es'));
+
+  select.innerHTML = '<option value="">Todas</option>' +
+    opciones.map(([id, nombre]) => `<option value="${id}">${nombre}</option>`).join('');
+
+  if (opciones.some(([id]) => String(id) === seleccionActual)) {
+    select.value = seleccionActual;
+  }
 }
 
 function renderizarTablaAsistencias(asistencias) {
@@ -1348,7 +1377,7 @@ function renderizarTablaAsistencias(asistencias) {
 }
 
 function configurarFiltrosAsistencias() {
-  ['buscar_asistencias', 'filtro_asistencia_estado'].forEach(id => {
+  ['buscar_asistencias', 'filtro_asistencia_estado', 'filtro_asistencia_evento'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change',
@@ -1359,8 +1388,10 @@ function configurarFiltrosAsistencias() {
 function limpiarFiltrosAsistencias() {
   const buscar = document.getElementById('buscar_asistencias');
   const estado = document.getElementById('filtro_asistencia_estado');
+  const evento = document.getElementById('filtro_asistencia_evento');
   if (buscar) buscar.value = '';
   if (estado) estado.value = '';
+  if (evento) evento.value = '';
   renderizarTablaAsistencias(filtrarAsistencias());
 }
 
@@ -1376,9 +1407,10 @@ function cargarAsistencias() {
       }
 
       asistenciasTabla = data;
+      poblarFiltroEventoAsistencias();
       renderizarTablaAsistencias(filtrarAsistencias());
       cargarUltimosRegistros();
-      actualizarEstadisticasAsistenciaDashboard(asistenciasTabla);
+      renderizarAsistenciaDashboard(asistenciasTabla);
 
     })
     .catch(err => console.error(err));

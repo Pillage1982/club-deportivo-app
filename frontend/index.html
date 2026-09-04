@@ -124,7 +124,15 @@
         </div>
 
         <div id="dashboard_asistencia_stats" class="mb-4">
-          <h6 class="text-muted mb-2">Asistencia por Bloque</h6>
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+            <h6 class="text-muted mb-0">Asistencia por Bloque</h6>
+            <div class="d-flex flex-wrap gap-2">
+              <select id="filtro_dashboard_asistencia_mes" class="form-select form-select-sm w-auto"></select>
+              <select id="filtro_dashboard_asistencia_evento" class="form-select form-select-sm w-auto">
+                <option value="">Todas las actividades</option>
+              </select>
+            </div>
+          </div>
           <div id="asistencia_por_bloque"><p class="text-muted small">Cargando...</p></div>
         </div>
       </section>
@@ -391,17 +399,23 @@
         <!-- Asistencias historial -->
         <div class="tab-pane fade" id="subtab_asistencias" role="tabpanel">
           <div class="row g-2 mb-3">
-            <div class="col-md-5">
+            <div class="col-md-4">
               <label for="buscar_asistencias" class="form-label">Buscar Integrante / Actividad</label>
               <input type="search" id="buscar_asistencias" class="form-control" placeholder="Nombre o actividad...">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
               <label for="filtro_asistencia_estado" class="form-label">Estado</label>
               <select id="filtro_asistencia_estado" class="form-select">
                 <option value="">Todos</option>
                 <option value="presente">Presente</option>
                 <option value="atrasado">Atrasado</option>
                 <option value="ausente">Ausente</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="filtro_asistencia_evento" class="form-label">Actividad</label>
+              <select id="filtro_asistencia_evento" class="form-select">
+                <option value="">Todas</option>
               </select>
             </div>
             <div class="col-md-2 d-flex align-items-end">

@@ -39,11 +39,104 @@ function cargarDashboard() {
       set('deuda_total',    formatearMonto(data.deuda_total  ?? 0));
 
       // Estadísticas por bloque usan asistenciasTabla ya cargado (sin fetch extra)
-      actualizarEstadisticasAsistenciaDashboard(
+      renderizarAsistenciaDashboard(
         Array.isArray(asistenciasTabla) ? asistenciasTabla : []
       );
     })
     .catch(err => console.error(err));
+}
+
+// =====================================
+// FILTROS ASISTENCIA POR BLOQUE (mes / actividad)
+// =====================================
+
+const MESES_DASHBOARD_ASISTENCIA = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
+
+function claveMesDashboardAsistencia(fecha) {
+  const texto = String(fecha || '').trim();
+  if (!texto) return '';
+  const normalizada = texto.includes('T') ? texto : texto.replace(' ', 'T');
+  const dt = new Date(normalizada);
+  if (Number.isNaN(dt.getTime())) return '';
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function etiquetaMesDashboardAsistencia(clave) {
+  const [anio, mes] = clave.split('-').map(Number);
+  return `${MESES_DASHBOARD_ASISTENCIA[mes - 1]} ${anio}`;
+}
+
+// Repuebla los selects de mes/actividad con lo presente en los datos, conservando
+// la selección del usuario entre recargas. Solo la primera carga fija el mes actual
+// por defecto; después de eso se respeta lo que el usuario haya elegido (incluido "Todos").
+function poblarFiltrosDashboardAsistencia(asistencias) {
+  const selMes = document.getElementById('filtro_dashboard_asistencia_mes');
+  const selEvento = document.getElementById('filtro_dashboard_asistencia_evento');
+  if (!selMes || !selEvento) return;
+
+  const esPrimeraCarga = selMes.options.length === 0;
+  const mesPrevio = selMes.value;
+  const eventoPrevio = selEvento.value;
+
+  const mesActual = claveMesDashboardAsistencia(new Date().toISOString());
+  const meses = new Set([mesActual]);
+  asistencias.forEach(a => {
+    const clave = claveMesDashboardAsistencia(a.fecha_evento);
+    if (clave) meses.add(clave);
+  });
+  const mesesOrdenados = Array.from(meses).sort().reverse();
+
+  selMes.innerHTML =
+    mesesOrdenados.map(clave => `<option value="${clave}">${etiquetaMesDashboardAsistencia(clave)}</option>`).join('') +
+    '<option value="">Todos los meses</option>';
+
+  selMes.value = (!esPrimeraCarga && (mesesOrdenados.includes(mesPrevio) || mesPrevio === ''))
+    ? mesPrevio
+    : mesActual;
+
+  const eventos = new Map();
+  asistencias.forEach(a => {
+    if (!eventos.has(a.evento_id)) eventos.set(a.evento_id, a.evento);
+  });
+  const opcionesEventos = Array.from(eventos.entries())
+    .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'es'));
+
+  selEvento.innerHTML = '<option value="">Todas las actividades</option>' +
+    opcionesEventos.map(([id, nombre]) => `<option value="${id}">${nombre}</option>`).join('');
+
+  if (opcionesEventos.some(([id]) => String(id) === eventoPrevio)) {
+    selEvento.value = eventoPrevio;
+  }
+}
+
+function filtrarAsistenciasDashboard(asistencias) {
+  const mes = document.getElementById('filtro_dashboard_asistencia_mes')?.value || '';
+  const evento = document.getElementById('filtro_dashboard_asistencia_evento')?.value || '';
+
+  return asistencias.filter(a => (
+    (!mes || claveMesDashboardAsistencia(a.fecha_evento) === mes) &&
+    (!evento || String(a.evento_id) === evento)
+  ));
+}
+
+function renderizarAsistenciaDashboard(asistencias) {
+  poblarFiltrosDashboardAsistencia(asistencias);
+  actualizarEstadisticasAsistenciaDashboard(filtrarAsistenciasDashboard(asistencias));
+}
+
+function configurarFiltrosDashboardAsistencia() {
+  ['filtro_dashboard_asistencia_mes', 'filtro_dashboard_asistencia_evento'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', () => {
+      actualizarEstadisticasAsistenciaDashboard(
+        filtrarAsistenciasDashboard(Array.isArray(asistenciasTabla) ? asistenciasTabla : [])
+      );
+    });
+  });
 }
 
 // =====================================

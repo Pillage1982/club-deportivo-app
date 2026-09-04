@@ -45,6 +45,7 @@ window.onload = () => {
   configurarFiltrosFinanzas();
   configurarFiltrosMultas();
   configurarFiltrosAsistencias();
+  configurarFiltrosDashboardAsistencia();
   configurarFiltrosGastos();
 
   if (puedeVerOperacion) {
