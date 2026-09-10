@@ -11,6 +11,12 @@ node_modules/
 backend/node_modules/
 
 # =========================
+# RESPALDO SITIO WORDPRESS (local, no versionar: 60MB+ de medios)
+# =========================
+
+respaldo-sitio-gdc/
+
+# =========================
 # COMPROBANTES DE GASTOS (subidos por el usuario)
 # =========================
 
