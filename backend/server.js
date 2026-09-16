@@ -43,6 +43,7 @@ app.use('/cuotas', require('./routes/cuotaRoutes'));
 app.use('/puntaje', require('./routes/puntajeRoutes'));
 app.use('/formaciones', require('./routes/formacionRoutes'));
 app.use('/gastos', require('./routes/gastoRoutes'));
+app.use('/socio-auth', require('./routes/socioAuthRoutes'));
 
 const frontendPath = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendPath));

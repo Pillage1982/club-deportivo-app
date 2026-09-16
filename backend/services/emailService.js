@@ -118,4 +118,47 @@ async function notificarAusentesEvento(ausentes, evento) {
   console.log(`[Email] ${enviados} enviados, ${fallidos} fallidos.`);
 }
 
-module.exports = { notificarAusentesEvento };
+// Envía el PIN de acceso al Portal del Socio (alta o regeneración). Fire-and-forget
+// desde el controlador: si no hay email o el envío falla, el admin igual recibió
+// el PIN en la respuesta para entregarlo a mano (ver socioAuthController).
+function enviarPinAcceso(persona, pin) {
+  if (!persona.email || !persona.email.trim()) {
+    return Promise.resolve();
+  }
+
+  const nombre = [
+    persona.nombres,
+    persona.apellido_paterno,
+    persona.apellido_materno || ''
+  ].join(' ').trim();
+
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">Gran Diablada Calameña</h2>
+      <p>Estimado/a <strong>${nombre}</strong>,</p>
+      <p>Ya puedes ingresar al Portal del Socio para ver tu información personal y tu estado financiero.</p>
+      <p style="font-size: 14px;">Tu acceso es:</p>
+      <ul style="font-size: 14px;">
+        <li><strong>RUT:</strong> ${persona.rut}</li>
+        <li><strong>PIN:</strong> <span style="font-size: 20px; letter-spacing: 3px;">${pin}</span></li>
+      </ul>
+      <p>
+        Por seguridad, al ingresar por primera vez el sistema te pedirá cambiar
+        este PIN por uno que solo tú conozcas.
+      </p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="color: #888; font-size: 12px;">
+        Este es un mensaje automático. No respondas a este correo. Si no
+        esperabas este mensaje, comunícalo a la directiva.
+      </p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    destinatario: persona.email,
+    asunto: 'Tu acceso al Portal del Socio — Gran Diablada Calameña',
+    cuerpo
+  });
+}
+
+module.exports = { notificarAusentesEvento, enviarPinAcceso };

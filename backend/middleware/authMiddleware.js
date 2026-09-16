@@ -33,6 +33,15 @@ module.exports = (req, res, next) => {
       process.env.JWT_SECRET
     );
 
+    // Defensa en profundidad: un token de socio (tipo:'socio', ver
+    // authSocioMiddleware) nunca debe pasar por rutas admin, aunque ambos
+    // compartan JWT_SECRET y aunque las rutas ya estén separadas por diseño.
+    if (decoded.tipo === 'socio') {
+      return res.status(401).json({
+        mensaje: 'Token inválido'
+      });
+    }
+
     // Guarda usuario autenticado
     // para siguientes middlewares
     req.usuario = decoded;

@@ -93,12 +93,24 @@ window.onload = () => {
     tabFormaciones.addEventListener('shown.bs.tab', () => inicializarFormaciones());
   }
 
+  // Cargar seguimiento de acceso de socios cuando se activa ese subtab
+  const tabAccesoSocios = document.querySelector('[href="#subtab_acceso_socios"]');
+  if (tabAccesoSocios) {
+    tabAccesoSocios.addEventListener('shown.bs.tab', () => inicializarAccesoSocios());
+  }
+
 };
 
 function aplicarRolesTabs() {
   const rol = obtenerRolActual();
   const puedeVerOperacion = rol === 'admin' || rol === 'entrenador';
   const puedeVerFinanzas  = rol === 'admin' || rol === 'tesorero';
+
+  // Acceso Socios administra credenciales (PIN) de todos los integrantes:
+  // solo admin, sin importar si además puede ver operación o finanzas.
+  if (rol !== 'admin') {
+    document.getElementById('nav_subtab_acceso_socios')?.classList.add('d-none');
+  }
 
   if (!puedeVerOperacion) {
     document.getElementById('nav_tab_asistencia')?.classList.add('d-none');
