@@ -165,12 +165,34 @@ async function asegurarTablaIngresos() {
   `);
 }
 
+// Portal del socio (login RUT + PIN): tabla separada de `personas` para que un
+// export o un bug de otra pantalla nunca exponga el hash del PIN. `persona_id`
+// es PK 1:1, así ON DUPLICATE KEY UPDATE sirve tanto para el primer PIN como
+// para regenerarlo. intentos_fallidos/bloqueado_hasta sostienen el lockout
+// anti fuerza-bruta (ver socioAuthModel/socioAuthController).
+async function asegurarTablaSociosAuth() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS socios_auth (
+      persona_id        BIGINT PRIMARY KEY,
+      pin_hash          VARCHAR(255) NOT NULL,
+      pin_cambiado      TINYINT(1) NOT NULL DEFAULT 0,
+      intentos_fallidos INT NOT NULL DEFAULT 0,
+      bloqueado_hasta   DATETIME NULL,
+      ultimo_login      DATETIME NULL,
+      created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT fk_socios_auth_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
+    )
+  `);
+}
+
 async function ejecutarMigraciones() {
   await asegurarEstadoIntegrantes();
   await reconstruirVistaEstadoFinanciero();
   await asegurarTablaGastos();
   await asegurarTablaActasReunion();
   await asegurarTablaIngresos();
+  await asegurarTablaSociosAuth();
 }
 
 module.exports = ejecutarMigraciones;

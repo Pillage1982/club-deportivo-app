@@ -443,6 +443,11 @@ function aplicarRolesFrontend() {
     return;
   }
 
+  // Acceso Socios administra credenciales (PIN) de todos los integrantes:
+  // solo admin, sin importar si además puede ver operación o finanzas.
+  ocultarSelector('.nav-acceso-socios');
+  ocultarElemento('modulo_acceso_socios');
+
   if (rol === 'tesorero') {
     ocultarSelector('.nav-asistencias');
     ocultarSelector('.nav-eventos');
