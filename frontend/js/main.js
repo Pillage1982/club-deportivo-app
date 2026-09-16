@@ -60,6 +60,11 @@ window.onload = () => {
   }
   cargarTablaActas();
 
+  // Acceso Socios administra credenciales (PIN) de todos los integrantes: solo admin.
+  if (rol === 'admin') {
+    inicializarAccesoSocios();
+  }
+
   cargarDashboard();
 
 };

@@ -42,7 +42,8 @@ window.APP_CONFIG = {
       cuotas: 'Cuotas',
       gastos: 'Gastos',
       ingresos: 'Ingresos',
-      actas: 'Actas de Reunión'
+      actas: 'Actas de Reunión',
+      acceso_socios: 'Acceso Socios'
     },
 
     botones: {
