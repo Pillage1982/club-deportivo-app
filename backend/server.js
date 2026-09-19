@@ -43,6 +43,7 @@ app.use('/gastos', require('./routes/gastoRoutes'));
 app.use('/actas', require('./routes/actaRoutes'));
 app.use('/ingresos', require('./routes/ingresoRoutes'));
 app.use('/socio-auth', require('./routes/socioAuthRoutes'));
+app.use('/socio-auth', require('./routes/socioDataRoutes'));
 
 const frontendPath = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendPath));
