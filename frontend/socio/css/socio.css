@@ -1,0 +1,158 @@
+/* Portal del Socio: shell mobile-first, mismos colores de marca que login.css (naranja/negro GDC). */
+* {
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f4f4f4;
+  padding-bottom: 78px; /* deja espacio para el bottom nav fijo */
+}
+
+/* Barra superior */
+.socio-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #050505, #2b1608, #f47a22);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.socio-logo {
+  width: 38px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #f47a22;
+}
+
+.socio-topbar-titulo {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.socio-topbar-nombre {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Contenido */
+.socio-main {
+  padding: 16px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.socio-pantalla.d-none {
+  display: none;
+}
+
+.socio-card {
+  background: white;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.socio-card-estado {
+  text-align: center;
+  font-weight: 600;
+}
+
+.socio-card-deuda {
+  text-align: center;
+}
+
+.socio-stat {
+  text-align: center;
+}
+
+.socio-stat-label {
+  font-size: 0.78rem;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.socio-stat-valor {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2b1608;
+}
+
+.socio-stat-sub {
+  font-size: 0.78rem;
+  color: #999;
+}
+
+.socio-desglose dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 12px;
+  margin: 0;
+}
+
+.socio-desglose dt {
+  color: #777;
+  font-weight: 400;
+}
+
+.socio-desglose dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.socio-lista-simple .item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 0.88rem;
+}
+
+.socio-lista-simple .item:last-child {
+  border-bottom: none;
+}
+
+.socio-tabla {
+  font-size: 0.85rem;
+}
+
+/* Navegación inferior */
+.socio-bottomnav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  background: white;
+  border-top: 1px solid #e5e5e5;
+  z-index: 30;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.socio-nav-btn {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 10px 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: #999;
+  font-size: 0.7rem;
+}
+
+.socio-nav-btn i {
+  font-size: 1.15rem;
+}
+
+.socio-nav-btn.active {
+  color: #f47a22;
+}

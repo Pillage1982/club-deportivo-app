@@ -124,7 +124,9 @@ body {
   color: white;
 }
 
-.login-input-group #password {
+/* #password: login admin. #pin: login del Portal del Socio (mismo botón de mostrar/ocultar). */
+.login-input-group #password,
+.login-input-group #pin {
   padding-right: 50px;
 }
 

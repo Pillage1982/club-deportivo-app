@@ -3,8 +3,8 @@
 // SERVICE WORKER — NexoComunidad PWA
 // =====================================
 
-const CACHE_STATIC  = 'nexo-static-v58';
-const CACHE_API     = 'nexo-api-v58';
+const CACHE_STATIC  = 'nexo-static-v59';
+const CACHE_API     = 'nexo-api-v59';
 
 const LOCAL_ASSETS = [
   '/index.html',
@@ -131,7 +131,9 @@ self.addEventListener('fetch', event => {
   event.respondWith(cacheFirst(request));
 });
 
-// Navegación: red → caché de la página → index.html
+// Navegación: red → caché de la página → index.html del mismo app (admin o socio).
+// Sin distinguir por prefijo, un socio abriendo /socio/ por primera vez sin conexión
+// (nunca visitado online, nada cacheado aún) caería al index.html del admin.
 async function networkFirstNav(request) {
   try {
     const response = await fetch(request);
@@ -143,7 +145,8 @@ async function networkFirstNav(request) {
   } catch {
     const cached = await caches.match(request);
     if (cached) return cached;
-    return caches.match('/index.html');
+    const url = new URL(request.url);
+    return caches.match(url.pathname.startsWith('/socio/') ? '/socio/login.html' : '/index.html');
   }
 }
 

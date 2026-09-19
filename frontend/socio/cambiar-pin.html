@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<!-- Cambio de PIN del socio: obligatorio en el primer ingreso (pin_cambiado=false), también accesible voluntariamente desde Mi Ficha. -->
+<html lang="es">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+
+  <title>Cambiar PIN | Portal del Socio</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="../css/login.css">
+
+  <script>
+    if (!localStorage.getItem('socio_token')) {
+      window.location.replace('login.html');
+    }
+  </script>
+
+</head>
+
+<body>
+
+  <div class="background-shape shape1"></div>
+  <div class="background-shape shape2"></div>
+
+  <div class="login-card">
+
+    <div class="logo">
+      <i class="bi bi-shield-lock-fill" style="color:#f47a22;"></i>
+    </div>
+
+    <h2 class="text-center">Cambiar PIN</h2>
+    <p class="text-center" id="texto_intro">
+      Por seguridad, debes cambiar el PIN antes de continuar.
+    </p>
+
+    <div class="mb-3 login-input-group">
+      <i class="bi bi-key-fill"></i>
+      <input
+        type="password"
+        id="pin_actual"
+        class="form-control"
+        placeholder="PIN actual"
+        inputmode="numeric"
+        maxlength="6">
+    </div>
+
+    <div class="mb-3 login-input-group">
+      <i class="bi bi-shield-lock-fill"></i>
+      <input
+        type="password"
+        id="pin_nuevo"
+        class="form-control"
+        placeholder="PIN nuevo (6 dígitos)"
+        inputmode="numeric"
+        maxlength="6">
+    </div>
+
+    <div class="mb-4 login-input-group">
+      <i class="bi bi-shield-lock-fill"></i>
+      <input
+        type="password"
+        id="pin_nuevo_confirmar"
+        class="form-control"
+        placeholder="Confirma el PIN nuevo"
+        inputmode="numeric"
+        maxlength="6">
+    </div>
+
+    <button id="btn_cambiar_pin" onclick="cambiarPinSocio()" class="btn-login">
+      Guardar nuevo PIN
+    </button>
+
+    <div id="respuesta"></div>
+
+    <p class="text-center mt-3 mb-0">
+      <a href="#" id="link_cancelar" style="color:#f47a22; font-size:0.85rem; display:none;">
+        Cancelar y volver
+      </a>
+    </p>
+
+  </div>
+
+  <p class="login-credit">
+    Diseño de Mario Riquelme
+  </p>
+
+  <script src="js/api.js"></script>
+  <script src="js/cambiar-pin.js"></script>
+</body>
+</html>
