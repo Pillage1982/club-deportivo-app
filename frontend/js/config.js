@@ -42,7 +42,8 @@ window.APP_CONFIG = {
       gestionPagos: 'Gestión de Pagos',
       asistencias: 'Asistencias',
       multas: 'Multas',
-      estadoFinanciero: 'Estado Financiero'
+      estadoFinanciero: 'Estado Financiero',
+      acceso_socios: 'Acceso Socios'
     },
 
     botones: {

@@ -39,6 +39,11 @@ app.use('/dashboard', require('./routes/dashboardRoutes'));
 app.use('/finanzas', require('./routes/finanzasRoutes'));
 app.use('/pagos', require('./routes/pagoRoutes'));
 app.use('/cuotas', require('./routes/cuotaRoutes'));
+// Ambos bajo /socio-auth (no /socio): el frontend del socio vive en la carpeta
+// /socio/ servida como estático (ver abajo) — si la API usara el prefijo /socio
+// colisionaría con esa ruta.
+app.use('/socio-auth', require('./routes/socioAuthRoutes'));
+app.use('/socio-auth', require('./routes/socioDataRoutes'));
 
 const frontendPath = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendPath));

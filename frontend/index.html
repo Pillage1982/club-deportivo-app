@@ -112,6 +112,13 @@
                 Multas
               </a>
             </li>
+
+            <li class="nav-item mb-2 nav-acceso-socios">
+              <a class="nav-link text-white" href="#acceso_socios">
+                <i class="bi bi-shield-lock"></i>
+                Acceso Socios
+              </a>
+            </li>
           </ul>
         </div>
       </div>
@@ -168,6 +175,13 @@
               <a class="nav-link text-white" href="#multas">
                 <i class="bi bi-currency-dollar"></i>
                 Multas
+              </a>
+            </li>
+
+            <li class="nav-item mb-2 nav-acceso-socios">
+              <a class="nav-link text-white" href="#acceso_socios">
+                <i class="bi bi-shield-lock"></i>
+                Acceso Socios
               </a>
             </li>
           </ul>
@@ -1029,7 +1043,114 @@
             </div>
           </div>
         </section>
+
+        <!-- ACCESO SOCIOS (Portal del Socio) -->
+        <section id="acceso_socios" class="mt-5">
+          <div id="modulo_acceso_socios" class="module-section">
+            <h2 data-config-text="etiquetas.modulos.acceso_socios">
+              Acceso Socios
+            </h2>
+
+            <div class="alert alert-info d-flex align-items-start gap-2">
+              <i class="bi bi-info-circle-fill fs-4"></i>
+              <div>
+                <strong>Portal del Socio.</strong> Desde aquí generas el acceso (RUT + PIN) para que
+                cada integrante vea su propia información y estado financiero desde su celular.
+                El PIN se muestra <strong>una sola vez</strong>: cópialo o envíalo por WhatsApp de inmediato.
+              </div>
+            </div>
+
+            <div class="card p-4 shadow-sm border-0 mb-4 d-flex flex-wrap flex-md-row align-items-md-center justify-content-between gap-3">
+              <div>
+                <h5 class="mb-1">Enrolamiento masivo</h5>
+                <p class="text-muted mb-0">
+                  Genera de una vez el acceso para todos los integrantes activos que todavía no lo tienen.
+                </p>
+              </div>
+              <button type="button" class="btn btn-primary btn-lg" id="btn_enrolamiento_masivo" onclick="ejecutarEnrolamientoMasivo()">
+                <i class="bi bi-people-fill me-2"></i>Generar accesos pendientes
+              </button>
+            </div>
+
+            <div id="resultado_enrolamiento_masivo" class="mb-4" style="display:none;">
+              <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                Estos PIN solo se muestran <strong>una vez</strong>. Cópialos o envíalos ahora — luego solo podrás regenerarlos.
+              </div>
+              <div class="table-responsive">
+                <table class="table table-striped table-bordered mb-0">
+                  <thead class="table-dark">
+                    <tr>
+                      <th>Nombre</th>
+                      <th>RUT</th>
+                      <th>PIN</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabla_resultado_enrolamiento"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <input type="search" id="buscar_acceso_socios" class="form-control" placeholder="Buscar por nombre o RUT">
+              </div>
+            </div>
+            <div id="tabla_acceso_socios_wrapper" class="table-responsive">
+              <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                  <tr>
+                    <th>Nombre</th>
+                    <th>RUT</th>
+                    <th>Acceso</th>
+                    <th>Primer ingreso</th>
+                    <th>Último ingreso</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tabla_acceso_socios"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </main>
+    </div>
+  </div>
+
+  <!-- Modal: PIN de acceso al Portal del Socio generado (se muestra una sola vez) -->
+  <div class="modal fade" id="modal_pin_generado" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-key-fill me-2"></i>Acceso generado</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center">
+          <p class="mb-1 text-muted">Integrante</p>
+          <h5 id="pin_modal_nombre" class="mb-3"></h5>
+
+          <p class="mb-1 text-muted">RUT (usuario)</p>
+          <h5 id="pin_modal_rut" class="mb-3"></h5>
+
+          <p class="mb-1 text-muted">PIN (clave, se muestra una sola vez)</p>
+          <h2 id="pin_modal_pin" class="mb-3" style="letter-spacing: 6px; font-family: monospace;"></h2>
+
+          <div class="alert alert-warning small">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            Este PIN no se podrá volver a ver. Cópialo o envíalo ahora al socio.
+          </div>
+
+          <div class="d-flex justify-content-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-outline-secondary" onclick="copiarPinModal()">
+              <i class="bi bi-clipboard me-1"></i>Copiar
+            </button>
+            <a id="pin_modal_whatsapp" href="#" target="_blank" rel="noopener" class="btn btn-success">
+              <i class="bi bi-whatsapp me-1"></i>Enviar por WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1049,6 +1170,7 @@
   <script src="js/asistencias.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/cuotas.js"></script>
+  <script src="js/accesoSocios.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>

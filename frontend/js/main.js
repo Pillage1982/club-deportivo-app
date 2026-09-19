@@ -55,4 +55,9 @@ window.onload = () => {
 
   cargarDashboard();
 
+  // Acceso Socios administra credenciales (PIN) de todos los integrantes: solo admin.
+  if (rol === 'admin') {
+    inicializarAccesoSocios();
+  }
+
 };
