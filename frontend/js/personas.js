@@ -518,6 +518,8 @@ function editarPersona(persona) {
   ).innerText = 'Actualizar Integrante';
 
   actualizarVisibilidadApoderado();
+
+  irAFormulario('#subtab_form_persona');
 }
 
 function actualizarVisibilidadApoderado() {
