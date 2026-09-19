@@ -492,6 +492,8 @@ function editarPersona(persona) {
     'btn_guardar_persona'
   ).innerText = 'Actualizar Integrante';
 
+  irAFormulario('modulo_personas');
+
 }
 
 // =====================================
