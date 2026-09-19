@@ -12,6 +12,18 @@ function escaparHtml(valor) {
   })[caracter]);
 }
 
+// =====================================
+// NAVEGACION A FORMULARIOS (botón Editar de las tablas)
+// =====================================
+
+// Tabla y formulario ya conviven en la misma sección (sidebar, sin pestañas
+// separadas), pero si la tabla tiene muchas filas el usuario queda scrolleado
+// lejos del formulario que "Editar" acaba de llenar. Esto hace scroll hasta
+// el inicio de la sección para que lo vea de inmediato.
+function irAFormulario(idSeccion) {
+  document.getElementById(idSeccion)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 
 /// =====================================
 // ALERTAS VISUALES BOOTSTRAP
