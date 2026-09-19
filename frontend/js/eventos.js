@@ -438,6 +438,8 @@ function editarEvento(evento) {
   ).innerText =
     'Actualizar Actividad';
 
+  irAFormulario('#subtab_form_evento');
+
 }
 
 // =====================================

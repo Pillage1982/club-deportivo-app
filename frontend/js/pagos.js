@@ -26,6 +26,8 @@ function editarPago(pago) {
 
   document.getElementById('btn_guardar_pago').innerText =
     'Actualizar Pago';
+
+  irAFormulario('#subtab_form_pago');
 }
 
 const MESES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];

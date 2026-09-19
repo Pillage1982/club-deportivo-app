@@ -13,6 +13,24 @@ function escaparHtml(valor) {
   })[caracter]);
 }
 
+// =====================================
+// NAVEGACION A FORMULARIOS (botón Editar de las tablas)
+// =====================================
+
+// Antes "Editar" solo llenaba el formulario, pero este vive en la pestaña
+// "Formularios" — el usuario quedaba con los datos cargados pero sin ver el
+// formulario hasta que cambiara de pestaña a mano. Esto muestra la pestaña
+// "Formularios" y su subtab correspondiente, y hace scroll hasta el formulario.
+function irAFormulario(hrefSubtab) {
+  const triggerFormularios = document.querySelector('[data-bs-toggle="tab"][href="#tab_formularios"]');
+  if (triggerFormularios) new bootstrap.Tab(triggerFormularios).show();
+
+  const triggerSubtab = document.querySelector(`[data-bs-toggle="tab"][href="${hrefSubtab}"]`);
+  if (triggerSubtab) new bootstrap.Tab(triggerSubtab).show();
+
+  document.querySelector(hrefSubtab)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 
 /// =====================================
 // ALERTAS VISUALES BOOTSTRAP
