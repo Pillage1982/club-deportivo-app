@@ -2,8 +2,8 @@
 // SERVICE WORKER — NexoComunidad PWA
 // =====================================
 
-const CACHE_STATIC = 'nexo-static-v10';
-const CACHE_API    = 'nexo-api-v10';
+const CACHE_STATIC = 'nexo-static-v11';
+const CACHE_API    = 'nexo-api-v11';
 
 const LOCAL_ASSETS = [
   '/index.html',
@@ -21,6 +21,7 @@ const LOCAL_ASSETS = [
   '/js/dashboard.js',
   '/js/reportes.js',
   '/js/main.js',
+  '/js/accesoSocios.js',
   '/img/logo.png',
   '/favicon.png'
 ];
@@ -38,7 +39,7 @@ const CDN_ASSETS = [
 
 const API_PATHS = [
   '/asistencia', '/personas', '/eventos', '/multas', '/usuarios',
-  '/dashboard', '/finanzas', '/pagos', '/cuotas', '/gastos'
+  '/dashboard', '/finanzas', '/pagos', '/cuotas', '/gastos', '/socio-auth'
 ];
 
 const API_CACHE_PATHS = ['/personas', '/eventos'];
@@ -108,6 +109,8 @@ self.addEventListener('fetch', event => {
 });
 
 // Navegación: red → caché de la página → index.html
+// Sin distinguir por prefijo, un socio abriendo /socio/ por primera vez sin conexión
+// (nunca visitado online, nada cacheado aún) caería al index.html del admin.
 async function networkFirstNav(request) {
   try {
     const response = await fetch(request);
@@ -119,7 +122,8 @@ async function networkFirstNav(request) {
   } catch {
     const cached = await caches.match(request);
     if (cached) return cached;
-    return caches.match('/index.html');
+    const url = new URL(request.url);
+    return caches.match(url.pathname.startsWith('/socio/') ? '/socio/login.html' : '/index.html');
   }
 }
 

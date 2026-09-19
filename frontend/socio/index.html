@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<!-- Portal del Socio: shell de una sola página con navegación inferior (Inicio, Mi Ficha, Finanzas, Asistencia). Solo lectura. -->
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+
+  <script>
+    if (!localStorage.getItem('socio_token')) {
+      window.location.replace('login.html');
+    } else if (localStorage.getItem('socio_pin_cambiado') === '0') {
+      window.location.replace('cambiar-pin.html');
+    }
+  </script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Portal del Socio | NexoComunidad</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <link rel="stylesheet" href="css/socio.css">
+
+  <link rel="icon" type="image/png" href="../favicon.png">
+</head>
+
+<body>
+
+  <header class="socio-topbar">
+    <div class="d-flex align-items-center gap-2">
+      <img src="../img/logo.png" alt="NexoComunidad" class="socio-logo">
+      <div>
+        <div class="socio-topbar-titulo">Portal del Socio</div>
+        <div class="socio-topbar-nombre" id="txt_nombre_socio"></div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-light" onclick="cerrarSesionSocio()">
+      <i class="bi bi-box-arrow-right"></i>
+    </button>
+  </header>
+
+  <main class="socio-main">
+
+    <!-- INICIO -->
+    <section id="pantalla_inicio" class="socio-pantalla">
+      <h5 class="mb-3">Resumen</h5>
+
+      <div id="badge_estado_socio" class="socio-card socio-card-estado mb-3"></div>
+
+      <div class="socio-card socio-stat mb-3">
+        <div class="socio-stat-label">Deuda actual</div>
+        <div class="socio-stat-valor" id="inicio_deuda">—</div>
+      </div>
+
+      <div class="socio-card">
+        <h6 class="mb-2">Últimos eventos</h6>
+        <div id="inicio_ultimos_eventos" class="socio-lista-simple">
+          <p class="text-muted small mb-0">Cargando...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MI FICHA -->
+    <section id="pantalla_ficha" class="socio-pantalla d-none">
+      <h5 class="mb-3">Mi Ficha</h5>
+
+      <div class="socio-card" id="ficha_datos">
+        <p class="text-muted small mb-0">Cargando...</p>
+      </div>
+
+      <a href="cambiar-pin.html?voluntario=1" class="btn btn-outline-secondary w-100 mt-3">
+        <i class="bi bi-key-fill me-1"></i>Cambiar mi PIN
+      </a>
+    </section>
+
+    <!-- FINANZAS -->
+    <section id="pantalla_finanzas" class="socio-pantalla d-none">
+      <h5 class="mb-3">Finanzas</h5>
+
+      <div class="socio-card socio-card-deuda mb-3">
+        <div class="socio-stat-label">Deuda actual</div>
+        <div class="socio-stat-valor" id="finanzas_deuda">—</div>
+      </div>
+
+      <h6 class="mb-2">Historial de cuotas</h6>
+      <div class="table-responsive mb-4">
+        <table class="table table-sm table-striped socio-tabla">
+          <thead>
+            <tr><th>Mes</th><th>Monto</th><th>Estado</th></tr>
+          </thead>
+          <tbody id="tabla_finanzas_cuotas">
+            <tr><td colspan="3" class="text-center text-muted">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h6 class="mb-2">Historial de pagos</h6>
+      <div class="table-responsive mb-4">
+        <table class="table table-sm table-striped socio-tabla">
+          <thead>
+            <tr><th>Fecha</th><th>Monto</th><th>Método</th></tr>
+          </thead>
+          <tbody id="tabla_finanzas_pagos">
+            <tr><td colspan="3" class="text-center text-muted">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h6 class="mb-2">Multas</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-striped socio-tabla">
+          <thead>
+            <tr><th>Fecha</th><th>Motivo</th><th>Monto</th><th>Estado</th></tr>
+          </thead>
+          <tbody id="tabla_finanzas_multas">
+            <tr><td colspan="4" class="text-center text-muted">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ASISTENCIA -->
+    <section id="pantalla_asistencia" class="socio-pantalla d-none">
+      <h5 class="mb-3">Asistencia</h5>
+
+      <h6 class="mb-2">Historial de asistencia</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-striped socio-tabla">
+          <thead>
+            <tr><th>Fecha</th><th>Evento</th><th>Estado</th></tr>
+          </thead>
+          <tbody id="tabla_asistencia">
+            <tr><td colspan="3" class="text-center text-muted">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="socio-bottomnav">
+    <button type="button" class="socio-nav-btn active" data-pantalla="inicio" onclick="mostrarPantalla('inicio')">
+      <i class="bi bi-house-fill"></i>
+      <span>Inicio</span>
+    </button>
+    <button type="button" class="socio-nav-btn" data-pantalla="ficha" onclick="mostrarPantalla('ficha')">
+      <i class="bi bi-person-fill"></i>
+      <span>Mi Ficha</span>
+    </button>
+    <button type="button" class="socio-nav-btn" data-pantalla="finanzas" onclick="mostrarPantalla('finanzas')">
+      <i class="bi bi-cash-coin"></i>
+      <span>Finanzas</span>
+    </button>
+    <button type="button" class="socio-nav-btn" data-pantalla="asistencia" onclick="mostrarPantalla('asistencia')">
+      <i class="bi bi-check2-square"></i>
+      <span>Asistencia</span>
+    </button>
+  </nav>
+
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
