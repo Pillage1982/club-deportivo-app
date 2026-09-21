@@ -368,22 +368,22 @@ function renderizarTablaPersonas(personas) {
     const dir = persona.direccion || '';
     filas.push(`
       <tr>
-        <td>${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}</td>
-        <td>${persona.rut || ''}</td>
-        <td>${persona.bloque || ''}</td>
-        <td>${persona.sexo || ''}</td>
-        <td>${escaparHtml(persona.email || '')}</td>
-        <td>${persona.telefono || ''}</td>
-        <td title="${dir}">${dir ? dir.substring(0, 25) + (dir.length > 25 ? '…' : '') : ''}</td>
-        <td>${persona.fecha_nacimiento ? formatearFecha(persona.fecha_nacimiento) : ''}</td>
-        <td>${persona.fecha_ingreso ? formatearFecha(persona.fecha_ingreso) : ''}</td>
-        <td>${persona.nombre_apoderado || ''}</td>
-        <td>${persona.telefono_apoderado || ''}</td>
-        <td>
+        <td class="td-nombre" data-label="Nombre Completo">${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}</td>
+        <td data-label="RUT">${persona.rut || ''}</td>
+        <td data-label="Bloque">${persona.bloque || ''}</td>
+        <td data-label="Sexo">${persona.sexo || ''}</td>
+        <td data-label="Email">${escaparHtml(persona.email || '')}</td>
+        <td data-label="Teléfono">${persona.telefono || ''}</td>
+        <td data-label="Dirección" title="${dir}">${dir ? dir.substring(0, 25) + (dir.length > 25 ? '…' : '') : ''}</td>
+        <td data-label="F. Nacimiento">${persona.fecha_nacimiento ? formatearFecha(persona.fecha_nacimiento) : ''}</td>
+        <td data-label="F. Ingreso">${persona.fecha_ingreso ? formatearFecha(persona.fecha_ingreso) : ''}</td>
+        <td data-label="Apoderado">${persona.nombre_apoderado || ''}</td>
+        <td data-label="Tel. Apoderado">${persona.telefono_apoderado || ''}</td>
+        <td class="td-estado" data-label="Estado">
           ${obtenerBadgeEstadoPersona(persona.estado)}
           ${persona.es_honorario ? '<span class="badge bg-info text-dark ms-1">Honorario</span>' : ''}
         </td>
-        <td class="text-nowrap">
+        <td class="td-acciones text-nowrap" data-label="Acciones">
           <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
             <button type="button" class="btn btn-outline-warning" title="Editar" aria-label="Editar"
               onclick='editarPersona(${JSON.stringify(persona)})'>&#9998;</button>

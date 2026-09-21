@@ -632,6 +632,97 @@ img[data-config-img="cliente.logo"] {
   padding: 8px 12px;
 }
 
+/* Integrantes en móvil: la tabla de 13 columnas pasa a tarjetas
+   (Nombre como título, el resto en pares etiqueta:valor, Estado y
+   Acciones sin etiqueta). Depende de los data-label que agrega
+   renderizarTablaPersonas() — solo aplica a esta tabla. */
+@media (max-width: 767.98px) {
+  #tabla_personas_wrapper.tabla-scroll {
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  #tabla_personas_wrapper table,
+  #tabla_personas_wrapper tbody,
+  #tabla_personas_wrapper tr,
+  #tabla_personas_wrapper td {
+    display: block;
+    width: 100%;
+  }
+
+  #tabla_personas_wrapper thead {
+    display: none;
+  }
+
+  #tabla_personas_wrapper tr:not(.tabla-bloque-header) {
+    background: var(--card);
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    border: none !important;
+  }
+
+  #tabla_personas_wrapper td {
+    border: none !important;
+    padding: 4px 0;
+  }
+
+  #tabla_personas_wrapper td[data-label]:empty {
+    display: none;
+  }
+
+  #tabla_personas_wrapper td[data-label]:not(.td-nombre):not(.td-estado):not(.td-acciones) {
+    position: relative;
+    min-height: 22px;
+    padding-left: 42%;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+
+  #tabla_personas_wrapper td[data-label]:not(.td-nombre):not(.td-estado):not(.td-acciones)::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    top: 4px;
+    width: 40%;
+    padding-right: 8px;
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text-light);
+  }
+
+  #tabla_personas_wrapper .td-nombre {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  }
+
+  #tabla_personas_wrapper .td-estado {
+    padding-top: 8px;
+  }
+
+  #tabla_personas_wrapper .td-acciones {
+    padding-top: 10px;
+    text-align: right;
+  }
+
+  #tabla_personas_wrapper .tabla-bloque-header {
+    margin: 14px 0 8px;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  #tabla_personas_wrapper .tabla-bloque-header:first-child {
+    margin-top: 0;
+  }
+}
+
 /* =====================================
    MÓDULO ASISTENCIA — SCAN-IT STYLE
 ===================================== */
