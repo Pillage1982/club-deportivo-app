@@ -22,7 +22,12 @@ exports.obtenerPersonas = (callback) => {
 
       fecha_nacimiento,
 
-      COALESCE(estado, 'activo') AS estado
+      fecha_ingreso,
+      apoderado_nombre,
+      apoderado_telefono,
+
+      COALESCE(estado, 'activo') AS estado,
+      COALESCE(es_honorario, 0) AS es_honorario
 
     FROM personas
 
@@ -32,6 +37,14 @@ exports.obtenerPersonas = (callback) => {
 
   db.query(query, callback);
 
+};
+
+exports.obtenerPersonaPorId = (id, callback) => {
+  db.query(
+    'SELECT id, COALESCE(es_honorario, 0) AS es_honorario FROM personas WHERE id = ? AND activo = 1 LIMIT 1',
+    [id],
+    (err, results) => callback(err, results ? results[0] : null)
+  );
 };
 
 exports.crearPersona = (
@@ -50,10 +63,14 @@ exports.crearPersona = (
       email,
       telefono,
       fecha_nacimiento,
-      estado
+      fecha_ingreso,
+      estado,
+      es_honorario,
+      apoderado_nombre,
+      apoderado_telefono
     )
 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
   `;
 
@@ -69,7 +86,11 @@ exports.crearPersona = (
       data.email,
       data.telefono,
       data.fecha_nacimiento || null,
-      data.estado || 'activo'
+      data.fecha_ingreso || null,
+      data.estado || 'activo',
+      data.es_honorario ? 1 : 0,
+      data.apoderado_nombre || null,
+      data.apoderado_telefono || null
     ],
 
     callback
@@ -182,7 +203,11 @@ exports.actualizarPersona = (
       email = ?,
       telefono = ?,
       fecha_nacimiento = ?,
-      estado = ?
+      fecha_ingreso = ?,
+      estado = ?,
+      es_honorario = ?,
+      apoderado_nombre = ?,
+      apoderado_telefono = ?
 
     WHERE id = ?
 
@@ -201,7 +226,11 @@ exports.actualizarPersona = (
       data.email,
       data.telefono,
       data.fecha_nacimiento || null,
+      data.fecha_ingreso || null,
       data.estado || 'activo',
+      data.es_honorario ? 1 : 0,
+      data.apoderado_nombre || null,
+      data.apoderado_telefono || null,
 
       id
 

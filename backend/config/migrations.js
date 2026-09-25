@@ -38,12 +38,23 @@ async function asegurarEstadoIntegrantes() {
       ALTER TABLE personas
       ADD COLUMN estado ENUM('activo', 'receso', 'inactivo') DEFAULT 'activo' AFTER activo
     `);
+  } else {
+    // Corre en cada arranque del servidor (ejecutarMigraciones gatea app.listen),
+    // así que el MODIFY solo se ejecuta si el tipo de columna aún no coincide,
+    // en vez de un ALTER TABLE ciego en cada reinicio/redeploy.
+    const filasTipo = await ejecutar(`
+      SELECT COLUMN_TYPE
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personas' AND COLUMN_NAME = 'estado'
+    `);
+    const tipoActual = String(filasTipo[0]?.COLUMN_TYPE || '').toLowerCase();
+    if (tipoActual !== "enum('activo','receso','inactivo')") {
+      await ejecutar(`
+        ALTER TABLE personas
+        MODIFY COLUMN estado ENUM('activo', 'receso', 'inactivo') DEFAULT 'activo'
+      `);
+    }
   }
-
-  await ejecutar(`
-    ALTER TABLE personas
-    MODIFY COLUMN estado ENUM('activo', 'receso', 'inactivo') DEFAULT 'activo'
-  `);
 
   await ejecutar(`
     UPDATE personas
@@ -118,6 +129,87 @@ async function reconstruirVistaEstadoFinanciero() {
   `);
 }
 
+// Solo fecha_ingreso y es_honorario se portan de v1.3-dev: bloque/sexo/dirección
+// son conceptos específicos de calamena, main ya los revirtió a propósito
+// (ver commit "Revert: agregar campos bloque, sexo, dirección...").
+async function asegurarCamposPersonas() {
+  const columnas = [
+    {
+      nombre: 'fecha_ingreso',
+      sql: "ADD COLUMN fecha_ingreso DATE NULL AFTER fecha_nacimiento"
+    },
+    {
+      nombre: 'es_honorario',
+      sql: "ADD COLUMN es_honorario TINYINT(1) NOT NULL DEFAULT 0 AFTER estado"
+    },
+    {
+      nombre: 'apoderado_nombre',
+      sql: "ADD COLUMN apoderado_nombre VARCHAR(150) NULL AFTER es_honorario"
+    },
+    {
+      nombre: 'apoderado_telefono',
+      sql: "ADD COLUMN apoderado_telefono VARCHAR(30) NULL AFTER apoderado_nombre"
+    }
+  ];
+
+  const filasExistentes = await ejecutar(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personas' AND COLUMN_NAME IN (?)`,
+    [columnas.map(col => col.nombre)]
+  );
+  const existentes = new Set(filasExistentes.map(f => f.COLUMN_NAME));
+
+  for (const col of columnas) {
+    if (!existentes.has(col.nombre)) {
+      await ejecutar(`ALTER TABLE personas ${col.sql}`);
+    }
+  }
+}
+
+async function asegurarCampoFinalizadoEventos() {
+  const existe = await columnaExiste('eventos', 'finalizado');
+  if (!existe) {
+    await ejecutar(`
+      ALTER TABLE eventos
+      ADD COLUMN finalizado TINYINT(1) NOT NULL DEFAULT 0
+    `);
+  }
+}
+
+async function asegurarFechaHoraEventos() {
+
+  // El formulario ya captura fecha+hora (datetime-local) pero la columna DATE
+  // truncaba la hora al guardar. Se amplía a DATETIME para conservarla y poder
+  // desambiguar actividades del mismo día (ej. viaje anual con varias actividades
+  // separadas por ~1 hora).
+  const filasFecha = await ejecutar(`
+    SELECT DATA_TYPE
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'eventos' AND COLUMN_NAME = 'fecha'
+  `);
+  if (String(filasFecha[0]?.DATA_TYPE || '').toLowerCase() === 'date') {
+    await ejecutar(`
+      ALTER TABLE eventos
+      MODIFY COLUMN fecha DATETIME NOT NULL
+    `);
+  }
+}
+
+async function asegurarTablaGastos() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS gastos (
+      id                INT AUTO_INCREMENT PRIMARY KEY,
+      descripcion       VARCHAR(200) NOT NULL,
+      categoria         VARCHAR(100) NOT NULL,
+      monto             DECIMAL(10,2) NOT NULL,
+      fecha             DATE NOT NULL,
+      responsable       VARCHAR(150) NULL,
+      comprobante_path  VARCHAR(255) NULL,
+      created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 // Portal del socio (login RUT + PIN): tabla separada de `personas` para que un
 // export o un bug de otra pantalla nunca exponga el hash del PIN. `persona_id`
 // es PK 1:1, así ON DUPLICATE KEY UPDATE sirve tanto para el primer PIN como
@@ -141,6 +233,10 @@ async function asegurarTablaSociosAuth() {
 
 async function ejecutarMigraciones() {
   await asegurarEstadoIntegrantes();
+  await asegurarCamposPersonas();
+  await asegurarCampoFinalizadoEventos();
+  await asegurarFechaHoraEventos();
+  await asegurarTablaGastos();
   await asegurarTablaSociosAuth();
   await reconstruirVistaEstadoFinanciero();
 }

@@ -101,6 +101,7 @@ function cargarFicha() {
         ${filaFicha('RUT', escapeHtml(ficha.rut))}
         ${filaFicha('Estado', badgeEstado(ficha.estado))}
         ${filaFicha('Fecha de nacimiento', formatearFecha(ficha.fecha_nacimiento) || '—')}
+        ${filaFicha('Fecha de ingreso', formatearFecha(ficha.fecha_ingreso) || '—')}
         ${filaFicha('Email', escapeHtml(ficha.email || '—'))}
         ${filaFicha('Teléfono', escapeHtml(ficha.telefono || '—'))}
         </dl>

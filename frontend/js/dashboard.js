@@ -10,40 +10,13 @@ let chartDeuda = null;
 // =====================================
 
 function cargarDashboard() {
-
-  const rol =
-    obtenerRolActual();
-
-  const solicitudes =
-    obtenerSolicitudesDashboard(rol);
-
-  Promise.all(
-    Object.values(solicitudes)
-  )
-
-  .then(resultados => {
-    const claves =
-      Object.keys(solicitudes);
-
-    const data =
-      claves.reduce((acumulado, clave, index) => {
-        acumulado[clave] = resultados[index];
-        return acumulado;
-      }, {});
-
-    const datos = prepararDatosDashboard({
-      personas: data.personas,
-      multas: data.multas,
-      finanzas: data.finanzas,
-      eventos: data.eventos,
-      asistencias: data.asistencias,
-      cuotas: data.cuotas
-    });
-
-    aplicarDashboardPorRol(datos);
-
+  fetch(`${API_URL}/dashboard`, { headers: getAuthHeaders() })
+  .then(async res => {
+    const data = await leerRespuestaJson(res);
+    if (!res.ok) throw new Error(data.mensaje || 'No se pudo cargar el dashboard');
+    return data;
   })
-
+  .then(data => aplicarDashboardPorRol(prepararResumenDashboard(data)))
   .catch(err => {
     console.error(err);
     mostrarAlerta(
@@ -54,7 +27,30 @@ function cargarDashboard() {
       'warning'
     );
   });
+}
 
+function prepararResumenDashboard(data) {
+  const resumen = (presentes, total) => ({
+    presentes: Number(presentes || 0),
+    total: Number(total || 0),
+    porcentaje: Number(total || 0) > 0
+      ? Math.round((Number(presentes || 0) / Number(total)) * 100)
+      : 0
+  });
+
+  return {
+    totalPersonas: Number(data.total_personas || 0),
+    totalMultas: Number(data.total_multas || 0),
+    totalPagado: Number(data.total_pagado || 0),
+    deudaTotal: Number(data.deuda_total || 0),
+    totalEventos: Number(data.total_eventos || 0),
+    proximasActividades: Number(data.proximas_actividades || 0),
+    totalAsistencias: Number(data.total_asistencias || 0),
+    asistenciasConProblema: Number(data.asistencias_con_problema || 0),
+    cuotasPendientes: Number(data.cuotas_pendientes || 0),
+    asistenciaEnsayos: resumen(data.ensayos_presentes, data.ensayos_total),
+    asistenciaPresentaciones: resumen(data.presentaciones_presentes, data.presentaciones_total)
+  };
 }
 
 function obtenerJsonDashboard(ruta) {

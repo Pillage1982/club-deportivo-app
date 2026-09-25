@@ -1,4 +1,7 @@
 const eventoModel = require('../models/eventoModel');
+const asistenciaModel = require('../models/asistenciaModel');
+const multaModel      = require('../models/multaModel');
+const { notificarAusentesEvento } = require('../services/emailService');
 
 const tiposPermitidos = [
   'entrenamiento',
@@ -146,5 +149,77 @@ exports.eliminar = (req, res) => {
     }
 
   );
+
+};
+
+exports.cerrar = (req, res) => {
+
+  const id = req.params.id;
+
+  eventoModel.obtenerEventoPorId(id, (err, evento) => {
+
+    if (err) {
+      return res.status(500).json({ mensaje: 'Error al verificar actividad' });
+    }
+
+    if (!evento) {
+      return res.status(404).json({ mensaje: 'Actividad no encontrada' });
+    }
+
+    if (evento.finalizado) {
+      return res.status(400).json({ mensaje: 'La actividad ya está finalizada' });
+    }
+
+    // Cierre atómico primero (WHERE finalizado=0 en el modelo): si dos
+    // peticiones casi simultáneas (doble clic) llegan aquí, solo una gana la
+    // carrera y genera ausentes/multas/email; la otra corta de inmediato en
+    // vez de duplicar ambos efectos.
+    eventoModel.cerrarEvento(id, (cerrarErr, cerrarResult) => {
+
+      if (cerrarErr) {
+        return res.status(500).json({ mensaje: 'Error al finalizar actividad' });
+      }
+
+      if (!cerrarResult || cerrarResult.affectedRows === 0) {
+        return res.status(400).json({ mensaje: 'La actividad ya está finalizada' });
+      }
+
+      asistenciaModel.registrarAusentesEvento(id, (ausErr, ausResult) => {
+
+        if (ausErr) {
+          return res.status(500).json({ mensaje: 'Error al registrar ausentes' });
+        }
+
+        const totalAusentes = ausResult ? ausResult.affectedRows : 0;
+
+        multaModel.crearMultasAusentes(id, (multaErr) => {
+
+          if (multaErr) {
+            return res.status(500).json({ mensaje: 'Error al generar multas por inasistencia' });
+          }
+
+          const detalle = totalAusentes > 0
+            ? ` Se registraron ${totalAusentes} ausente(s) con multa de $5.000.`
+            : ' Todos los integrantes tenían asistencia registrada.';
+
+          res.json({
+            mensaje: `Actividad finalizada.${detalle}`
+          });
+
+          // Fire-and-forget: notificar ausentes por email
+          asistenciaModel.obtenerAusentesConContacto(id, (contactErr, ausentes) => {
+            if (contactErr || !ausentes) return;
+            notificarAusentesEvento(ausentes, evento).catch(err => {
+              console.error('[Email] Error general en notificaciones:', err);
+            });
+          });
+
+        });
+
+      });
+
+    });
+
+  });
 
 };

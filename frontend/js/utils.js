@@ -18,6 +18,22 @@ function escapeHtml(texto) {
   })[caracter]);
 }
 
+// Normaliza texto para comparar en buscadores/filtros (minúsculas, sin tildes).
+// Fuente única: antes estaba copiada con distinto nombre en personas.js,
+// pagos.js, asistencias.js (x2) y gastos.js.
+function normalizarTexto(valor) {
+  return String(valor || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim();
+}
+const normalizarTextoBusqueda   = normalizarTexto;
+const normalizarTextoPago       = normalizarTexto;
+const normalizarTextoAsistencia = normalizarTexto;
+const normalizarTextoMulta      = normalizarTexto;
+const normalizarTextoGasto      = normalizarTexto;
+
 // =====================================
 // NAVEGACION A FORMULARIOS (botón Editar de las tablas)
 // =====================================
@@ -197,6 +213,14 @@ function getAuthHeaders() {
 
 }
 
+// Para peticiones con FormData (subida de archivos): sin Content-Type,
+// el navegador debe fijarlo con el boundary del multipart automáticamente.
+function getAuthHeadersMultipart() {
+  return {
+    Authorization: `Bearer ${localStorage.getItem('token')}`
+  };
+}
+
 // ==============================
 // LOGOUT -- CERRAR SESION
 // ==============================
@@ -270,12 +294,17 @@ function decodificarJwt(token) {
 
 function cerrarSesionPorExpiracion() {
   if (_sesionCerrandose) return;
+
+  if (navigator.onLine === false) return;
+
   _sesionCerrandose = true;
   localStorage.removeItem('token');
   localStorage.removeItem('usuario');
   sessionStorage.setItem('sesion_expirada', '1');
   window.location.href = 'login.html';
 }
+
+window.addEventListener('online', verificarExpiracionToken);
 
 function verificarExpiracionToken() {
   const token = localStorage.getItem('token');

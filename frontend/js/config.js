@@ -33,6 +33,10 @@ window.APP_CONFIG = {
     reunion: 'Reunion'
   },
 
+  asistencia: {
+    toleranciaMinutosAtraso: 0
+  },
+
   etiquetas: {
     modulos: {
       registrarAsistencia: 'Registrar Asistencia',

@@ -73,7 +73,11 @@ function normalizarPersona(data) {
     email: limpiarTexto(data.email).toLowerCase(),
     telefono: limpiarTexto(data.telefono),
     fecha_nacimiento: data.fecha_nacimiento,
-    estado: limpiarTexto(data.estado || 'activo').toLowerCase()
+    fecha_ingreso: data.fecha_ingreso || null,
+    estado: limpiarTexto(data.estado || 'activo').toLowerCase(),
+    es_honorario: Boolean(data.es_honorario),
+    apoderado_nombre: limpiarTexto(data.apoderado_nombre) || null,
+    apoderado_telefono: limpiarTexto(data.apoderado_telefono) || null
   };
 }
 

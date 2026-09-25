@@ -32,4 +32,11 @@ router.delete(
   controller.eliminar
 );
 
+router.patch(
+  '/:id/cerrar',
+  authMiddleware,
+  roleMiddleware('admin'),
+  controller.cerrar
+);
+
 module.exports = router;

@@ -5,10 +5,22 @@
 node_modules/
 
 # =========================
+# RESPALDO SITIO GDC (local, no versionado)
+# =========================
+
+respaldo-sitio-gdc/
+
+# =========================
 # BACKEND NODE MODULES
 # =========================
 
 backend/node_modules/
+
+# =========================
+# COMPROBANTES DE GASTOS (subidos por el usuario)
+# =========================
+
+backend/uploads/
 
 # =========================
 # VARIABLES DE ENTORNO

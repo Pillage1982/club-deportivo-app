@@ -2,6 +2,17 @@ const cuotaModel =
   require('../models/cuotaModel');
 
 // =====================================
+// CUOTAS PENDIENTES POR PERSONA
+// =====================================
+
+exports.listarPendientesPorPersona = (req, res) => {
+  cuotaModel.obtenerCuotasPendientesPorPersona(req.params.persona_id, (err, results) => {
+    if (err) return res.status(500).json(err);
+    res.json(results);
+  });
+};
+
+// =====================================
 // GENERAR CUOTAS MENSUALES
 // =====================================
 

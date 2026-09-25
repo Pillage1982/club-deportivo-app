@@ -2,11 +2,12 @@
 // asistencia de UN solo persona_id — nunca listas completas ni datos de otros
 // integrantes.
 //
-// Nota de esquema (esta rama, la más simple de las 4): `personas` no tiene
-// bloque/sexo/dirección/fecha_ingreso ni columnas de apoderado; no hay tabla
-// `pago_detalle` (un pago no se vincula a cuotas específicas); y
-// `deuda_actual` SÍ incluye multas — igual que vista_estado_financiero
-// (ver migrations.js).
+// Nota de esquema (NexoComunidad genérico, distinto de calamena): `personas`
+// tiene fecha_ingreso y es_honorario, pero no bloque/sexo/dirección (ver
+// migrations.js); no hay tabla `pago_detalle` (un pago no se vincula a cuotas
+// específicas) ni columnas de apoderado; y `deuda_actual` SÍ incluye multas —
+// igual que vista_estado_financiero. Por eso las consultas de aquí son más
+// simples que las de cliente/calamena, no es un recorte accidental.
 const db = require('../config/db');
 
 // =====================================
@@ -16,7 +17,7 @@ exports.obtenerFicha = (personaId, callback) => {
   db.query(
     `SELECT
        rut, nombres, apellido_paterno, apellido_materno,
-       email, telefono, fecha_nacimiento,
+       email, telefono, fecha_nacimiento, fecha_ingreso,
        COALESCE(estado, 'activo') AS estado
      FROM personas
      WHERE id = ? AND activo = 1

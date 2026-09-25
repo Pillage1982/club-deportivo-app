@@ -9,6 +9,22 @@ exports.crearMultaAsistencia = (data, callback) => {
   );
 };
 
+exports.crearMultasAusentes = (evento_id, callback) => {
+  const query = `
+    INSERT INTO multas (persona_id, asistencia_id, monto, motivo, estado)
+    SELECT a.persona_id, a.id, 5000, 'Inasistencia a actividad', 'pendiente'
+    FROM asistencias a
+    WHERE
+      a.evento_id = ?
+      AND a.estado = 'ausente'
+      AND a.id NOT IN (
+        SELECT asistencia_id FROM multas WHERE asistencia_id IS NOT NULL
+      )
+  `;
+
+  db.query(query, [evento_id], callback);
+};
+
 exports.obtenerMultas = (callback) => {
 
   const query = `
