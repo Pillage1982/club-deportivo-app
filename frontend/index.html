@@ -77,70 +77,7 @@
       <!-- SIDEBAR DESKTOP -->
       <div class="d-none d-lg-block sidebar-desktop">
         <div class="sidebar-mobile p-3 min-vh-100">
-          <ul class="nav flex-column">
-            <li class="nav-item mb-2 nav-dashboard">
-              <a class="nav-link text-white" href="#dashboard">
-                <i class="bi bi-speedometer2"></i>
-                Dashboard
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-asistencias">
-              <a class="nav-link text-white" href="#asistencias">
-                <i class="bi bi-check2-square"></i>
-                Asistencia
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-eventos">
-              <a class="nav-link text-white" href="#eventos">
-                <i class="bi bi-calendar-event"></i>
-                Eventos
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-cuotas">
-              <a class="nav-link text-white" href="#cuotas">
-                <i class="bi bi-graph-up"></i>
-                Cuotas
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-pagos">
-              <a class="nav-link text-white" href="#modulo_pagos">
-                <i class="bi bi-cash-coin"></i>
-                Pagos
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-gastos">
-              <a class="nav-link text-white" href="#gastos">
-                <i class="bi bi-currency-dollar"></i>
-                Gastos
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-ingresos">
-              <a class="nav-link text-white" href="#ingresos">
-                <i class="bi bi-piggy-bank"></i>
-                Ingresos
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-actas">
-              <a class="nav-link text-white" href="#actas">
-                <i class="bi bi-journal-text"></i>
-                Actas de Reunión
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-acceso-socios">
-              <a class="nav-link text-white" href="#acceso_socios">
-                <i class="bi bi-shield-lock"></i>
-                Acceso Socios
-              </a>
-            </li>
-          </ul>
+          <ul class="nav flex-column" id="menu_lateral_desktop"></ul>
         </div>
       </div>
 
@@ -163,70 +100,7 @@
         </div>
 
         <div class="offcanvas-body sidebar-mobile">
-          <ul class="nav flex-column">
-            <li class="nav-item mb-2 nav-dashboard">
-              <a class="nav-link text-white" href="#dashboard">
-                <i class="bi bi-speedometer2"></i>
-                Dashboard
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-asistencias">
-              <a class="nav-link text-white" href="#asistencias">
-                <i class="bi bi-check2-square"></i>
-                Asistencia
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-eventos">
-              <a class="nav-link text-white" href="#eventos">
-                <i class="bi bi-calendar-event"></i>
-                Eventos
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-cuotas">
-              <a class="nav-link text-white" href="#cuotas">
-                <i class="bi bi-graph-up"></i>
-                Cuotas
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-pagos">
-              <a class="nav-link text-white" href="#modulo_pagos">
-                <i class="bi bi-cash-coin"></i>
-                Pagos
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-gastos">
-              <a class="nav-link text-white" href="#gastos">
-                <i class="bi bi-currency-dollar"></i>
-                Gastos
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-ingresos">
-              <a class="nav-link text-white" href="#ingresos">
-                <i class="bi bi-piggy-bank"></i>
-                Ingresos
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-actas">
-              <a class="nav-link text-white" href="#actas">
-                <i class="bi bi-journal-text"></i>
-                Actas de Reunión
-              </a>
-            </li>
-
-            <li class="nav-item mb-2 nav-acceso-socios">
-              <a class="nav-link text-white" href="#acceso_socios">
-                <i class="bi bi-shield-lock"></i>
-                Acceso Socios
-              </a>
-            </li>
-          </ul>
+          <ul class="nav flex-column" id="menu_lateral_movil"></ul>
         </div>
       </div>
 
@@ -234,7 +108,7 @@
       <main class="main-content flex-grow-1 p-4">
 
         <!-- DASHBOARD -->
-        <section id="dashboard" class="mt-4">
+        <section id="dashboard" class="mt-4" data-vista="dashboard">
           <h2 data-config-text="etiquetas.modulos.dashboard">
             Dashboard
           </h2>
@@ -303,7 +177,7 @@
         </section>
 
         <!-- GRAFICOS -->
-        <section id="dashboard_graficos" class="mt-5">
+        <section id="dashboard_graficos" class="mt-5" data-vista="dashboard">
           <div id="dashboard_charts" class="dashboard-chart-grid">
             <div id="calendario_actividades_wrapper" class="calendario-wrapper">
               <div class="card p-3 shadow-sm border-0">
@@ -349,7 +223,7 @@
         </section>
 
         <!-- REGISTRAR ASISTENCIA -->
-        <section id="modulo_asistencia" class="module-section">
+        <section id="modulo_asistencia" class="module-section" data-vista="registrar_asistencia">
           <h2 data-config-text="etiquetas.modulos.registrarAsistencia">
             Registrar Asistencia
           </h2>
@@ -469,7 +343,7 @@
             Gestión de Integrantes
           </h2>
 
-          <div id="form_personas" class="card p-4 shadow-sm border-0">
+          <div id="form_personas" class="card p-4 shadow-sm border-0" data-vista="form_integrantes">
             <div class="row">
               <div class="col-md-4 mb-3">
                 <label class="form-label">Nombres</label>
@@ -558,7 +432,7 @@
 
           <div
             id="buscador_personas_wrapper"
-            class="mt-4 mb-3">
+            class="mt-4 mb-3" data-vista="tabla_integrantes">
 
             <label
               for="buscar_personas"
@@ -573,7 +447,7 @@
               placeholder="Buscar por nombre, RUT, email o telefono">
           </div>
 
-          <div id="tabla_personas_wrapper" class="table-responsive mt-4">
+          <div id="tabla_personas_wrapper" class="table-responsive mt-4" data-vista="tabla_integrantes">
             <table class="table table-bordered table-striped table-hover align-middle">
               <thead class="table-dark">
                 <tr>
@@ -600,7 +474,7 @@
               Gestión de Actividades
             </h2>
 
-            <div class="card p-4 shadow-sm border-0">
+            <div class="card p-4 shadow-sm border-0" data-vista="form_eventos">
               <div class="row">
                 <div class="col-md-4 mb-3">
                   <label class="form-label">Nombre Actividad</label>
@@ -670,7 +544,7 @@
 
           <div
             id="filtros_eventos_wrapper"
-            class="row g-3 mt-2 mb-3">
+            class="row g-3 mt-2 mb-3" data-vista="tabla_eventos">
             <div class="col-md-4">
               <label for="buscar_eventos" class="form-label">
                 Buscar Actividades
@@ -718,7 +592,7 @@
             </div>
           </div>
 
-          <div id="tabla_eventos_wrapper" class="table-responsive mt-4">
+          <div id="tabla_eventos_wrapper" class="table-responsive mt-4" data-vista="tabla_eventos">
             <table class="table table-bordered table-striped">
               <thead class="table-dark">
                 <tr>
@@ -742,7 +616,7 @@
             Gestión de Pagos
           </h2>
 
-          <div class="card p-4 shadow-sm border-0">
+          <div class="card p-4 shadow-sm border-0" data-vista="form_pagos">
             <div class="row">
               <div class="col-md-4 mb-3">
                 <label class="form-label">Integrante</label>
@@ -789,7 +663,7 @@
 
           <div
             id="filtros_pagos_wrapper"
-            class="row g-3 mt-2 mb-3">
+            class="row g-3 mt-2 mb-3" data-vista="tabla_pagos">
             <div class="col-md-5">
               <label for="buscar_pagos" class="form-label">
                 Buscar Pagos
@@ -826,7 +700,7 @@
             </div>
           </div>
 
-          <div id="tabla_pagos_wrapper" class="table-responsive mt-4">
+          <div id="tabla_pagos_wrapper" class="table-responsive mt-4" data-vista="tabla_pagos">
             <table class="table table-bordered table-striped">
               <thead class="table-dark">
                 <tr>
@@ -844,7 +718,7 @@
         </section>
 
         <!-- ASISTENCIAS -->
-        <section id="asistencias">
+        <section id="asistencias" data-vista="tabla_asistencias">
           <h2 data-config-text="etiquetas.modulos.asistencias">
             Asistencias
           </h2>
@@ -882,7 +756,7 @@
         </section>
 
         <!-- CUOTAS -->
-        <section id="cuotas" class="mt-5">
+        <section id="cuotas" class="mt-5" data-vista="tabla_cuotas">
           <div id="modulo_cuotas" class="module-section">
             <h2 data-config-text="etiquetas.modulos.cuotas">
               Cuotas
@@ -989,7 +863,7 @@
               Ingresos
             </h2>
 
-            <div class="card p-4 shadow-sm border-0 mb-4">
+            <div class="card p-4 shadow-sm border-0 mb-4" data-vista="form_ingresos">
               <div class="row">
                 <div class="col-md-4 mb-3">
                   <label class="form-label">Descripción</label>
@@ -1032,7 +906,7 @@
               </button>
             </div>
 
-            <div class="row g-2 mb-3">
+            <div class="row g-2 mb-3" data-vista="tabla_ingresos">
               <div class="col-md-5">
                 <input type="search" id="buscar_ingresos" class="form-control" placeholder="Buscar por descripción, categoría, entidad o responsable...">
               </div>
@@ -1044,7 +918,7 @@
               </div>
             </div>
 
-            <div id="tabla_ingresos_wrapper" class="table-responsive">
+            <div id="tabla_ingresos_wrapper" class="table-responsive" data-vista="tabla_ingresos">
               <table class="table table-striped table-bordered">
                 <thead class="table-dark">
                   <tr>
@@ -1071,7 +945,7 @@
               Gastos
             </h2>
 
-            <div class="card p-4 shadow-sm border-0 mb-4">
+            <div class="card p-4 shadow-sm border-0 mb-4" data-vista="form_gastos">
               <div class="row">
                 <div class="col-md-4 mb-3">
                   <label class="form-label">Descripción</label>
@@ -1109,7 +983,7 @@
               </button>
             </div>
 
-            <div class="row g-2 mb-3">
+            <div class="row g-2 mb-3" data-vista="tabla_gastos">
               <div class="col-md-5">
                 <input type="search" id="buscar_gastos" class="form-control" placeholder="Buscar por descripción, categoría o responsable...">
               </div>
@@ -1121,7 +995,7 @@
               </div>
             </div>
 
-            <div id="tabla_gastos_wrapper" class="table-responsive">
+            <div id="tabla_gastos_wrapper" class="table-responsive" data-vista="tabla_gastos">
               <table class="table table-striped table-bordered">
                 <thead class="table-dark">
                   <tr>
@@ -1147,7 +1021,7 @@
               Actas de Reunión
             </h2>
 
-            <div id="acta_form_card" class="card p-4 shadow-sm border-0 mb-4">
+            <div id="acta_form_card" class="card p-4 shadow-sm border-0 mb-4" data-vista="form_actas">
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Reunión</label>
@@ -1182,7 +1056,7 @@
               </button>
             </div>
 
-            <div class="row g-2 mb-3">
+            <div class="row g-2 mb-3" data-vista="tabla_actas">
               <div class="col-md-8">
                 <input type="search" id="buscar_actas" class="form-control" placeholder="Buscar por título, reunión o responsable...">
               </div>
@@ -1191,7 +1065,7 @@
               </div>
             </div>
 
-            <div id="tabla_actas_wrapper" class="table-responsive">
+            <div id="tabla_actas_wrapper" class="table-responsive" data-vista="tabla_actas">
               <table class="table table-striped table-bordered">
                 <thead class="table-dark">
                   <tr>
@@ -1210,7 +1084,7 @@
         </section>
 
         <!-- ACCESO SOCIOS (Portal del Socio) -->
-        <section id="acceso_socios" class="mt-5">
+        <section id="acceso_socios" class="mt-5" data-vista="tabla_acceso_socios">
           <div id="modulo_acceso_socios" class="module-section">
             <h2 data-config-text="etiquetas.modulos.acceso_socios">
               Acceso Socios
@@ -1341,5 +1215,6 @@
   <script src="js/accesoSocios.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/navegacion.js"></script>
 </body>
 </html>
