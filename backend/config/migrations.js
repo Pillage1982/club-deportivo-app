@@ -137,7 +137,7 @@ async function asegurarTablaActasReunion() {
   await ejecutar(`
     CREATE TABLE IF NOT EXISTS actas_reunion (
       id            INT AUTO_INCREMENT PRIMARY KEY,
-      evento_id     INT NOT NULL,
+      evento_id     BIGINT NOT NULL,
       titulo        VARCHAR(200) NOT NULL,
       contenido     TEXT NOT NULL,
       archivo_path  VARCHAR(255) NULL,
