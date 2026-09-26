@@ -116,11 +116,11 @@ body {
 }
 
 #dashboard {
-  order: 10;
+  order: -20;
 }
 
 #dashboard_graficos {
-  order: 20;
+  order: -10;
 }
 
 #modulo_asistencia {
