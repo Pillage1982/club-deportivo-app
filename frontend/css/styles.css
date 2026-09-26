@@ -189,15 +189,21 @@ body {
   .sidebar-desktop {
     position: fixed;
     top: 76px;
-    left: 0;
+    right: 0;
     width: 260px;
     height: calc(100vh - 76px);
     overflow-y: auto;
     z-index: 1040;
   }
 
+  /* Sidebar de escritorio a la derecha */
+  .sidebar-desktop .sidebar-mobile {
+    border-right: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
   .main-content {
-    margin-left: 260px;
+    margin-right: 260px;
     width: calc(100% - 260px);
   }
 
@@ -207,7 +213,7 @@ body {
   }
 
   body.sidebar-oculto .main-content {
-    margin-left: 0;
+    margin-right: 0;
     width: 100%;
   }
 }

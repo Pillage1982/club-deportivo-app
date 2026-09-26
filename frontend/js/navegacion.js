@@ -202,7 +202,7 @@ function aplicarEstadoSidebar(oculto) {
     boton.title = texto;
     boton.setAttribute('aria-label', texto);
     boton.querySelector('i').className =
-      `bi ${oculto ? 'bi-layout-sidebar' : 'bi-layout-sidebar-inset'}`;
+      `bi ${oculto ? 'bi-layout-sidebar-reverse' : 'bi-layout-sidebar-inset-reverse'}`;
   }
 }
 
