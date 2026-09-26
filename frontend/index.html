@@ -124,63 +124,78 @@
             Dashboard
           </h2>
 
-          <div id="dashboard_cards" class="dashboard-grid">
-            <div id="card_dashboard_integrantes" class="col-6 col-md-3">
-              <div class="card text-bg-primary shadow-sm border-0">
-                <div class="card-body shadow-sm border-0">
-                  <h5 id="label_dashboard_integrantes" class="card-title shadow-sm border-0">
-                    <i class="bi bi-people-fill"></i>
-                    Integrantes
-                  </h5>
+          <div id="dashboard_resumen" class="dashboard-resumen">
+            <div id="dashboard_cards" class="dashboard-grid">
+              <div id="card_dashboard_integrantes" class="col-6 col-md-3">
+                <div class="card text-bg-primary shadow-sm border-0">
+                  <div class="card-body shadow-sm border-0">
+                    <h5 id="label_dashboard_integrantes" class="card-title shadow-sm border-0">
+                      <i class="bi bi-people-fill"></i>
+                      Integrantes
+                    </h5>
 
-                  <h2 id="total_personas">
-                    0
-                  </h2>
+                    <h2 id="total_personas">
+                      0
+                    </h2>
+                  </div>
+                </div>
+              </div>
+
+              <div id="card_dashboard_multas" class="col-6 col-md-3">
+                <div class="card text-bg-danger shadow-sm border-0">
+                  <div class="card-body shadow-sm border-0">
+                    <h5 id="label_dashboard_multas" class="card-title shadow-sm border-0">
+                      <i class="bi bi-exclamation-triangle-fill"></i>
+                      Multas
+                    </h5>
+
+                    <h2 id="total_multas">
+                      0
+                    </h2>
+                  </div>
+                </div>
+              </div>
+
+              <div id="card_dashboard_pagado" class="col-6 col-md-3">
+                <div class="card text-bg-success shadow-sm border-0">
+                  <div class="card-body shadow-sm border-0">
+                    <h5 id="label_dashboard_pagado" class="card-title shadow-sm border-0">
+                      <i class="bi bi-cash-stack"></i>
+                      Pagado
+                    </h5>
+
+                    <h2 id="total_pagado">
+                      $0
+                    </h2>
+                  </div>
+                </div>
+              </div>
+
+              <div id="card_dashboard_deuda" class="col-6 col-md-3">
+                <div class="card text-bg-warning shadow-sm border-0">
+                  <div class="card-body shadow-sm border-0">
+                    <h5 id="label_dashboard_deuda" class="card-title shadow-sm border-0">
+                      <i class="bi bi-wallet2"></i>
+                      Deuda
+                    </h5>
+
+                    <h2 id="deuda_total">
+                      $0
+                    </h2>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div id="card_dashboard_multas" class="col-6 col-md-3">
-              <div class="card text-bg-danger shadow-sm border-0">
-                <div class="card-body shadow-sm border-0">
-                  <h5 id="label_dashboard_multas" class="card-title shadow-sm border-0">
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                    Multas
-                  </h5>
+            <div id="grafico_deuda_wrapper">
+              <div class="card p-3 shadow-sm border-0 h-100">
+                <h5>Deuda Actual</h5>
 
-                  <h2 id="total_multas">
-                    0
-                  </h2>
-                </div>
-              </div>
-            </div>
-
-            <div id="card_dashboard_pagado" class="col-6 col-md-3">
-              <div class="card text-bg-success shadow-sm border-0">
-                <div class="card-body shadow-sm border-0">
-                  <h5 id="label_dashboard_pagado" class="card-title shadow-sm border-0">
-                    <i class="bi bi-cash-stack"></i>
-                    Pagado
-                  </h5>
-
-                  <h2 id="total_pagado">
-                    $0
-                  </h2>
-                </div>
-              </div>
-            </div>
-
-            <div id="card_dashboard_deuda" class="col-6 col-md-3">
-              <div class="card text-bg-warning shadow-sm border-0">
-                <div class="card-body shadow-sm border-0">
-                  <h5 id="label_dashboard_deuda" class="card-title shadow-sm border-0">
-                    <i class="bi bi-wallet2"></i>
-                    Deuda
-                  </h5>
-
-                  <h2 id="deuda_total">
-                    $0
-                  </h2>
+                <div class="chart-container">
+                  <canvas id="graficoDeuda"></canvas>
+                  <p id="grafico_deuda_vacio" class="text-muted text-center position-absolute top-50 start-50 translate-middle mb-0 d-none">
+                    Nadie tiene deuda pendiente.
+                  </p>
                 </div>
               </div>
             </div>
@@ -215,19 +230,6 @@
                 </div>
 
                 <div id="calendario_actividades" class="calendario-grid"></div>
-              </div>
-            </div>
-
-            <div id="grafico_deuda_wrapper" class="col-12 col-md-6 mb-3">
-              <div class="card p-3 shadow-sm border-0">
-                <h5>Deuda Actual</h5>
-
-                <div class="chart-container">
-                  <canvas id="graficoDeuda"></canvas>
-                  <p id="grafico_deuda_vacio" class="text-muted text-center position-absolute top-50 start-50 translate-middle mb-0 d-none">
-                    Nadie tiene deuda pendiente.
-                  </p>
-                </div>
               </div>
             </div>
           </div>
