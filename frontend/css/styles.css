@@ -322,6 +322,47 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* Resumen del dashboard: tarjetas apiladas en una columna angosta y el
+   gráfico Deuda Actual al lado. En pantallas chicas queda uno bajo el otro. */
+.dashboard-resumen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+#grafico_deuda_wrapper .card {
+  display: flex;
+  flex-direction: column;
+}
+
+#grafico_deuda_wrapper .chart-container {
+  flex: 1;
+}
+
+@media (min-width: 769px) {
+  .dashboard-resumen {
+    grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  }
+
+  .dashboard-resumen .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .dashboard-resumen .dashboard-grid .card,
+  .dashboard-resumen .dashboard-grid .card-body {
+    min-height: 0;
+  }
+
+  .dashboard-resumen .dashboard-grid .card-body {
+    padding: 14px 18px;
+  }
+
+  .dashboard-resumen .dashboard-grid .card-title {
+    min-height: 0;
+  }
+}
+
 .dashboard-chart-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
