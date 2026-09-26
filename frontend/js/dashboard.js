@@ -41,6 +41,7 @@ function cargarDashboard() {
     });
 
     aplicarDashboardPorRol(datos);
+    renderizarGraficoDeuda(data.finanzas);
 
   })
 
@@ -357,39 +358,48 @@ function aplicarDashboardPorRol(datos) {
 }
 
 // =====================================
-// CARGAR GRAFICOS FINANCIEROS
+// GRAFICO DEUDA ACTUAL
 // =====================================
 
-function cargarGraficos() {
+// Usa las filas de /finanzas que cargarDashboard ya trajo. Solo grafica
+// deuda positiva: un saldo a favor (pagado de más) no cabe en un gráfico
+// circular.
+function renderizarGraficoDeuda(finanzas) {
+  const canvas =
+    document.getElementById('graficoDeuda');
 
-  fetch(`${API_URL}/finanzas`, {
+  if (!canvas || typeof Chart === 'undefined') {
+    return;
+  }
 
-    headers: getAuthHeaders()
+  const conDeuda =
+    (Array.isArray(finanzas) ? finanzas : [])
+      .filter(f => Number(f.deuda_actual || 0) > 0);
 
-  })
+  const nombres = conDeuda.map(
+    f => `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`.trim()
+  );
 
-  .then(res => res.json())
+  const deuda = conDeuda.map(
+    f => Number(f.deuda_actual)
+  );
 
-  .then(data => {
+  // Destruye el gráfico anterior
+  // para evitar duplicados visuales
+  if (chartDeuda) {
+    chartDeuda.destroy();
+  }
 
-    // Prepara datos para Chart.js
-    if (!Array.isArray(data)) {
-      mostrarAlerta(
-      data.mensaje || 'No se pudieron cargar los gráficos',
-      'warning'
-      );
-      return;
-    }
-
-    const nombres = data.map(
-      f => `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`
-    );
-
-    const deuda = data.map(
-      f => Number(f.deuda_actual)
-    );
-
-    const opcionesGraficos = {
+  chartDeuda = new Chart(canvas, {
+    type: 'pie',
+    data: {
+      labels: nombres,
+      datasets: [{
+        label: 'Deuda',
+        data: deuda
+      }]
+    },
+    options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -401,51 +411,23 @@ function cargarGraficos() {
               size: 10
             }
           }
+        },
+        tooltip: {
+          callbacks: {
+            label: contexto =>
+              `${contexto.label}: ${formatearMonto(contexto.parsed)}`
+          }
         }
       }
-    };
-
-    // Destruye el gráfico anterior
-    // para evitar duplicados visuales
-    if (chartDeuda) {
-      chartDeuda.destroy();
     }
+  });
 
-    // Grafico circular deuda financiera
-    chartDeuda = new Chart(
+  const vacio =
+    document.getElementById('grafico_deuda_vacio');
 
-      document.getElementById(
-        'graficoDeuda'
-      ),
-
-      {
-
-        type: 'pie',
-
-        data: {
-
-          labels: nombres,
-
-          datasets: [{
-
-            label: 'Deuda',
-
-            data: deuda
-
-          }]
-
-        },
-
-        options: opcionesGraficos
-
-      }
-
-    );
-
-  })
-
-  .catch(err => console.error(err));
-
+  if (vacio) {
+    vacio.classList.toggle('d-none', conDeuda.length > 0);
+  }
 }
 
 // =====================================
