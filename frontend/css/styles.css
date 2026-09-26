@@ -200,6 +200,16 @@ body {
     margin-left: 260px;
     width: calc(100% - 260px);
   }
+
+  /* Botón de la navbar que oculta el sidebar (navegacion.js) */
+  body.sidebar-oculto .sidebar-desktop {
+    display: none !important; /* gana a .d-lg-block de Bootstrap */
+  }
+
+  body.sidebar-oculto .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
 }
 
 @media (max-width: 991.98px) {

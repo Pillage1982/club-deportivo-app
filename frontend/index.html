@@ -36,6 +36,17 @@
   <nav class="navbar navbar-dark bg-dark">
     <div class="container-fluid">
       <button
+        id="btn_alternar_sidebar"
+        class="btn btn-outline-light d-none d-lg-inline-flex me-2"
+        type="button"
+        onclick="alternarSidebar()"
+        title="Ocultar menú"
+        aria-label="Ocultar menú">
+
+        <i class="bi bi-layout-sidebar-inset"></i>
+      </button>
+
+      <button
         class="btn btn-outline-light d-lg-none me-2"
         type="button"
         data-bs-toggle="offcanvas"
