@@ -162,7 +162,7 @@ function editarPago(pago) {
   document.getElementById('btn_guardar_pago').innerText =
     'Actualizar Pago';
 
-  irAFormulario('modulo_pagos');
+  irAFormulario('form_pagos');
 }
 
 function crearPago() {

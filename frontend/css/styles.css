@@ -100,6 +100,40 @@ body {
   transform: translateX(4px);
 }
 
+/* Ítem de la vista visible y submenús Formularios/Tablas (navegacion.js) */
+.nav-link.active {
+  background: rgba(255, 255, 255, 0.16);
+  color: white !important;
+  font-weight: 600;
+}
+
+.nav-grupo-chevron {
+  font-size: 14px !important;
+  transition: transform 0.2s;
+}
+
+.nav-grupo-toggle:not(.collapsed) .nav-grupo-chevron {
+  transform: rotate(180deg);
+}
+
+.nav-submenu {
+  padding-left: 18px;
+}
+
+.nav-link.nav-subitem {
+  padding: 9px 14px;
+  font-size: 0.93rem;
+}
+
+.nav-link.nav-subitem i {
+  font-size: 15px;
+}
+
+/* Bloques de otras vistas (una sola vista visible a la vez) */
+.vista-oculta {
+  display: none !important;
+}
+
 .offcanvas {
   background: linear-gradient(180deg, var(--primary), #111827);
   width: 260px;

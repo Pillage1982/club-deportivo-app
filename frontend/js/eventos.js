@@ -541,7 +541,7 @@ function editarEvento(evento) {
   ).innerText =
     'Actualizar Actividad';
 
-  irAFormulario('eventos');
+  irAFormulario('form_eventos');
 
 }
 

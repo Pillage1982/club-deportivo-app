@@ -16,12 +16,10 @@ function escaparHtml(valor) {
 // NAVEGACION A FORMULARIOS (botón Editar de las tablas)
 // =====================================
 
-// Tabla y formulario ya conviven en la misma sección (sidebar, sin pestañas
-// separadas), pero si la tabla tiene muchas filas el usuario queda scrolleado
-// lejos del formulario que "Editar" acaba de llenar. Esto hace scroll hasta
-// el inicio de la sección para que lo vea de inmediato.
-function irAFormulario(idSeccion) {
-  document.getElementById(idSeccion)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+// Formularios y tablas son vistas separadas del sidebar (navegacion.js):
+// "Editar" llena el formulario y cambia a su vista para que se vea de inmediato.
+function irAFormulario(vista) {
+  mostrarVista(vista);
 }
 
 
@@ -458,11 +456,14 @@ function aplicarRolesFrontend() {
   // Acceso Socios administra credenciales (PIN) de todos los integrantes:
   // solo admin, sin importar si además puede ver operación o finanzas.
   ocultarSelector('.nav-acceso-socios');
+  ocultarSelector('.nav-form-actas');
   ocultarElemento('modulo_acceso_socios');
 
   if (rol === 'tesorero') {
     ocultarSelector('.nav-asistencias');
     ocultarSelector('.nav-eventos');
+    ocultarSelector('.nav-registrar-asistencia');
+    ocultarSelector('.nav-form-integrantes');
 
     ocultarElemento('modulo_asistencia');
     ocultarElemento('form_personas');
@@ -475,6 +476,7 @@ function aplicarRolesFrontend() {
     ocultarSelector('.nav-pagos');
     ocultarSelector('.nav-gastos');
     ocultarSelector('.nav-ingresos');
+    ocultarSelector('.nav-form-integrantes');
 
     ['form_personas',
       'modulo_cuotas',
