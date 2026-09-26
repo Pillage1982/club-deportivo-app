@@ -185,5 +185,47 @@ function obtenerVistaGuardada() {
   }
 }
 
+// =====================================
+// OCULTAR / MOSTRAR SIDEBAR (escritorio)
+// =====================================
+
+// En móvil el sidebar ya es un offcanvas; este botón solo existe en escritorio.
+const CLAVE_SIDEBAR_OCULTO = 'sidebar_oculto';
+
+function aplicarEstadoSidebar(oculto) {
+  document.body.classList.toggle('sidebar-oculto', oculto);
+
+  const boton = document.getElementById('btn_alternar_sidebar');
+
+  if (boton) {
+    const texto = oculto ? 'Mostrar menú' : 'Ocultar menú';
+    boton.title = texto;
+    boton.setAttribute('aria-label', texto);
+    boton.querySelector('i').className =
+      `bi ${oculto ? 'bi-layout-sidebar' : 'bi-layout-sidebar-inset'}`;
+  }
+}
+
+function alternarSidebar() {
+  const oculto = !document.body.classList.contains('sidebar-oculto');
+
+  aplicarEstadoSidebar(oculto);
+
+  try {
+    localStorage.setItem(CLAVE_SIDEBAR_OCULTO, oculto ? '1' : '0');
+  } catch (err) {
+    // Sin localStorage: solo no se recuerda la preferencia
+  }
+}
+
+function obtenerSidebarOcultoGuardado() {
+  try {
+    return localStorage.getItem(CLAVE_SIDEBAR_OCULTO) === '1';
+  } catch (err) {
+    return false;
+  }
+}
+
 renderizarMenuLateral();
+aplicarEstadoSidebar(obtenerSidebarOcultoGuardado());
 mostrarVista(obtenerVistaGuardada());
