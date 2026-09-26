@@ -35,15 +35,6 @@
 
   <nav class="navbar navbar-dark bg-dark">
     <div class="container-fluid">
-      <button
-        class="btn btn-outline-light d-lg-none me-2"
-        type="button"
-        data-bs-toggle="offcanvas"
-        data-bs-target="#sidebarMobile">
-
-        <i class="bi bi-list"></i>
-      </button>
-
       <span class="navbar-brand mb-0 h1 d-flex align-items-center gap-2">
         <img
           class="cliente-logo"
@@ -78,6 +69,16 @@
 
           <i class="bi bi-layout-sidebar-inset-reverse"></i>
         </button>
+
+        <button
+          class="btn btn-outline-light d-lg-none ms-2"
+          type="button"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#sidebarMobile"
+          aria-label="Abrir menú">
+
+          <i class="bi bi-list"></i>
+        </button>
       </div>
     </div>
   </nav>
@@ -94,7 +95,7 @@
 
       <!-- SIDEBAR MOVIL -->
       <div
-        class="offcanvas offcanvas-start d-lg-none"
+        class="offcanvas offcanvas-end d-lg-none"
         tabindex="-1"
         id="sidebarMobile">
 

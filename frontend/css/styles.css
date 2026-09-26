@@ -136,7 +136,15 @@ body {
 
 .offcanvas {
   background: linear-gradient(180deg, var(--primary), #111827);
-  width: 260px;
+  /* Bootstrap fija el ancho con esta variable (400px por defecto) */
+  --bs-offcanvas-width: 260px;
+  /* Por encima de la navbar fija (z-index 1050), que si no tapa
+     el encabezado del menú y su botón de cerrar */
+  --bs-offcanvas-zindex: 1060;
+}
+
+.offcanvas-backdrop {
+  z-index: 1055;
 }
 
 /* =====================================
