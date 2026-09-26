@@ -248,6 +248,7 @@ document.getElementById(
     cargarTablaEventos();
 
     cargarEventos();
+    cargarDashboard();
 
   })
 
@@ -579,6 +580,7 @@ function ejecutarEliminarEvento(id) {
     invalidarCacheApi('eventos');
     cargarTablaEventos();
     cargarEventos();
+    cargarDashboard();
 
   })
 

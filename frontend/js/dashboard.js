@@ -2,7 +2,6 @@
 // INSTANCIAS GRAFICOS CHART.JS
 // =====================================
 
-let chartMultas = null;
 let chartDeuda = null;
 
 // =====================================
@@ -176,18 +175,6 @@ function prepararDatosDashboard(data) {
       ].includes(asistencia.estado);
     }).length;
 
-  const asistenciaEnsayos =
-    calcularResumenAsistenciaPorTipo(
-      asistencias,
-      ['entrenamiento']
-    );
-
-  const asistenciaPresentaciones =
-    calcularResumenAsistenciaPorTipo(
-      asistencias,
-      ['partido']
-    );
-
   const cuotasPendientes =
     cuotas.filter(cuota => {
       return cuota.estado === 'pendiente' ||
@@ -217,70 +204,8 @@ function prepararDatosDashboard(data) {
     asistenciasConProblema,
     cuotasPendientes,
     totalGastosMes,
-    asistenciaEnsayos,
-    asistenciaPresentaciones
+    eventos
   };
-}
-
-function calcularResumenAsistenciaPorTipo(asistencias, tipos) {
-  const registros =
-    asistencias.filter(asistencia => {
-      return tipos.includes(asistencia.tipo_evento);
-    });
-
-  const presentes =
-    registros.filter(asistencia => {
-      return [
-        'presente',
-        'atrasado'
-      ].includes(asistencia.estado);
-    }).length;
-
-  const total =
-    registros.length;
-
-  return {
-    presentes,
-    total,
-    porcentaje: total > 0
-      ? Math.round((presentes / total) * 100)
-      : 0
-  };
-}
-
-function actualizarEstadisticasAsistenciaDashboard(datos) {
-  const ensayosPorcentaje =
-    document.getElementById('asistencia_ensayos_porcentaje');
-
-  const ensayosDetalle =
-    document.getElementById('asistencia_ensayos_detalle');
-
-  const presentacionesPorcentaje =
-    document.getElementById('asistencia_presentaciones_porcentaje');
-
-  const presentacionesDetalle =
-    document.getElementById('asistencia_presentaciones_detalle');
-
-  if (
-    !ensayosPorcentaje ||
-    !ensayosDetalle ||
-    !presentacionesPorcentaje ||
-    !presentacionesDetalle
-  ) {
-    return;
-  }
-
-  ensayosPorcentaje.innerText =
-    `${datos.asistenciaEnsayos.porcentaje}%`;
-
-  ensayosDetalle.innerText =
-    `${datos.asistenciaEnsayos.presentes} presentes de ${datos.asistenciaEnsayos.total} registros`;
-
-  presentacionesPorcentaje.innerText =
-    `${datos.asistenciaPresentaciones.porcentaje}%`;
-
-  presentacionesDetalle.innerText =
-    `${datos.asistenciaPresentaciones.presentes} presentes de ${datos.asistenciaPresentaciones.total} registros`;
 }
 
 function actualizarTarjetaDashboard(config) {
@@ -312,7 +237,8 @@ function actualizarTarjetaDashboard(config) {
 }
 
 function aplicarDashboardPorRol(datos) {
-  actualizarEstadisticasAsistenciaDashboard(datos);
+  eventosCalendario = datos.eventos;
+  renderizarCalendarioActividades();
 
   const rol =
     obtenerRolActual();
@@ -459,14 +385,6 @@ function cargarGraficos() {
       f => `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`
     );
 
-    const multas = data.map(
-      f => Number(f.total_multas)
-    );
-
-    const cuotas = data.map(
-      f => Number(f.total_cuotas || 0)
-    );
-
     const deuda = data.map(
       f => Number(f.deuda_actual)
     );
@@ -487,80 +405,11 @@ function cargarGraficos() {
       }
     };
 
-    // Destruye gráficos anteriores
+    // Destruye el gráfico anterior
     // para evitar duplicados visuales
-    if (chartMultas) {
-
-      chartMultas.destroy();
-
-    } 
-
-if (chartDeuda) {
-
-  chartDeuda.destroy();
-
-}
-
-// Grafico barras multas por socio
-    chartMultas = new Chart(
-
-      document.getElementById(
-        'graficoMultas'
-      ),
-
-      {
-
-        type: 'bar',
-
-        data: {
-
-          labels: nombres,
-
-          datasets: [
-  {
-
-    label: 'Multas',
-
-    data: multas
-
-  },
-  {
-
-    label: 'Cuotas',
-
-    data: cuotas
-
-  }
-]
-
-        },
-
-        options: {
-          ...opcionesGraficos,
-          scales: {
-            x: {
-              ticks: {
-                maxRotation: 45,
-                minRotation: 25,
-                font: {
-                  size: 10
-                }
-              }
-            },
-            y: {
-              ticks: {
-                precision: 0,
-                font: {
-                  size: 10
-                }
-              }
-            }
-          }
-        }
-
-      }
-
-    );
+    if (chartDeuda) {
+      chartDeuda.destroy();
+    }
 
     // Grafico circular deuda financiera
     chartDeuda = new Chart(
@@ -597,4 +446,123 @@ if (chartDeuda) {
 
   .catch(err => console.error(err));
 
+}
+
+// =====================================
+// CALENDARIO MENSUAL DE ACTIVIDADES
+// =====================================
+
+let eventosCalendario = [];
+let mesCalendario = new Date();
+mesCalendario.setDate(1);
+
+const MESES_CALENDARIO = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+const DIAS_CALENDARIO = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+function cambiarMesCalendario(delta) {
+  mesCalendario.setMonth(mesCalendario.getMonth() + delta);
+  renderizarCalendarioActividades();
+}
+
+// La fecha llega como 'YYYY-MM-DD HH:MM:SS' (dateStrings): se lee tal cual
+// para no desplazar el día por zona horaria.
+function obtenerClaveDiaEvento(fecha) {
+  return String(fecha || '').substring(0, 10);
+}
+
+function obtenerHoraEvento(fecha) {
+  const hora = String(fecha || '').substring(11, 16);
+  return hora && hora !== '00:00' ? hora : '';
+}
+
+function claveDia(anio, mes, dia) {
+  return `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+}
+
+function renderizarCalendarioActividades() {
+  const contenedor =
+    document.getElementById('calendario_actividades');
+
+  const titulo =
+    document.getElementById('calendario_titulo');
+
+  if (!contenedor || !titulo) {
+    return;
+  }
+
+  const anio = mesCalendario.getFullYear();
+  const mes = mesCalendario.getMonth();
+
+  titulo.innerText = `${MESES_CALENDARIO[mes]} ${anio}`;
+
+  const eventosPorDia = {};
+
+  eventosCalendario.forEach(evento => {
+    const clave = obtenerClaveDiaEvento(evento.fecha);
+    (eventosPorDia[clave] = eventosPorDia[clave] || []).push(evento);
+  });
+
+  Object.values(eventosPorDia).forEach(lista => {
+    lista.sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+  });
+
+  const hoy = new Date();
+  const claveHoy = claveDia(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+  // Semana parte en lunes: getDay() 0 = domingo -> columna 6
+  const desfase = (new Date(anio, mes, 1).getDay() + 6) % 7;
+  const diasMes = new Date(anio, mes + 1, 0).getDate();
+
+  contenedor.innerHTML = '';
+
+  DIAS_CALENDARIO.forEach(nombre => {
+    const cabecera = document.createElement('div');
+    cabecera.className = 'calendario-dia-semana';
+    cabecera.innerText = nombre;
+    contenedor.appendChild(cabecera);
+  });
+
+  for (let i = 0; i < desfase; i++) {
+    const vacio = document.createElement('div');
+    vacio.className = 'calendario-dia calendario-dia-vacio';
+    contenedor.appendChild(vacio);
+  }
+
+  for (let dia = 1; dia <= diasMes; dia++) {
+    const clave = claveDia(anio, mes, dia);
+    const celda = document.createElement('div');
+
+    celda.className = 'calendario-dia';
+
+    if (clave === claveHoy) {
+      celda.classList.add('calendario-hoy');
+    }
+
+    const numero = document.createElement('span');
+    numero.className = 'calendario-numero';
+    numero.innerText = dia;
+    celda.appendChild(numero);
+
+    (eventosPorDia[clave] || []).forEach(evento => {
+      const hora = obtenerHoraEvento(evento.fecha);
+      const item = document.createElement('div');
+
+      item.className = `calendario-evento calendario-evento-${evento.tipo}`;
+      item.innerText = hora ? `${hora} ${evento.nombre}` : evento.nombre;
+      item.title = [
+        obtenerTipoActividad(evento.tipo),
+        evento.nombre,
+        hora,
+        evento.ubicacion
+      ].filter(Boolean).join(' · ');
+
+      celda.appendChild(item);
+    });
+
+    contenedor.appendChild(celda);
+  }
 }

@@ -300,54 +300,36 @@
               </div>
             </div>
           </div>
-
-          <div
-            id="dashboard_asistencia_stats"
-            class="attendance-stat-grid mt-4">
-            <div class="attendance-stat">
-              <div>
-                <span class="attendance-stat-label">
-                  Ensayos
-                </span>
-
-                <strong id="asistencia_ensayos_porcentaje">
-                  0%
-                </strong>
-              </div>
-
-              <small id="asistencia_ensayos_detalle">
-                0 presentes de 0 registros
-              </small>
-            </div>
-
-            <div class="attendance-stat">
-              <div>
-                <span class="attendance-stat-label">
-                  Presentaciones
-                </span>
-
-                <strong id="asistencia_presentaciones_porcentaje">
-                  0%
-                </strong>
-              </div>
-
-              <small id="asistencia_presentaciones_detalle">
-                0 presentes de 0 registros
-              </small>
-            </div>
-          </div>
         </section>
 
         <!-- GRAFICOS -->
         <section id="dashboard_graficos" class="mt-5">
           <div id="dashboard_charts" class="dashboard-chart-grid">
-            <div id="grafico_multas_wrapper" class="col-12 col-md-6 mb-3">
+            <div id="calendario_actividades_wrapper" class="calendario-wrapper">
               <div class="card p-3 shadow-sm border-0">
-                <h5>Multas por Integrante</h5>
+                <div class="calendario-header">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    onclick="cambiarMesCalendario(-1)"
+                    aria-label="Mes anterior">
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
 
-                <div class="chart-container">
-                  <canvas id="graficoMultas"></canvas>
+                  <h5 id="calendario_titulo" class="mb-0">
+                    Calendario de actividades
+                  </h5>
+
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    onclick="cambiarMesCalendario(1)"
+                    aria-label="Mes siguiente">
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
                 </div>
+
+                <div id="calendario_actividades" class="calendario-grid"></div>
               </div>
             </div>
 
