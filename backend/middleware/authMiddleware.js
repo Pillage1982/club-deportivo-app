@@ -9,7 +9,10 @@ const jwt = require('jsonwebtoken');
 // MIDDLEWARE AUTENTICACION JWT
 // =====================================
 
-module.exports = (req, res, next) => {
+// permitirCambioPendiente: solo la ruta de cambio de clave acepta un token con
+// `cambiarPassword` (primer ingreso con clave genérica); el resto lo rechaza.
+function crearMiddleware({ permitirCambioPendiente = false } = {}) {
+  return (req, res, next) => {
 
   // Obtiene header Authorization
   const authHeader = req.headers.authorization;
@@ -42,6 +45,14 @@ module.exports = (req, res, next) => {
       });
     }
 
+    // Cambio de clave obligatorio pendiente: no se usa el panel hasta cambiarla.
+    if (decoded.cambiarPassword && !permitirCambioPendiente) {
+      return res.status(403).json({
+        mensaje: 'Debes cambiar tu clave antes de continuar',
+        codigo: 'CAMBIO_PASSWORD_REQUERIDO'
+      });
+    }
+
     // Guarda usuario autenticado
     // para siguientes middlewares
     req.usuario = decoded;
@@ -57,4 +68,8 @@ module.exports = (req, res, next) => {
 
 }
 
-};
+  };
+}
+
+module.exports = crearMiddleware();
+module.exports.permitirCambioPendiente = crearMiddleware({ permitirCambioPendiente: true });
