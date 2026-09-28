@@ -95,7 +95,13 @@ async function asegurarCamposPersonas(colsPersonas) {
     { nombre: 'fecha_ingreso',     sql: "ADD COLUMN fecha_ingreso DATE NULL AFTER fecha_nacimiento" },
     { nombre: 'nombre_apoderado',  sql: "ADD COLUMN nombre_apoderado VARCHAR(150) NULL AFTER fecha_ingreso" },
     { nombre: 'telefono_apoderado',sql: "ADD COLUMN telefono_apoderado VARCHAR(30) NULL AFTER nombre_apoderado" },
-    { nombre: 'es_honorario',      sql: "ADD COLUMN es_honorario TINYINT(1) NOT NULL DEFAULT 0" }
+    { nombre: 'es_honorario',      sql: "ADD COLUMN es_honorario TINYINT(1) NOT NULL DEFAULT 0" },
+    // Campos de la ficha de inscripción GDC (planilla "Nuevos 2027")
+    { nombre: 'rut_apoderado',     sql: "ADD COLUMN rut_apoderado VARCHAR(20) NULL AFTER telefono_apoderado" },
+    { nombre: 'observacion',       sql: "ADD COLUMN observacion VARCHAR(255) NULL" },
+    { nombre: 'bautizo',           sql: "ADD COLUMN bautizo TINYINT(1) NOT NULL DEFAULT 0" },
+    { nombre: 'comunion',          sql: "ADD COLUMN comunion TINYINT(1) NOT NULL DEFAULT 0" },
+    { nombre: 'confirmacion',      sql: "ADD COLUMN confirmacion TINYINT(1) NOT NULL DEFAULT 0" }
   ];
 
   for (const col of columnas) {

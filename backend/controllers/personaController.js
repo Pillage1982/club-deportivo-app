@@ -85,6 +85,11 @@ function normalizarPersona(data) {
     fecha_ingreso: data.fecha_ingreso || null,
     nombre_apoderado: limpiarTexto(data.nombre_apoderado),
     telefono_apoderado: limpiarTexto(data.telefono_apoderado),
+    rut_apoderado: limpiarTexto(data.rut_apoderado).toUpperCase(),
+    observacion: limpiarTexto(data.observacion),
+    bautizo: data.bautizo ? 1 : 0,
+    comunion: data.comunion ? 1 : 0,
+    confirmacion: data.confirmacion ? 1 : 0,
     estado: limpiarTexto(data.estado || 'activo').toLowerCase(),
     es_honorario: data.es_honorario ? 1 : 0
   };
@@ -121,6 +126,10 @@ function validarPersona(data) {
 
   if (!validarFechaNacimiento(data.fecha_nacimiento)) {
     return 'Ingrese una fecha de nacimiento válida';
+  }
+
+  if (data.rut_apoderado && !validarRut(data.rut_apoderado)) {
+    return 'Ingrese un RUT de apoderado válido';
   }
 
   return null;

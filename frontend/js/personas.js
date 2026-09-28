@@ -116,6 +116,16 @@ function cargarPersonas() {
     telefono_apoderado:
       document.getElementById('telefono_apoderado').value,
 
+    rut_apoderado:
+      document.getElementById('rut_apoderado').value,
+
+    observacion:
+      document.getElementById('observacion').value,
+
+    bautizo: document.getElementById('bautizo').checked,
+    comunion: document.getElementById('comunion').checked,
+    confirmacion: document.getElementById('confirmacion').checked,
+
     estado:
       document.getElementById(
         'persona_estado'
@@ -229,6 +239,11 @@ document.getElementById('sexo').value = '';
 document.getElementById('direccion').value = '';
 document.getElementById('nombre_apoderado').value = '';
 document.getElementById('telefono_apoderado').value = '';
+document.getElementById('rut_apoderado').value = '';
+document.getElementById('observacion').value = '';
+document.getElementById('bautizo').checked = false;
+document.getElementById('comunion').checked = false;
+document.getElementById('confirmacion').checked = false;
 
 document.getElementById(
   'persona_estado'
@@ -470,6 +485,16 @@ function editarPersona(persona) {
 
   document.getElementById('telefono_apoderado').value =
     persona.telefono_apoderado || '';
+
+  document.getElementById('rut_apoderado').value =
+    persona.rut_apoderado || '';
+
+  document.getElementById('observacion').value =
+    persona.observacion || '';
+
+  document.getElementById('bautizo').checked = !!persona.bautizo;
+  document.getElementById('comunion').checked = !!persona.comunion;
+  document.getElementById('confirmacion').checked = !!persona.confirmacion;
 
   document.getElementById(
     'persona_estado'

@@ -957,14 +957,38 @@
                     <i class="bi bi-info-circle"></i> Integrante menor de edad — datos de apoderado requeridos.
                   </div>
                   <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                       <label class="form-label">Nombre Apoderado</label>
                       <input type="text" id="nombre_apoderado" class="form-control">
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
+                      <label class="form-label">RUT Apoderado</label>
+                      <input type="text" id="rut_apoderado" class="form-control" placeholder="12345678-9">
+                    </div>
+                    <div class="col-md-4 mb-3">
                       <label class="form-label">Teléfono Apoderado</label>
                       <input type="text" id="telefono_apoderado" class="form-control">
                     </div>
+                  </div>
+                </div>
+
+                <div class="col-md-8 mb-3">
+                  <label class="form-label">Observación</label>
+                  <input type="text" id="observacion" class="form-control" maxlength="255">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label d-block">Sacramentos</label>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="bautizo">
+                    <label class="form-check-label" for="bautizo">Bautizo</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="comunion">
+                    <label class="form-check-label" for="comunion">Comunión</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="confirmacion">
+                    <label class="form-check-label" for="confirmacion">Confirmación</label>
                   </div>
                 </div>
               </div>
