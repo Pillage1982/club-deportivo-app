@@ -35,6 +35,16 @@ exports.obtenerPersonas = (callback) => {
 
       telefono_apoderado,
 
+      rut_apoderado,
+
+      observacion,
+
+      COALESCE(bautizo, 0) AS bautizo,
+
+      COALESCE(comunion, 0) AS comunion,
+
+      COALESCE(confirmacion, 0) AS confirmacion,
+
       COALESCE(estado, 'activo') AS estado,
 
       COALESCE(es_honorario, 0) AS es_honorario
@@ -79,11 +89,16 @@ exports.crearPersona = (
       fecha_ingreso,
       nombre_apoderado,
       telefono_apoderado,
+      rut_apoderado,
+      observacion,
+      bautizo,
+      comunion,
+      confirmacion,
       estado,
       es_honorario
     )
 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
   `;
 
@@ -105,6 +120,11 @@ exports.crearPersona = (
       data.fecha_ingreso || null,
       data.nombre_apoderado || null,
       data.telefono_apoderado || null,
+      data.rut_apoderado || null,
+      data.observacion || null,
+      data.bautizo ? 1 : 0,
+      data.comunion ? 1 : 0,
+      data.confirmacion ? 1 : 0,
       data.estado || 'activo',
       data.es_honorario ? 1 : 0
     ],
@@ -185,6 +205,11 @@ exports.reactivarPersona = (
       fecha_ingreso = ?,
       nombre_apoderado = ?,
       telefono_apoderado = ?,
+      rut_apoderado = ?,
+      observacion = ?,
+      bautizo = ?,
+      comunion = ?,
+      confirmacion = ?,
       estado = ?,
       es_honorario = ?,
       activo = 1
@@ -209,6 +234,11 @@ exports.reactivarPersona = (
       data.fecha_ingreso || null,
       data.nombre_apoderado || null,
       data.telefono_apoderado || null,
+      data.rut_apoderado || null,
+      data.observacion || null,
+      data.bautizo ? 1 : 0,
+      data.comunion ? 1 : 0,
+      data.confirmacion ? 1 : 0,
       data.estado || 'activo',
       data.es_honorario ? 1 : 0,
       id
@@ -242,6 +272,11 @@ exports.actualizarPersona = (
       fecha_ingreso = ?,
       nombre_apoderado = ?,
       telefono_apoderado = ?,
+      rut_apoderado = ?,
+      observacion = ?,
+      bautizo = ?,
+      comunion = ?,
+      confirmacion = ?,
       estado = ?,
       es_honorario = ?
 
@@ -268,6 +303,11 @@ exports.actualizarPersona = (
       data.fecha_ingreso || null,
       data.nombre_apoderado || null,
       data.telefono_apoderado || null,
+      data.rut_apoderado || null,
+      data.observacion || null,
+      data.bautizo ? 1 : 0,
+      data.comunion ? 1 : 0,
+      data.confirmacion ? 1 : 0,
       data.estado || 'activo',
       data.es_honorario ? 1 : 0,
 

@@ -96,7 +96,12 @@ async function exportarIntegrantesExcel() {
     'Estado':           p.estado || 'activo',
     'Honorario':        p.es_honorario ? 'Sí' : 'No',
     'Apoderado':        p.nombre_apoderado   || '',
-    'Tel. Apoderado':   p.telefono_apoderado || ''
+    'RUT Apoderado':    p.rut_apoderado      || '',
+    'Tel. Apoderado':   p.telefono_apoderado || '',
+    'Bautizo':          p.bautizo      ? 'Sí' : 'No',
+    'Comunión':         p.comunion     ? 'Sí' : 'No',
+    'Confirmación':     p.confirmacion ? 'Sí' : 'No',
+    'Observación':      p.observacion  || ''
   }));
   await _descargarExcel(rows, 'Integrantes', 'integrantes');
   mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
