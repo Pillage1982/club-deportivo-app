@@ -95,7 +95,10 @@ function login() {
       JSON.stringify(data.usuario)
     );
 
-    window.location.href = 'index.html';
+    // Primer ingreso con la clave genérica: no se entra al panel sin cambiarla.
+    window.location.href = data.usuario.debeCambiarPassword
+      ? 'cambiar-password.html'
+      : 'index.html';
 
   })
 

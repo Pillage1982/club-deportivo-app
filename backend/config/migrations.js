@@ -278,6 +278,17 @@ async function asegurarTablaSociosAuth() {
   `);
 }
 
+// Cambio de clave obligatorio en el primer ingreso del panel admin (mismo criterio
+// que el PIN del Portal del Socio). DEFAULT 1: al crear la columna, todos los
+// usuarios existentes quedan obligados a cambiar su clave en el próximo login, y
+// todo usuario nuevo creado por SQL (clave genérica de la directiva) también.
+async function asegurarCambioPasswordUsuarios() {
+  const cols = await columnasExistentes('usuarios');
+  if (!cols.has('debe_cambiar_password')) {
+    await ejecutar('ALTER TABLE usuarios ADD COLUMN debe_cambiar_password TINYINT(1) NOT NULL DEFAULT 1');
+  }
+}
+
 async function asegurarCamposPagos() {
   const cols = await columnasExistentes('pagos');
   if (!cols.has('referencia_externa')) {
@@ -364,6 +375,7 @@ async function ejecutarMigraciones() {
   await asegurarTablaGastos();
   await asegurarTablasFormaciones();
   await asegurarTablaSociosAuth();
+  await asegurarCambioPasswordUsuarios();
   await asegurarCamposPagos();
   await consolidarTiposCuota();
   await reconstruirVistaRankingPuntaje();

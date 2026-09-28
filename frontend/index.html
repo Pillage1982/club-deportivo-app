@@ -11,6 +11,12 @@
   <script>
     if (!localStorage.getItem('token')) {
       window.location.replace('login.html');
+    } else {
+      try {
+        if (JSON.parse(localStorage.getItem('usuario') || '{}').debeCambiarPassword) {
+          window.location.replace('cambiar-password.html');
+        }
+      } catch (e) {}
     }
   </script>
 
