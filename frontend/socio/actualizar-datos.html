@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<!-- Actualizar datos del socio: paso obligatorio del primer ingreso (después de crear el PIN) y cada vez que la directiva lo vuelva a exigir. Sin completarlo no se ve la página personal. -->
+<html lang="es">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+
+  <title>Actualizar datos | Portal del Socio</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="../css/login.css">
+
+  <style>
+    /* login.css centra una tarjeta corta en 100vh; este formulario es largo. */
+    body { height: auto; min-height: 100vh; padding: 24px 0; }
+    .login-card { max-width: 520px; }
+    .datos-seccion { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #f47a22; margin: 22px 0 10px; }
+    .datos-label { font-size: 0.85rem; margin-bottom: 4px; opacity: 0.85; }
+    .datos-fijos { font-size: 0.85rem; background: rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 12px 14px; }
+    .datos-fijos dt { font-weight: 400; opacity: 0.7; }
+    .datos-fijos dd { margin-bottom: 6px; }
+    .form-control, select.form-control { color-scheme: dark; }
+    select.form-control option { color: #111; }
+    .btn-check + .btn { min-width: 64px; }
+  </style>
+
+  <script>
+    if (!localStorage.getItem('socio_token')) {
+      window.location.replace('login.html');
+    }
+  </script>
+
+</head>
+
+<body>
+
+  <div class="background-shape shape1"></div>
+  <div class="background-shape shape2"></div>
+
+  <div class="login-card">
+
+    <div class="logo">
+      <i class="bi bi-person-lines-fill" style="color:#f47a22;"></i>
+    </div>
+
+    <h2 class="text-center">Actualizar datos</h2>
+    <p class="text-center">
+      Antes de continuar, revisa y completa tus datos. Todos los campos son obligatorios.
+    </p>
+
+    <div id="cargando" class="text-center my-4">
+      <span class="spinner-border spinner-border-sm" role="status"></span> Cargando tus datos...
+    </div>
+
+    <form id="form_datos" class="d-none" novalidate>
+
+      <p class="datos-seccion">Tus datos registrados</p>
+      <dl class="datos-fijos row mb-1" id="datos_fijos"></dl>
+      <p class="small mt-2" style="opacity: 0.7;">
+        Si alguno de estos datos está mal, avísale a la directiva.
+      </p>
+
+      <p class="datos-seccion">Contacto</p>
+
+      <label class="datos-label" for="telefono">Celular</label>
+      <div class="mb-3 login-input-group">
+        <i class="bi bi-phone-fill"></i>
+        <input type="tel" id="telefono" class="form-control" placeholder="+56912345678" autocomplete="tel">
+      </div>
+
+      <label class="datos-label" for="email">Email</label>
+      <div class="mb-3 login-input-group">
+        <i class="bi bi-envelope-fill"></i>
+        <input type="email" id="email" class="form-control" placeholder="tucorreo@ejemplo.cl" autocomplete="email">
+      </div>
+
+      <label class="datos-label" for="direccion">Dirección</label>
+      <div class="mb-3 login-input-group">
+        <i class="bi bi-house-fill"></i>
+        <input type="text" id="direccion" class="form-control" placeholder="Calle, número, villa/población" maxlength="255" autocomplete="street-address">
+      </div>
+
+      <p class="datos-seccion">Datos personales</p>
+
+      <label class="datos-label" for="fecha_nacimiento">Fecha de nacimiento</label>
+      <div class="mb-3 login-input-group">
+        <i class="bi bi-calendar-event-fill"></i>
+        <input type="date" id="fecha_nacimiento" class="form-control">
+      </div>
+
+      <label class="datos-label" for="sexo">Sexo</label>
+      <div class="mb-3 login-input-group">
+        <i class="bi bi-person-fill"></i>
+        <select id="sexo" class="form-control">
+          <option value="">Selecciona...</option>
+          <option value="Masculino">Masculino</option>
+          <option value="Femenino">Femenino</option>
+        </select>
+      </div>
+
+      <div id="seccion_apoderado" class="d-none">
+        <p class="datos-seccion">Apoderado (eres menor de edad)</p>
+
+        <label class="datos-label" for="nombre_apoderado">Nombre completo del apoderado</label>
+        <div class="mb-3 login-input-group">
+          <i class="bi bi-person-badge-fill"></i>
+          <input type="text" id="nombre_apoderado" class="form-control" maxlength="150">
+        </div>
+
+        <label class="datos-label" for="rut_apoderado">RUT del apoderado</label>
+        <div class="mb-3 login-input-group">
+          <i class="bi bi-person-vcard-fill"></i>
+          <input type="text" id="rut_apoderado" class="form-control" placeholder="12345678-9" maxlength="12">
+        </div>
+
+        <label class="datos-label" for="telefono_apoderado">Celular del apoderado</label>
+        <div class="mb-3 login-input-group">
+          <i class="bi bi-phone-fill"></i>
+          <input type="tel" id="telefono_apoderado" class="form-control" placeholder="+56912345678">
+        </div>
+      </div>
+
+      <p class="datos-seccion">Sacramentos</p>
+      <div id="sacramentos"></div>
+
+      <button type="submit" id="btn_guardar_datos" class="btn-login mt-3">
+        Guardar y continuar
+      </button>
+
+    </form>
+
+    <div id="respuesta"></div>
+
+    <p class="text-center mt-3 mb-0">
+      <a href="#" onclick="cerrarSesionSocio(); return false;" style="color:#f47a22; font-size:0.85rem;">
+        Cerrar sesión
+      </a>
+    </p>
+
+  </div>
+
+  <p class="login-credit">
+    Diseño de Mario Riquelme
+  </p>
+
+  <script src="js/api.js"></script>
+  <script src="js/actualizar-datos.js"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
-// Login del Portal del Socio: RUT + PIN contra /socio-auth/login (endpoint público,
-// rate-limited en el servidor). Guarda el token propio y decide a dónde ir según
-// si el socio ya cambió su PIN inicial.
+// Login del Portal del Socio: RUT + clave contra /socio-auth/login (endpoint público,
+// rate-limited en el servidor). La clave es el RUT sin puntos ni guion hasta que el
+// socio crea su PIN; si aún no lo crea, se le envía a cambiar-pin.html.
 
 if (sessionStorage.getItem('socio_sesion_expirada')) {
   sessionStorage.removeItem('socio_sesion_expirada');
@@ -20,7 +20,7 @@ function loginSocio() {
     document.getElementById('respuesta').innerHTML = `
       <div class="alert alert-warning mt-3">
         <i class="bi bi-exclamation-circle-fill"></i>
-        Debe ingresar RUT y PIN
+        Debe ingresar RUT y clave
       </div>
     `;
     return;

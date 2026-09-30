@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal del Socio — login por RUT + PIN (no reutiliza el login admin: token, storage y endpoint son propios). -->
+<!-- Portal del Socio — login por RUT + clave (RUT en el primer ingreso, luego PIN propio; no reutiliza el login admin: token, storage y endpoint son propios). -->
 <html lang="es">
 
 <head>
@@ -61,9 +61,8 @@
         type="password"
         id="pin"
         class="form-control"
-        placeholder="PIN (6 dígitos)"
-        inputmode="numeric"
-        maxlength="6"
+        placeholder="Clave (tu PIN)"
+        maxlength="12"
         autocomplete="current-password">
       <button type="button" id="togglePin" class="toggle-password">
         <i class="bi bi-eye-fill"></i>
@@ -77,7 +76,8 @@
     <div id="respuesta"></div>
 
     <p class="text-center mt-3 mb-0" style="font-size: 0.85rem; opacity: 0.75;">
-      ¿No tienes tu PIN? Pídelo a la directiva.
+      ¿Primer ingreso? Tu clave es tu RUT sin puntos ni guion (ej. 12345678K).<br>
+      ¿Olvidaste tu PIN? Pide a la directiva que restablezca tu acceso.
     </p>
 
   </div>

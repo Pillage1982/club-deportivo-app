@@ -1,55 +1,17 @@
 // Controlador HTTP de integrantes: normaliza y valida RUT/datos antes de usar personaModel.
 const personaModel = require('../models/personaModel');
 
-function limpiarTexto(valor) {
-  return String(valor || '').trim().replace(/\s+/g, ' ');
-}
-
-function limpiarRut(rut) {
-  return String(rut || '').replace(/\./g, '').replace(/-/g, '').trim().toUpperCase();
-}
-
-function validarRut(rut) {
-  const limpio = limpiarRut(rut);
-
-  if (!/^[0-9]{7,8}[0-9K]$/.test(limpio)) {
-    return false;
-  }
-
-  const cuerpo = limpio.slice(0, -1);
-  const dv = limpio.slice(-1);
-  let suma = 0;
-  let multiplicador = 2;
-
-  for (let i = cuerpo.length - 1; i >= 0; i--) {
-    suma += Number(cuerpo[i]) * multiplicador;
-    multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
-  }
-
-  const resto = 11 - (suma % 11);
-  const dvEsperado = resto === 11 ? '0' : resto === 10 ? 'K' : String(resto);
-
-  return dv === dvEsperado;
-}
-
-function validarEmail(email) {
-  if (!email) return true;
-
-  // La regex anterior solo excluia espacios y '@', permitiendo HTML/JS
-  // (ej. "<svg/onload=...>@a.b") que luego se guardaba tal cual y se
-  // renderizaba sin escapar en el frontend (stored XSS). Se restringe a
-  // los caracteres reales de un email, sin '<', '>', comillas ni backticks.
-  return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
-}
+const {
+  limpiarTexto,
+  limpiarRut,
+  validarRut,
+  validarEmail,
+  validarNombre
+} = require('../utils/validacionesPersona');
 
 function validarTelefono(telefono) {
   const limpio = String(telefono || '').replace(/\s+/g, '');
   return /^(\+?56)?9?[0-9]{8}$/.test(limpio);
-}
-
-function validarNombre(valor) {
-  const texto = limpiarTexto(valor);
-  return texto.length >= 2 && /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]+$/.test(texto);
 }
 
 function validarFechaNacimiento(fecha) {

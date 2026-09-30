@@ -24,6 +24,55 @@ exports.obtenerFicha = (personaId, callback) => {
 };
 
 // =====================================
+// ACTUALIZAR DATOS (paso obligatorio después de crear el PIN)
+// =====================================
+// Incluye los campos de solo lectura (RUT, nombre, escuadra...) para mostrarlos
+// en el formulario, y datos_actualizados_en para saber si ya confirmó alguna vez.
+exports.obtenerDatosEditables = (personaId, callback) => {
+  db.query(
+    `SELECT
+       p.rut, p.nombres, p.apellido_paterno, p.apellido_materno,
+       p.bloque, COALESCE(p.estado, 'activo') AS estado, p.fecha_ingreso, p.es_honorario,
+       p.telefono, p.email, p.direccion, p.fecha_nacimiento, p.sexo,
+       p.nombre_apoderado, p.rut_apoderado, p.telefono_apoderado,
+       p.bautizo, p.comunion, p.confirmacion,
+       sa.datos_actualizados_en
+     FROM personas p
+     LEFT JOIN socios_auth sa ON sa.persona_id = p.id
+     WHERE p.id = ? AND p.activo = 1
+     LIMIT 1`,
+    [personaId],
+    (err, rows) => callback(err, rows ? rows[0] : null)
+  );
+};
+
+// Guarda solo las columnas que el socio puede editar (lista cerrada, nunca
+// nombres de columna desde el request) y marca la actualización como hecha en
+// la misma sentencia: o quedan los dos cambios o ninguno.
+const COLUMNAS_EDITABLES_SOCIO = [
+  'telefono', 'email', 'direccion', 'fecha_nacimiento', 'sexo',
+  'bautizo', 'comunion', 'confirmacion',
+  'nombre_apoderado', 'rut_apoderado', 'telefono_apoderado'
+];
+
+exports.guardarDatosSocio = (personaId, datos, callback) => {
+  const columnas = COLUMNAS_EDITABLES_SOCIO.filter(col => datos[col] !== undefined);
+  const asignaciones = columnas.map(col => `p.${col} = ?`);
+  const valores = columnas.map(col => datos[col]);
+
+  db.query(
+    `UPDATE personas p
+     INNER JOIN socios_auth sa ON sa.persona_id = p.id
+     SET ${asignaciones.join(', ')},
+         sa.datos_actualizados = 1,
+         sa.datos_actualizados_en = NOW()
+     WHERE p.id = ? AND p.activo = 1`,
+    [...valores, personaId],
+    callback
+  );
+};
+
+// =====================================
 // FINANZAS: deuda actual, historial de cuotas y de pagos
 // =====================================
 // Deuda = total cuotas - total pagado, igual que vista_estado_financiero, pero sin su

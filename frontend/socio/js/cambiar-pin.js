@@ -1,10 +1,15 @@
-// Cambio de PIN: obligatorio en el primer ingreso (pin_cambiado=false, sin opción
-// de cancelar), voluntario después (?voluntario=1, con link para volver a Inicio).
+// Cambio de PIN: obligatorio en el primer ingreso (la clave actual es el RUT sin
+// puntos ni guion; sin opción de cancelar), voluntario después (?voluntario=1,
+// clave actual = PIN propio, con link para volver a Inicio).
 
 const esVoluntario = new URLSearchParams(window.location.search).get('voluntario') === '1';
 
 if (esVoluntario) {
   document.getElementById('texto_intro').textContent = 'Puedes cambiar tu PIN cuando quieras.';
+  const pinActualInput = document.getElementById('pin_actual');
+  pinActualInput.placeholder = 'PIN actual';
+  pinActualInput.setAttribute('inputmode', 'numeric');
+  pinActualInput.maxLength = 6;
   const link = document.getElementById('link_cancelar');
   link.style.display = 'inline';
   link.addEventListener('click', e => {
@@ -50,7 +55,10 @@ function cambiarPinSocio() {
     })
     .then(() => {
       localStorage.setItem('socio_pin_cambiado', '1');
-      window.location.href = 'index.html';
+      // Primer ingreso: después del PIN viene "Actualizar datos".
+      window.location.href = localStorage.getItem('socio_datos_actualizados') === '1'
+        ? 'index.html'
+        : 'actualizar-datos.html';
     })
     .catch(err => {
       boton.disabled = false;

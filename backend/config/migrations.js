@@ -284,6 +284,20 @@ async function asegurarTablaSociosAuth() {
   `);
 }
 
+// Actualización de datos obligatoria en el Portal del Socio (después de crear el
+// PIN): mientras datos_actualizados=0 el socio no ve su página personal. El admin
+// puede volver a exigirla (ej. cada temporada) poniendo el flag en 0.
+async function asegurarDatosActualizadosSocios() {
+  const cols = await columnasExistentes('socios_auth');
+  // Secuencial: dos ALTER sobre la misma tabla no ganan nada en paralelo.
+  if (!cols.has('datos_actualizados')) {
+    await ejecutar('ALTER TABLE socios_auth ADD COLUMN datos_actualizados TINYINT(1) NOT NULL DEFAULT 0');
+  }
+  if (!cols.has('datos_actualizados_en')) {
+    await ejecutar('ALTER TABLE socios_auth ADD COLUMN datos_actualizados_en DATETIME NULL');
+  }
+}
+
 // Cambio de clave obligatorio en el primer ingreso del panel admin (mismo criterio
 // que el PIN del Portal del Socio). DEFAULT 1: al crear la columna, todos los
 // usuarios existentes quedan obligados a cambiar su clave en el próximo login, y
@@ -381,6 +395,7 @@ async function ejecutarMigraciones() {
   await asegurarTablaGastos();
   await asegurarTablasFormaciones();
   await asegurarTablaSociosAuth();
+  await asegurarDatosActualizadosSocios();
   await asegurarCambioPasswordUsuarios();
   await asegurarCamposPagos();
   await consolidarTiposCuota();
