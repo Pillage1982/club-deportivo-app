@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Actualizar datos del socio: paso obligatorio del primer ingreso (después de crear el PIN) y cada vez que la directiva lo vuelva a exigir. Sin completarlo no se ve la página personal. -->
+<!-- Actualizar datos del socio: paso obligatorio del primer ingreso (después de crear la contraseña) y cada vez que la directiva lo vuelva a exigir. Sin completarlo no se ve la página personal. -->
 <html lang="es">
 
 <head>
@@ -30,7 +30,9 @@
 
   <style>
     /* login.css centra una tarjeta corta en 100vh; este formulario es largo. */
-    body { height: auto; min-height: 100vh; padding: 24px 0; }
+    body { height: auto; min-height: 100vh; padding: 24px 0; flex-direction: column; }
+    /* En login.css el crédito es fixed (páginas cortas); aquí flotaría sobre el formulario al hacer scroll. */
+    .login-credit { position: static; margin-top: 16px; }
     .login-card { max-width: 520px; }
     .datos-seccion { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #f47a22; margin: 22px 0 10px; }
     .datos-label { font-size: 0.85rem; margin-bottom: 4px; opacity: 0.85; }
@@ -40,6 +42,20 @@
     .form-control, select.form-control { color-scheme: dark; }
     select.form-control option { color: #111; }
     .btn-check + .btn { min-width: 64px; }
+    .sacramento { background: rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 10px 12px; height: 100%; }
+    .campo-faltante { border: 1px solid #ff6b6b !important; box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.25) !important; }
+    .sacramento.campo-faltante { border-radius: 12px; }
+
+    /* PC: tarjeta ancha en dos columnas (datos registrados | formulario).
+       En celular todo queda en una sola columna, como antes. */
+    @media (min-width: 992px) {
+      .login-card { max-width: 1040px; padding: 40px 48px; }
+      .datos-columna-fija { position: sticky; top: 24px; }
+      .datos-columna-fija .datos-seccion:first-child,
+      .datos-formulario .datos-seccion:first-child { margin-top: 0; }
+      .datos-acciones { display: flex; justify-content: flex-end; }
+      .datos-acciones .btn-login { width: auto; min-width: 260px; padding: 0 32px; }
+    }
   </style>
 
   <script>
@@ -71,83 +87,112 @@
     </div>
 
     <form id="form_datos" class="d-none" novalidate>
+      <div class="row g-lg-5">
 
-      <p class="datos-seccion">Tus datos registrados</p>
-      <dl class="datos-fijos row mb-1" id="datos_fijos"></dl>
-      <p class="small mt-2" style="opacity: 0.7;">
-        Si alguno de estos datos está mal, avísale a la directiva.
-      </p>
+        <!-- Columna izquierda (PC): datos que solo la directiva puede cambiar -->
+        <aside class="col-lg-4">
+          <div class="datos-columna-fija">
+            <p class="datos-seccion">Tus datos registrados</p>
+            <dl class="datos-fijos row mb-1" id="datos_fijos"></dl>
+            <p class="small mt-2" style="opacity: 0.7;">
+              Si alguno de estos datos está mal, avísale a la directiva.
+            </p>
+          </div>
+        </aside>
 
-      <p class="datos-seccion">Contacto</p>
+        <!-- Columna derecha (PC): lo que el socio completa -->
+        <div class="col-lg-8 datos-formulario">
 
-      <label class="datos-label" for="telefono">Celular</label>
-      <div class="mb-3 login-input-group">
-        <i class="bi bi-phone-fill"></i>
-        <input type="tel" id="telefono" class="form-control" placeholder="+56912345678" autocomplete="tel">
-      </div>
+          <p class="datos-seccion">Contacto</p>
+          <div class="row g-md-3">
+            <div class="col-md-6">
+              <label class="datos-label" for="telefono">Celular</label>
+              <div class="mb-3 login-input-group">
+                <i class="bi bi-phone-fill"></i>
+                <input type="tel" id="telefono" class="form-control" placeholder="+56912345678" autocomplete="tel">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="datos-label" for="email">Email</label>
+              <div class="mb-3 login-input-group">
+                <i class="bi bi-envelope-fill"></i>
+                <input type="email" id="email" class="form-control" placeholder="tucorreo@ejemplo.cl" autocomplete="email">
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="datos-label" for="direccion">Dirección</label>
+              <div class="mb-3 login-input-group">
+                <i class="bi bi-house-fill"></i>
+                <input type="text" id="direccion" class="form-control" placeholder="Calle, número, villa/población" maxlength="255" autocomplete="street-address">
+              </div>
+            </div>
+          </div>
 
-      <label class="datos-label" for="email">Email</label>
-      <div class="mb-3 login-input-group">
-        <i class="bi bi-envelope-fill"></i>
-        <input type="email" id="email" class="form-control" placeholder="tucorreo@ejemplo.cl" autocomplete="email">
-      </div>
+          <p class="datos-seccion">Datos personales</p>
+          <div class="row g-md-3">
+            <div class="col-md-6">
+              <label class="datos-label" for="fecha_nacimiento">Fecha de nacimiento</label>
+              <div class="mb-3 login-input-group">
+                <i class="bi bi-calendar-event-fill"></i>
+                <input type="date" id="fecha_nacimiento" class="form-control">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="datos-label" for="sexo">Sexo</label>
+              <div class="mb-3 login-input-group">
+                <i class="bi bi-person-fill"></i>
+                <select id="sexo" class="form-control">
+                  <option value="">Selecciona...</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Femenino">Femenino</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
-      <label class="datos-label" for="direccion">Dirección</label>
-      <div class="mb-3 login-input-group">
-        <i class="bi bi-house-fill"></i>
-        <input type="text" id="direccion" class="form-control" placeholder="Calle, número, villa/población" maxlength="255" autocomplete="street-address">
-      </div>
+          <div id="seccion_apoderado" class="d-none">
+            <p class="datos-seccion">Apoderado (eres menor de edad)</p>
+            <div class="row g-md-3">
+              <div class="col-12">
+                <label class="datos-label" for="nombre_apoderado">Nombre completo del apoderado</label>
+                <div class="mb-3 login-input-group">
+                  <i class="bi bi-person-badge-fill"></i>
+                  <input type="text" id="nombre_apoderado" class="form-control" maxlength="150">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="datos-label" for="rut_apoderado">RUT del apoderado</label>
+                <div class="mb-3 login-input-group">
+                  <i class="bi bi-person-vcard-fill"></i>
+                  <input type="text" id="rut_apoderado" class="form-control" placeholder="12345678-9" maxlength="12">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="datos-label" for="telefono_apoderado">Celular del apoderado</label>
+                <div class="mb-3 login-input-group">
+                  <i class="bi bi-phone-fill"></i>
+                  <input type="tel" id="telefono_apoderado" class="form-control" placeholder="+56912345678">
+                </div>
+              </div>
+            </div>
+          </div>
 
-      <p class="datos-seccion">Datos personales</p>
+          <p class="datos-seccion">Sacramentos</p>
+          <div id="sacramentos" class="row g-2"></div>
 
-      <label class="datos-label" for="fecha_nacimiento">Fecha de nacimiento</label>
-      <div class="mb-3 login-input-group">
-        <i class="bi bi-calendar-event-fill"></i>
-        <input type="date" id="fecha_nacimiento" class="form-control">
-      </div>
+          <div id="respuesta"></div>
 
-      <label class="datos-label" for="sexo">Sexo</label>
-      <div class="mb-3 login-input-group">
-        <i class="bi bi-person-fill"></i>
-        <select id="sexo" class="form-control">
-          <option value="">Selecciona...</option>
-          <option value="Masculino">Masculino</option>
-          <option value="Femenino">Femenino</option>
-        </select>
-      </div>
+          <div class="datos-acciones mt-4">
+            <button type="submit" id="btn_guardar_datos" class="btn-login">
+              Guardar y continuar
+            </button>
+          </div>
 
-      <div id="seccion_apoderado" class="d-none">
-        <p class="datos-seccion">Apoderado (eres menor de edad)</p>
-
-        <label class="datos-label" for="nombre_apoderado">Nombre completo del apoderado</label>
-        <div class="mb-3 login-input-group">
-          <i class="bi bi-person-badge-fill"></i>
-          <input type="text" id="nombre_apoderado" class="form-control" maxlength="150">
         </div>
-
-        <label class="datos-label" for="rut_apoderado">RUT del apoderado</label>
-        <div class="mb-3 login-input-group">
-          <i class="bi bi-person-vcard-fill"></i>
-          <input type="text" id="rut_apoderado" class="form-control" placeholder="12345678-9" maxlength="12">
-        </div>
-
-        <label class="datos-label" for="telefono_apoderado">Celular del apoderado</label>
-        <div class="mb-3 login-input-group">
-          <i class="bi bi-phone-fill"></i>
-          <input type="tel" id="telefono_apoderado" class="form-control" placeholder="+56912345678">
-        </div>
       </div>
-
-      <p class="datos-seccion">Sacramentos</p>
-      <div id="sacramentos"></div>
-
-      <button type="submit" id="btn_guardar_datos" class="btn-login mt-3">
-        Guardar y continuar
-      </button>
-
     </form>
 
-    <div id="respuesta"></div>
+    <div id="respuesta_carga"></div>
 
     <p class="text-center mt-3 mb-0">
       <a href="#" onclick="cerrarSesionSocio(); return false;" style="color:#f47a22; font-size:0.85rem;">

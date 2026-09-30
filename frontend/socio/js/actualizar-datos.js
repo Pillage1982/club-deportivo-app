@@ -1,4 +1,4 @@
-// "Actualizar datos": paso obligatorio del primer ingreso, después de crear el PIN
+// "Actualizar datos": paso obligatorio del primer ingreso, después de crear la contraseña
 // (login -> cambiar-pin -> actualizar-datos -> index). Todos los campos son
 // obligatorios; el servidor valida y normaliza igual (socioPerfilController) y no
 // entrega la página personal hasta que esto se guarde (perfilSocioMiddleware).
@@ -16,6 +16,8 @@ window.onload = () => {
   verificarExpiracionSocio();
   renderizarSacramentos();
   document.getElementById('fecha_nacimiento').addEventListener('change', actualizarSeccionApoderado);
+  document.getElementById('form_datos').addEventListener('input', quitarMarcaAlCompletar);
+  document.getElementById('form_datos').addEventListener('change', quitarMarcaAlCompletar);
   document.getElementById('form_datos').addEventListener('submit', e => {
     e.preventDefault();
     guardarDatosSocio();
@@ -24,14 +26,17 @@ window.onload = () => {
 };
 
 function renderizarSacramentos() {
+  // Celular: una fila por sacramento. PC: los tres lado a lado (col-md-4).
   document.getElementById('sacramentos').innerHTML = SACRAMENTOS.map(s => `
-    <div class="d-flex align-items-center justify-content-between mb-2">
-      <span>${s.etiqueta}</span>
-      <div class="btn-group" role="group" aria-label="${s.etiqueta}">
-        <input type="radio" class="btn-check" name="${s.campo}" id="${s.campo}_si" value="1">
-        <label class="btn btn-sm btn-outline-light" for="${s.campo}_si">Sí</label>
-        <input type="radio" class="btn-check" name="${s.campo}" id="${s.campo}_no" value="0">
-        <label class="btn btn-sm btn-outline-light" for="${s.campo}_no">No</label>
+    <div class="col-12 col-md-4">
+      <div class="sacramento d-flex flex-md-column align-items-center align-items-md-start justify-content-between gap-2" id="sacramento_${s.campo}">
+        <span>${s.etiqueta}</span>
+        <div class="btn-group" role="group" aria-label="${s.etiqueta}">
+          <input type="radio" class="btn-check" name="${s.campo}" id="${s.campo}_si" value="1">
+          <label class="btn btn-sm btn-outline-light" for="${s.campo}_si">Sí</label>
+          <input type="radio" class="btn-check" name="${s.campo}" id="${s.campo}_no" value="0">
+          <label class="btn btn-sm btn-outline-light" for="${s.campo}_no">No</label>
+        </div>
       </div>
     </div>
   `).join('');
@@ -65,7 +70,7 @@ function cargarDatosSocio() {
     .catch(err => {
       console.error(err);
       document.getElementById('cargando').classList.add('d-none');
-      document.getElementById('respuesta').innerHTML = alertaHtml('danger', err.message);
+      document.getElementById('respuesta_carga').innerHTML = alertaHtml('danger', err.message);
     });
 }
 
@@ -128,11 +133,8 @@ function guardarDatosSocio() {
     datos.telefono_apoderado = valor('telefono_apoderado');
   }
 
-  const faltaTexto = Object.entries(datos).some(([campo, v]) =>
-    !SACRAMENTOS.some(s => s.campo === campo) && !v);
-  const faltaSacramento = SACRAMENTOS.some(({ campo }) => datos[campo] === null);
-  if (faltaTexto || faltaSacramento) {
-    respuesta.innerHTML = alertaHtml('warning', 'Completa todos los campos antes de continuar');
+  if (marcarCamposFaltantes(datos)) {
+    respuesta.innerHTML = alertaHtml('warning', 'Completa los campos marcados en rojo antes de continuar');
     return;
   }
 
@@ -160,6 +162,36 @@ function guardarDatosSocio() {
       console.error(err);
       respuesta.innerHTML = alertaHtml('danger', err.message);
     });
+}
+
+// Marca en rojo cada campo vacío (y sacramento sin responder), lleva el foco al
+// primero y devuelve true si falta alguno. La marca se quita al completarlo.
+function marcarCamposFaltantes(datos) {
+  let primero = null;
+
+  Object.entries(datos).forEach(([campo, valor]) => {
+    const esSacramento = SACRAMENTOS.some(s => s.campo === campo);
+    const falta = esSacramento ? valor === null : !valor;
+    const elemento = document.getElementById(esSacramento ? `sacramento_${campo}` : campo);
+    if (!elemento) return;
+    elemento.classList.toggle('campo-faltante', falta);
+    if (falta && !primero) primero = esSacramento ? document.getElementById(`${campo}_si`) : elemento;
+  });
+
+  if (primero) {
+    primero.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    primero.focus({ preventScroll: true });
+  }
+  return !!primero;
+}
+
+function quitarMarcaAlCompletar(evento) {
+  const objetivo = evento.target;
+  if (objetivo.classList.contains('btn-check')) {
+    document.getElementById(`sacramento_${objetivo.name}`)?.classList.remove('campo-faltante');
+  } else if (objetivo.value) {
+    objetivo.classList.remove('campo-faltante');
+  }
 }
 
 function alertaHtml(tipo, mensaje) {
