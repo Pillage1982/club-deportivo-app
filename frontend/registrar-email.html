@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<!-- Registro del email del directivo: paso obligatorio del primer ingreso al panel (después del cambio de clave) si su usuario no tiene email. Se usa para "¿Olvidaste tu contraseña?". -->
+<html lang="es">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <title>GDC.APP | Registrar email</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="css/login.css">
+
+  <script>
+    if (!localStorage.getItem('token')) {
+      window.location.replace('login.html');
+    }
+  </script>
+
+</head>
+
+<body>
+
+  <div class="background-shape shape1"></div>
+  <div class="background-shape shape2"></div>
+
+  <div class="login-card">
+
+    <div class="logo">
+      <i class="bi bi-envelope-fill" style="color:#f47a22;"></i>
+    </div>
+
+    <h2 class="text-center">Registra tu email</h2>
+    <p class="text-center">
+      Antes de continuar, ingresa tu email personal. Lo usaremos para enviarte un enlace
+      si alguna vez olvidas tu contraseña.
+    </p>
+
+    <div class="mb-3 login-input-group">
+      <i class="bi bi-envelope-fill"></i>
+      <input
+        type="email"
+        id="email"
+        class="form-control"
+        placeholder="tucorreo@ejemplo.cl"
+        maxlength="150"
+        autocomplete="email">
+    </div>
+
+    <div class="mb-4 login-input-group">
+      <i class="bi bi-envelope-check-fill"></i>
+      <input
+        type="email"
+        id="email_confirmar"
+        class="form-control"
+        placeholder="Confirma tu email"
+        maxlength="150"
+        autocomplete="email">
+    </div>
+
+    <button id="btn_registrar_email" onclick="registrarEmail()" class="btn-login">
+      Guardar y continuar
+    </button>
+
+    <div id="respuesta"></div>
+
+    <p class="text-center mt-3 mb-0">
+      <a href="#" id="link_salir" style="color:#f47a22; font-size:0.85rem;">
+        Cerrar sesión
+      </a>
+    </p>
+
+  </div>
+
+  <p class="login-credit">
+    Diseño de Mario Riquelme
+  </p>
+
+  <script src="js/registrar-email.js"></script>
+</body>
+</html>

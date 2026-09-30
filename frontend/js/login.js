@@ -95,10 +95,13 @@ function login() {
       JSON.stringify(data.usuario)
     );
 
-    // Primer ingreso con la clave genérica: no se entra al panel sin cambiarla.
+    // Primer ingreso: primero cambiar la clave genérica, después registrar el
+    // email si falta; recién entonces se entra al panel.
     window.location.href = data.usuario.debeCambiarPassword
       ? 'cambiar-password.html'
-      : 'index.html';
+      : data.usuario.debeRegistrarEmail
+        ? 'registrar-email.html'
+        : 'index.html';
 
   })
 

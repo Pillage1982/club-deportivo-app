@@ -7,8 +7,29 @@ function _nombreOrg() {
   return (window.APP_CONFIG && window.APP_CONFIG.nombreOrganizacion) || 'NexoComunidad';
 }
 
+// Formato pedido por el cliente para todo descargable: DD/MM/AAAA.
+// (toLocaleDateString('es-CL') entrega DD-MM-AAAA, con guiones.)
 function _fechaHoy() {
-  return new Date().toLocaleDateString('es-CL');
+  const hoy = new Date();
+  const dia = String(hoy.getDate()).padStart(2, '0');
+  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+  return `${dia}/${mes}/${hoy.getFullYear()}`;
+}
+
+// 'AAAA-MM-DD' (o 'AAAA-MM-DD HH:MM:SS', la BD usa dateStrings) -> 'DD/MM/AAAA'.
+function _fechaDMA(fecha) {
+  const partes = String(fecha || '').substring(0, 10).split('-');
+  if (partes.length !== 3) return fecha ? String(fecha) : '';
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+// Para Excel se escribe una fecha real (no texto) para que ordenar y filtrar
+// por la columna funcione; _descargarExcel le aplica el formato DD/MM/AAAA.
+// Se construye en UTC porque ExcelJS convierte a número de serie en UTC.
+function _fechaExcel(fecha) {
+  const partes = String(fecha || '').substring(0, 10).split('-').map(Number);
+  if (partes.length !== 3 || partes.some(Number.isNaN)) return fecha ? String(fecha) : '';
+  return new Date(Date.UTC(partes[0], partes[1] - 1, partes[2]));
 }
 
 // ── Excel helpers ─────────────────────────────────────────────────────────────
@@ -66,22 +87,78 @@ async function _descargarExcel(rows, nombreHoja, nombreArchivo) {
   const sheet    = workbook.addWorksheet(nombreHoja);
   const headers  = Object.keys(rows[0] || {});
   sheet.addRow(headers);
-  rows.forEach(row => sheet.addRow(headers.map(h => row[h])));
+  rows.forEach(row => {
+    const fila = sheet.addRow(headers.map(h => row[h]));
+    fila.eachCell(cell => {
+      if (cell.value instanceof Date) cell.numFmt = 'dd/mm/yyyy';
+    });
+  });
   _estilizarEncabezado(sheet.getRow(1));
   _aplicarBordesYFiltro(sheet, headers.length, rows.length + 1);
   const buffer = await workbook.xlsx.writeBuffer();
   _descargarBlob(buffer, `${nombreArchivo}_${_fechaHoy().replace(/\//g, '-')}.xlsx`);
 }
 
+// ── Integrantes agrupados por escuadra ────────────────────────────────────────
+// Orden pedido por el cliente. El bloque es texto libre en la ficha, así que se
+// compara sin tildes ni mayúsculas y con variantes (Ñawpas Hombre/Mujer,
+// Pecados + Tentaciones, K'acha viuda, Figurines / ...). Lo que no calce con
+// ninguna va a "Sin escuadra". Socios honorarios: por bloque o por la marca
+// es_honorario de la ficha (se evalúa antes que el resto).
+
+const ESCUADRAS_EXPORT_GDC = [
+  { nombre: 'Arcangeles',            patron: /^arcangel/ },
+  { nombre: 'Infantil',              patron: /^infantil/ },
+  { nombre: 'Ñawpas',                patron: /^nawpa/ },
+  { nombre: 'Chinas Supay',          patron: /^(chinas )?supay/ },
+  { nombre: 'Osos',                  patron: /^oso/ },
+  { nombre: 'Doble Caras',           patron: /^(chinas )?doble cara/ },
+  { nombre: 'Luciferes',             patron: /^lucifer/ },
+  { nombre: 'Waris',                 patron: /^(wari|huari)/ },
+  { nombre: 'Virtudes',              patron: /^virtud/ },
+  { nombre: 'Pecados y Tentaciones', patron: /^(pecado|tentacion)/ },
+  { nombre: 'Diablesas',             patron: /^diablesa/ },
+  { nombre: 'Diablos',               patron: /^diablo/ },
+  { nombre: 'Jukumaris',             patron: /^jukumari/ },
+  { nombre: "K'achas Viudas",        patron: /^k ?acha/ },
+  { nombre: 'Yana Conciencia',       patron: /^yana/ },
+  { nombre: 'Figurines',             patron: /^figurin/ },
+  { nombre: 'Socios',                patron: /^socio(?!s? honorario)/ },
+  { nombre: 'Socios Honorarios',     patron: /^socios? honorario/ }
+];
+const ESCUADRA_SIN_ASIGNAR = 'Sin Escuadra';
+
+function _textoPlano(valor) {
+  return String(valor || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, ' ').trim().toLowerCase();
+}
+
+function _escuadraDe(persona) {
+  if (Number(persona.es_honorario) === 1) return 'Socios Honorarios';
+  const bloque = _textoPlano(persona.bloque);
+  const escuadra = ESCUADRAS_EXPORT_GDC.find(e => e.patron.test(bloque));
+  return escuadra ? escuadra.nombre : ESCUADRA_SIN_ASIGNAR;
+}
+
+function _compararPorNombre(a, b) {
+  return [a.apellido_paterno, a.apellido_materno, a.nombres].join(' ')
+    .localeCompare([b.apellido_paterno, b.apellido_materno, b.nombres].join(' '), 'es', { sensitivity: 'base' });
+}
+
+// Devuelve solo las escuadras con integrantes, en el orden del cliente.
+function _agruparIntegrantesPorEscuadra(personas) {
+  const orden = [...ESCUADRAS_EXPORT_GDC.map(e => e.nombre), ESCUADRA_SIN_ASIGNAR];
+  const grupos = new Map(orden.map(nombre => [nombre, []]));
+  personas.forEach(p => grupos.get(_escuadraDe(p)).push(p));
+  return orden
+    .map(nombre => ({ nombre, integrantes: grupos.get(nombre).sort(_compararPorNombre) }))
+    .filter(g => g.integrantes.length > 0);
+}
+
 // ── Excel: Integrantes ────────────────────────────────────────────────────────
 
-async function exportarIntegrantesExcel() {
-  if (!_excelDisponible()) return;
-  if (!personasTabla || personasTabla.length === 0) {
-    mostrarAlerta('No hay integrantes para exportar.', 'warning');
-    return;
-  }
-  const rows = personasTabla.map(p => ({
+function _filaIntegranteExcel(p) {
+  return {
     'RUT':              p.rut || '',
     'Apellido paterno': p.apellido_paterno || '',
     'Apellido materno': p.apellido_materno || '',
@@ -91,8 +168,8 @@ async function exportarIntegrantesExcel() {
     'Email':            p.email || '',
     'Teléfono':         p.telefono || '',
     'Dirección':        p.direccion || '',
-    'F. Nacimiento':    p.fecha_nacimiento ? String(p.fecha_nacimiento).substring(0, 10) : '',
-    'F. Ingreso':       p.fecha_ingreso    ? String(p.fecha_ingreso).substring(0, 10)    : '',
+    'F. Nacimiento':    _fechaExcel(p.fecha_nacimiento),
+    'F. Ingreso':       _fechaExcel(p.fecha_ingreso),
     'Estado':           p.estado || 'activo',
     'Honorario':        p.es_honorario ? 'Sí' : 'No',
     'Apoderado':        p.nombre_apoderado   || '',
@@ -102,9 +179,42 @@ async function exportarIntegrantesExcel() {
     'Comunión':         p.comunion     ? 'Sí' : 'No',
     'Confirmación':     p.confirmacion ? 'Sí' : 'No',
     'Observación':      p.observacion  || ''
-  }));
-  await _descargarExcel(rows, 'Integrantes', 'integrantes');
-  mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
+  };
+}
+
+// Una sola hoja: antes de cada escuadra va una fila de título combinada
+// ("INFANTIL (63)") y debajo sus integrantes en orden alfabético.
+async function exportarIntegrantesExcel() {
+  if (!_excelDisponible()) return;
+  if (!personasTabla || personasTabla.length === 0) {
+    mostrarAlerta('No hay integrantes para exportar.', 'warning');
+    return;
+  }
+  const grupos   = _agruparIntegrantesPorEscuadra(personasTabla);
+  const headers  = Object.keys(_filaIntegranteExcel({}));
+  const workbook = new ExcelJS.Workbook();
+  const sheet    = workbook.addWorksheet('Integrantes');
+  sheet.addRow(headers);
+  _estilizarEncabezado(sheet.getRow(1));
+
+  grupos.forEach(grupo => {
+    const titulo = sheet.addRow([`${grupo.nombre.toUpperCase()} (${grupo.integrantes.length})`]);
+    sheet.mergeCells(titulo.number, 1, titulo.number, headers.length);
+    titulo.getCell(1).font = { bold: true };
+    titulo.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCE4D6' } };
+    grupo.integrantes.forEach(p => {
+      const datos = _filaIntegranteExcel(p);
+      const fila  = sheet.addRow(headers.map(h => datos[h]));
+      fila.eachCell(cell => {
+        if (cell.value instanceof Date) cell.numFmt = 'dd/mm/yyyy';
+      });
+    });
+  });
+
+  _aplicarBordesYFiltro(sheet, headers.length, sheet.rowCount);
+  const buffer = await workbook.xlsx.writeBuffer();
+  _descargarBlob(buffer, `integrantes_${_fechaHoy().replace(/\//g, '-')}.xlsx`);
+  mostrarAlerta(`Excel generado: ${personasTabla.length} integrante(s) en ${grupos.length} escuadra(s).`, 'success');
 }
 
 // ── Excel: Asistencia (matriz por actividad) ────────────────────────────────────
@@ -127,7 +237,8 @@ async function _obtenerDatosMatrizAsistencia() {
 }
 
 // Una columna por fecha de actividad; si hay varias actividades el mismo día se
-// numeran (Actividad AAAA-MM-DD 1, 2...), igual que la planilla de referencia del cliente.
+// numeran (Actividad DD/MM/AAAA 1, 2...), igual que la planilla de referencia del cliente.
+// Se agrupa por la fecha ISO y solo la etiqueta de la columna va en DD/MM/AAAA.
 function _columnasEventosAsistencia(eventos) {
   const ordenados = [...eventos].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   const totalPorFecha = new Map();
@@ -141,7 +252,7 @@ function _columnasEventosAsistencia(eventos) {
     const indice = (contadorPorFecha.get(fecha) || 0) + 1;
     contadorPorFecha.set(fecha, indice);
     const sufijo = totalPorFecha.get(fecha) > 1 ? ` ${indice}` : '';
-    return { id: ev.id, columna: `Actividad ${fecha}${sufijo}` };
+    return { id: ev.id, columna: `Actividad ${_fechaDMA(fecha)}${sufijo}` };
   });
 }
 
@@ -444,7 +555,7 @@ async function exportarGastosExcel() {
     return;
   }
   const rows = gastosCargados.map(g => ({
-    'Fecha':       g.fecha ? String(g.fecha).substring(0, 10) : '',
+    'Fecha':       _fechaExcel(g.fecha),
     'Categoría':   g.categoria || '',
     'Descripción': g.descripcion || '',
     'Monto':       Number(g.monto || 0),
@@ -526,10 +637,14 @@ function exportarIntegrantesPDF() {
     return;
   }
   const doc = _crearDocPDF('Listado de Integrantes');
-  doc.autoTable({
-    startY: 30,
-    head: [['RUT', 'Apellido paterno', 'Apellido materno', 'Nombres', 'Bloque', 'Sexo', 'Email', 'Estado']],
-    body: personasTabla.map(p => [
+  const body = [];
+  _agruparIntegrantesPorEscuadra(personasTabla).forEach(grupo => {
+    body.push([{
+      content: `${grupo.nombre.toUpperCase()} (${grupo.integrantes.length})`,
+      colSpan: 8,
+      styles:  { fillColor: [252, 228, 214], fontStyle: 'bold', textColor: 30 }
+    }]);
+    grupo.integrantes.forEach(p => body.push([
       p.rut || '',
       p.apellido_paterno || '',
       p.apellido_materno || '',
@@ -538,7 +653,12 @@ function exportarIntegrantesPDF() {
       p.sexo || '',
       p.email || '',
       p.estado || 'activo'
-    ]),
+    ]));
+  });
+  doc.autoTable({
+    startY: 30,
+    head: [['RUT', 'Apellido paterno', 'Apellido materno', 'Nombres', 'Bloque', 'Sexo', 'Email', 'Estado']],
+    body,
     foot: [['', '', '', '', '', '', `Total: ${personasTabla.length} integrante(s)`, '']],
     styles:             { fontSize: 7, cellPadding: 2 },
     headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
@@ -736,7 +856,7 @@ function exportarGastosPDF() {
     startY: 30,
     head: [['Fecha', 'Categoría', 'Descripción', 'Monto', 'Responsable', 'Comprobante']],
     body: gastosCargados.map(g => [
-      g.fecha ? String(g.fecha).substring(0, 10) : '',
+      _fechaDMA(g.fecha),
       g.categoria || '',
       g.descripcion || '',
       formatearMonto(g.monto),

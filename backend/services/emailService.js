@@ -118,47 +118,42 @@ async function notificarAusentesEvento(ausentes, evento) {
   console.log(`[Email] ${enviados} enviados, ${fallidos} fallidos.`);
 }
 
-// Envía el PIN de acceso al Portal del Socio (alta o regeneración). Fire-and-forget
-// desde el controlador: si no hay email o el envío falla, el admin igual recibió
-// el PIN en la respuesta para entregarlo a mano (ver socioAuthController).
-function enviarPinAcceso(persona, pin) {
-  if (!persona.email || !persona.email.trim()) {
-    return Promise.resolve();
+// Enlace de "¿Olvidaste tu contraseña?" (directiva o socio).
+// Devuelve false si el correo no está configurado, para que el controlador lo
+// registre en el log (al usuario siempre se le responde un mensaje genérico).
+function enviarEnlaceRecuperacion({ destinatario, nombre, enlace, esSocio, minutosVigencia }) {
+  if (!emailConfigurado()) {
+    console.warn('[Email] No configurado. Enlace de recuperación no enviado a:', destinatario);
+    return Promise.resolve(false);
   }
 
-  const nombre = [
-    persona.nombres,
-    persona.apellido_paterno,
-    persona.apellido_materno || ''
-  ].join(' ').trim();
-
+  const queCambia = esSocio ? 'tu contraseña del Portal del Socio' : 'tu contraseña del panel de la directiva';
   const cuerpo = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">Gran Diablada Calameña</h2>
-      <p>Estimado/a <strong>${nombre}</strong>,</p>
-      <p>Ya puedes ingresar al Portal del Socio para ver tu información personal y tu estado financiero.</p>
-      <p style="font-size: 14px;">Tu acceso es:</p>
-      <ul style="font-size: 14px;">
-        <li><strong>RUT:</strong> ${persona.rut}</li>
-        <li><strong>PIN:</strong> <span style="font-size: 20px; letter-spacing: 3px;">${pin}</span></li>
-      </ul>
-      <p>
-        Por seguridad, al ingresar por primera vez el sistema te pedirá cambiar
-        este PIN por uno que solo tú conozcas.
+      <p>Hola <strong>${nombre}</strong>,</p>
+      <p>Recibimos una solicitud para restablecer ${queCambia}.</p>
+      <p style="text-align: center; margin: 28px 0;">
+        <a href="${enlace}" style="background: #f47a22; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+          Crear una contraseña nueva
+        </a>
+      </p>
+      <p style="font-size: 13px; color: #555;">
+        El enlace sirve una sola vez y vence en ${minutosVigencia} minutos.
+        Si no fuiste tú, ignora este correo: tu clave actual sigue funcionando.
       </p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
       <p style="color: #888; font-size: 12px;">
-        Este es un mensaje automático. No respondas a este correo. Si no
-        esperabas este mensaje, comunícalo a la directiva.
+        Este es un mensaje automático. No respondas a este correo.
       </p>
     </div>
   `;
 
   return enviarCorreo({
-    destinatario: persona.email,
-    asunto: 'Tu acceso al Portal del Socio — Gran Diablada Calameña',
+    destinatario,
+    asunto: 'Restablecer tu contraseña — Gran Diablada Calameña',
     cuerpo
-  });
+  }).then(() => true);
 }
 
-module.exports = { notificarAusentesEvento, enviarPinAcceso };
+module.exports = { notificarAusentesEvento, enviarEnlaceRecuperacion };

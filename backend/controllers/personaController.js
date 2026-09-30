@@ -1,55 +1,24 @@
 // Controlador HTTP de integrantes: normaliza y valida RUT/datos antes de usar personaModel.
 const personaModel = require('../models/personaModel');
 
-function limpiarTexto(valor) {
-  return String(valor || '').trim().replace(/\s+/g, ' ');
+const {
+  limpiarTexto,
+  limpiarRut,
+  validarRut,
+  validarEmail,
+  validarNombre,
+  normalizarCelular
+} = require('../utils/validacionesPersona');
+
+// Celulares en formato único +569XXXXXXXX (pedido del cliente GDC, sep-2026),
+// igual que en "Actualizar datos" del Portal del Socio. Si no es un celular
+// válido se deja el texto tal cual para que validarPersona lo rechace.
+function normalizarTelefono(telefono) {
+  return normalizarCelular(telefono) || limpiarTexto(telefono);
 }
 
-function limpiarRut(rut) {
-  return String(rut || '').replace(/\./g, '').replace(/-/g, '').trim().toUpperCase();
-}
-
-function validarRut(rut) {
-  const limpio = limpiarRut(rut);
-
-  if (!/^[0-9]{7,8}[0-9K]$/.test(limpio)) {
-    return false;
-  }
-
-  const cuerpo = limpio.slice(0, -1);
-  const dv = limpio.slice(-1);
-  let suma = 0;
-  let multiplicador = 2;
-
-  for (let i = cuerpo.length - 1; i >= 0; i--) {
-    suma += Number(cuerpo[i]) * multiplicador;
-    multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
-  }
-
-  const resto = 11 - (suma % 11);
-  const dvEsperado = resto === 11 ? '0' : resto === 10 ? 'K' : String(resto);
-
-  return dv === dvEsperado;
-}
-
-function validarEmail(email) {
-  if (!email) return true;
-
-  // La regex anterior solo excluia espacios y '@', permitiendo HTML/JS
-  // (ej. "<svg/onload=...>@a.b") que luego se guardaba tal cual y se
-  // renderizaba sin escapar en el frontend (stored XSS). Se restringe a
-  // los caracteres reales de un email, sin '<', '>', comillas ni backticks.
-  return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
-}
-
-function validarTelefono(telefono) {
-  const limpio = String(telefono || '').replace(/\s+/g, '');
-  return /^(\+?56)?9?[0-9]{8}$/.test(limpio);
-}
-
-function validarNombre(valor) {
-  const texto = limpiarTexto(valor);
-  return texto.length >= 2 && /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]+$/.test(texto);
+function esCelularNormalizado(telefono) {
+  return /^\+569[0-9]{8}$/.test(telefono);
 }
 
 function validarFechaNacimiento(fecha) {
@@ -80,11 +49,11 @@ function normalizarPersona(data) {
     sexo: data.sexo || null,
     direccion: limpiarTexto(data.direccion),
     email: limpiarTexto(data.email).toLowerCase(),
-    telefono: limpiarTexto(data.telefono),
+    telefono: normalizarTelefono(data.telefono),
     fecha_nacimiento: data.fecha_nacimiento,
     fecha_ingreso: data.fecha_ingreso || null,
     nombre_apoderado: limpiarTexto(data.nombre_apoderado),
-    telefono_apoderado: limpiarTexto(data.telefono_apoderado),
+    telefono_apoderado: normalizarTelefono(data.telefono_apoderado),
     rut_apoderado: limpiarTexto(data.rut_apoderado).toUpperCase(),
     observacion: limpiarTexto(data.observacion),
     bautizo: data.bautizo ? 1 : 0,
@@ -120,8 +89,12 @@ function validarPersona(data) {
     return 'Ingrese un email válido';
   }
 
-  if (!validarTelefono(data.telefono)) {
-    return 'Ingrese un teléfono chileno válido';
+  if (!esCelularNormalizado(data.telefono)) {
+    return 'Ingrese un celular válido (ej. +56912345678)';
+  }
+
+  if (data.telefono_apoderado && !esCelularNormalizado(data.telefono_apoderado)) {
+    return 'Ingrese un celular de apoderado válido (ej. +56912345678)';
   }
 
   if (!validarFechaNacimiento(data.fecha_nacimiento)) {

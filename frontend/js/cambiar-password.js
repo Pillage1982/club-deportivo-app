@@ -1,6 +1,7 @@
 // Cambio de clave obligatorio del panel admin: se llega aquí desde login.js cuando
 // el usuario entra con la clave genérica (debe_cambiar_password=1). Al guardar,
-// el backend entrega un token nuevo sin la restricción y se entra al panel.
+// el backend entrega un token nuevo sin la restricción y se entra al panel (o a
+// registrar-email.html si el usuario aún no tiene email).
 const API_URL = window.API_URL || window.location.origin;
 
 const PASSWORD_MIN_LARGO = 8;
@@ -51,7 +52,7 @@ function cambiarPassword() {
       if (!data) return;
       localStorage.setItem('token', data.token);
       localStorage.setItem('usuario', JSON.stringify(data.usuario));
-      window.location.href = 'index.html';
+      window.location.href = data.usuario.debeRegistrarEmail ? 'registrar-email.html' : 'index.html';
     })
     .catch(err => {
       boton.disabled = false;

@@ -1,10 +1,11 @@
-// Panel admin "Acceso Socios": enrolamiento (individual y masivo) y seguimiento
-// del login del Portal del Socio (RUT + PIN). Pensado para directivos sin
-// afinidad informática: un botón grande, una tabla de seguimiento y un modal
-// que muestra el PIN una sola vez con opción de copiar o enviar por WhatsApp.
+// Panel admin "Acceso Socios": seguimiento del login del Portal del Socio.
+// No hay clave que generar: todo integrante activo entra la primera vez con su RUT
+// como usuario y como clave (sin puntos ni guion) y el portal le exige crear su
+// contraseña, y luego debe actualizar sus datos (obligatorio). Desde aquí
+// el admin ve quién ya lo hizo, restablece el acceso de quien olvidó su contraseña,
+// vuelve a exigir la actualización de datos y envía las instrucciones por WhatsApp.
 
 let cacheEstadoAccesoSocios = [];
-let pinModalActual = { pin: '', nombre: '', rut: '' };
 
 function inicializarAccesoSocios() {
   cargarEstadoAccesoSocios();
@@ -38,12 +39,6 @@ function configurarBuscadorAccesoSocios() {
   });
 }
 
-function badgeAccesoSocios(condicion, textoSi, textoNo) {
-  return condicion
-    ? `<span class="badge bg-success">${textoSi}</span>`
-    : `<span class="badge bg-secondary">${textoNo}</span>`;
-}
-
 function renderizarTablaAccesoSocios(personas) {
   const tabla = document.getElementById('tabla_acceso_socios');
   if (!tabla) return;
@@ -58,142 +53,90 @@ function renderizarTablaAccesoSocios(personas) {
   tabla.innerHTML = personas.map(p => {
     const nombre = `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno || ''}`.trim();
     const bloqueado = p.bloqueado_hasta && new Date(String(p.bloqueado_hasta).replace(' ', 'T')) > new Date();
+    const estado = p.pin_propio
+      ? '<span class="badge bg-success">Contraseña creada</span>'
+      : '<span class="badge bg-secondary">Pendiente</span>';
+    const datos = p.datos_actualizados
+      ? `<span class="badge bg-success">Actualizados</span>${p.datos_actualizados_en ? `<div class="small text-muted">${formatearFechaHora(p.datos_actualizados_en)}</div>` : ''}`
+      : '<span class="badge bg-secondary">Pendiente</span>';
 
     return `
       <tr>
         <td>${escaparHtml(nombre)}</td>
         <td>${p.rut || ''}</td>
-        <td>${badgeAccesoSocios(!!p.tiene_acceso, 'Creado', 'Sin acceso')}</td>
         <td>
-          ${p.tiene_acceso ? badgeAccesoSocios(!!p.pin_cambiado, 'Ya ingresó', 'Pendiente') : '—'}
+          ${estado}
           ${bloqueado ? '<span class="badge bg-danger ms-1">Bloqueado</span>' : ''}
         </td>
+        <td>${datos}</td>
         <td>${p.ultimo_login ? formatearFechaHora(p.ultimo_login) : '—'}</td>
-        <td>
-          <button type="button" class="btn btn-sm btn-outline-primary" onclick="generarPinIndividual(${p.persona_id})">
-            <i class="bi bi-key-fill me-1"></i>${p.tiene_acceso ? 'Regenerar PIN' : 'Generar PIN'}
-          </button>
+        <td class="text-nowrap">
+          <a href="${construirLinkWhatsapp(p)}" target="_blank" rel="noopener" class="btn btn-sm btn-success" title="Enviar instrucciones por WhatsApp">
+            <i class="bi bi-whatsapp"></i>
+          </a>
+          ${p.pin_propio || bloqueado ? `
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="restablecerAccesoSocio(${p.persona_id})">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Restablecer
+          </button>` : ''}
+          ${p.datos_actualizados ? `
+          <button type="button" class="btn btn-sm btn-outline-secondary" title="Volver a exigir la actualización de datos" onclick="solicitarActualizacionDatos(${p.persona_id})">
+            <i class="bi bi-arrow-repeat"></i>
+          </button>` : ''}
         </td>
       </tr>`;
   }).join('');
 }
 
 // =====================================
-// ENROLAMIENTO MASIVO
+// RESTABLECER ACCESO (olvidó su contraseña o quedó bloqueado)
 // =====================================
-function ejecutarEnrolamientoMasivo() {
+function restablecerAccesoSocio(personaId) {
   const confirmar = confirm(
-    'Se generará un PIN nuevo para todos los integrantes activos que todavía no tienen acceso al portal.\n\n¿Continuar?'
+    'La contraseña actual del socio dejará de servir. Su clave volverá a ser su RUT sin puntos ni guion ' +
+    'y al entrar deberá crear una contraseña nueva.\n\n¿Continuar?'
   );
   if (!confirmar) return;
 
-  const boton = document.getElementById('btn_enrolamiento_masivo');
-  boton.disabled = true;
-  boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generando...';
-
-  fetch(`${API_URL}/socio-auth/admin/enrolamiento-masivo`, {
+  fetch(`${API_URL}/socio-auth/admin/restablecer/${personaId}`, {
     method: 'POST',
     headers: getAuthHeaders()
   })
-    .then(res => res.json())
-    .then(data => {
-      mostrarResultadoEnrolamientoMasivo(data.generados || []);
+    .then(async res => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.mensaje || 'No se pudo restablecer el acceso');
+      alert(data.mensaje);
       cargarEstadoAccesoSocios();
     })
     .catch(err => {
-      console.error('Error en enrolamiento masivo:', err);
-      alert('Ocurrió un error generando los accesos. Intenta nuevamente.');
-    })
-    .finally(() => {
-      boton.disabled = false;
-      boton.innerHTML = '<i class="bi bi-people-fill me-2"></i>Generar accesos pendientes';
+      console.error('Error restableciendo acceso:', err);
+      alert(err.message || 'Ocurrió un error restableciendo el acceso. Intenta nuevamente.');
     });
 }
 
-function mostrarResultadoEnrolamientoMasivo(generados) {
-  const contenedor = document.getElementById('resultado_enrolamiento_masivo');
-  const tabla = document.getElementById('tabla_resultado_enrolamiento');
-
-  if (!generados.length) {
-    contenedor.style.display = 'none';
-    alert('No había integrantes pendientes de acceso: todos ya lo tienen.');
-    return;
-  }
-
-  tabla.innerHTML = generados.map(g => {
-    const nombre = `${g.nombres} ${g.apellido_paterno} ${g.apellido_materno || ''}`.trim();
-    return `
-      <tr>
-        <td>${escaparHtml(nombre)}</td>
-        <td>${g.rut || ''}</td>
-        <td><span style="font-family: monospace; letter-spacing: 2px;">${g.pin}</span></td>
-        <td>${g.email ? '<span class="badge bg-success">Enviado</span>' : '<span class="badge bg-secondary">Sin email</span>'}</td>
-        <td class="text-nowrap">
-          <button type="button" class="btn btn-sm btn-outline-secondary" title="Copiar PIN" onclick="copiarTexto('${g.pin}')">
-            <i class="bi bi-clipboard"></i>
-          </button>
-          <a href="${construirLinkWhatsapp(g)}" target="_blank" rel="noopener" class="btn btn-sm btn-success" title="Enviar por WhatsApp">
-            <i class="bi bi-whatsapp"></i>
-          </a>
-        </td>
-      </tr>`;
-  }).join('');
-
-  contenedor.style.display = 'block';
-  contenedor.scrollIntoView({ behavior: 'smooth' });
-}
-
 // =====================================
-// GENERAR/REGENERAR PIN INDIVIDUAL
+// VOLVER A EXIGIR ACTUALIZACIÓN DE DATOS (individual, o a todos sin personaId)
 // =====================================
-function generarPinIndividual(personaId) {
-  const confirmar = confirm('Se generará un PIN nuevo. El anterior dejará de servir de inmediato. ¿Continuar?');
+function solicitarActualizacionDatos(personaId) {
+  const confirmar = confirm(personaId
+    ? 'En su próximo ingreso, el socio deberá revisar y actualizar sus datos antes de ver su página personal.\n\n¿Continuar?'
+    : 'Todos los socios que ya actualizaron sus datos deberán hacerlo de nuevo en su próximo ingreso.\n\n¿Continuar?');
   if (!confirmar) return;
 
-  fetch(`${API_URL}/socio-auth/admin/generar/${personaId}`, {
-    method: 'POST',
-    headers: getAuthHeaders()
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.pin) {
-        alert(data.mensaje || 'No se pudo generar el PIN');
-        return;
-      }
-      mostrarModalPinGenerado(data.persona, data.pin);
+  const url = personaId
+    ? `${API_URL}/socio-auth/admin/solicitar-actualizacion/${personaId}`
+    : `${API_URL}/socio-auth/admin/solicitar-actualizacion`;
+
+  fetch(url, { method: 'POST', headers: getAuthHeaders() })
+    .then(async res => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.mensaje || 'No se pudo solicitar la actualización');
+      alert(data.mensaje);
       cargarEstadoAccesoSocios();
     })
     .catch(err => {
-      console.error('Error generando PIN:', err);
-      alert('Ocurrió un error generando el PIN. Intenta nuevamente.');
+      console.error('Error solicitando actualización de datos:', err);
+      alert(err.message || 'Ocurrió un error. Intenta nuevamente.');
     });
-}
-
-function mostrarModalPinGenerado(persona, pin) {
-  const nombre = `${persona.nombres} ${persona.apellido_paterno}`.trim();
-
-  pinModalActual = { pin, nombre, rut: persona.rut };
-
-  document.getElementById('pin_modal_nombre').textContent = nombre;
-  document.getElementById('pin_modal_rut').textContent = persona.rut || '';
-  document.getElementById('pin_modal_pin').textContent = pin;
-  document.getElementById('pin_modal_whatsapp').href = construirLinkWhatsapp({ ...persona, pin });
-
-  new bootstrap.Modal(document.getElementById('modal_pin_generado')).show();
-}
-
-function copiarPinModal() {
-  copiarTexto(pinModalActual.pin);
-}
-
-function copiarTexto(texto) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(texto)
-      .then(() => alert('Copiado: ' + texto))
-      .catch(() => alert('No se pudo copiar. Cópialo manualmente: ' + texto));
-  } else {
-    alert('Cópialo manualmente: ' + texto);
-  }
 }
 
 // Heurística simple: si el teléfono guardado no trae código de país, se asume
@@ -207,11 +150,13 @@ function formatearTelefonoWhatsapp(telefono) {
 
 function construirLinkWhatsapp(persona) {
   const nombre = `${persona.nombres || ''} ${persona.apellido_paterno || ''}`.trim();
+  const rutLimpio = String(persona.rut || '').replace(/[.\-]/g, '').toUpperCase();
   const texto = encodeURIComponent(
-    `Hola ${nombre}, tu acceso al Portal del Socio es:\n` +
-    `RUT: ${persona.rut}\n` +
-    `PIN: ${persona.pin}\n\n` +
-    `Es personal e intransferible. Al ingresar por primera vez deberás cambiarlo.`
+    `Hola ${nombre}, ya puedes entrar al Portal del Socio:\n` +
+    `${window.location.origin}/socio/login.html\n\n` +
+    `Usuario: tu RUT (${persona.rut})\n` +
+    `Clave: tu RUT sin puntos ni guion (${rutLimpio})\n\n` +
+    `Al entrar por primera vez deberás crear tu contraseña personal.`
   );
   const numero = formatearTelefonoWhatsapp(persona.telefono);
   return numero ? `https://wa.me/${numero}?text=${texto}` : `https://wa.me/?text=${texto}`;

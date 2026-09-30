@@ -688,9 +688,11 @@ function validarEmailFrontend(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// Celular chileno: 9XXXXXXXX o 569XXXXXXXX, con o sin '+', espacios o guiones.
+// El backend lo guarda siempre como +569XXXXXXXX (normalizarCelular).
 function validarTelefonoFrontend(telefono) {
-  const limpio = String(telefono || '').replace(/\s+/g, '');
-  return /^(\+?56)?9?[0-9]{8}$/.test(limpio);
+  const digitos = String(telefono || '').replace(/\D/g, '');
+  return /^(9|569)[0-9]{8}$/.test(digitos);
 }
 
 function validarFechaNacimientoFrontend(fecha) {
@@ -731,7 +733,11 @@ function validarPersonaFrontend(data) {
   }
 
   if (!validarTelefonoFrontend(data.telefono)) {
-    return 'Ingrese un teléfono chileno válido';
+    return 'Ingrese un celular válido (ej. +56912345678)';
+  }
+
+  if (data.telefono_apoderado && !validarTelefonoFrontend(data.telefono_apoderado)) {
+    return 'Ingrese un celular de apoderado válido (ej. +56912345678)';
   }
 
   if (!validarFechaNacimientoFrontend(data.fecha_nacimiento)) {

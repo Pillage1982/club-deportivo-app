@@ -152,6 +152,58 @@ body {
   transform: scale(0.98);
 }
 
+/* Selector Directiva / Socio (login admin y Portal del Socio) */
+
+.login-selector {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 24px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(244, 122, 34, 0.25);
+}
+
+.login-selector a {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  transition: 0.2s;
+}
+
+.login-selector a:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.login-selector a.activo {
+  color: white;
+  background: linear-gradient(135deg, #f47a22, #c95712);
+}
+
+/* Requisitos de contraseña (Portal del Socio) */
+
+.requisitos-clave {
+  list-style: none;
+  padding: 0;
+  margin: -6px 0 18px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.requisitos-clave li {
+  margin-bottom: 2px;
+}
+
+.requisitos-clave li.ok {
+  color: #7ddc8f;
+}
+
 /* Mostrar/Ocultar password */
 
 .toggle-password {

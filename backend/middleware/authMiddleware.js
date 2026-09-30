@@ -9,8 +9,9 @@ const jwt = require('jsonwebtoken');
 // MIDDLEWARE AUTENTICACION JWT
 // =====================================
 
-// permitirCambioPendiente: solo la ruta de cambio de clave acepta un token con
-// `cambiarPassword` (primer ingreso con clave genérica); el resto lo rechaza.
+// permitirCambioPendiente: solo las rutas del primer ingreso (cambio de clave y
+// registro del email) aceptan un token con `cambiarPassword` o `registrarEmail`;
+// el resto lo rechaza.
 function crearMiddleware({ permitirCambioPendiente = false } = {}) {
   return (req, res, next) => {
 
@@ -50,6 +51,14 @@ function crearMiddleware({ permitirCambioPendiente = false } = {}) {
       return res.status(403).json({
         mensaje: 'Debes cambiar tu clave antes de continuar',
         codigo: 'CAMBIO_PASSWORD_REQUERIDO'
+      });
+    }
+
+    // Email pendiente (primer ingreso): se registra antes de usar el panel.
+    if (decoded.registrarEmail && !permitirCambioPendiente) {
+      return res.status(403).json({
+        mensaje: 'Debes registrar tu email antes de continuar',
+        codigo: 'EMAIL_REQUERIDO'
       });
     }
 
