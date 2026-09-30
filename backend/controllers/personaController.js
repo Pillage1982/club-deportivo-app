@@ -6,12 +6,19 @@ const {
   limpiarRut,
   validarRut,
   validarEmail,
-  validarNombre
+  validarNombre,
+  normalizarCelular
 } = require('../utils/validacionesPersona');
 
-function validarTelefono(telefono) {
-  const limpio = String(telefono || '').replace(/\s+/g, '');
-  return /^(\+?56)?9?[0-9]{8}$/.test(limpio);
+// Celulares en formato único +569XXXXXXXX (pedido del cliente GDC, sep-2026),
+// igual que en "Actualizar datos" del Portal del Socio. Si no es un celular
+// válido se deja el texto tal cual para que validarPersona lo rechace.
+function normalizarTelefono(telefono) {
+  return normalizarCelular(telefono) || limpiarTexto(telefono);
+}
+
+function esCelularNormalizado(telefono) {
+  return /^\+569[0-9]{8}$/.test(telefono);
 }
 
 function validarFechaNacimiento(fecha) {
@@ -42,11 +49,11 @@ function normalizarPersona(data) {
     sexo: data.sexo || null,
     direccion: limpiarTexto(data.direccion),
     email: limpiarTexto(data.email).toLowerCase(),
-    telefono: limpiarTexto(data.telefono),
+    telefono: normalizarTelefono(data.telefono),
     fecha_nacimiento: data.fecha_nacimiento,
     fecha_ingreso: data.fecha_ingreso || null,
     nombre_apoderado: limpiarTexto(data.nombre_apoderado),
-    telefono_apoderado: limpiarTexto(data.telefono_apoderado),
+    telefono_apoderado: normalizarTelefono(data.telefono_apoderado),
     rut_apoderado: limpiarTexto(data.rut_apoderado).toUpperCase(),
     observacion: limpiarTexto(data.observacion),
     bautizo: data.bautizo ? 1 : 0,
@@ -82,8 +89,12 @@ function validarPersona(data) {
     return 'Ingrese un email válido';
   }
 
-  if (!validarTelefono(data.telefono)) {
-    return 'Ingrese un teléfono chileno válido';
+  if (!esCelularNormalizado(data.telefono)) {
+    return 'Ingrese un celular válido (ej. +56912345678)';
+  }
+
+  if (data.telefono_apoderado && !esCelularNormalizado(data.telefono_apoderado)) {
+    return 'Ingrese un celular de apoderado válido (ej. +56912345678)';
   }
 
   if (!validarFechaNacimiento(data.fecha_nacimiento)) {
