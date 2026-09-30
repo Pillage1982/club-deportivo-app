@@ -34,6 +34,19 @@ exports.obtenerParaLogin = (rutLimpio, callback) => {
   });
 };
 
+// "¿Olvidaste tu PIN?": datos mínimos para enviar el enlace de recuperación.
+exports.buscarParaRecuperar = (rutLimpio, callback) => {
+  db.query(
+    `SELECT id AS persona_id, nombres, apellido_paterno, email
+     FROM personas
+     WHERE activo = 1 AND COALESCE(estado, 'activo') <> 'inactivo'
+       AND REPLACE(REPLACE(UPPER(rut), '.', ''), '-', '') = ?
+     LIMIT 1`,
+    [rutLimpio],
+    (err, results) => callback(err, results ? results[0] : null)
+  );
+};
+
 // Incluye el RUT: mientras el socio no cree su PIN, la clave actual es el RUT.
 exports.obtenerPorPersonaId = (personaId, callback) => {
   db.query(

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<!-- "¿Olvidaste tu contraseña?" del panel de la directiva: sin ?token pide el usuario y envía el enlace por email; con ?token (el enlace del correo) permite crear la clave nueva. -->
+<html lang="es">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <title>Recuperar contraseña | GDC.APP</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="css/login.css">
+
+</head>
+
+<body>
+
+  <div class="background-shape shape1"></div>
+  <div class="background-shape shape2"></div>
+
+  <div class="login-card">
+
+    <div class="logo">
+      <i class="bi bi-key-fill" style="color:#f47a22;"></i>
+    </div>
+
+    <h2 class="text-center">Recuperar contraseña</h2>
+
+    <!-- Paso 1: pedir el enlace -->
+    <div id="paso_solicitar">
+      <p class="text-center">
+        Ingresa tu usuario y te enviaremos un enlace a tu email registrado.
+      </p>
+
+      <div class="mb-4 login-input-group">
+        <i class="bi bi-person-fill"></i>
+        <input type="text" id="usuario" class="form-control" placeholder="Usuario" autocomplete="username">
+      </div>
+
+      <button id="btn_solicitar" onclick="solicitarEnlace()" class="btn-login">
+        Enviar enlace
+      </button>
+    </div>
+
+    <!-- Paso 2: crear la clave nueva (desde el enlace del correo) -->
+    <div id="paso_restablecer" class="d-none">
+      <p class="text-center">Crea tu nueva contraseña (mínimo 8 caracteres).</p>
+
+      <div class="mb-3 login-input-group">
+        <i class="bi bi-shield-lock-fill"></i>
+        <input type="password" id="password_nueva" class="form-control" placeholder="Nueva contraseña" autocomplete="new-password">
+      </div>
+
+      <div class="mb-4 login-input-group">
+        <i class="bi bi-shield-lock-fill"></i>
+        <input type="password" id="password_nueva_confirmar" class="form-control" placeholder="Confirma la nueva contraseña" autocomplete="new-password">
+      </div>
+
+      <button id="btn_restablecer" onclick="restablecerClave()" class="btn-login">
+        Guardar nueva contraseña
+      </button>
+    </div>
+
+    <div id="respuesta"></div>
+
+    <p class="text-center mt-3 mb-0">
+      <a href="login.html" style="color:#f47a22; font-size:0.85rem;">Volver al inicio de sesión</a>
+    </p>
+
+  </div>
+
+  <p class="login-credit">
+    Diseño de Mario Riquelme
+  </p>
+
+  <script src="js/recuperar-clave.js"></script>
+</body>
+</html>

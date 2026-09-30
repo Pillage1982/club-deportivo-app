@@ -298,6 +298,31 @@ async function asegurarDatosActualizadosSocios() {
   }
 }
 
+// "¿Olvidaste tu contraseña?" (directiva y socios): enlace de un solo uso por email.
+// Solo se guarda el SHA-256 del token (un respaldo filtrado no sirve para resetear
+// cuentas). tipo+referencia_id apunta a usuarios.id o personas.id según el caso.
+// usuarios.email: la directiva no tenía email registrado, sin él no hay a dónde
+// enviar el enlace.
+async function asegurarRecuperacionClave() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS recuperaciones_clave (
+      id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+      tipo          ENUM('usuario', 'socio') NOT NULL,
+      referencia_id BIGINT NOT NULL,
+      token_hash    CHAR(64) NOT NULL,
+      expira_en     DATETIME NOT NULL,
+      usado_en      DATETIME NULL,
+      creado_en     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_recuperacion_token (token_hash),
+      KEY idx_recuperacion_referencia (tipo, referencia_id)
+    )
+  `);
+  const cols = await columnasExistentes('usuarios');
+  if (!cols.has('email')) {
+    await ejecutar('ALTER TABLE usuarios ADD COLUMN email VARCHAR(150) NULL');
+  }
+}
+
 // Cambio de clave obligatorio en el primer ingreso del panel admin (mismo criterio
 // que el PIN del Portal del Socio). DEFAULT 1: al crear la columna, todos los
 // usuarios existentes quedan obligados a cambiar su clave en el próximo login, y
@@ -397,6 +422,7 @@ async function ejecutarMigraciones() {
   await asegurarTablaSociosAuth();
   await asegurarDatosActualizadosSocios();
   await asegurarCambioPasswordUsuarios();
+  await asegurarRecuperacionClave();
   await asegurarCamposPagos();
   await consolidarTiposCuota();
   await reconstruirVistaRankingPuntaje();

@@ -9,9 +9,15 @@ const authSocioMiddleware = require('../middleware/authSocioMiddleware');
 const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
 const loginRateLimiter = require('../middleware/loginRateLimiter');
+const recuperacionRateLimiter = require('../middleware/recuperacionRateLimiter');
+const recuperacion = require('../controllers/recuperacionClaveController');
 
 // Público (rate-limited: sin esto un PIN de 6 dígitos es fuerza-bruteable)
 router.post('/login', loginRateLimiter, controller.login);
+
+// "¿Olvidaste tu PIN?": público, envía un enlace de un solo uso por email.
+router.post('/recuperar', recuperacionRateLimiter, recuperacion.solicitarSocio);
+router.post('/restablecer', loginRateLimiter, recuperacion.restablecerSocio);
 
 // Socio autenticado con su propio token (tipo:'socio')
 router.post('/cambiar-pin', authSocioMiddleware, controller.cambiarPin);
