@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- "¿Olvidaste tu PIN?" del Portal del Socio: sin ?token pide el RUT y envía el enlace al email registrado; con ?token (el enlace del correo) permite crear el PIN nuevo. -->
+<!-- "¿Olvidaste tu contraseña?" del Portal del Socio (el archivo conserva el nombre de cuando era PIN): sin ?token pide el RUT y envía el enlace al email registrado; con ?token (el enlace del correo) permite crear la contraseña nueva. -->
 <html lang="es">
 
 <head>
@@ -12,7 +12,7 @@
 
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 
-  <title>Recuperar PIN | Portal del Socio</title>
+  <title>Recuperar contraseña | Portal del Socio</title>
 
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
@@ -41,7 +41,7 @@
       <i class="bi bi-key-fill" style="color:#f47a22;"></i>
     </div>
 
-    <h2 class="text-center">Recuperar PIN</h2>
+    <h2 class="text-center">Recuperar contraseña</h2>
 
     <!-- Paso 1: pedir el enlace -->
     <div id="paso_solicitar">
@@ -63,22 +63,24 @@
       </p>
     </div>
 
-    <!-- Paso 2: crear el PIN nuevo (desde el enlace del correo) -->
+    <!-- Paso 2: crear la contraseña nueva (desde el enlace del correo) -->
     <div id="paso_restablecer" class="d-none">
-      <p class="text-center">Crea tu nuevo PIN de 6 dígitos.</p>
+      <p class="text-center">Crea tu nueva contraseña.</p>
 
       <div class="mb-3 login-input-group">
         <i class="bi bi-shield-lock-fill"></i>
-        <input type="password" id="pin_nuevo" class="form-control" placeholder="PIN nuevo (6 dígitos)" inputmode="numeric" maxlength="6" autocomplete="new-password">
+        <input type="password" id="pin_nuevo" class="form-control" placeholder="Nueva contraseña" maxlength="64" autocomplete="new-password">
       </div>
+
+      <ul class="requisitos-clave" id="requisitos_clave"></ul>
 
       <div class="mb-4 login-input-group">
         <i class="bi bi-shield-lock-fill"></i>
-        <input type="password" id="pin_nuevo_confirmar" class="form-control" placeholder="Confirma el PIN nuevo" inputmode="numeric" maxlength="6" autocomplete="new-password">
+        <input type="password" id="pin_nuevo_confirmar" class="form-control" placeholder="Confirma la nueva contraseña" maxlength="64" autocomplete="new-password">
       </div>
 
       <button id="btn_restablecer" onclick="restablecerPin()" class="btn-login">
-        Guardar nuevo PIN
+        Guardar contraseña
       </button>
     </div>
 

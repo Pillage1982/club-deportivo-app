@@ -1,8 +1,8 @@
 // Panel admin "Acceso Socios": seguimiento del login del Portal del Socio.
-// No hay PIN que generar: todo integrante activo entra la primera vez con su RUT
+// No hay clave que generar: todo integrante activo entra la primera vez con su RUT
 // como usuario y como clave (sin puntos ni guion) y el portal le exige crear su
-// PIN de 6 dígitos, y luego debe actualizar sus datos (obligatorio). Desde aquí
-// el admin ve quién ya lo hizo, restablece el acceso de quien olvidó su PIN,
+// contraseña, y luego debe actualizar sus datos (obligatorio). Desde aquí
+// el admin ve quién ya lo hizo, restablece el acceso de quien olvidó su contraseña,
 // vuelve a exigir la actualización de datos y envía las instrucciones por WhatsApp.
 
 let cacheEstadoAccesoSocios = [];
@@ -54,7 +54,7 @@ function renderizarTablaAccesoSocios(personas) {
     const nombre = `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno || ''}`.trim();
     const bloqueado = p.bloqueado_hasta && new Date(String(p.bloqueado_hasta).replace(' ', 'T')) > new Date();
     const estado = p.pin_propio
-      ? '<span class="badge bg-success">PIN creado</span>'
+      ? '<span class="badge bg-success">Contraseña creada</span>'
       : '<span class="badge bg-secondary">Pendiente</span>';
     const datos = p.datos_actualizados
       ? `<span class="badge bg-success">Actualizados</span>${p.datos_actualizados_en ? `<div class="small text-muted">${formatearFechaHora(p.datos_actualizados_en)}</div>` : ''}`
@@ -88,12 +88,12 @@ function renderizarTablaAccesoSocios(personas) {
 }
 
 // =====================================
-// RESTABLECER ACCESO (olvidó su PIN o quedó bloqueado)
+// RESTABLECER ACCESO (olvidó su contraseña o quedó bloqueado)
 // =====================================
 function restablecerAccesoSocio(personaId) {
   const confirmar = confirm(
-    'El PIN actual del socio dejará de servir. Su clave volverá a ser su RUT sin puntos ni guion ' +
-    'y al entrar deberá crear un PIN nuevo.\n\n¿Continuar?'
+    'La contraseña actual del socio dejará de servir. Su clave volverá a ser su RUT sin puntos ni guion ' +
+    'y al entrar deberá crear una contraseña nueva.\n\n¿Continuar?'
   );
   if (!confirmar) return;
 
@@ -156,7 +156,7 @@ function construirLinkWhatsapp(persona) {
     `${window.location.origin}/socio/login.html\n\n` +
     `Usuario: tu RUT (${persona.rut})\n` +
     `Clave: tu RUT sin puntos ni guion (${rutLimpio})\n\n` +
-    `Al entrar por primera vez deberás crear tu PIN personal de 6 dígitos.`
+    `Al entrar por primera vez deberás crear tu contraseña personal.`
   );
   const numero = formatearTelefonoWhatsapp(persona.telefono);
   return numero ? `https://wa.me/${numero}?text=${texto}` : `https://wa.me/?text=${texto}`;

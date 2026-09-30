@@ -1,6 +1,6 @@
-// "¿Olvidaste tu PIN?" del Portal del Socio (ver recuperacionClaveController).
-// Sin ?token: pide el RUT y solicita el enlace. Con ?token: crea el PIN nuevo.
-// Usa API_URL y escaparHtml de api.js.
+// "¿Olvidaste tu contraseña?" del Portal del Socio (ver recuperacionClaveController).
+// Sin ?token: pide el RUT y solicita el enlace. Con ?token: crea la contraseña nueva.
+// Usa API_URL, escaparHtml y la política de contraseña (REQUISITOS_CLAVE) de api.js.
 
 const tokenRecuperacion = new URLSearchParams(window.location.search).get('token');
 
@@ -9,6 +9,7 @@ if (tokenRecuperacion) {
   document.getElementById('paso_restablecer').classList.remove('d-none');
   // Saca el token de la barra de direcciones (historial, capturas de pantalla).
   window.history.replaceState(null, '', window.location.pathname);
+  montarRequisitosClave('pin_nuevo', 'requisitos_clave');
 }
 
 function solicitarEnlace() {
@@ -31,16 +32,16 @@ function restablecerPin() {
   const confirmar = document.getElementById('pin_nuevo_confirmar').value.trim();
   const respuesta = document.getElementById('respuesta');
 
-  if (!/^[0-9]{6}$/.test(pinNuevo)) {
-    respuesta.innerHTML = alertaHtml('warning', 'El PIN debe tener exactamente 6 dígitos');
+  if (!claveCumplePolitica(pinNuevo)) {
+    respuesta.innerHTML = alertaHtml('warning', 'La nueva contraseña no cumple todos los requisitos');
     return;
   }
   if (pinNuevo !== confirmar) {
-    respuesta.innerHTML = alertaHtml('warning', 'Los PIN no coinciden');
+    respuesta.innerHTML = alertaHtml('warning', 'Las contraseñas no coinciden');
     return;
   }
 
-  enviar('btn_restablecer', 'Guardar nuevo PIN', `${API_URL}/socio-auth/restablecer`,
+  enviar('btn_restablecer', 'Guardar contraseña', `${API_URL}/socio-auth/restablecer`,
     { token: tokenRecuperacion, pinNuevo }, data => {
       document.getElementById('paso_restablecer').classList.add('d-none');
       respuesta.innerHTML = alertaHtml('success', data.mensaje);

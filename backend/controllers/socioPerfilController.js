@@ -1,4 +1,4 @@
-// "Actualizar datos" del Portal del Socio: paso obligatorio después de crear el PIN
+// "Actualizar datos" del Portal del Socio: paso obligatorio después de crear la contraseña
 // (y cada vez que la directiva lo vuelva a exigir). Todos los campos editables son
 // obligatorios; RUT, nombre, escuadra, estado, fecha de ingreso y honorario son
 // solo lectura (los mantiene la directiva desde el panel admin).

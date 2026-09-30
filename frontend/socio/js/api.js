@@ -34,7 +34,7 @@ function cerrarSesionSocio() {
 }
 
 // Primer ingreso: login -> cambiar-pin -> actualizar-datos -> index. Redirige a
-// login si no hay token, a cambiar-pin si falta crear el PIN, o a actualizar-datos
+// login si no hay token, a cambiar-pin si falta crear la contraseña, o a actualizar-datos
 // si faltan los datos. El servidor aplica la misma regla (perfilSocioMiddleware);
 // esto solo evita mostrar una pantalla vacía antes de su 403.
 function requireSocioLogin({ permitirPinPendiente = false, permitirDatosPendientes = false } = {}) {
@@ -100,6 +100,38 @@ function verificarExpiracionSocio() {
     return response;
   };
 })();
+
+// =====================================
+// POLÍTICA DE CONTRASEÑA (mismas reglas que backend/utils/politicaClave.js)
+// =====================================
+const REQUISITOS_CLAVE = [
+  { texto: 'Al menos 8 caracteres', cumple: c => c.length >= 8 },
+  { texto: 'Una letra mayúscula', cumple: c => /[A-ZÁÉÍÓÚÑ]/.test(c) },
+  { texto: 'Una letra minúscula', cumple: c => /[a-záéíóúñ]/.test(c) },
+  { texto: 'Un número', cumple: c => /[0-9]/.test(c) },
+  { texto: 'Un símbolo (! @ # $ % . -)', cumple: c => /[^A-Za-z0-9ÁÉÍÓÚÑáéíóúñ\s]/.test(c) }
+];
+
+function claveCumplePolitica(clave) {
+  return REQUISITOS_CLAVE.every(r => r.cumple(String(clave || '')));
+}
+
+// Lista de requisitos bajo el campo de contraseña nueva, que se marcan en verde
+// a medida que se cumplen.
+function montarRequisitosClave(inputId, contenedorId) {
+  const input = document.getElementById(inputId);
+  const contenedor = document.getElementById(contenedorId);
+  if (!input || !contenedor) return;
+
+  const pintar = () => {
+    contenedor.innerHTML = REQUISITOS_CLAVE.map(r => {
+      const ok = r.cumple(input.value);
+      return `<li class="${ok ? 'ok' : ''}"><i class="bi bi-${ok ? 'check-circle-fill' : 'circle'}"></i> ${r.texto}</li>`;
+    }).join('');
+  };
+  input.addEventListener('input', pintar);
+  pintar();
+}
 
 // =====================================
 // FORMATO

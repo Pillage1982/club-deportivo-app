@@ -118,7 +118,7 @@ async function notificarAusentesEvento(ausentes, evento) {
   console.log(`[Email] ${enviados} enviados, ${fallidos} fallidos.`);
 }
 
-// Enlace de "¿Olvidaste tu contraseña?" (directiva) o "¿Olvidaste tu PIN?" (socio).
+// Enlace de "¿Olvidaste tu contraseña?" (directiva o socio).
 // Devuelve false si el correo no está configurado, para que el controlador lo
 // registre en el log (al usuario siempre se le responde un mensaje genérico).
 function enviarEnlaceRecuperacion({ destinatario, nombre, enlace, esSocio, minutosVigencia }) {
@@ -127,7 +127,7 @@ function enviarEnlaceRecuperacion({ destinatario, nombre, enlace, esSocio, minut
     return Promise.resolve(false);
   }
 
-  const queCambia = esSocio ? 'tu PIN del Portal del Socio' : 'tu contraseña del panel de la directiva';
+  const queCambia = esSocio ? 'tu contraseña del Portal del Socio' : 'tu contraseña del panel de la directiva';
   const cuerpo = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">Gran Diablada Calameña</h2>
@@ -135,7 +135,7 @@ function enviarEnlaceRecuperacion({ destinatario, nombre, enlace, esSocio, minut
       <p>Recibimos una solicitud para restablecer ${queCambia}.</p>
       <p style="text-align: center; margin: 28px 0;">
         <a href="${enlace}" style="background: #f47a22; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-          Crear ${esSocio ? 'un PIN nuevo' : 'una contraseña nueva'}
+          Crear una contraseña nueva
         </a>
       </p>
       <p style="font-size: 13px; color: #555;">
@@ -151,7 +151,7 @@ function enviarEnlaceRecuperacion({ destinatario, nombre, enlace, esSocio, minut
 
   return enviarCorreo({
     destinatario,
-    asunto: esSocio ? 'Restablecer tu PIN — Gran Diablada Calameña' : 'Restablecer tu contraseña — Gran Diablada Calameña',
+    asunto: 'Restablecer tu contraseña — Gran Diablada Calameña',
     cuerpo
   }).then(() => true);
 }

@@ -1,5 +1,5 @@
 // Primer ingreso del Portal del Socio en el servidor (no solo en el frontend):
-// mientras el socio no cree su PIN y no complete "Actualizar datos", la API no
+// mientras el socio no cree su contraseña y no complete "Actualizar datos", la API no
 // entrega su ficha, finanzas, asistencia ni puntaje. Va después de
 // authSocioMiddleware (necesita req.socio). Responde 403 con `codigo` para que
 // el frontend redirija a la pantalla que corresponde.
@@ -13,7 +13,7 @@ function exigirPerfilSocio({ datos = true } = {}) {
         return res.status(500).json({ mensaje: 'Error al verificar el acceso' });
       }
       if (!estado || Number(estado.pin_cambiado) !== 1) {
-        return res.status(403).json({ codigo: 'PIN_PENDIENTE', mensaje: 'Debes crear tu PIN antes de continuar' });
+        return res.status(403).json({ codigo: 'PIN_PENDIENTE', mensaje: 'Debes crear tu contraseña antes de continuar' });
       }
       if (datos && Number(estado.datos_actualizados) !== 1) {
         return res.status(403).json({ codigo: 'DATOS_PENDIENTES', mensaje: 'Debes actualizar tus datos antes de continuar' });

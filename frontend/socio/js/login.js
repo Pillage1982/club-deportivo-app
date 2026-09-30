@@ -1,6 +1,6 @@
 // Login del Portal del Socio: RUT + clave contra /socio-auth/login (endpoint público,
 // rate-limited en el servidor). La clave es el RUT sin puntos ni guion hasta que el
-// socio crea su PIN; si aún no lo crea, se le envía a cambiar-pin.html.
+// socio crea su contraseña; si aún no la crea, se le envía a cambiar-pin.html.
 
 if (sessionStorage.getItem('socio_sesion_expirada')) {
   sessionStorage.removeItem('socio_sesion_expirada');

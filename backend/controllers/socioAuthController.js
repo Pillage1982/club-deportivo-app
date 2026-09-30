@@ -1,18 +1,21 @@
 // Controlador de autenticación del Portal del Socio: login por RUT + clave, creación
-// obligatoria del PIN propio en el primer ingreso, y herramientas admin de seguimiento.
+// obligatoria de la contraseña propia en el primer ingreso, y herramientas admin.
 //
 // Primer ingreso (pedido del cliente GDC, sep-2026): la clave inicial es el propio
 // RUT sin puntos ni guion (ej. 12345678K). No hay enrolamiento: todo integrante
-// activo puede entrar así mientras no tenga PIN propio. Estado en socios_auth:
-//   - sin fila (o pin_cambiado=0) -> clave = RUT, se exige crear PIN al entrar
-//   - fila con pin_cambiado=1     -> clave = PIN propio de 6 dígitos
+// activo puede entrar así mientras no tenga contraseña propia. Estado en socios_auth:
+//   - sin fila (o pin_cambiado=0) -> clave = RUT, se exige crear contraseña al entrar
+//   - fila con pin_cambiado=1     -> clave = contraseña propia (ver utils/politicaClave)
+// Los nombres pin_* (columnas, rutas, campos del body) vienen de cuando era un PIN
+// de 6 dígitos; se mantuvieron para no migrar BD ni rutas.
 // "Restablecer acceso" (admin) borra la fila y la clave vuelve a ser el RUT.
-// Después del PIN, el socio debe completar "Actualizar datos" (datos_actualizados)
-// antes de ver su página personal; ver socioPerfilController/perfilSocioMiddleware.
+// Después de la contraseña, el socio debe completar "Actualizar datos"
+// (datos_actualizados); ver socioPerfilController/perfilSocioMiddleware.
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const socioAuthModel = require('../models/socioAuthModel');
+const { validarClaveSocio } = require('../utils/politicaClave');
 
 const BCRYPT_ROUNDS = 10;
 
@@ -29,8 +32,8 @@ function estaBloqueado(bloqueadoHasta) {
   return new Date(String(bloqueadoHasta).replace(' ', 'T')) > new Date();
 }
 
-// Valida la clave según el estado del socio: RUT limpio si aún no crea su PIN,
-// o bcrypt contra el PIN propio si ya lo creó.
+// Valida la clave según el estado del socio: RUT limpio si aún no crea su
+// contraseña, o bcrypt contra la contraseña propia si ya la creó.
 function verificarClave(socio, clave, callback) {
   if (!tienePinPropio(socio)) {
     return callback(null, limpiarRut(clave) === limpiarRut(socio.rut));
@@ -57,7 +60,7 @@ exports.login = (req, res) => {
     }
 
     // Mensaje genérico en todos los casos de rechazo: no revelar si el RUT
-    // existe, si ya creó su PIN, o si fue la clave la que falló.
+    // existe, si ya creó su contraseña, o si fue la clave la que falló.
     if (!socio || socio.estado === 'inactivo') {
       return res.status(401).json({ mensaje: 'RUT o clave incorrecta' });
     }
@@ -104,10 +107,14 @@ exports.login = (req, res) => {
         { expiresIn: '10d' }
       );
 
+      // Quien aún entra con un PIN antiguo de 6 dígitos (anterior a la política
+      // de contraseña) es enviado a crear una contraseña que la cumpla.
+      const claveVigente = tienePinPropio(socio) && !validarClaveSocio(pin, socio.rut);
+
       res.json({
         mensaje: 'Login exitoso',
         token,
-        pinCambiado: tienePinPropio(socio),
+        pinCambiado: claveVigente,
         datosActualizados: tienePinPropio(socio) && Number(socio.datos_actualizados) === 1,
         socio: {
           persona_id: socio.persona_id,
@@ -120,58 +127,59 @@ exports.login = (req, res) => {
 };
 
 // =====================================
-// CAMBIO DE PIN (socio autenticado; obligatorio mientras la clave siga siendo el RUT)
+// CAMBIO DE CONTRASEÑA (socio autenticado; obligatorio mientras la clave sea el RUT)
 // =====================================
 exports.cambiarPin = (req, res) => {
   const personaId = req.socio.persona_id;
   const { pinActual, pinNuevo } = req.body;
 
   if (!pinActual || !pinNuevo) {
-    return res.status(400).json({ mensaje: 'La clave actual y el nuevo PIN son requeridos' });
-  }
-
-  if (!/^[0-9]{6}$/.test(String(pinNuevo))) {
-    return res.status(400).json({ mensaje: 'El nuevo PIN debe tener 6 dígitos' });
+    return res.status(400).json({ mensaje: 'La clave actual y la nueva contraseña son requeridas' });
   }
 
   if (String(pinActual) === String(pinNuevo)) {
-    return res.status(400).json({ mensaje: 'El nuevo PIN debe ser distinto al actual' });
+    return res.status(400).json({ mensaje: 'La nueva contraseña debe ser distinta a la actual' });
   }
 
   socioAuthModel.obtenerPorPersonaId(personaId, (err, socio) => {
     if (err) {
-      console.error('Error buscando socio para cambio de PIN:', err);
-      return res.status(500).json({ mensaje: 'Error al cambiar PIN' });
+      console.error('Error buscando socio para cambio de contraseña:', err);
+      return res.status(500).json({ mensaje: 'Error al cambiar la contraseña' });
     }
     if (!socio) {
       return res.status(404).json({ mensaje: 'Acceso no encontrado' });
     }
 
+    const errorPolitica = validarClaveSocio(pinNuevo, socio.rut);
+    if (errorPolitica) {
+      return res.status(400).json({ mensaje: errorPolitica });
+    }
+
     verificarClave(socio, pinActual, (errCompare, coincide) => {
       if (errCompare) {
-        console.error('Error bcrypt (cambio PIN):', errCompare);
-        return res.status(500).json({ mensaje: 'Error al cambiar PIN' });
+        console.error('Error bcrypt (cambio de contraseña):', errCompare);
+        return res.status(500).json({ mensaje: 'Error al cambiar la contraseña' });
       }
       if (!coincide) {
         return res.status(401).json({
           mensaje: tienePinPropio(socio)
-            ? 'El PIN actual no es correcto'
+            ? 'La contraseña actual no es correcta'
             : 'La clave actual no es correcta (es tu RUT sin puntos ni guion)'
         });
       }
 
       bcrypt.hash(String(pinNuevo), BCRYPT_ROUNDS, (errHash, hash) => {
         if (errHash) {
-          console.error('Error hasheando nuevo PIN:', errHash);
-          return res.status(500).json({ mensaje: 'Error al cambiar PIN' });
+          console.error('Error hasheando nueva contraseña:', errHash);
+          return res.status(500).json({ mensaje: 'Error al cambiar la contraseña' });
         }
 
         socioAuthModel.guardarPinPropio(personaId, hash, errUpdate => {
           if (errUpdate) {
-            console.error('Error guardando nuevo PIN:', errUpdate);
-            return res.status(500).json({ mensaje: 'Error al cambiar PIN' });
+            console.error('Error guardando nueva contraseña:', errUpdate);
+            return res.status(500).json({ mensaje: 'Error al cambiar la contraseña' });
           }
-          res.json({ mensaje: 'PIN actualizado correctamente' });
+          res.json({ mensaje: 'Contraseña actualizada correctamente' });
         });
       });
     });
@@ -179,8 +187,8 @@ exports.cambiarPin = (req, res) => {
 };
 
 // =====================================
-// ADMIN: restablecer acceso (olvidó su PIN o quedó bloqueado): la clave
-// vuelve a ser el RUT y en el próximo ingreso deberá crear un PIN nuevo.
+// ADMIN: restablecer acceso (olvidó su contraseña o quedó bloqueado): la clave
+// vuelve a ser el RUT y en el próximo ingreso deberá crear una contraseña nueva.
 // =====================================
 exports.restablecerAccesoAdmin = (req, res) => {
   const personaId = Number(req.params.personaId);
@@ -222,7 +230,7 @@ exports.solicitarActualizacionAdmin = (req, res) => {
 };
 
 // =====================================
-// ADMIN: seguimiento de accesos (quién ya creó su PIN, último ingreso, bloqueos)
+// ADMIN: seguimiento de accesos (quién ya creó su contraseña, último ingreso, bloqueos)
 // =====================================
 exports.listarEstado = (req, res) => {
   socioAuthModel.listarEstadoAcceso((err, filas) => {

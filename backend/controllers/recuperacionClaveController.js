@@ -1,4 +1,4 @@
-// "¿Olvidaste tu contraseña?" (directiva) y "¿Olvidaste tu PIN?" (socios): envía
+// "¿Olvidaste tu contraseña?" (directiva y socios): envía
 // por email un enlace de un solo uso (vence en 30 min) para crear una clave nueva.
 //
 // Seguridad:
@@ -15,6 +15,7 @@ const usuarioModel = require('../models/usuarioModel');
 const socioAuthModel = require('../models/socioAuthModel');
 const emailService = require('../services/emailService');
 const { limpiarRut } = require('../utils/validacionesPersona');
+const { validarClaveSocio } = require('../utils/politicaClave');
 
 const BCRYPT_ROUNDS = 10;
 const PASSWORD_MIN_LARGO = 8;
@@ -170,24 +171,27 @@ exports.solicitarSocio = (req, res) => {
 exports.restablecerSocio = (req, res) => {
   const { token, pinNuevo } = req.body || {};
 
-  if (!/^[0-9]{6}$/.test(String(pinNuevo || ''))) {
-    return res.status(400).json({ mensaje: 'El nuevo PIN debe tener 6 dígitos' });
+  // Se valida sin RUT (aún no se sabe de quién es el token) antes de tocar el
+  // enlace, para no consumirlo por una contraseña que igual no cumple la política.
+  const errorPolitica = validarClaveSocio(pinNuevo);
+  if (errorPolitica) {
+    return res.status(400).json({ mensaje: errorPolitica });
   }
 
   restablecer('socio', token, personaId => {
     bcrypt.hash(String(pinNuevo), BCRYPT_ROUNDS, (errHash, hash) => {
       if (errHash) {
-        console.error('[Recuperación] Error hasheando PIN:', errHash);
-        return res.status(500).json({ mensaje: 'Error al restablecer el PIN' });
+        console.error('[Recuperación] Error hasheando contraseña:', errHash);
+        return res.status(500).json({ mensaje: 'Error al restablecer la contraseña' });
       }
-      // Mismo guardado que el cambio de PIN normal: queda con PIN propio y sin
-      // bloqueo. Si nunca había actualizado sus datos, se le pedirán al entrar.
+      // Mismo guardado que el cambio de contraseña normal: queda con clave propia
+      // y sin bloqueo. Si nunca había actualizado sus datos, se le pedirán al entrar.
       socioAuthModel.guardarPinPropio(personaId, hash, errUpdate => {
         if (errUpdate) {
-          console.error('[Recuperación] Error guardando PIN:', errUpdate);
-          return res.status(500).json({ mensaje: 'Error al restablecer el PIN' });
+          console.error('[Recuperación] Error guardando contraseña:', errUpdate);
+          return res.status(500).json({ mensaje: 'Error al restablecer la contraseña' });
         }
-        res.json({ mensaje: 'PIN actualizado. Ya puedes ingresar con tu nuevo PIN.' });
+        res.json({ mensaje: 'Contraseña actualizada. Ya puedes ingresar con tu nueva contraseña.' });
       });
     });
   }, res);

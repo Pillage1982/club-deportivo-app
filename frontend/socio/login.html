@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Portal del Socio — login por RUT + clave (RUT en el primer ingreso, luego PIN propio; no reutiliza el login admin: token, storage y endpoint son propios). -->
+<!-- Portal del Socio — login por RUT + clave (RUT en el primer ingreso, luego contraseña propia; no reutiliza el login admin: token, storage y endpoint son propios). -->
 <html lang="es">
 
 <head>
@@ -71,8 +71,8 @@
         type="password"
         id="pin"
         class="form-control"
-        placeholder="Clave (tu PIN)"
-        maxlength="12"
+        placeholder="Contraseña"
+        maxlength="64"
         autocomplete="current-password">
       <button type="button" id="togglePin" class="toggle-password">
         <i class="bi bi-eye-fill"></i>
@@ -90,7 +90,7 @@
     </p>
 
     <p class="text-center mt-2 mb-0">
-      <a href="recuperar-pin.html" style="color:#f47a22; font-size:0.85rem;">¿Olvidaste tu PIN?</a>
+      <a href="recuperar-pin.html" style="color:#f47a22; font-size:0.85rem;">¿Olvidaste tu contraseña?</a>
     </p>
 
   </div>
