@@ -14,12 +14,20 @@ router.post('/login', loginRateLimiter, controller.login);
 router.post('/recuperar', recuperacionRateLimiter, recuperacion.solicitarUsuario);
 router.post('/restablecer', loginRateLimiter, recuperacion.restablecerUsuario);
 
-// Acepta el token con cambio de clave pendiente (única ruta que lo hace).
+// Primer ingreso: únicas rutas que aceptan el token con pendientes
+// (cambio de clave y/o registro del email).
 router.post(
   '/cambiar-password',
   loginRateLimiter,
   authMiddleware.permitirCambioPendiente,
   controller.cambiarPassword
+);
+
+router.post(
+  '/registrar-email',
+  loginRateLimiter,
+  authMiddleware.permitirCambioPendiente,
+  controller.registrarEmail
 );
 
 module.exports = router;

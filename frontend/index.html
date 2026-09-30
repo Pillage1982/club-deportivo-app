@@ -13,8 +13,11 @@
       window.location.replace('login.html');
     } else {
       try {
-        if (JSON.parse(localStorage.getItem('usuario') || '{}').debeCambiarPassword) {
+        const usuarioSesion = JSON.parse(localStorage.getItem('usuario') || '{}');
+        if (usuarioSesion.debeCambiarPassword) {
           window.location.replace('cambiar-password.html');
+        } else if (usuarioSesion.debeRegistrarEmail) {
+          window.location.replace('registrar-email.html');
         }
       } catch (e) {}
     }

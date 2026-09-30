@@ -25,3 +25,8 @@ exports.actualizarPasswordPropia = (id, passwordHash, callback) => {
     callback
   );
 };
+
+// Primer ingreso: el directivo registra su email (para recuperar la contraseña).
+exports.actualizarEmail = (id, email, callback) => {
+  db.query('UPDATE usuarios SET email = ? WHERE id = ?', [email, id], callback);
+};
