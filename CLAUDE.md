@@ -12,13 +12,16 @@ Cliente activo: Gran Diablada Calameña (rama `cliente/calamena`).
 ## Ambientes
 - `club.pillageweb.cl` → main (producción NexoComunidad genérico)
 - `devnexo.pillageweb.cl` → v1.3-dev (desarrollo activo)
-- `devclub.pillageweb.cl` → cliente/calamena (cliente Gran Diablada Calameña)
+- `app.gdcayquina.cl` → cliente/calamena-produccion (producción Gran Diablada Calameña, hosting Hostinger del cliente, despliegue por zip)
+- `dev.gdcayquina.cl` → cliente/calamena (ambiente de pruebas Gran Diablada Calameña, despliegue por zip)
+- `devclub.pillageweb.cl` → **dado de baja (oct-2026)**, reemplazado por dev.gdcayquina.cl
 - `nexocomunidad.pillageweb.cl` → landing comercial
 
 ## Ramas
 - `main` → producción estable
 - `v1.3-dev` → desarrollo activo NexoComunidad
-- `cliente/calamena` → personalización Gran Diablada Calameña
+- `cliente/calamena` → personalización Gran Diablada Calameña (trabajo diario, pruebas)
+- `cliente/calamena-produccion` → producción Gran Diablada Calameña (se fusiona desde cliente/calamena cuando está probado)
 
 ## Flujo de trabajo
 - Cambios se hacen en `v1.3-dev` o `cliente/calamena`
@@ -35,7 +38,7 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 
 ## Estado actual cliente/calamena (jul-2026)
 
-### Implementado y en producción (devclub.pillageweb.cl)
+### Implementado (app.gdcayquina.cl / dev.gdcayquina.cl)
 - PWA offline-first completa (SW v22, IndexedDB v2 con UUID)
 - Scanner QR nunca se bloquea: guarda con `estadoSync: sin_evento` si no hay evento
 - Matching automático al seleccionar evento (por fecha local, corregido timezone)
@@ -63,10 +66,8 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 
 ### Pendiente calamena
 - UI para asignar manualmente estados nuevos de asistencia (justificado, licencia_medica, vestimenta_distinta, retiro_sin_aviso) — hoy solo accesibles vía QR o BD directa
-- Portal del socio (PWA separada, login por RUT + PIN)
 - Cancionero (Spotify + letras)
-- Despliegue en grandiabladacalameña.cl — bloqueado, cliente no entrega cPanel de BlueHosting
-- EMAIL_PASS no configurado en devclub → emails de cierre de evento no se envían
+- Correo saliente sin configurar en app./dev.gdcayquina.cl (EMAIL_HOST/EMAIL_USER/EMAIL_PASS, buzones @gdcayquina.cl por crear) → no salen cierres de evento, recuperación de clave ni cartas del Portal del Socio
 
 ### En espera de definición del cliente
 - **Tolerancia QR:** no implementar nuevos cambios hasta que el cliente confirme si desea aplicarla.
@@ -91,10 +92,10 @@ Ver `documentacion/roadmap_maestro_producto_adaptable.md`
 ## Hosting Hostinger — comandos clave
 ```bash
 # Ruta del proyecto
-cd ~/domains/devclub.pillageweb.cl/nodejs
+cd ~/domains/dev.gdcayquina.cl/nodejs   # o app.gdcayquina.cl
 
 # npm (no está en PATH, usar ruta completa)
 /opt/alt/alt-nodejs22/root/usr/bin/npm install
 
-# Reiniciar: hPanel → Sitios web → devclub → Node.js → Reiniciar
+# Redesplegar: subir zip nuevo (git archive) en hPanel → Sitios web → <sitio> → Despliegues
 ```

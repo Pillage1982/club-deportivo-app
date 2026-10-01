@@ -402,6 +402,57 @@ async function reconstruirVistaRankingPuntaje() {
   `);
 }
 
+// Pestaña "Documentos" del Portal del Socio: cartas que antes se entregaban en
+// papel. id = Nº de folio. Una justificación aprobada cambia la asistencia del
+// evento a justificado/licencia_medica (Art. 8.4); evento_id NULL = "Otro"
+// (actividad que no está en el sistema). Solo se reciben hasta el cierre de
+// asistencia (Art. 8.7), lo valida el controller, no la tabla.
+async function asegurarTablasDocumentosSocio() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS justificaciones (
+      id                    BIGINT AUTO_INCREMENT PRIMARY KEY,
+      persona_id            BIGINT NOT NULL,
+      evento_id             BIGINT NULL,
+      referencia            ENUM('ensayo', 'reunion', 'salida', 'otro') NOT NULL,
+      referencia_otro       VARCHAR(150) NULL,
+      fecha_actividad       DATE NOT NULL,
+      tipo_solicitado       ENUM('justificado', 'licencia_medica') NOT NULL DEFAULT 'justificado',
+      condicion             ENUM('bailarin', 'socio') NOT NULL,
+      motivo                TEXT NOT NULL,
+      quien_entrega         VARCHAR(150) NULL,
+      adjunto_path          VARCHAR(255) NULL,
+      estado                ENUM('pendiente', 'aprobada', 'rechazada') NOT NULL DEFAULT 'pendiente',
+      estado_aplicado       ENUM('justificado', 'licencia_medica') NULL,
+      observacion_directiva VARCHAR(300) NULL,
+      revisado_por          INT NULL,
+      revisado_en           DATETIME NULL,
+      email_enviado         TINYINT(1) NOT NULL DEFAULT 0,
+      creado_en             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      KEY idx_justificacion_persona (persona_id),
+      KEY idx_justificacion_estado (estado),
+      KEY idx_justificacion_evento (evento_id),
+      CONSTRAINT fk_justificacion_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE,
+      CONSTRAINT fk_justificacion_evento FOREIGN KEY (evento_id) REFERENCES eventos(id) ON DELETE SET NULL
+    )
+  `);
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS postulaciones_bloque (
+      id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+      persona_id     BIGINT NOT NULL,
+      bloque_actual  VARCHAR(100) NULL,
+      es_nuevo       TINYINT(1) NOT NULL DEFAULT 0,
+      opcion_1       VARCHAR(100) NOT NULL,
+      opcion_2       VARCHAR(100) NULL,
+      celular        VARCHAR(20) NULL,
+      email          VARCHAR(150) NULL,
+      email_enviado  TINYINT(1) NOT NULL DEFAULT 0,
+      creado_en      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      KEY idx_postulacion_persona (persona_id),
+      CONSTRAINT fk_postulacion_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
+    )
+  `);
+}
+
 async function ejecutarMigraciones() {
   const [colsPersonas, colsEventos, colsAsistencias] = await Promise.all([
     columnasExistentes('personas'),
@@ -424,6 +475,7 @@ async function ejecutarMigraciones() {
   await asegurarCambioPasswordUsuarios();
   await asegurarRecuperacionClave();
   await asegurarCamposPagos();
+  await asegurarTablasDocumentosSocio();
   await consolidarTiposCuota();
   await reconstruirVistaRankingPuntaje();
   await reconstruirVistaEstadoFinanciero();

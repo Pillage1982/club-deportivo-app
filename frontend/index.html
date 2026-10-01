@@ -287,6 +287,12 @@
             <span id="badge_sin_evento" class="badge bg-warning text-dark ms-1 d-none">0</span>
           </a>
         </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_justificaciones">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_justificaciones" role="tab">
+            <i class="bi bi-envelope-paper"></i> Justificaciones
+            <span id="badge_justificaciones" class="badge bg-warning text-dark ms-1 d-none">0</span>
+          </a>
+        </li>
         <li class="nav-item" role="presentation" id="nav_subtab_pagos">
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_pagos" role="tab">
             <i class="bi bi-cash"></i> Pagos
@@ -464,6 +470,66 @@
         </div>
 
         <!-- Sin asignar (asistencias offline sin evento) -->
+        <!-- Justificaciones: cartas enviadas desde el Portal del Socio (Documentos) -->
+        <div class="tab-pane fade" id="subtab_justificaciones" role="tabpanel">
+          <div class="alert alert-info small">
+            Cartas de justificación enviadas por los integrantes desde el Portal del Socio
+            (solo se reciben hasta el cierre de asistencia, Art. 8.7). Al <strong>aprobar</strong>,
+            la asistencia de esa actividad queda como justificada o licencia médica, se elimina la multa
+            pendiente y se recalcula el puntaje. El integrante recibe un aviso por correo.
+          </div>
+          <div class="row g-2 mb-3 align-items-end">
+            <div class="col-md-3">
+              <label for="filtro_justificaciones_estado" class="form-label">Estado</label>
+              <select id="filtro_justificaciones_estado" class="form-select">
+                <option value="pendiente">Pendientes</option>
+                <option value="aprobada">Aprobadas</option>
+                <option value="rechazada">Rechazadas</option>
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label for="buscar_justificaciones" class="form-label">Buscar</label>
+              <input type="search" id="buscar_justificaciones" class="form-control" placeholder="Nombre, RUT, actividad o folio">
+            </div>
+          </div>
+          <div id="tabla_justificaciones_wrapper" class="table-responsive tabla-scroll mb-4">
+            <table class="table table-bordered table-striped mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Folio</th>
+                  <th>Recibida</th>
+                  <th>Integrante</th>
+                  <th>Actividad</th>
+                  <th>Tipo</th>
+                  <th>Motivo</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_justificaciones"></tbody>
+            </table>
+          </div>
+
+          <h5 class="mb-3"><i class="bi bi-grid-3x3-gap me-2"></i>Postulaciones a bloques</h5>
+          <div id="tabla_postulaciones_wrapper" class="table-responsive tabla-scroll">
+            <table class="table table-bordered table-striped mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Folio</th>
+                  <th>Recibida</th>
+                  <th>Integrante</th>
+                  <th>Bloque actual</th>
+                  <th>1ª opción</th>
+                  <th>2ª opción</th>
+                  <th>Contacto</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_postulaciones"></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="tab-pane fade" id="subtab_sin_evento" role="tabpanel">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <p class="mb-0 text-muted">Registros escaneados sin actividad asignada, guardados localmente.</p>
@@ -1155,6 +1221,46 @@
     </div>
   </div>
 
+  <!-- Modal: Revisar justificación -->
+  <div class="modal fade" id="modal_revisar_justificacion" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-envelope-paper me-2"></i>Justificación folio <span id="revisar_just_folio"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="revisar_just_detalle" class="mb-3"></div>
+          <div id="revisar_just_acciones">
+            <div class="row g-2">
+              <div class="col-md-5">
+                <label for="revisar_just_estado" class="form-label">Registrar asistencia como</label>
+                <select id="revisar_just_estado" class="form-select">
+                  <option value="justificado">Justificado</option>
+                  <option value="licencia_medica">Licencia médica</option>
+                </select>
+              </div>
+              <div class="col-md-7">
+                <label for="revisar_just_observacion" class="form-label">Observación <span class="text-muted">(obligatoria si se rechaza)</span></label>
+                <input type="text" id="revisar_just_observacion" class="form-control" maxlength="300">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" id="revisar_just_footer">
+          <button type="button" class="btn btn-outline-danger" id="btn_rechazar_justificacion" onclick="resolverJustificacion('rechazar')">
+            <i class="bi bi-x-circle me-1"></i>Rechazar
+          </button>
+          <button type="button" class="btn btn-success" id="btn_aprobar_justificacion" onclick="resolverJustificacion('aprobar')">
+            <i class="bi bi-check-circle me-1"></i>Aprobar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="app-footer text-center py-3 mt-4">
     <small>Diseño de Mario Riquelme</small>
   </footer>
@@ -1168,6 +1274,7 @@
   <script src="js/pagos.js"></script>
   <script src="js/gastos.js"></script>
   <script src="js/accesoSocios.js"></script>
+  <script src="js/justificaciones.js"></script>
   <script src="js/multas.js"></script>
   <script src="js/puntaje.js"></script>
   <script src="js/formaciones.js?v=30"></script>

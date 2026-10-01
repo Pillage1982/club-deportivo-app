@@ -1,6 +1,7 @@
-// Portal del Socio: navegación entre las 4 pantallas y carga de datos propios
-// (solo lectura) desde /socio-auth/mi-*. Cada pantalla se carga una sola vez
-// (cache en memoria) y se refresca al volver a entrar a index.html.
+// Portal del Socio: navegación entre las 5 pantallas y carga de datos propios
+// (solo lectura) desde /socio-auth/mi-*; Documentos vive en documentos.js.
+// Cada pantalla se carga una sola vez (cache en memoria) y se refresca al
+// volver a entrar a index.html.
 
 const cachePantallas = {};
 
@@ -34,6 +35,7 @@ function cargarPantalla(nombre) {
   if (nombre === 'ficha') return cargarFicha();
   if (nombre === 'finanzas') return cargarFinanzas();
   if (nombre === 'asistencia') return cargarAsistenciaYPuntaje();
+  if (nombre === 'documentos') return cargarDocumentos();
 }
 
 function badgeEstado(estado) {
