@@ -74,6 +74,15 @@ function formatearFechaTexto(fecha) {
   });
 }
 
+// Tipo de actividad como lo nombra la agrupación (eventos.tipo).
+const NOMBRE_TIPO_ACTIVIDAD = {
+  entrenamiento: 'el ensayo',
+  reunion: 'la reunión',
+  partido: 'la presentación'
+};
+
+// Sin mención a multas: hoy no se cobran (deuda = cuotas − pagos). Lo que sí
+// pesa es el puntaje (Art. 8.3/8.4), que define la ubicación en la formación.
 function notificarAusenteEvento(persona, evento) {
   const nombre = [
     persona.nombres,
@@ -81,22 +90,23 @@ function notificarAusenteEvento(persona, evento) {
     persona.apellido_materno || ''
   ].join(' ').trim();
 
+  const actividad = NOMBRE_TIPO_ACTIVIDAD[evento.tipo] || 'la actividad';
+
   const cuerpo = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #222;">
       <h2 style="color: #333;">Gran Diablada Calameña</h2>
-      <p>Estimado/a <strong>${nombre}</strong>,</p>
+      <p>Estimado/a <strong>${escaparHtml(nombre)}</strong>:</p>
       <p>
-        La actividad <strong>${evento.nombre}</strong>
-        del ${formatearFechaTexto(evento.fecha)}
-        ha sido finalizada.
+        Usted ha quedado registrado/a como <strong style="color: #dc3545;">ausente</strong>
+        en ${actividad} <strong>${escaparHtml(evento.nombre)}</strong>
+        del ${escaparHtml(formatearFechaTexto(evento.fecha))}.
       </p>
       <p>
-        Tu asistencia quedó registrada como <strong style="color: #dc3545;">Ausente</strong>.
-        Se ha generado una multa de <strong>$5.000</strong> por inasistencia.
+        No olvide que esto afectará su puntaje para la formación de futuras presentaciones.
       </p>
-      <p>
-        Si tienes algún justificativo, comunícalo con la directiva para que
-        sea evaluado según los protocolos de la agrupación.
+      <p style="margin-top: 24px;">
+        Atentamente,<br>
+        <strong>La Directiva</strong>
       </p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
       <p style="color: #888; font-size: 12px;">
