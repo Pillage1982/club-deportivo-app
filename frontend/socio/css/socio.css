@@ -182,3 +182,147 @@ body {
 .socio-nav-btn.active {
   color: #f47a22;
 }
+
+/* Navegación inferior con 5 botones: etiquetas más cortas caben en 320px */
+@media (max-width: 360px) {
+  .socio-nav-btn {
+    font-size: 0.62rem;
+  }
+}
+
+/* ===== Documentos ===== */
+.btn-gdc {
+  background: #f47a22;
+  border-color: #f47a22;
+  color: white;
+  font-weight: 600;
+}
+
+.btn-gdc:hover,
+.btn-gdc:focus,
+.btn-gdc:disabled {
+  background: #d9661a;
+  border-color: #d9661a;
+  color: white;
+}
+
+.socio-doc-opcion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  color: #222;
+}
+
+.socio-doc-opcion > i:first-child {
+  font-size: 1.5rem;
+  color: #f47a22;
+}
+
+.socio-doc-opcion span {
+  display: flex;
+  flex-direction: column;
+}
+
+.socio-doc-opcion small {
+  color: #777;
+}
+
+.socio-doc-item {
+  align-items: center;
+  gap: 10px;
+}
+
+.socio-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.socio-opciones label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Vista previa con el formato de las cartas en papel */
+.carta-preview {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 20px 18px;
+  font-family: Arial, sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #222;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.carta-preview * {
+  font-family: Arial, sans-serif;
+}
+
+.carta-preview p {
+  margin-bottom: 0.6rem;
+}
+
+.carta-membrete {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.carta-membrete img {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.carta-membrete div {
+  flex: 1;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.carta-derecha {
+  text-align: right;
+}
+
+.carta-destinatarios {
+  margin-top: 12px;
+}
+
+.carta-referencia {
+  padding-bottom: 6px;
+  border-bottom: 3px solid #222;
+}
+
+.carta-casilla {
+  white-space: nowrap;
+  margin-right: 4px;
+}
+
+.carta-nota {
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.carta-cuerpo {
+  padding: 6px 4px 8px;
+  border-bottom: 1px solid #222;
+  min-height: 3.5em;
+  overflow-wrap: anywhere;
+}
+
+.carta-sangria {
+  text-indent: 32px;
+}
+
+.carta-vacio {
+  color: #aaa;
+  font-style: italic;
+}

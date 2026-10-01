@@ -59,6 +59,7 @@ window.onload = () => {
         cargarTablaEventos();
       });
     cargarAsistencias();
+    actualizarBadgeJustificaciones();
   }
 
   if (puedeVerFinanzas) {
@@ -93,6 +94,12 @@ window.onload = () => {
     tabFormaciones.addEventListener('shown.bs.tab', () => inicializarFormaciones());
   }
 
+  // Cartas de justificación del Portal del Socio
+  const tabJustificaciones = document.querySelector('[href="#subtab_justificaciones"]');
+  if (tabJustificaciones) {
+    tabJustificaciones.addEventListener('shown.bs.tab', () => inicializarJustificaciones());
+  }
+
   // Cargar seguimiento de acceso de socios cuando se activa ese subtab
   const tabAccesoSocios = document.querySelector('[href="#subtab_acceso_socios"]');
   if (tabAccesoSocios) {
@@ -118,6 +125,7 @@ function aplicarRolesTabs() {
     document.getElementById('nav_subtab_asistencias')?.classList.add('d-none');
     document.getElementById('nav_subtab_form_evento')?.classList.add('d-none');
     document.getElementById('nav_subtab_sin_evento')?.classList.add('d-none');
+    document.getElementById('nav_subtab_justificaciones')?.classList.add('d-none');
     document.getElementById('nav_subtab_puntaje')?.classList.add('d-none');
   }
 

@@ -144,7 +144,8 @@ function escaparHtml(valor) {
 
 function formatearFecha(fecha) {
   if (!fecha) return '';
-  const fechaLimpia = String(fecha).split('T')[0];
+  // Acepta DATE, ISO ('...T...') y DATETIME de MySQL ('YYYY-MM-DD HH:MM:SS').
+  const fechaLimpia = String(fecha).split(/[T ]/)[0];
   const partes = fechaLimpia.split('-');
   if (partes.length !== 3) return fechaLimpia;
   const [anio, mes, dia] = partes;

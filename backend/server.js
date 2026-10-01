@@ -43,6 +43,7 @@ app.use('/cuotas', require('./routes/cuotaRoutes'));
 app.use('/puntaje', require('./routes/puntajeRoutes'));
 app.use('/formaciones', require('./routes/formacionRoutes'));
 app.use('/gastos', require('./routes/gastoRoutes'));
+app.use('/justificaciones', require('./routes/justificacionRoutes'));
 // Ambos bajo /socio-auth (no /socio): el frontend del socio vive en la carpeta
 // /socio/ servida como estático (ver abajo) — si la API usara el prefijo /socio
 // colisionaría con esa ruta y el Service Worker cachearía mal el HTML/JS estático
