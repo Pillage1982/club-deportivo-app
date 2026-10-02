@@ -2,7 +2,8 @@
 // postulación a bloques con el mismo formato que las cartas en papel de la
 // agrupación. Nombre, RUT, celular y email se autocompletan (el servidor los toma
 // de la BD, no del formulario); la vista previa muestra la carta tal como llega
-// por correo a la directiva/caporales. También abre los Estatutos en PDF.
+// por correo a la directiva/caporales. También muestra la cuenta para depositar,
+// envía comprobantes de depósito a tesorería y abre los Estatutos en PDF.
 
 let datosDocumentos = null;
 
@@ -43,7 +44,7 @@ function cargarDocumentos() {
 // NAVEGACIÓN INTERNA (menú ↔ formularios)
 // =====================================
 function mostrarVistaDocumentos(id) {
-  ['docs_menu', 'docs_form_justificacion', 'docs_form_postulacion'].forEach(v => {
+  ['docs_menu', 'docs_form_justificacion', 'docs_form_postulacion', 'docs_cuenta', 'docs_form_comprobante'].forEach(v => {
     document.getElementById(v).classList.toggle('d-none', v !== id);
   });
   window.scrollTo(0, 0);
@@ -99,15 +100,32 @@ function renderizarHistorialDocumentos() {
   const contenedor = document.getElementById('docs_historial');
   const items = [
     ...datosDocumentos.justificaciones.map(j => ({ tipo: 'j', fecha: j.creado_en, dato: j })),
-    ...datosDocumentos.postulaciones.map(p => ({ tipo: 'p', fecha: p.creado_en, dato: p }))
+    ...datosDocumentos.postulaciones.map(p => ({ tipo: 'p', fecha: p.creado_en, dato: p })),
+    ...(datosDocumentos.comprobantes || []).map(c => ({ tipo: 'c', fecha: c.creado_en, dato: c }))
   ].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
 
   if (!items.length) {
-    contenedor.innerHTML = '<p class="text-muted small mb-0">Todavía no has enviado cartas.</p>';
+    contenedor.innerHTML = '<p class="text-muted small mb-0">Todavía no has enviado cartas ni comprobantes.</p>';
     return;
   }
 
   contenedor.innerHTML = items.map(({ tipo, dato }) => {
+    if (tipo === 'c') {
+      return `
+        <div class="item socio-doc-item">
+          <div>
+            <div><strong>Comprobante de depósito</strong> · Folio ${folioTexto(dato.id)}</div>
+            <small class="text-muted">
+              ${formatearMonto(dato.monto)} · depositado ${formatearFecha(dato.fecha_deposito)}${dato.concepto ? ` · ${escaparHtml(dato.concepto)}` : ''}
+            </small>
+          </div>
+          ${dato.email_enviado
+            ? '<span class="badge bg-secondary">Enviado a tesorería</span>'
+            : '<span class="badge bg-warning text-dark">Correo no enviado</span>'}
+        </div>
+      `;
+    }
+
     if (tipo === 'p') {
       return `
         <div class="item socio-doc-item">
@@ -433,6 +451,140 @@ function enviarPostulacion() {
     })
     .then(data => {
       document.getElementById('form_postulacion').reset();
+      volverMenuDocumentos();
+      document.getElementById('docs_respuesta').innerHTML =
+        alertaDocumentos(data.correoEnviado ? 'success' : 'warning', data.mensaje);
+      cargarDocumentos();
+    })
+    .catch(err => {
+      respuesta.innerHTML = alertaDocumentos('danger', err.message);
+    })
+    .finally(() => { boton.disabled = false; });
+}
+
+// =====================================
+// DATOS PARA DEPOSITAR
+// =====================================
+const CAMPOS_CUENTA = [
+  ['titular', 'Titular'],
+  ['rut', 'RUT'],
+  ['banco', 'Banco'],
+  ['tipo_cuenta', 'Tipo de cuenta'],
+  ['numero', 'N° de cuenta'],
+  ['email', 'Correo']
+];
+
+function abrirDatosCuenta() {
+  if (!datosDocumentos) return;
+  document.getElementById('docs_respuesta').innerHTML = '';
+  document.getElementById('cuenta_respuesta').innerHTML = '';
+  const cuenta = datosDocumentos.cuenta_deposito || {};
+  const contenedor = document.getElementById('cuenta_datos');
+
+  if (!cuenta.numero) {
+    contenedor.innerHTML = '<p class="text-muted small mb-0">Tesorería aún no publica los datos de la cuenta. Consulta directamente con tesorería.</p>';
+  } else {
+    const filas = CAMPOS_CUENTA.filter(([clave]) => cuenta[clave]);
+    contenedor.innerHTML = filas.map(([clave, etiqueta]) => `
+      <div class="item align-items-center">
+        <div>
+          <small class="text-muted d-block">${etiqueta}</small>
+          <strong>${escaparHtml(cuenta[clave])}</strong>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copiarDatoCuenta('${clave}')" aria-label="Copiar ${etiqueta}">
+          <i class="bi bi-copy"></i>
+        </button>
+      </div>
+    `).join('') + `
+      <button type="button" class="btn btn-sm btn-outline-secondary w-100 mt-2" onclick="copiarDatoCuenta()">
+        <i class="bi bi-clipboard me-1"></i>Copiar todos los datos
+      </button>
+      ${cuenta.nota ? `<p class="text-muted small mt-2 mb-0">${escaparHtml(cuenta.nota)}</p>` : ''}
+    `;
+  }
+  mostrarVistaDocumentos('docs_cuenta');
+}
+
+// Sin clave copia todos los datos (para pegarlos en la app del banco).
+function copiarDatoCuenta(clave) {
+  const cuenta = datosDocumentos.cuenta_deposito || {};
+  const texto = clave
+    ? String(cuenta[clave])
+    : CAMPOS_CUENTA.filter(([c]) => cuenta[c]).map(([c, etiqueta]) => `${etiqueta}: ${cuenta[c]}`).join('\n');
+  const aviso = document.getElementById('cuenta_respuesta');
+
+  const copiar = navigator.clipboard
+    ? navigator.clipboard.writeText(texto)
+    : Promise.reject(new Error('sin portapapeles'));
+  copiar
+    .then(() => { aviso.innerHTML = alertaDocumentos('success', clave ? 'Copiado.' : 'Datos de la cuenta copiados.'); })
+    .catch(() => { aviso.innerHTML = alertaDocumentos('warning', 'No se pudo copiar. Mantén presionado el dato para copiarlo.'); });
+}
+
+// =====================================
+// COMPROBANTE DE DEPÓSITO → TESORERÍA
+// =====================================
+function abrirFormularioComprobante() {
+  if (!datosDocumentos) return;
+  document.getElementById('docs_respuesta').innerHTML = '';
+  document.getElementById('comp_respuesta').innerHTML = '';
+  const fecha = document.getElementById('comp_fecha');
+  fecha.max = hoyIso();
+  if (!fecha.value) fecha.value = hoyIso();
+  mostrarVistaDocumentos('docs_form_comprobante');
+}
+
+function leerFormularioComprobante() {
+  return {
+    monto: Number(document.getElementById('comp_monto').value.replace(/\D/g, '')),
+    fecha: document.getElementById('comp_fecha').value,
+    concepto: document.getElementById('comp_concepto').value.trim(),
+    archivo: document.getElementById('comp_archivo').files[0] || null
+  };
+}
+
+function validarComprobante(f) {
+  if (!f.monto || f.monto < 100) return 'Indica el monto depositado';
+  if (!f.fecha) return 'Indica la fecha del depósito';
+  if (f.fecha > hoyIso()) return 'La fecha del depósito no puede ser futura';
+  if (!f.archivo) return 'Adjunta la foto o el PDF del comprobante';
+  if (f.archivo.size > 5 * 1024 * 1024) return 'El archivo supera los 5 MB';
+  return null;
+}
+
+function enviarComprobante() {
+  const respuesta = document.getElementById('comp_respuesta');
+  const f = leerFormularioComprobante();
+  const error = validarComprobante(f);
+
+  if (error) {
+    respuesta.innerHTML = alertaDocumentos('warning', error);
+    return;
+  }
+
+  const datos = new FormData();
+  datos.append('monto', f.monto);
+  datos.append('fecha_deposito', f.fecha);
+  if (f.concepto) datos.append('concepto', f.concepto);
+  datos.append('comprobante', f.archivo);
+
+  const boton = document.getElementById('btn_enviar_comprobante');
+  boton.disabled = true;
+  respuesta.innerHTML = '';
+
+  // Sin Content-Type: el navegador arma el multipart con su boundary.
+  fetch(`${API_URL}/socio-auth/documentos/comprobantes`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getSocioToken()}` },
+    body: datos
+  })
+    .then(async res => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.mensaje || 'No se pudo enviar el comprobante');
+      return data;
+    })
+    .then(data => {
+      document.getElementById('form_comprobante').reset();
       volverMenuDocumentos();
       document.getElementById('docs_respuesta').innerHTML =
         alertaDocumentos(data.correoEnviado ? 'success' : 'warning', data.mensaje);

@@ -87,7 +87,7 @@ function ejecutarGeneracionCuotas() {
 // ya que un pago no puede vincularse a una cuota que todavía no existe.
 function generarCuotasTemporada() {
   mostrarConfirmacion(
-    'Esta acción generará las cuotas de toda la temporada (los 10 meses) para todos los integrantes activos, incluidos los meses futuros. ¿Deseas continuar?',
+    'Esta acción generará las cuotas de la temporada 2026-2027 (octubre 2026 a julio 2027, 10 meses) para todos los integrantes activos, incluidos los meses futuros. Las cuotas que ya existan no se duplican. ¿Deseas continuar?',
     ejecutarGeneracionCuotasTemporada
   );
 }

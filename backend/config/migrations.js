@@ -129,6 +129,24 @@ async function asegurarCamposEventos(colsEventos) {
       MODIFY COLUMN fecha DATETIME NOT NULL
     `);
   }
+
+  // Marcador de inicio de temporada (casilla "Inicia temporada" del formulario de
+  // actividades). Reemplaza el corte por nombre "Despedida de Pueblo": al crear la
+  // columna se marcan una sola vez las Despedidas ya cargadas (para conservar las
+  // temporadas pasadas) y la Misa a la Chilena de sept-2026, que abre 2026-2027.
+  // Después lo administra la directiva desde el formulario.
+  if (!colsEventos.has('inicia_temporada')) {
+    await ejecutar(`
+      ALTER TABLE eventos
+      ADD COLUMN inicia_temporada TINYINT(1) NOT NULL DEFAULT 0
+    `);
+    await ejecutar(`
+      UPDATE eventos
+      SET inicia_temporada = 1
+      WHERE LOWER(nombre) LIKE 'despedida de pueblo%'
+         OR (LOWER(nombre) LIKE 'misa a la chilena%' AND fecha >= '2026-09-01' AND fecha < '2026-11-01')
+    `);
+  }
 }
 
 async function asegurarEstadosAsistencia(colsAsistencias) {
@@ -359,13 +377,13 @@ async function consolidarTiposCuota() {
   await ejecutar("UPDATE tipos_cuotas SET monto_base=12000, descripcion='Cuota mensual GDC' WHERE id=?", [canonico]);
 }
 
-// Corte oficial de temporada (pendiente #2 de la matriz de validacion, art. 9.1.1):
-// la actividad "Despedida de Pueblo <anio>" cierra una temporada y es, a la vez,
-// la primera actividad puntuable de la siguiente. Se toma la mas reciente que ya
-// ocurrio como fecha de corte; los puntajes de esa fecha en adelante son de la
-// temporada vigente y son los unicos que suman en el ranking oficial. Si aun no
-// existe ninguna "Despedida de Pueblo" cargada, no se aplica corte (se preserva
-// el comportamiento historico) para no vaciar el ranking antes de tiempo.
+// Corte oficial de temporada (art. 9.1.1): la actividad marcada con
+// inicia_temporada = 1 (hasta 2026 la "Despedida de Pueblo"; desde 2026-2027 la
+// "Misa a la Chilena") abre una temporada y es su primera actividad puntuable.
+// Se toma la mas reciente que ya ocurrio como fecha de corte; los puntajes de esa
+// fecha en adelante son de la temporada vigente y son los unicos que suman en el
+// ranking oficial. Si no hay ninguna marcada, no se aplica corte (se preserva el
+// comportamiento historico) para no vaciar el ranking antes de tiempo.
 async function reconstruirVistaRankingPuntaje() {
   await ejecutar(`
     CREATE OR REPLACE VIEW vista_ranking_puntaje AS
@@ -393,7 +411,7 @@ async function reconstruirVistaRankingPuntaje() {
       AND pt.fecha >= (
         SELECT COALESCE(MAX(DATE(e.fecha)), '1900-01-01')
         FROM eventos e
-        WHERE LOWER(e.nombre) LIKE 'despedida de pueblo%'
+        WHERE e.inicia_temporada = 1
           AND DATE(e.fecha) <= CURDATE()
       )
     WHERE p.activo = 1 AND COALESCE(p.estado, 'activo') = 'activo'
@@ -449,6 +467,22 @@ async function asegurarTablasDocumentosSocio() {
       creado_en      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       KEY idx_postulacion_persona (persona_id),
       CONSTRAINT fk_postulacion_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
+    )
+  `);
+  // Comprobantes de depósito/transferencia que el socio envía a tesorería. Solo
+  // aviso: no crea el pago; tesorería lo registra en el panel al confirmarlo.
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS comprobantes_deposito (
+      id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+      persona_id      BIGINT NOT NULL,
+      monto           INT NOT NULL,
+      fecha_deposito  DATE NOT NULL,
+      concepto        VARCHAR(200) NULL,
+      adjunto_path    VARCHAR(255) NOT NULL,
+      email_enviado   TINYINT(1) NOT NULL DEFAULT 0,
+      creado_en       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      KEY idx_comprobante_persona (persona_id),
+      CONSTRAINT fk_comprobante_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
     )
   `);
 }

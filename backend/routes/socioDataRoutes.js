@@ -27,8 +27,9 @@ router.get('/mi-finanzas', exigirPerfilSocio(), controller.miFinanzas);
 router.get('/mi-asistencia', exigirPerfilSocio(), controller.miAsistencia);
 router.get('/mi-puntaje', exigirPerfilSocio(), controller.miPuntaje);
 
-// Pestaña "Documentos": cartas de justificación y postulación a bloques (se
-// guardan y se envían por correo) + Estatutos en PDF.
+// Pestaña "Documentos": cartas de justificación y postulación a bloques,
+// comprobantes de depósito para tesorería (se guardan y se envían por correo) +
+// Estatutos en PDF.
 router.get('/documentos', exigirPerfilSocio(), documentosController.datosFormularios);
 router.post(
   '/documentos/justificaciones',
@@ -47,6 +48,22 @@ router.post(
   documentosController.enviarJustificacion
 );
 router.post('/documentos/postulaciones', exigirPerfilSocio(), documentosController.enviarPostulacion);
+router.post(
+  '/documentos/comprobantes',
+  exigirPerfilSocio(),
+  (req, res, next) => {
+    uploadJustificativo.comprobantesDeposito.single('comprobante')(req, res, (err) => {
+      if (err) {
+        const mensaje = err.code === 'LIMIT_FILE_SIZE'
+          ? 'El archivo supera los 5 MB'
+          : (err.message || 'No se pudo subir el archivo');
+        return res.status(400).json({ mensaje });
+      }
+      next();
+    });
+  },
+  documentosController.enviarComprobante
+);
 router.get('/documentos/estatutos', exigirPerfilSocio(), documentosController.descargarEstatutos);
 
 module.exports = router;

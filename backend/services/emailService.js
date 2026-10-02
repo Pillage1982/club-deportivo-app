@@ -368,6 +368,53 @@ function enviarPostulacionBloque(datos) {
   }).then(() => true);
 }
 
+const DESTINO_TESORERIA = () => process.env.EMAIL_TESORERIA || 'tesoreria@gdcayquina.cl';
+
+// datos: { folio, creadoEn, persona, monto, fechaDeposito, concepto, adjunto: {path, filename} }
+// Devuelve false si el correo no está configurado (el comprobante igual queda guardado).
+function enviarComprobanteDeposito(datos) {
+  if (!emailConfigurado()) {
+    console.warn('[Email] No configurado. Comprobante de depósito no enviado, folio:', datos.folio);
+    return Promise.resolve(false);
+  }
+
+  const p = datos.persona;
+  const nombre = [p.nombres, p.apellido_paterno, p.apellido_materno || ''].join(' ').trim();
+  const monto = `$${Number(datos.monto).toLocaleString('es-CL')}`;
+
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; color: #222; font-size: 14px; line-height: 1.5;">
+      ${membreteCarta(datos.folio, datos.creadoEn)}
+      <p style="margin: 0 0 20px;"><strong>Señores<br>Tesorería.<br><u>Presente</u>.</strong></p>
+      <p style="margin: 0 0 16px;">Envío el comprobante adjunto del siguiente depósito o transferencia:</p>
+      <table role="presentation" style="border-collapse: collapse; margin: 0 0 20px;">
+        <tr><td style="padding: 4px 16px 4px 0;"><strong>Monto:</strong></td><td>${escaparHtml(monto)}</td></tr>
+        <tr><td style="padding: 4px 16px 4px 0;"><strong>Fecha del depósito:</strong></td><td>${escaparHtml(formatearFechaTexto(`${datos.fechaDeposito}T12:00:00`))}</td></tr>
+        <tr><td style="padding: 4px 16px 4px 0;"><strong>Concepto:</strong></td><td>${escaparHtml(datos.concepto || '—')}</td></tr>
+      </table>
+      <p style="margin: 0 0 8px;"><strong>Nombre:</strong> ${escaparHtml(nombre)}</p>
+      <p style="margin: 0 0 8px;"><strong>Rut:</strong> ${escaparHtml(p.rut)}</p>
+      <p style="margin: 0 0 8px;"><strong>Bloque:</strong> ${escaparHtml(p.bloque || '—')}</p>
+      <p style="margin: 0 0 20px;"><strong>Firma:</strong> <em style="color: #555;">${constanciaEnvio(formatearFechaHoraTexto(datos.creadoEn))}</em></p>
+      <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;">
+      <p style="color: #888; font-size: 12px; margin: 0;">
+        Tesorería: verificar el abono en la cartola y registrar el pago en el panel de la directiva
+        → Formularios → Pago (el comprobante no registra el pago por sí solo).
+        Responder este correo le escribe directamente al integrante${p.email ? '' : ' (no tiene email registrado)'}.
+      </p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    destinatario: DESTINO_TESORERIA(),
+    cc: p.email || null,
+    replyTo: p.email || null,
+    asunto: `Comprobante de depósito ${monto} — Folio ${formatearFolio(datos.folio)} — ${nombre}`,
+    cuerpo,
+    adjuntos: [adjuntoLogo(), datos.adjunto]
+  }).then(() => true);
+}
+
 // Aviso al socio cuando la directiva aprueba o rechaza su carta.
 function notificarResolucionJustificacion({ persona, folio, aprobada, estadoAplicado, observacion, actividad }) {
   if (!emailConfigurado() || !persona.email) return Promise.resolve(false);
@@ -410,6 +457,7 @@ module.exports = {
   enviarEnlaceRecuperacion,
   enviarCartaJustificacion,
   enviarPostulacionBloque,
+  enviarComprobanteDeposito,
   notificarResolucionJustificacion,
   formatearFolio
 };

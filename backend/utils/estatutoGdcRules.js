@@ -83,7 +83,7 @@ function calcularPuntajeEnsayos(puntosEnsayos) {
 // hasta este dia (sin incluirlo) sigue ordenando por puntaje historico completo,
 // igual que hasta ahora, para no reordenar las formaciones ya definidas para
 // eventos agendados en septiembre 2026. Desde este dia en adelante usa el mismo
-// corte de temporada que el ranking oficial (Despedida de Pueblo mas reciente,
+// corte de temporada que el ranking oficial (actividad "Inicia temporada" mas reciente,
 // ver reconstruirVistaRankingPuntaje en backend/config/migrations.js). No requiere
 // reiniciar el servidor: la fecha se evalua en cada consulta (CURDATE()), asi que
 // el cambio de comportamiento ocurre solo por el paso del calendario. Editar esta
@@ -103,14 +103,32 @@ const POLITICA_TEMPORADA_2025_2026 = Object.freeze({
   ajuste_caporal_requiere_asamblea: true
 });
 
-// Art. 9.3: los 10 periodos de cuota de la temporada vigente. Se actualiza cada
-// temporada (ver tambien POLITICA_TEMPORADA_2025_2026 y PERIODOS_FINANCIEROS_GDC
-// en frontend/js/reportes.js, que deben moverse juntos al pasar de temporada).
+// Temporada 2026-2027: la abre la Misa a la Chilena del 26-09-2026 (actividad
+// marcada "Inicia temporada"). Mismas 10 cuotas de octubre a julio.
+const POLITICA_TEMPORADA_2026_2027 = Object.freeze({
+  ...POLITICA_TEMPORADA_2025_2026,
+  inicio: '2026-09-26',
+  fin: '2027-08-31',
+  primer_ensayo_general: primerSabadoDeJunio(2027)
+});
+
+// Art. 9.3: los 10 periodos de cuota de cada temporada.
 const PERIODOS_CUOTAS_2025_2026 = Object.freeze([
   { mes: 10, anio: 2025 }, { mes: 11, anio: 2025 }, { mes: 12, anio: 2025 },
   { mes: 1, anio: 2026 }, { mes: 2, anio: 2026 }, { mes: 3, anio: 2026 },
   { mes: 4, anio: 2026 }, { mes: 5, anio: 2026 }, { mes: 6, anio: 2026 }, { mes: 7, anio: 2026 }
 ]);
+
+const PERIODOS_CUOTAS_2026_2027 = Object.freeze([
+  { mes: 10, anio: 2026 }, { mes: 11, anio: 2026 }, { mes: 12, anio: 2026 },
+  { mes: 1, anio: 2027 }, { mes: 2, anio: 2027 }, { mes: 3, anio: 2027 },
+  { mes: 4, anio: 2027 }, { mes: 5, anio: 2027 }, { mes: 6, anio: 2027 }, { mes: 7, anio: 2027 }
+]);
+
+// Temporada vigente para "Generar cuotas de toda la temporada" y el pago anual.
+// Al pasar de temporada: agregar sus periodos arriba y apuntar aqui (el reporte
+// de pago de cuotas arma sus columnas solo, desde las cuotas y pagos existentes).
+const PERIODOS_CUOTAS_TEMPORADA_VIGENTE = PERIODOS_CUOTAS_2026_2027;
 
 // Art. 9.3, escenario (a) de la tabla de simulacion de pagos: cancelar las cuotas
 // completas de la temporada al inicio del ciclo anual otorga el bono de anticipado
@@ -149,7 +167,10 @@ module.exports = {
   calcularPuntajeEnsayos,
   FORMACION_USAR_PUNTAJE_TEMPORADA_DESDE,
   POLITICA_TEMPORADA_2025_2026,
+  POLITICA_TEMPORADA_2026_2027,
   PONDERACION_BLOQUES,
   PERIODOS_CUOTAS_2025_2026,
+  PERIODOS_CUOTAS_2026_2027,
+  PERIODOS_CUOTAS_TEMPORADA_VIGENTE,
   esPagoAnualInicioCiclo
 };
