@@ -50,7 +50,7 @@ exports.obtenerDatosEditables = (personaId, callback) => {
 // nombres de columna desde el request) y marca la actualización como hecha en
 // la misma sentencia: o quedan los dos cambios o ninguno.
 const COLUMNAS_EDITABLES_SOCIO = [
-  'telefono', 'email', 'direccion', 'fecha_nacimiento', 'sexo',
+  'telefono', 'email', 'direccion', 'fecha_nacimiento', 'fecha_ingreso', 'sexo',
   'bautizo', 'comunion', 'confirmacion',
   'nombre_apoderado', 'rut_apoderado', 'telefono_apoderado'
 ];

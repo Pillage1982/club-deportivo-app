@@ -79,7 +79,8 @@
 
     <h2 class="text-center">Actualizar datos</h2>
     <p class="text-center">
-      Antes de continuar, revisa y completa tus datos. Todos los campos son obligatorios.
+      Antes de continuar, revisa y completa tus datos. Todos los campos son obligatorios,
+      excepto la fecha de ingreso.
     </p>
 
     <div id="cargando" class="text-center my-4">
@@ -146,6 +147,13 @@
                   <option value="Masculino">Masculino</option>
                   <option value="Femenino">Femenino</option>
                 </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="datos-label" for="fecha_ingreso">Fecha de ingreso a la agrupación (opcional)</label>
+              <div class="mb-3 login-input-group">
+                <i class="bi bi-calendar-check-fill"></i>
+                <input type="date" id="fecha_ingreso" class="form-control">
               </div>
             </div>
           </div>
