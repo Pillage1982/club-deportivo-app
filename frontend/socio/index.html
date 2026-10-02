@@ -181,6 +181,24 @@
           <i class="bi bi-chevron-right ms-auto"></i>
         </button>
 
+        <button type="button" class="socio-card socio-doc-opcion mb-2" onclick="abrirDatosCuenta()">
+          <i class="bi bi-bank2"></i>
+          <span>
+            <strong>Datos para depositar</strong>
+            <small>Cuenta de la agrupación para pagar tus cuotas</small>
+          </span>
+          <i class="bi bi-chevron-right ms-auto"></i>
+        </button>
+
+        <button type="button" class="socio-card socio-doc-opcion mb-2" onclick="abrirFormularioComprobante()">
+          <i class="bi bi-receipt"></i>
+          <span>
+            <strong>Enviar comprobante de depósito</strong>
+            <small>Foto o PDF a tesorería</small>
+          </span>
+          <i class="bi bi-chevron-right ms-auto"></i>
+        </button>
+
         <button type="button" class="socio-card socio-doc-opcion mb-4" id="btn_estatutos" onclick="abrirEstatutos()">
           <i class="bi bi-journal-text"></i>
           <span>
@@ -190,7 +208,7 @@
           <i class="bi bi-box-arrow-up-right ms-auto"></i>
         </button>
 
-        <h6 class="mb-2">Mis cartas enviadas</h6>
+        <h6 class="mb-2">Mis envíos</h6>
         <div id="docs_historial" class="socio-card socio-lista-simple">
           <p class="text-muted small mb-0">Cargando...</p>
         </div>
@@ -319,6 +337,63 @@
         <div id="post_respuesta"></div>
         <button type="button" id="btn_enviar_postulacion" class="btn btn-gdc w-100 mb-4" onclick="enviarPostulacion()">
           <i class="bi bi-send-fill me-1"></i>Enviar postulación a los caporales
+        </button>
+      </div>
+
+      <!-- Datos de la cuenta para depósitos -->
+      <div id="docs_cuenta" class="d-none">
+        <button type="button" class="btn btn-link px-0 mb-2" onclick="volverMenuDocumentos()">
+          <i class="bi bi-arrow-left"></i> Volver
+        </button>
+        <h5 class="mb-3">Datos para depositar</h5>
+        <div id="cuenta_datos" class="socio-card socio-lista-simple mb-3"></div>
+        <div id="cuenta_respuesta"></div>
+        <p class="text-muted small mb-3">
+          En el comentario de la transferencia escribe tu nombre y RUT. Después envía el
+          comprobante a tesorería para que registre tu pago.
+        </p>
+        <button type="button" class="btn btn-gdc w-100 mb-4" onclick="abrirFormularioComprobante()">
+          <i class="bi bi-receipt me-1"></i>Ya deposité: enviar comprobante
+        </button>
+      </div>
+
+      <!-- Formulario: comprobante de depósito -->
+      <div id="docs_form_comprobante" class="d-none">
+        <button type="button" class="btn btn-link px-0 mb-2" onclick="volverMenuDocumentos()">
+          <i class="bi bi-arrow-left"></i> Volver
+        </button>
+        <h5 class="mb-1">Enviar comprobante de depósito</h5>
+        <p class="text-muted small mb-3">
+          Llega al correo de tesorería con tus datos. Tu pago se registra cuando tesorería
+          lo confirma en la cuenta.
+        </p>
+
+        <form id="form_comprobante" class="socio-card mb-3" novalidate>
+          <div class="mb-3">
+            <label for="comp_monto" class="form-label">Monto depositado</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="text" id="comp_monto" class="form-control" inputmode="numeric" maxlength="11" placeholder="Ej: 12.000">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="comp_fecha" class="form-label">Fecha del depósito</label>
+            <input type="date" id="comp_fecha" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label for="comp_concepto" class="form-label">¿Qué estás pagando? <span class="text-muted">(opcional)</span></label>
+            <input type="text" id="comp_concepto" class="form-control" maxlength="200" placeholder="Ej: cuotas de octubre y noviembre">
+          </div>
+          <div class="mb-1">
+            <label for="comp_archivo" class="form-label">Comprobante</label>
+            <input type="file" id="comp_archivo" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
+            <div class="form-text">Foto o PDF del comprobante, máximo 5 MB.</div>
+          </div>
+        </form>
+
+        <div id="comp_respuesta"></div>
+        <button type="button" id="btn_enviar_comprobante" class="btn btn-gdc w-100 mb-4" onclick="enviarComprobante()">
+          <i class="bi bi-send-fill me-1"></i>Enviar a tesorería
         </button>
       </div>
 

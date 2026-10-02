@@ -60,19 +60,20 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - **Multas desacopladas (jul-2026):** `deuda_actual = cuotas − pagos` (multas excluidas de la deuda); columna multas en Estado Financiero es informativa; fácil de reactivar en una línea cuando la agrupación decida cobrarlas
 - Estados extendidos de asistencia: `justificado`, `licencia_medica`, `vestimenta_distinta`, `retiro_sin_aviso` (en BD y puntaje; pendiente UI manual)
 - Matching por cercanía horaria cuando existen varias actividades el mismo día
-- Tolerancia de atraso disponible como configuración global en `config.js`, actualmente en `0`
+- Tolerancia de atraso global en `config.js` (`toleranciaMinutosAtraso: 30`), confirmada por el cliente el 25-08-2026
+- **Justificaciones (oct-2026):** el socio envía la carta desde el Portal del Socio; al aprobarla en Tablas → Justificaciones la asistencia queda `justificado`/`licencia_medica`, se borra la multa y se recalcula el puntaje
+- Correo saliente configurado en dev y producción (oct-2026): SMTP de Hostinger, buzones @gdcayquina.cl
+- **Depósitos en Portal del Socio (oct-2026):** Documentos → "Datos para depositar" (cuenta en `backend/config/cuentaDeposito.js`) y "Enviar comprobante de depósito" (tabla `comprobantes_deposito`, archivo en `uploads/comprobantes_deposito`, correo a `EMAIL_TESORERIA` o tesoreria@gdcayquina.cl). Solo avisa: tesorería registra el pago en el panel
+- **Temporadas (oct-2026):** la abre la actividad marcada "Inicia temporada" (`eventos.inicia_temporada`); corta ranking, selector de temporadas y formaciones. 2026-2027 la abre la Misa a la Chilena del 26-09-2026. Cuotas de la temporada vigente: `PERIODOS_CUOTAS_TEMPORADA_VIGENTE` en `estatutoGdcRules.js` (oct-2026 a jul-2027)
 - **Módulo de Gastos (jul-2026):** registro, categorías, responsable, comprobante adjunto y exportación
 - Sesión de 20 días y continuidad offline sin cierre forzado por falta de conexión
 
 ### Pendiente calamena
-- UI para asignar manualmente estados nuevos de asistencia (justificado, licencia_medica, vestimenta_distinta, retiro_sin_aviso) — hoy solo accesibles vía QR o BD directa
+- UI para asignar manualmente `vestimenta_distinta` y `retiro_sin_aviso` (justificado y licencia_medica ya entran por Justificaciones)
 - Cancionero (Spotify + letras)
-- Correo saliente sin configurar en app./dev.gdcayquina.cl (EMAIL_HOST/EMAIL_USER/EMAIL_PASS, buzones @gdcayquina.cl por crear) → no salen cierres de evento, recuperación de clave ni cartas del Portal del Socio
 
 ### En espera de definición del cliente
-- **Tolerancia QR:** no implementar nuevos cambios hasta que el cliente confirme si desea aplicarla.
-- Valores pendientes: cantidad de minutos y si la tolerancia será global o configurable por actividad.
-- Regla pendiente: confirmar cómo afectará el estado de asistencia y el puntaje.
+- Justificaciones: si se aprueba antes del evento y el socio igual asiste; si la Junta de disciplina necesita rol propio; folio único o separado.
 
 ### Pendiente offline (spec: prompt-asistencia-offline-sin-evento.md)
 - Background Sync API (SyncManager en SW) — el fallback manual ya existe

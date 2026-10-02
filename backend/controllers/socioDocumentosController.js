@@ -6,6 +6,8 @@
 const fs = require('fs');
 const path = require('path');
 const justificacionModel = require('../models/justificacionModel');
+const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
+const cuentaDeposito = require('../config/cuentaDeposito');
 const uploadJustificativo = require('../middleware/uploadJustificativo');
 const emailService = require('../services/emailService');
 
@@ -42,12 +44,13 @@ exports.datosFormularios = async (req, res) => {
   const personaId = req.socio.persona_id;
 
   try {
-    const [persona, eventos, bloques, justificaciones, postulaciones] = await Promise.all([
+    const [persona, eventos, bloques, justificaciones, postulaciones, comprobantes] = await Promise.all([
       justificacionModel.obtenerDatosCarta(personaId),
       justificacionModel.listarEventosJustificables(personaId),
       justificacionModel.listarBloques(),
       justificacionModel.listarJustificacionesSocio(personaId),
-      justificacionModel.listarPostulacionesSocio(personaId)
+      justificacionModel.listarPostulacionesSocio(personaId),
+      comprobanteDepositoModel.listarSocio(personaId)
     ]);
 
     if (!persona) {
@@ -71,7 +74,9 @@ exports.datosFormularios = async (req, res) => {
       })),
       bloques,
       justificaciones,
-      postulaciones
+      postulaciones,
+      comprobantes,
+      cuenta_deposito: cuentaDeposito
     });
   } catch (err) {
     console.error('Error cargando documentos del socio:', err);
@@ -277,6 +282,87 @@ exports.enviarPostulacion = async (req, res) => {
   } catch (err) {
     console.error('Error registrando postulación a bloque:', err);
     res.status(500).json({ mensaje: 'No se pudo registrar la postulación' });
+  }
+};
+
+// =====================================
+// COMPROBANTE DE DEPÓSITO → TESORERÍA (multipart: comprobante obligatorio)
+// =====================================
+// Solo avisa a tesorería: no registra el pago ni cambia cuotas. Tesorería revisa
+// la cartola y registra el pago en el panel.
+exports.enviarComprobante = async (req, res) => {
+  const personaId = req.socio.persona_id;
+  const body = req.body || {};
+
+  const monto = Number(String(body.monto ?? '').replace(/\D/g, ''));
+  const fechaDeposito = String(body.fecha_deposito || '');
+  const concepto = textoLimpio(body.concepto, 200) || null;
+
+  if (!req.file) {
+    return res.status(400).json({ mensaje: 'Adjunta la foto o el PDF del comprobante' });
+  }
+  if (!Number.isInteger(monto) || monto < 100 || monto > 10000000) {
+    descartarArchivo(req);
+    return res.status(400).json({ mensaje: 'Indica el monto depositado' });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaDeposito) || fechaDeposito > hoyChile() || fechaDeposito < '2025-01-01') {
+    descartarArchivo(req);
+    return res.status(400).json({ mensaje: 'Indica una fecha de depósito válida (no puede ser futura)' });
+  }
+
+  try {
+    const firmaValida = await uploadJustificativo.verificarFirmaArchivo(req.file.path, req.file.mimetype)
+      .catch(() => false);
+    if (!firmaValida) {
+      descartarArchivo(req);
+      return res.status(400).json({ mensaje: 'El archivo no corresponde a una imagen o PDF válido' });
+    }
+
+    const persona = await justificacionModel.obtenerDatosCarta(personaId);
+    if (!persona) {
+      descartarArchivo(req);
+      return res.status(404).json({ mensaje: 'Integrante no encontrado' });
+    }
+
+    const folio = await comprobanteDepositoModel.crear({
+      persona_id: personaId,
+      monto,
+      fecha_deposito: fechaDeposito,
+      concepto,
+      adjunto_path: `comprobantes_deposito/${req.file.filename}`
+    });
+    const creadoEn = await comprobanteDepositoModel.obtenerFechaCreacion(folio);
+
+    let correoEnviado = false;
+    try {
+      correoEnviado = await emailService.enviarComprobanteDeposito({
+        folio,
+        creadoEn,
+        persona,
+        monto,
+        fechaDeposito,
+        concepto,
+        adjunto: {
+          path: req.file.path,
+          filename: `comprobante-${emailService.formatearFolio(folio)}${path.extname(req.file.filename)}`
+        }
+      });
+      if (correoEnviado) await comprobanteDepositoModel.marcarEmail(folio);
+    } catch (errCorreo) {
+      console.error('[Email] Error enviando comprobante de depósito, folio', folio, errCorreo);
+    }
+
+    res.status(201).json({
+      folio,
+      correoEnviado,
+      mensaje: correoEnviado
+        ? `Comprobante enviado a tesorería. Folio Nº ${emailService.formatearFolio(folio)}.`
+        : `Comprobante registrado con folio Nº ${emailService.formatearFolio(folio)}, pero el correo a tesorería no pudo enviarse. Avisa a tesorería.`
+    });
+  } catch (err) {
+    descartarArchivo(req);
+    console.error('Error registrando comprobante de depósito:', err);
+    res.status(500).json({ mensaje: 'No se pudo registrar el comprobante' });
   }
 };
 

@@ -469,6 +469,22 @@ async function asegurarTablasDocumentosSocio() {
       CONSTRAINT fk_postulacion_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
     )
   `);
+  // Comprobantes de depósito/transferencia que el socio envía a tesorería. Solo
+  // aviso: no crea el pago; tesorería lo registra en el panel al confirmarlo.
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS comprobantes_deposito (
+      id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+      persona_id      BIGINT NOT NULL,
+      monto           INT NOT NULL,
+      fecha_deposito  DATE NOT NULL,
+      concepto        VARCHAR(200) NULL,
+      adjunto_path    VARCHAR(255) NOT NULL,
+      email_enviado   TINYINT(1) NOT NULL DEFAULT 0,
+      creado_en       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      KEY idx_comprobante_persona (persona_id),
+      CONSTRAINT fk_comprobante_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
+    )
+  `);
 }
 
 async function ejecutarMigraciones() {
