@@ -18,7 +18,7 @@ const CONDICION_CORTE_TEMPORADA_PUNTAJE = `(
     OR pt.fecha >= (
       SELECT COALESCE(MAX(DATE(e.fecha)), '1900-01-01')
       FROM eventos e
-      WHERE LOWER(e.nombre) LIKE 'despedida de pueblo%' AND DATE(e.fecha) <= CURDATE()
+      WHERE e.inicia_temporada = 1 AND DATE(e.fecha) <= CURDATE()
     )
   )`;
 

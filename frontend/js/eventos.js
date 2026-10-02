@@ -126,7 +126,12 @@ function crearEvento() {
     descripcion:
       document.getElementById(
         'evento_descripcion'
-      ).value
+      ).value,
+
+    inicia_temporada:
+      document.getElementById(
+        'evento_inicia_temporada'
+      ).checked
 
   };
 
@@ -244,6 +249,10 @@ document.getElementById(
   'evento_descripcion'
 ).value = '';
 
+document.getElementById(
+  'evento_inicia_temporada'
+).checked = false;
+
 // Refresca tabla y selector eventos
     invalidarCacheApi('eventos');
     cargarTablaEventos();
@@ -343,7 +352,9 @@ function renderizarTablaEventos(eventos) {
     const finalizado = evento.finalizado ? 1 : 0;
     return `
       <tr>
-        <td>${evento.nombre}</td>
+        <td>${evento.nombre}${evento.inicia_temporada
+          ? ' <span class="badge bg-warning text-dark" title="Desde esta actividad cuenta el puntaje de la temporada">Inicia temporada</span>'
+          : ''}</td>
         <td>${obtenerTipoActividad(evento.tipo)}</td>
         <td>${formatearFechaHora(evento.fecha)}</td>
         <td>${evento.ubicacion || ''}</td>
@@ -432,6 +443,11 @@ function editarEvento(evento) {
     'evento_descripcion'
   ).value =
     evento.descripcion || '';
+
+  document.getElementById(
+    'evento_inicia_temporada'
+  ).checked =
+    Boolean(Number(evento.inicia_temporada));
 
   document.getElementById(
     'btn_guardar_evento'

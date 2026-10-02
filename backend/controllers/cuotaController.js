@@ -1,6 +1,6 @@
 // Controlador HTTP de cuotas: lista, genera y administra cuotas delegando las consultas al modelo.
 const cuotaModel = require('../models/cuotaModel');
-const { PERIODOS_CUOTAS_2025_2026 } = require('../utils/estatutoGdcRules');
+const { PERIODOS_CUOTAS_TEMPORADA_VIGENTE } = require('../utils/estatutoGdcRules');
 
 // =====================================
 // CUOTAS PENDIENTES POR PERSONA
@@ -72,7 +72,7 @@ exports.generarTemporadaCompleta = (req, res) => {
     if (!tipos.length) return res.status(404).json({ mensaje: 'No existe el tipo de cuota Mensualidad' });
 
     const tipoMensualidad = tipos[0];
-    const periodos = PERIODOS_CUOTAS_2025_2026;
+    const periodos = PERIODOS_CUOTAS_TEMPORADA_VIGENTE;
     let pendientes  = periodos.length;
     let totalCreadas = 0;
     let respondido   = false;

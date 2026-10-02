@@ -14,14 +14,14 @@ function ejecutar(sql, params = []) {
   });
 }
 
-// Temporadas seleccionables: cada "Despedida de Pueblo <anio>" ya ocurrida abre
-// una temporada (ver reconstruirVistaRankingPuntaje en backend/config/migrations.js,
+// Temporadas seleccionables: cada actividad marcada "Inicia temporada" ya ocurrida
+// abre una temporada (ver reconstruirVistaRankingPuntaje en backend/config/migrations.js,
 // misma referencia de corte). Se listan de la mas antigua a la mas reciente.
 exports.obtenerTemporadas = () =>
   ejecutar(`
     SELECT id, nombre, DATE(fecha) AS fecha
     FROM eventos
-    WHERE LOWER(nombre) LIKE 'despedida de pueblo%' AND DATE(fecha) <= CURDATE()
+    WHERE inicia_temporada = 1 AND DATE(fecha) <= CURDATE()
     ORDER BY fecha ASC
   `);
 

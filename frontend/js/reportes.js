@@ -303,34 +303,11 @@ async function exportarAsistenciasExcel() {
 
 // ── Excel: Deudores ───────────────────────────────────────────────────────────
 
-const PERIODOS_FINANCIEROS_GDC = [
-  { anio: 2025, mes: 10, nombre: 'Octubre 2025' },
-  { anio: 2025, mes: 11, nombre: 'Noviembre 2025' },
-  { anio: 2025, mes: 12, nombre: 'Diciembre 2025' },
-  { anio: 2026, mes: 1, nombre: 'Enero 2026' },
-  { anio: 2026, mes: 2, nombre: 'Febrero 2026' },
-  { anio: 2026, mes: 3, nombre: 'Marzo 2026' },
-  { anio: 2026, mes: 4, nombre: 'Abril 2026' },
-  { anio: 2026, mes: 5, nombre: 'Mayo 2026' },
-  { anio: 2026, mes: 6, nombre: 'Junio 2026' },
-  { anio: 2026, mes: 7, nombre: 'Julio 2026' }
-];
-
 async function _obtenerCuotasParaReporteDeudores() {
   const respuesta = await fetch(`${API_URL}/cuotas`, { headers: getAuthHeaders() });
   const data = await respuesta.json().catch(() => ({}));
   if (!respuesta.ok || !Array.isArray(data)) throw new Error(data.mensaje || 'No se pudieron cargar los pagos mensuales');
   return data;
-}
-
-function _detalleMensualDeudor(deudor, cuotas) {
-  return PERIODOS_FINANCIEROS_GDC.map(periodo => {
-    const cuota = cuotas.find(item => Number(item.persona_id) === Number(deudor.id) &&
-      Number(item.anio) === periodo.anio && Number(item.mes) === periodo.mes);
-    return { periodo: periodo.nombre, cuota: Number(cuota?.monto || 0),
-      pagado: Number(cuota?.monto_pagado || 0), saldo: Number(cuota?.saldo ?? cuota?.monto ?? 0),
-      estado: cuota?.estado || 'sin_registro' };
-  });
 }
 
 async function _obtenerPersonasParaReporte() {
@@ -350,9 +327,15 @@ function _columnasMesesPago(cuotas, pagosPorMes) {
   const periodos = new Map();
   cuotas.forEach(c => periodos.set(`${c.anio}_${c.mes}`, { anio: Number(c.anio), mes: Number(c.mes) }));
   (pagosPorMes || []).forEach(pg => periodos.set(`${pg.anio}_${pg.mes}`, { anio: Number(pg.anio), mes: Number(pg.mes) }));
-  return Array.from(periodos.values())
-    .sort((a, b) => a.anio - b.anio || a.mes - b.mes)
-    .map(p => ({ ...p, columna: NOMBRES_MESES_GDC[p.mes] }));
+  const ordenados = Array.from(periodos.values()).sort((a, b) => a.anio - b.anio || a.mes - b.mes);
+  // Con más de una temporada un mes se repite (octubre 2025 y octubre 2026): se
+  // agrega el año para que las columnas no choquen en el Excel.
+  const meses = ordenados.map(p => p.mes);
+  const hayRepetidos = new Set(meses).size < meses.length;
+  return ordenados.map(p => ({
+    ...p,
+    columna: hayRepetidos ? `${NOMBRES_MESES_GDC[p.mes]} ${String(p.anio).slice(2)}` : NOMBRES_MESES_GDC[p.mes]
+  }));
 }
 
 async function _obtenerReporteCuotasReal() {

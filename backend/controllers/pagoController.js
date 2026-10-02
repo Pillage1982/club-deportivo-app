@@ -7,7 +7,7 @@ const pagoModel    = require('../models/pagoModel');
 const personaModel = require('../models/personaModel');
 const cuotaModel   = require('../models/cuotaModel');
 const puntajeModel = require('../models/puntajeModel');
-const { PERIODOS_CUOTAS_2025_2026, esPagoAnualInicioCiclo } = require('../utils/estatutoGdcRules');
+const { PERIODOS_CUOTAS_TEMPORADA_VIGENTE, esPagoAnualInicioCiclo } = require('../utils/estatutoGdcRules');
 
 function calcularPuntosCuota(mes, anio) {
   const hoy     = new Date();
@@ -49,7 +49,7 @@ function recalcularAsistenciasPersona(personaId) {
 // Si no, cada cuota recibe su puntaje individual normal (igual que un pago suelto).
 function procesarPuntajeCuotasAnual(persona_id, cuotas) {
   const periodosPagados = cuotas.map(c => ({ mes: Number(c.mes), anio: Number(c.anio) }));
-  const esAnualInicio = esPagoAnualInicioCiclo(periodosPagados, PERIODOS_CUOTAS_2025_2026, new Date());
+  const esAnualInicio = esPagoAnualInicioCiclo(periodosPagados, PERIODOS_CUOTAS_TEMPORADA_VIGENTE, new Date());
   const fecha = new Date().toISOString().substring(0, 10);
 
   cuotas.forEach(cuota => {

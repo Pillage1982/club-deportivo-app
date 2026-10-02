@@ -18,7 +18,9 @@ exports.obtenerEventos = (callback) => {
 
     descripcion,
 
-    finalizado
+    finalizado,
+
+    inicia_temporada
 
   FROM eventos
 
@@ -42,10 +44,11 @@ exports.crearEvento = (
       tipo,
       fecha,
       ubicacion,
-      descripcion
+      descripcion,
+      inicia_temporada
     )
 
-    VALUES (?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?)
 
   `;
 
@@ -58,7 +61,8 @@ exports.crearEvento = (
       data.tipo,
       data.fecha,
       data.ubicacion,
-      data.descripcion
+      data.descripcion,
+      data.inicia_temporada ? 1 : 0
     ],
 
     callback
@@ -83,7 +87,8 @@ exports.actualizarEvento = (
       tipo = ?,
       fecha = ?,
       ubicacion = ?,
-      descripcion = ?
+      descripcion = ?,
+      inicia_temporada = ?
 
     WHERE id = ?
 
@@ -100,6 +105,7 @@ exports.actualizarEvento = (
       data.fecha,
       data.ubicacion,
       data.descripcion,
+      data.inicia_temporada ? 1 : 0,
 
       id
 

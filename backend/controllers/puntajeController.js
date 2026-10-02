@@ -6,10 +6,11 @@
 const puntajeModel = require('../models/puntajeModel');
 
 // Construye la lista de temporadas seleccionables a partir de las actividades
-// "Despedida de Pueblo <anio>" ya ocurridas: cada una abre una temporada que dura
-// hasta la siguiente (o hasta hoy, si es la mas reciente). Se agrega al inicio un
-// bucket para los puntajes previos a la primera Despedida registrada (temporadas
-// migradas antes de que existiera ese marcador).
+// marcadas "Inicia temporada" ya ocurridas (Despedidas de Pueblo hasta 2026, Misa
+// a la Chilena desde 2026-2027): cada una abre una temporada que dura hasta la
+// siguiente (o hasta hoy, si es la mas reciente). Se agrega al inicio un bucket
+// para los puntajes previos al primer marcador (temporadas migradas antes de que
+// existiera).
 function construirTemporadas(eventosDespedida) {
   const temporadas = eventosDespedida.map((evento, indice) => ({
     id: String(evento.id),
