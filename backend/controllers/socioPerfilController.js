@@ -1,7 +1,8 @@
 // "Actualizar datos" del Portal del Socio: paso obligatorio después de crear la contraseña
 // (y cada vez que la directiva lo vuelva a exigir). Todos los campos editables son
-// obligatorios; RUT, nombre, escuadra, estado, fecha de ingreso y honorario son
-// solo lectura (los mantiene la directiva desde el panel admin).
+// obligatorios salvo la fecha de ingreso (vacía = se conserva la registrada);
+// RUT, nombre, escuadra, estado y honorario son solo lectura (los mantiene la
+// directiva desde el panel admin).
 const socioDataModel = require('../models/socioDataModel');
 const {
   limpiarTexto,
@@ -38,6 +39,16 @@ function validarYNormalizar(body) {
   if (datos.direccion.length < 5 || datos.direccion.length > 255) return { error: 'Ingresa tu dirección completa' };
   if (!validarFechaNacimientoISO(datos.fecha_nacimiento)) return { error: 'Ingresa una fecha de nacimiento válida' };
   if (!['Masculino', 'Femenino'].includes(datos.sexo)) return { error: 'Selecciona tu sexo' };
+
+  // Fecha de ingreso opcional: si no viene, no se toca la registrada. Misma regla
+  // de fecha válida y no futura que la de nacimiento, y no anterior a ella.
+  const fechaIngreso = String(body.fecha_ingreso || '').substring(0, 10);
+  if (fechaIngreso) {
+    if (!validarFechaNacimientoISO(fechaIngreso) || fechaIngreso < datos.fecha_nacimiento) {
+      return { error: 'Ingresa una fecha de ingreso válida' };
+    }
+    datos.fecha_ingreso = fechaIngreso;
+  }
 
   for (const campo of SACRAMENTOS) {
     datos[campo] = leerSiNo(body[campo]);

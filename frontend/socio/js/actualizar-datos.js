@@ -1,6 +1,7 @@
 // "Actualizar datos": paso obligatorio del primer ingreso, después de crear la contraseña
 // (login -> cambiar-pin -> actualizar-datos -> index). Todos los campos son
-// obligatorios; el servidor valida y normaliza igual (socioPerfilController) y no
+// obligatorios salvo la fecha de ingreso (si se deja vacía se conserva la
+// registrada); el servidor valida y normaliza igual (socioPerfilController) y no
 // entrega la página personal hasta que esto se guarde (perfilSocioMiddleware).
 
 const SACRAMENTOS = [
@@ -56,6 +57,7 @@ function cargarDatosSocio() {
       ['telefono', 'email', 'direccion', 'sexo', 'nombre_apoderado', 'rut_apoderado', 'telefono_apoderado']
         .forEach(campo => { document.getElementById(campo).value = datos[campo] || ''; });
       document.getElementById('fecha_nacimiento').value = String(datos.fecha_nacimiento || '').substring(0, 10);
+      document.getElementById('fecha_ingreso').value = String(datos.fecha_ingreso || '').substring(0, 10);
 
       SACRAMENTOS.forEach(({ campo }) => {
         if (datos[campo] === null || datos[campo] === undefined) return;
@@ -80,8 +82,7 @@ function mostrarDatosFijos(datos) {
     ['Nombre', nombre],
     ['RUT', datos.rut],
     ['Escuadra', datos.bloque || '—'],
-    ['Estado', datos.estado],
-    ['Fecha de ingreso', formatearFecha(datos.fecha_ingreso) || '—']
+    ['Estado', datos.estado]
   ];
   if (Number(datos.es_honorario) === 1) filas.push(['Socio honorario', 'Sí']);
 
@@ -137,6 +138,11 @@ function guardarDatosSocio() {
     respuesta.innerHTML = alertaHtml('warning', 'Completa los campos marcados en rojo antes de continuar');
     return;
   }
+
+  // Opcional: se agrega después de marcar faltantes para que vacía no se marque
+  // en rojo; si no se envía, el servidor conserva la fecha registrada.
+  const fechaIngreso = valor('fecha_ingreso');
+  if (fechaIngreso) datos.fecha_ingreso = fechaIngreso;
 
   const boton = document.getElementById('btn_guardar_datos');
   boton.disabled = true;
