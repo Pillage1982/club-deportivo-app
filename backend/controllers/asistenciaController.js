@@ -5,6 +5,7 @@
 
 const asistenciaModel = require('../models/asistenciaModel');
 const multaModel      = require('../models/multaModel');
+const multasConfig    = require('../config/multas');
 const eventoModel     = require('../models/eventoModel');
 const puntajeModel    = require('../models/puntajeModel');
 const { calcularPuntosAsistencia } = require('../utils/estatutoGdcRules');
@@ -36,6 +37,8 @@ function insertarPuntajeBackground(persona_id, asistencia_id, evento, estado) {
 // ── Multa ─────────────────────────────────────────────────────────────────────
 
 function calcularMultaAsistencia(estado, minutos) {
+  if (!multasConfig.habilitadas) return null;
+
   if (estado === 'ausente') {
     return { monto: 5000, motivo: 'Inasistencia a actividad' };
   }

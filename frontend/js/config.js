@@ -22,6 +22,12 @@ window.APP_CONFIG = {
     multas: 'Multas'
   },
 
+  // La agrupación no aplica multas por ahora (oct-2026): con false se ocultan
+  // en todo el panel. Debe coincidir con backend/config/multas.js.
+  multas: {
+    habilitadas: false
+  },
+
   rolesVisuales: {
     admin: 'Administrador',
     tesorero: 'Tesorero',

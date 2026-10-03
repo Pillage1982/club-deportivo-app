@@ -2,6 +2,7 @@
 const eventoModel = require('../models/eventoModel');
 const asistenciaModel = require('../models/asistenciaModel');
 const multaModel = require('../models/multaModel');
+const multasConfig = require('../config/multas');
 const { notificarAusentesEvento } = require('../services/emailService');
 
 const tiposPermitidos = [
@@ -179,7 +180,12 @@ exports.cerrar = (req, res) => {
 
       const totalAusentes = ausResult ? ausResult.affectedRows : 0;
 
-      multaModel.crearMultasAusentes(id, (multaErr) => {
+      // Con las multas deshabilitadas se salta la generación y se cierra igual
+      const generarMultas = multasConfig.habilitadas
+        ? (cb) => multaModel.crearMultasAusentes(id, cb)
+        : (cb) => cb(null);
+
+      generarMultas((multaErr) => {
 
         if (multaErr) {
           return res.status(500).json({ mensaje: 'Error al generar multas por inasistencia' });
@@ -192,7 +198,7 @@ exports.cerrar = (req, res) => {
           }
 
           const detalle = totalAusentes > 0
-            ? ` Se registraron ${totalAusentes} ausente(s) con multa de $5.000.`
+            ? ` Se registraron ${totalAusentes} ausente(s)${multasConfig.habilitadas ? ' con multa de $5.000' : ''}.`
             : ' Todos los integrantes tenían asistencia registrada.';
 
           res.json({

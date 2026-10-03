@@ -52,6 +52,7 @@ function limpiarFiltrosMultas() {
 }
 
 function cargarMultas() {
+  if (!multasHabilitadas()) return;
 
   fetch(`${API_URL}/multas`, { headers: getAuthHeaders() })
     .then(res => res.json())
