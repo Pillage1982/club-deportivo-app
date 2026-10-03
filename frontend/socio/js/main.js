@@ -74,7 +74,7 @@ function cargarInicio() {
       const ultimos = asistencias.slice(0, 5);
 
       if (!ultimos.length) {
-        listaEventos.innerHTML = '<p class="text-muted small mb-0">Todavía no tienes eventos registrados.</p>';
+        listaEventos.innerHTML = '<p class="text-muted small mb-0">Todavía no tienes eventos registrados en esta temporada.</p>';
         return;
       }
 
@@ -128,6 +128,16 @@ function filaFicha(etiqueta, valor) {
   return `<dt>${etiqueta}</dt><dd>${valor}</dd>`;
 }
 
+// Finanzas, asistencia y puntaje vienen solo de la temporada vigente (desde la
+// actividad "Inicia temporada"): el backend manda su inicio en temporada_desde.
+function mostrarTemporada(desde) {
+  const anio = Number(String(desde || '').substring(0, 4));
+  if (!anio || anio < 2000) return;
+  document.querySelectorAll('.socio-temporada').forEach(el => {
+    el.textContent = `Temporada ${anio}-${anio + 1}, desde el ${formatearFecha(desde)}`;
+  });
+}
+
 // =====================================
 // FINANZAS
 // =====================================
@@ -135,6 +145,8 @@ function cargarFinanzas() {
   fetch(`${API_URL}/socio-auth/mi-finanzas`, { headers: getAuthHeadersSocio() })
     .then(res => res.json())
     .then(data => {
+      mostrarTemporada(data.temporada_desde);
+
       const deudaEl = document.getElementById('finanzas_deuda');
       deudaEl.textContent = formatearMonto(data.deuda_actual);
       deudaEl.style.color = data.deuda_actual > 0 ? '#c0392b' : '#2e7d32';
@@ -148,7 +160,7 @@ function cargarFinanzas() {
               <td>${badgeEstadoCuota(c.estado)}</td>
             </tr>
           `).join('')
-        : '<tr><td colspan="3" class="text-center text-muted">Sin cuotas registradas</td></tr>';
+        : '<tr><td colspan="3" class="text-center text-muted">Sin cuotas registradas en esta temporada</td></tr>';
 
       const tablaPagos = document.getElementById('tabla_finanzas_pagos');
       tablaPagos.innerHTML = data.pagos.length
@@ -159,7 +171,7 @@ function cargarFinanzas() {
               <td>${p.cuotas_cubiertas ? escaparHtml(p.cuotas_cubiertas) : '—'}</td>
             </tr>
           `).join('')
-        : '<tr><td colspan="3" class="text-center text-muted">Sin pagos registrados</td></tr>';
+        : '<tr><td colspan="3" class="text-center text-muted">Sin pagos registrados en esta temporada</td></tr>';
     })
     .catch(err => console.error('Error cargando finanzas:', err));
 }
@@ -182,6 +194,8 @@ function cargarAsistenciaYPuntaje() {
     fetch(`${API_URL}/socio-auth/mi-asistencia`, { headers: getAuthHeadersSocio() }).then(r => r.json())
   ])
     .then(([puntaje, asistencias]) => {
+      mostrarTemporada(puntaje.temporada_desde);
+
       document.getElementById('puntaje_desglose').innerHTML = `
         <dl class="socio-desglose">
         ${filaFicha('Antigüedad', puntaje.puntos_antiguedad)}
@@ -203,7 +217,7 @@ function cargarAsistenciaYPuntaje() {
               <td>${badgeEstadoAsistencia(a.estado)}</td>
             </tr>
           `).join('')
-        : '<tr><td colspan="3" class="text-center text-muted">Sin asistencias registradas</td></tr>';
+        : '<tr><td colspan="3" class="text-center text-muted">Sin asistencias registradas en esta temporada</td></tr>';
     })
     .catch(err => console.error('Error cargando asistencia y puntaje:', err));
 }

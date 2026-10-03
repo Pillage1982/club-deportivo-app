@@ -75,36 +75,57 @@ exports.guardarDatosSocio = (personaId, datos, callback) => {
 // =====================================
 // FINANZAS: deuda actual, historial de cuotas y de pagos
 // =====================================
-// Deuda = total cuotas - total pagado, igual que vista_estado_financiero, pero sin su
-// filtro "estado='activo'" (un socio en receso también puede ver y pagar su deuda).
-exports.obtenerResumenDeuda = (personaId, callback) => {
+// El portal muestra solo la temporada vigente: `desde` es su inicio ('YYYY-MM-DD',
+// puntajeModel.obtenerInicioTemporadaVigente). Una cuota es de la temporada si su
+// periodo es del mes de inicio en adelante; un pago, si se hizo desde el inicio o
+// cubre alguna cuota de la temporada (pago anticipado antes de la Misa).
+function periodoDesde(desde) {
+  return Number(String(desde).substring(0, 4)) * 100 + Number(String(desde).substring(5, 7));
+}
+
+const CONDICION_PAGO_TEMPORADA = `(
+  pa.fecha >= ?
+  OR EXISTS (
+    SELECT 1 FROM pago_detalle pdt
+    JOIN cuotas ct ON ct.id = pdt.referencia_id
+    WHERE pdt.pago_id = pa.id AND pdt.tipo = 'cuota' AND ct.anio * 100 + ct.mes >= ?
+  )
+)`;
+
+// Deuda = total cuotas - total pagado de la temporada, igual que
+// vista_estado_financiero pero sin su filtro "estado='activo'" (un socio en
+// receso también puede ver y pagar su deuda).
+exports.obtenerResumenDeuda = (personaId, desde, callback) => {
+  const periodo = periodoDesde(desde);
   db.query(
     `SELECT
-       (SELECT COALESCE(SUM(monto), 0) FROM cuotas WHERE persona_id = ?) AS total_cuotas,
-       (SELECT COALESCE(SUM(monto_total), 0) FROM pagos WHERE persona_id = ?) AS total_pagado`,
-    [personaId, personaId],
+       (SELECT COALESCE(SUM(monto), 0) FROM cuotas
+         WHERE persona_id = ? AND anio * 100 + mes >= ?) AS total_cuotas,
+       (SELECT COALESCE(SUM(pa.monto_total), 0) FROM pagos pa
+         WHERE pa.persona_id = ? AND ${CONDICION_PAGO_TEMPORADA}) AS total_pagado`,
+    [personaId, periodo, personaId, desde, periodo],
     (err, rows) => callback(err, rows ? rows[0] : null)
   );
 };
 
-exports.obtenerHistorialCuotas = (personaId, callback) => {
+exports.obtenerHistorialCuotas = (personaId, desde, callback) => {
   db.query(
     `SELECT
        c.id, c.mes, c.anio, c.monto, c.estado, c.fecha_vencimiento,
        COALESCE(SUM(d.monto_pagado), 0) AS monto_pagado
      FROM cuotas c
      LEFT JOIN pago_detalle d ON d.tipo = 'cuota' AND d.referencia_id = c.id
-     WHERE c.persona_id = ?
+     WHERE c.persona_id = ? AND c.anio * 100 + c.mes >= ?
      GROUP BY c.id, c.mes, c.anio, c.monto, c.estado, c.fecha_vencimiento
      ORDER BY c.anio DESC, c.mes DESC`,
-    [personaId],
+    [personaId, periodoDesde(desde)],
     callback
   );
 };
 
 // GROUP_CONCAT de las cuotas que cada pago cubrió (vía pago_detalle) — así el socio
 // ve "a qué mes(es) corresponde" cada pago sin tener que cruzar dos tablas a mano.
-exports.obtenerHistorialPagos = (personaId, callback) => {
+exports.obtenerHistorialPagos = (personaId, desde, callback) => {
   db.query(
     `SELECT
        pa.id, pa.monto_total, pa.metodo, pa.fecha,
@@ -117,28 +138,28 @@ exports.obtenerHistorialPagos = (personaId, callback) => {
      FROM pagos pa
      LEFT JOIN pago_detalle pd ON pd.pago_id = pa.id AND pd.tipo = 'cuota'
      LEFT JOIN cuotas c ON c.id = pd.referencia_id
-     WHERE pa.persona_id = ?
+     WHERE pa.persona_id = ? AND ${CONDICION_PAGO_TEMPORADA}
      GROUP BY pa.id, pa.monto_total, pa.metodo, pa.fecha, pa.fecha_precision, pa.referencia_externa
      ORDER BY pa.fecha DESC`,
-    [personaId],
+    [personaId, desde, periodoDesde(desde)],
     callback
   );
 };
 
 // =====================================
-// ASISTENCIA: historial de eventos propio
+// ASISTENCIA: historial de eventos propio de la temporada vigente
 // =====================================
-exports.obtenerHistorialAsistencia = (personaId, callback) => {
+exports.obtenerHistorialAsistencia = (personaId, desde, callback) => {
   db.query(
     `SELECT
        a.id, e.nombre AS evento, e.tipo AS tipo_evento, e.fecha AS fecha_evento,
        a.estado, a.minutos_atraso
      FROM asistencias a
      JOIN eventos e ON e.id = a.evento_id
-     WHERE a.persona_id = ?
+     WHERE a.persona_id = ? AND DATE(e.fecha) >= ?
      ORDER BY e.fecha DESC
      LIMIT 200`,
-    [personaId],
+    [personaId, desde],
     callback
   );
 };
