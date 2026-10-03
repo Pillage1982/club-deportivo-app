@@ -389,6 +389,22 @@ function ocultarElemento(id) {
   }
 }
 
+function multasHabilitadas() {
+  return window.APP_CONFIG?.multas?.habilitadas !== false;
+}
+
+// Con las multas deshabilitadas (APP_CONFIG.multas) desaparecen de todo el
+// panel: subpestaña, tarjeta del dashboard y columna de Estado Financiero.
+function aplicarMultasDeshabilitadas() {
+  if (multasHabilitadas()) return;
+
+  document.getElementById('nav_subtab_multas')?.classList.add('d-none');
+  ['subtab_multas', 'card_dashboard_multas', 'th_finanzas_multas'].forEach(ocultarElemento);
+
+  const tituloGrafico = document.querySelector('#grafico_multas_wrapper h5');
+  if (tituloGrafico) tituloGrafico.textContent = 'Cuotas por Bloque';
+}
+
 function aplicarRolesFrontend() {
   const usuario = JSON.parse(
     localStorage.getItem('usuario')

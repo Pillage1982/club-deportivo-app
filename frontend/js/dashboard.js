@@ -436,7 +436,7 @@ function cargarGraficos() {
         data: {
           labels: bloques,
           datasets: [
-            { label: 'Multas', data: multas, backgroundColor: '#e15759' },
+            ...(multasHabilitadas() ? [{ label: 'Multas', data: multas, backgroundColor: '#e15759' }] : []),
             { label: 'Cuotas', data: cuotas, backgroundColor: '#4e79a7' }
           ]
         },

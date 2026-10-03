@@ -24,6 +24,9 @@ const allowedOrigin = process.env.FRONTEND_URL;
 // calcular allowedOrigin, que quedaba sin usar. Si no esta configurado el
 // origen, se deja abierto (mismo comportamiento que antes) en vez de romper
 // el arranque en ambientes que aun no definen FRONTEND_URL.
+// Rutas públicas (sitio gdcayquina.cl) antes del CORS global: usan su propio CORS.
+app.use('/publico', require('./routes/publicoRoutes'));
+
 app.use(cors(allowedOrigin ? { origin: allowedOrigin } : undefined));
 app.use(express.json());
 

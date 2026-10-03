@@ -67,7 +67,7 @@ function renderizarTablaFinanzas(finanzas) {
   if (!finanzas.length) {
     tabla.innerHTML = `
       <tr>
-        <td colspan="5" class="text-center text-muted">
+        <td colspan="${multasHabilitadas() ? 5 : 4}" class="text-center text-muted">
           No hay integrantes para los filtros seleccionados
         </td>
       </tr>
@@ -78,7 +78,7 @@ function renderizarTablaFinanzas(finanzas) {
   tabla.innerHTML = finanzas.map(finanza => `
     <tr>
       <td>${finanza.nombres} ${finanza.apellido_paterno} ${finanza.apellido_materno || ''}</td>
-      <td>${formatearMonto(finanza.total_multas)}</td>
+      ${multasHabilitadas() ? `<td>${formatearMonto(finanza.total_multas)}</td>` : ''}
       <td>${formatearMonto(finanza.total_cuotas)}</td>
       <td>${formatearMonto(finanza.total_pagado)}</td>
       <td>${obtenerBadgeFinanciero(finanza.deuda_actual)}</td>

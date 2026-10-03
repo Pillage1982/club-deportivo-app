@@ -26,6 +26,7 @@ window.onload = () => {
   mostrarUsuario();
   aplicarRolesFrontend();
   aplicarRolesTabs();
+  aplicarMultasDeshabilitadas();
 
   // Un solo fetch a /personas — luego ambas funciones usan el caché
   fetch(`${API_URL}/personas`, { headers: getAuthHeaders() })
