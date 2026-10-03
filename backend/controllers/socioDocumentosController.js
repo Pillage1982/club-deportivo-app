@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const justificacionModel = require('../models/justificacionModel');
 const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
+const puntajeModel = require('../models/puntajeModel');
 const cuentaDeposito = require('../config/cuentaDeposito');
 const uploadJustificativo = require('../middleware/uploadJustificativo');
 const emailService = require('../services/emailService');
@@ -44,13 +45,15 @@ exports.datosFormularios = async (req, res) => {
   const personaId = req.socio.persona_id;
 
   try {
+    // "Mis envíos" muestra solo la temporada vigente
+    const desde = await puntajeModel.obtenerInicioTemporadaVigente();
     const [persona, eventos, bloques, justificaciones, postulaciones, comprobantes] = await Promise.all([
       justificacionModel.obtenerDatosCarta(personaId),
       justificacionModel.listarEventosJustificables(personaId),
       justificacionModel.listarBloques(),
-      justificacionModel.listarJustificacionesSocio(personaId),
-      justificacionModel.listarPostulacionesSocio(personaId),
-      comprobanteDepositoModel.listarSocio(personaId)
+      justificacionModel.listarJustificacionesSocio(personaId, desde),
+      justificacionModel.listarPostulacionesSocio(personaId, desde),
+      comprobanteDepositoModel.listarSocio(personaId, desde)
     ]);
 
     if (!persona) {

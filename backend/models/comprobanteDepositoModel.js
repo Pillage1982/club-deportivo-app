@@ -22,11 +22,12 @@ exports.obtenerFechaCreacion = id =>
 exports.marcarEmail = id =>
   ejecutar('UPDATE comprobantes_deposito SET email_enviado = 1 WHERE id = ?', [id]);
 
-exports.listarSocio = personaId =>
+// `desde` ('YYYY-MM-DD'): el portal lista solo la temporada vigente.
+exports.listarSocio = (personaId, desde) =>
   ejecutar(`
     SELECT id, monto, fecha_deposito, concepto, email_enviado, creado_en
     FROM comprobantes_deposito
-    WHERE persona_id = ?
+    WHERE persona_id = ? AND (fecha_deposito >= ? OR creado_en >= ?)
     ORDER BY creado_en DESC
     LIMIT 50
-  `, [personaId]);
+  `, [personaId, desde, desde]);

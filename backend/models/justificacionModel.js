@@ -86,7 +86,8 @@ exports.obtenerFechaCreacion = id =>
 exports.marcarEmailJustificacion = id =>
   ejecutar('UPDATE justificaciones SET email_enviado = 1 WHERE id = ?', [id]);
 
-exports.listarJustificacionesSocio = personaId =>
+// `desde` ('YYYY-MM-DD'): el portal lista solo la temporada vigente.
+exports.listarJustificacionesSocio = (personaId, desde) =>
   ejecutar(`
     SELECT j.id, j.referencia, j.referencia_otro, j.fecha_actividad,
            j.tipo_solicitado, j.estado, j.estado_aplicado, j.observacion_directiva,
@@ -94,10 +95,10 @@ exports.listarJustificacionesSocio = personaId =>
            e.nombre AS evento, e.fecha AS fecha_evento
     FROM justificaciones j
     LEFT JOIN eventos e ON e.id = j.evento_id
-    WHERE j.persona_id = ?
+    WHERE j.persona_id = ? AND (j.fecha_actividad >= ? OR j.creado_en >= ?)
     ORDER BY j.creado_en DESC
     LIMIT 100
-  `, [personaId]);
+  `, [personaId, desde, desde]);
 
 // =====================================
 // SOCIO: postulación a bloques
@@ -127,14 +128,14 @@ exports.obtenerFechaCreacionPostulacion = id =>
 exports.marcarEmailPostulacion = id =>
   ejecutar('UPDATE postulaciones_bloque SET email_enviado = 1 WHERE id = ?', [id]);
 
-exports.listarPostulacionesSocio = personaId =>
+exports.listarPostulacionesSocio = (personaId, desde) =>
   ejecutar(`
     SELECT id, bloque_actual, es_nuevo, opcion_1, opcion_2, creado_en
     FROM postulaciones_bloque
-    WHERE persona_id = ?
+    WHERE persona_id = ? AND creado_en >= ?
     ORDER BY creado_en DESC
     LIMIT 50
-  `, [personaId]);
+  `, [personaId, desde]);
 
 // =====================================
 // ADMIN: revisión de justificaciones

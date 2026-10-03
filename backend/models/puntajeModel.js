@@ -25,6 +25,16 @@ exports.obtenerTemporadas = () =>
     ORDER BY fecha ASC
   `);
 
+// Inicio de la temporada vigente ('YYYY-MM-DD'): la actividad "Inicia temporada"
+// ya ocurrida más reciente, mismo corte que vista_ranking_puntaje. Sin ninguna
+// marcada devuelve '1900-01-01' (sin corte).
+exports.obtenerInicioTemporadaVigente = () =>
+  ejecutar(`
+    SELECT DATE_FORMAT(COALESCE(MAX(DATE(fecha)), '1900-01-01'), '%Y-%m-%d') AS inicio
+    FROM eventos
+    WHERE inicia_temporada = 1 AND DATE(fecha) <= CURDATE()
+  `).then(rows => rows[0].inicio);
+
 // Ranking acotado a un rango [inicio, fin) de fechas de puntaje. inicio/fin nulos
 // dejan ese extremo abierto (usado para "antes de la primera Despedida" y para la
 // temporada en curso, que no tiene fin). Misma agregacion que la vista
@@ -76,7 +86,8 @@ exports.obtenerPuntosCuotasPorPersona = () =>
 // LEFT JOIN: los puntos por pago de cuota (insertarPuntajeCuota) no tienen
 // evento_id (es NULL), así que un INNER JOIN los descartaba silenciosamente
 // del historial aunque sí sumaran al puntaje_total del ranking.
-exports.obtenerHistorial = (persona_id) =>
+// `desde` opcional ('YYYY-MM-DD'): solo puntajes desde esa fecha (Portal del Socio).
+exports.obtenerHistorial = (persona_id, desde = null) =>
   ejecutar(`
     SELECT
       pt.id,
@@ -87,10 +98,10 @@ exports.obtenerHistorial = (persona_id) =>
       e.tipo AS tipo_evento
     FROM puntajes pt
     LEFT JOIN eventos e ON pt.evento_id = e.id
-    WHERE pt.persona_id = ?
+    WHERE pt.persona_id = ?${desde ? ' AND pt.fecha >= ?' : ''}
     ORDER BY pt.fecha DESC, pt.id DESC
     LIMIT 200
-  `, [persona_id]);
+  `, desde ? [persona_id, desde] : [persona_id]);
 
 exports.verificarCuotaAlDia = (persona_id, mes, anio) =>
   ejecutar(`
