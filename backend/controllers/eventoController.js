@@ -216,3 +216,16 @@ exports.cerrar = (req, res) => {
   });
 
 };
+
+// GET /publico/actividades (sin sesión): próximas actividades para gdcayquina.cl.
+exports.listarProximosPublicos = (req, res) => {
+  eventoModel.obtenerProximosPublicos(6, (err, rows) => {
+    if (err) {
+      console.error('Error al listar actividades públicas:', err);
+      return res.status(500).json({ error: 'No se pudieron obtener las actividades' });
+    }
+
+    res.set('Cache-Control', 'public, max-age=300');
+    res.json(rows);
+  });
+};
