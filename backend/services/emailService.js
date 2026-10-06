@@ -444,6 +444,116 @@ function notificarResolucionJustificacion({ persona, folio, aprobada, estadoApli
   }).then(() => true);
 }
 
+// =====================================
+// SOLICITUDES "SÚMATE A LA PROMESA" (sitio gdcayquina.cl)
+// =====================================
+const DESTINO_SOLICITUDES_INGRESO = () => process.env.EMAIL_SOLICITUDES_INGRESO
+  || 'presidencia@gdcayquina.cl, secretaria@gdcayquina.cl, caporales@gdcayquina.cl';
+
+const URL_APP = () => process.env.FRONTEND_URL || 'https://app.gdcayquina.cl';
+
+function filaDato(etiqueta, valor) {
+  return `<tr><td style="padding: 4px 16px 4px 0; vertical-align: top;"><strong>${etiqueta}:</strong></td><td>${escaparHtml(valor || '—')}</td></tr>`;
+}
+
+// s: fila de solicitudes_ingreso. Devuelve false si el correo no está configurado
+// (la solicitud igual queda guardada y se ve en el panel).
+function enviarSolicitudIngreso(s) {
+  if (!emailConfigurado()) {
+    console.warn('[Email] No configurado. Solicitud de ingreso no enviada, folio:', s.id);
+    return Promise.resolve(false);
+  }
+
+  const nombre = [s.nombres, s.apellido_paterno, s.apellido_materno || ''].join(' ').trim();
+  const fechaNacimiento = formatearFechaTexto(`${String(s.fecha_nacimiento).substring(0, 10)}T12:00:00`);
+
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; color: #222; font-size: 14px; line-height: 1.5;">
+      ${membreteCarta(s.id, s.creado_en)}
+      <p style="margin: 0 0 20px;"><strong>Señores<br>Directiva y Caporales.<br><u>Presente</u>.</strong></p>
+      <p style="margin: 0 0 16px; padding-bottom: 6px; border-bottom: 3px solid #222;">
+        <strong>Referencia: Solicitud de ingreso — Súmate a la promesa.</strong>
+      </p>
+      <p style="margin: 0 0 16px;">Se recibió una nueva solicitud desde el sitio gdcayquina.cl:</p>
+      <table role="presentation" style="border-collapse: collapse; margin: 0 0 20px;">
+        ${filaDato('Nombre', nombre)}
+        ${filaDato('Rut', s.rut)}
+        ${filaDato('Fecha de nacimiento', fechaNacimiento)}
+        ${filaDato('Celular', s.telefono)}
+        ${filaDato('E-mail', s.email)}
+        ${filaDato('Comparsa de interés', s.comparsa_interes)}
+        ${s.mensaje ? filaDato('Mensaje', s.mensaje) : ''}
+      </table>
+      ${s.nombre_apoderado ? `
+      <p style="margin: 0 0 8px;"><strong>Es menor de edad. Apoderado:</strong></p>
+      <table role="presentation" style="border-collapse: collapse; margin: 0 0 20px;">
+        ${filaDato('Nombre', s.nombre_apoderado)}
+        ${filaDato('Rut', s.rut_apoderado)}
+        ${filaDato('Celular', s.telefono_apoderado)}
+      </table>` : ''}
+      <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;">
+      <p style="color: #888; font-size: 12px; margin: 0;">
+        Revisar y aceptar o rechazar en el panel de la directiva → Tablas → Solicitudes
+        (folio ${formatearFolio(s.id)}). Al aceptarla, el postulante queda como integrante
+        y completa el resto de sus datos en su primer ingreso al Portal del Socio.
+        Responder este correo le escribe directamente al postulante.
+      </p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    destinatario: DESTINO_SOLICITUDES_INGRESO(),
+    replyTo: s.email,
+    asunto: `Solicitud de ingreso — Folio ${formatearFolio(s.id)} — ${nombre}`,
+    cuerpo,
+    adjuntos: [adjuntoLogo()]
+  }).then(() => true);
+}
+
+// Aviso al postulante cuando la directiva acepta o rechaza su solicitud. Si es
+// aceptada, le explica cómo entrar por primera vez al Portal del Socio.
+function notificarResolucionSolicitudIngreso({ solicitud, aprobada, observacion }) {
+  if (!emailConfigurado() || !solicitud.email) return Promise.resolve(false);
+
+  const nombre = [solicitud.nombres, solicitud.apellido_paterno].join(' ').trim();
+  const urlPortal = `${URL_APP()}/socio/login.html`;
+
+  const detalle = aprobada
+    ? `
+      <p>¡Bienvenido/a a la promesa! Tu solicitud fue <strong style="color: #2e7d32;">aceptada</strong>.</p>
+      <p>Para terminar tu inscripción, entra al Portal del Socio:</p>
+      <ul>
+        <li><strong>RUT:</strong> tu RUT</li>
+        <li><strong>Clave:</strong> tu RUT sin puntos ni guion (ej. 12345678K)</li>
+      </ul>
+      <p>En ese primer ingreso crearás tu contraseña y completarás los datos que faltan.</p>
+      <p style="margin: 24px 0;">
+        <a href="${urlPortal}" style="background: #8b1a1a; color: #fff; padding: 12px 22px; text-decoration: none; border-radius: 4px; display: inline-block;">
+          Ir al Portal del Socio
+        </a>
+      </p>`
+    : `<p>Tu solicitud de ingreso folio <strong>${formatearFolio(solicitud.id)}</strong> no fue aceptada por ahora.</p>`;
+
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">Gran Diablada Calameña</h2>
+      <p>Hola <strong>${escaparHtml(nombre)}</strong>,</p>
+      ${detalle}
+      ${observacion ? `<p>Mensaje de la directiva: <em>${escaparHtml(observacion)}</em></p>` : ''}
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="color: #888; font-size: 12px;">Este es un mensaje automático. No respondas a este correo.</p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    destinatario: solicitud.email,
+    asunto: aprobada
+      ? 'Bienvenido/a a la Gran Diablada Calameña'
+      : `Solicitud de ingreso folio ${formatearFolio(solicitud.id)}`,
+    cuerpo
+  }).then(() => true);
+}
+
 function formatearFechaHoraTexto(fecha) {
   const d = fecha ? new Date(String(fecha).replace(' ', 'T')) : new Date();
   if (Number.isNaN(d.getTime())) return String(fecha || '');
@@ -459,5 +569,7 @@ module.exports = {
   enviarPostulacionBloque,
   enviarComprobanteDeposito,
   notificarResolucionJustificacion,
+  enviarSolicitudIngreso,
+  notificarResolucionSolicitudIngreso,
   formatearFolio
 };

@@ -293,6 +293,12 @@
             <span id="badge_justificaciones" class="badge bg-warning text-dark ms-1 d-none">0</span>
           </a>
         </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_solicitudes">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_solicitudes" role="tab">
+            <i class="bi bi-person-plus"></i> Solicitudes
+            <span id="badge_solicitudes" class="badge bg-warning text-dark ms-1 d-none">0</span>
+          </a>
+        </li>
         <li class="nav-item" role="presentation" id="nav_subtab_pagos">
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_pagos" role="tab">
             <i class="bi bi-cash"></i> Pagos
@@ -846,6 +852,48 @@
           </div>
         </div>
 
+        <!-- Solicitudes "Súmate a la promesa" del sitio gdcayquina.cl -->
+        <div class="tab-pane fade" id="subtab_solicitudes" role="tabpanel">
+          <div class="alert alert-info small">
+            Solicitudes de ingreso enviadas desde el botón <strong>"Súmate a la promesa"</strong> del sitio
+            gdcayquina.cl (también llegan por correo a presidencia, secretaría y caporales).
+            Al <strong>aceptar</strong>, la persona queda como integrante activo: entra al Portal del Socio con su RUT
+            como clave, crea su contraseña y completa el resto de sus datos. Recibe un aviso por correo.
+          </div>
+          <div class="row g-2 mb-3 align-items-end">
+            <div class="col-md-3">
+              <label for="filtro_solicitudes_estado" class="form-label">Estado</label>
+              <select id="filtro_solicitudes_estado" class="form-select">
+                <option value="pendiente">Pendientes</option>
+                <option value="aprobada">Aceptadas</option>
+                <option value="rechazada">Rechazadas</option>
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label for="buscar_solicitudes" class="form-label">Buscar</label>
+              <input type="search" id="buscar_solicitudes" class="form-control" placeholder="Nombre, RUT, comparsa o folio">
+            </div>
+          </div>
+          <div class="table-responsive tabla-scroll">
+            <table class="table table-bordered table-striped mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Folio</th>
+                  <th>Recibida</th>
+                  <th>Postulante</th>
+                  <th>Edad</th>
+                  <th>Comparsa de interés</th>
+                  <th>Contacto</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_solicitudes"></tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Acceso Socios -->
         <div class="tab-pane fade" id="subtab_acceso_socios" role="tabpanel">
 
@@ -1268,6 +1316,43 @@
     </div>
   </div>
 
+  <!-- Modal: Revisar solicitud de ingreso -->
+  <div class="modal fade" id="modal_revisar_solicitud" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-person-plus me-2"></i>Solicitud de ingreso folio <span id="revisar_sol_folio"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="revisar_sol_detalle" class="mb-3"></div>
+          <div id="revisar_sol_acciones">
+            <div class="row g-2">
+              <div class="col-md-5">
+                <label for="revisar_sol_bloque" class="form-label">Bloque <span class="text-muted">(opcional)</span></label>
+                <input type="text" id="revisar_sol_bloque" class="form-control" maxlength="100">
+              </div>
+              <div class="col-md-7">
+                <label for="revisar_sol_observacion" class="form-label">Mensaje para el postulante <span class="text-muted">(opcional)</span></label>
+                <input type="text" id="revisar_sol_observacion" class="form-control" maxlength="300">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" id="revisar_sol_footer">
+          <button type="button" class="btn btn-outline-danger" id="btn_rechazar_solicitud" onclick="resolverSolicitudIngreso('rechazar')">
+            <i class="bi bi-x-circle me-1"></i>Rechazar
+          </button>
+          <button type="button" class="btn btn-success" id="btn_aprobar_solicitud" onclick="resolverSolicitudIngreso('aprobar')">
+            <i class="bi bi-check-circle me-1"></i>Aceptar como integrante
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="app-footer text-center py-3 mt-4">
     <small>Diseño de Mario Riquelme</small>
   </footer>
@@ -1282,6 +1367,7 @@
   <script src="js/gastos.js"></script>
   <script src="js/accesoSocios.js"></script>
   <script src="js/justificaciones.js"></script>
+  <script src="js/solicitudesIngreso.js"></script>
   <script src="js/multas.js"></script>
   <script src="js/puntaje.js"></script>
   <script src="js/formaciones.js?v=30"></script>

@@ -487,6 +487,39 @@ async function asegurarTablasDocumentosSocio() {
   `);
 }
 
+// Solicitudes "Súmate a la promesa" del sitio gdcayquina.cl: datos básicos del
+// postulante (y del apoderado si es menor). Al aprobarla se crea el integrante;
+// el resto de los datos los completa él mismo en su primer ingreso al Portal.
+async function asegurarTablaSolicitudesIngreso() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS solicitudes_ingreso (
+      id                    BIGINT AUTO_INCREMENT PRIMARY KEY,
+      rut                   VARCHAR(12) NOT NULL,
+      nombres               VARCHAR(100) NOT NULL,
+      apellido_paterno      VARCHAR(100) NOT NULL,
+      apellido_materno      VARCHAR(100) NULL,
+      fecha_nacimiento      DATE NOT NULL,
+      telefono              VARCHAR(20) NOT NULL,
+      email                 VARCHAR(150) NOT NULL,
+      comparsa_interes      VARCHAR(150) NULL,
+      mensaje               VARCHAR(500) NULL,
+      nombre_apoderado      VARCHAR(150) NULL,
+      rut_apoderado         VARCHAR(12) NULL,
+      telefono_apoderado    VARCHAR(20) NULL,
+      estado                ENUM('pendiente', 'aprobada', 'rechazada') NOT NULL DEFAULT 'pendiente',
+      persona_id            BIGINT NULL,
+      observacion_directiva VARCHAR(300) NULL,
+      revisado_por          INT NULL,
+      revisado_en           DATETIME NULL,
+      email_enviado         TINYINT(1) NOT NULL DEFAULT 0,
+      creado_en             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      KEY idx_solicitud_rut (rut),
+      KEY idx_solicitud_estado (estado),
+      CONSTRAINT fk_solicitud_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE SET NULL
+    )
+  `);
+}
+
 async function ejecutarMigraciones() {
   const [colsPersonas, colsEventos, colsAsistencias] = await Promise.all([
     columnasExistentes('personas'),
@@ -510,6 +543,7 @@ async function ejecutarMigraciones() {
   await asegurarRecuperacionClave();
   await asegurarCamposPagos();
   await asegurarTablasDocumentosSocio();
+  await asegurarTablaSolicitudesIngreso();
   await consolidarTiposCuota();
   await reconstruirVistaRankingPuntaje();
   await reconstruirVistaEstadoFinanciero();

@@ -101,6 +101,13 @@ window.onload = () => {
     tabJustificaciones.addEventListener('shown.bs.tab', () => inicializarJustificaciones());
   }
 
+  // Solicitudes "Súmate a la promesa" del sitio (solo admin)
+  if (obtenerRolActual() === 'admin') {
+    actualizarBadgeSolicitudes();
+    document.querySelector('[href="#subtab_solicitudes"]')
+      ?.addEventListener('shown.bs.tab', () => inicializarSolicitudesIngreso());
+  }
+
   // Cargar seguimiento de acceso de socios cuando se activa ese subtab
   const tabAccesoSocios = document.querySelector('[href="#subtab_acceso_socios"]');
   if (tabAccesoSocios) {
@@ -118,6 +125,7 @@ function aplicarRolesTabs() {
   // solo admin, sin importar si además puede ver operación o finanzas.
   if (rol !== 'admin') {
     document.getElementById('nav_subtab_acceso_socios')?.classList.add('d-none');
+    document.getElementById('nav_subtab_solicitudes')?.classList.add('d-none');
   }
 
   if (!puedeVerOperacion) {
