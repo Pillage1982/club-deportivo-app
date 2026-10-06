@@ -29,8 +29,8 @@
   <link rel="stylesheet" href="../css/login.css">
 
   <style>
-    /* login.css centra una tarjeta corta en 100vh; este formulario es largo. */
-    body { height: auto; min-height: 100vh; padding: 24px 0; flex-direction: column; }
+    /* login.css centra una tarjeta corta en 100vh sin scroll; este formulario es largo. */
+    body { height: auto; min-height: 100vh; padding: 24px 0; flex-direction: column; overflow-x: hidden; overflow-y: auto; }
     /* En login.css el crédito es fixed (páginas cortas); aquí flotaría sobre el formulario al hacer scroll. */
     .login-credit { position: static; margin-top: 16px; }
     .login-card { max-width: 520px; }
