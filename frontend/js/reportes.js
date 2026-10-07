@@ -549,6 +549,27 @@ async function exportarGastosExcel() {
   mostrarAlerta(`Excel generado: ${rows.length} gasto(s).`, 'success');
 }
 
+// ── Excel: Ingresos de terceros ───────────────────────────────────────────────
+
+async function exportarIngresosExcel() {
+  if (!_excelDisponible()) return;
+  if (!ingresosCargados || ingresosCargados.length === 0) {
+    mostrarAlerta('No hay ingresos para exportar.', 'warning');
+    return;
+  }
+  const rows = ingresosCargados.map(i => ({
+    'Fecha':       _fechaExcel(i.fecha),
+    'Categoría':   i.categoria || '',
+    'Origen':      i.origen || '',
+    'Descripción': i.descripcion || '',
+    'Monto':       Number(i.monto || 0),
+    'Responsable': i.responsable || '',
+    'Comprobante': i.comprobante_path ? 'Sí' : 'No'
+  }));
+  await _descargarExcel(rows, 'Ingresos', 'ingresos_terceros');
+  mostrarAlerta(`Excel generado: ${rows.length} ingreso(s).`, 'success');
+}
+
 // ── PDF helpers ───────────────────────────────────────────────────────────────
 
 function _pdfDisponible() {
@@ -855,6 +876,39 @@ function exportarGastosPDF() {
   });
   doc.save(`gastos_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
   mostrarAlerta(`PDF generado: ${gastosCargados.length} gasto(s).`, 'success');
+}
+
+// ── PDF: Ingresos de terceros (respaldo para asamblea) ────────────────────────
+
+function exportarIngresosPDF() {
+  if (!_pdfDisponible()) return;
+  if (!ingresosCargados || ingresosCargados.length === 0) {
+    mostrarAlerta('No hay ingresos para exportar.', 'warning');
+    return;
+  }
+  const doc = _crearDocPDF('Reporte de Ingresos de Terceros');
+  const totalIngresos = ingresosCargados.reduce((s, i) => s + Number(i.monto || 0), 0);
+  doc.autoTable({
+    startY: 30,
+    head: [['Fecha', 'Categoría', 'Origen', 'Descripción', 'Monto', 'Responsable', 'Comprobante']],
+    body: ingresosCargados.map(i => [
+      _fechaDMA(i.fecha),
+      i.categoria || '',
+      i.origen || '',
+      i.descripcion || '',
+      formatearMonto(i.monto),
+      i.responsable || '',
+      i.comprobante_path ? 'Sí' : 'No'
+    ]),
+    foot: [['', '', '', `Total: ${ingresosCargados.length} ingreso(s)`, formatearMonto(totalIngresos), '', '']],
+    styles:             { fontSize: 8, cellPadding: 2 },
+    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+    footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [250, 250, 250] },
+    columnStyles:       { 4: { halign: 'right' } }
+  });
+  doc.save(`ingresos_terceros_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
+  mostrarAlerta(`PDF generado: ${ingresosCargados.length} ingreso(s).`, 'success');
 }
 
 // ── PDF: Pago Cuotas (matriz por mes) ───────────────────────────────────────────
