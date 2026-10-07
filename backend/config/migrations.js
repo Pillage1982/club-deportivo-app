@@ -222,11 +222,18 @@ async function asegurarTablaIngresos() {
       fecha             DATE NOT NULL,
       responsable       VARCHAR(150) NULL,
       comprobante_path  VARCHAR(255) NULL,
+      documento_path    VARCHAR(255) NULL,
       registrado_por    INT NULL,
       created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       KEY idx_ingresos_fecha (fecha)
     )
   `);
+
+  // La tabla ya pudo crearse sin el segundo adjunto (dev, 2026-10-07)
+  const cols = await columnasExistentes('ingresos');
+  if (!cols.has('documento_path')) {
+    await ejecutar('ALTER TABLE ingresos ADD COLUMN documento_path VARCHAR(255) NULL AFTER comprobante_path');
+  }
 }
 
 // Esta bonificacion se cargo por una interpretacion incorrecta de los estatutos.

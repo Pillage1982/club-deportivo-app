@@ -18,9 +18,12 @@ router.post(
   authMiddleware,
   roleMiddleware('admin', 'tesorero'),
   (req, res, next) => {
-    uploadComprobante.single('comprobante')(req, res, (err) => {
+    uploadComprobante.fields([
+      { name: 'comprobante', maxCount: 1 },
+      { name: 'documento', maxCount: 1 }
+    ])(req, res, (err) => {
       if (err) {
-        return res.status(400).json({ mensaje: err.message || 'No se pudo subir el comprobante' });
+        return res.status(400).json({ mensaje: err.message || 'No se pudo subir el archivo' });
       }
       next();
     });
@@ -33,6 +36,13 @@ router.get(
   authMiddleware,
   roleMiddleware('admin', 'tesorero'),
   controller.descargarComprobante
+);
+
+router.get(
+  '/:id/documento',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.descargarDocumento
 );
 
 router.delete(

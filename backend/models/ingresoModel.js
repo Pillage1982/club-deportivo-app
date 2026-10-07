@@ -4,7 +4,7 @@ const db = require('../config/db');
 
 exports.obtenerIngresos = (callback) => {
   const query = `
-    SELECT id, descripcion, categoria, origen, monto, fecha, responsable, comprobante_path
+    SELECT id, descripcion, categoria, origen, monto, fecha, responsable, comprobante_path, documento_path
     FROM ingresos
     ORDER BY fecha DESC, id DESC
   `;
@@ -25,8 +25,8 @@ exports.obtenerIngresoPorId = (id, callback) => {
 exports.crearIngreso = (data, callback) => {
   const query = `
     INSERT INTO ingresos
-    (descripcion, categoria, origen, monto, fecha, responsable, comprobante_path, registrado_por)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    (descripcion, categoria, origen, monto, fecha, responsable, comprobante_path, documento_path, registrado_por)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   db.query(
     query,
@@ -38,6 +38,7 @@ exports.crearIngreso = (data, callback) => {
       data.fecha,
       data.responsable || null,
       data.comprobante_path || null,
+      data.documento_path || null,
       data.registrado_por || null
     ],
     callback

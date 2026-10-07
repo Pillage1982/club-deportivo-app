@@ -564,7 +564,8 @@ async function exportarIngresosExcel() {
     'Descripción': i.descripcion || '',
     'Monto':       Number(i.monto || 0),
     'Responsable': i.responsable || '',
-    'Comprobante': i.comprobante_path ? 'Sí' : 'No'
+    'Comprobante de depósito': i.comprobante_path ? 'Sí' : 'No',
+    'Documento de respaldo':   i.documento_path ? 'Sí' : 'No'
   }));
   await _descargarExcel(rows, 'Ingresos', 'ingresos_terceros');
   mostrarAlerta(`Excel generado: ${rows.length} ingreso(s).`, 'success');
@@ -890,7 +891,7 @@ function exportarIngresosPDF() {
   const totalIngresos = ingresosCargados.reduce((s, i) => s + Number(i.monto || 0), 0);
   doc.autoTable({
     startY: 30,
-    head: [['Fecha', 'Categoría', 'Origen', 'Descripción', 'Monto', 'Responsable', 'Comprobante']],
+    head: [['Fecha', 'Categoría', 'Origen', 'Descripción', 'Monto', 'Responsable', 'Comprobante', 'Documento']],
     body: ingresosCargados.map(i => [
       _fechaDMA(i.fecha),
       i.categoria || '',
@@ -898,9 +899,10 @@ function exportarIngresosPDF() {
       i.descripcion || '',
       formatearMonto(i.monto),
       i.responsable || '',
-      i.comprobante_path ? 'Sí' : 'No'
+      i.comprobante_path ? 'Sí' : 'No',
+      i.documento_path ? 'Sí' : 'No'
     ]),
-    foot: [['', '', '', `Total: ${ingresosCargados.length} ingreso(s)`, formatearMonto(totalIngresos), '', '']],
+    foot: [['', '', '', `Total: ${ingresosCargados.length} ingreso(s)`, formatearMonto(totalIngresos), '', '', '']],
     styles:             { fontSize: 8, cellPadding: 2 },
     headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
     footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
