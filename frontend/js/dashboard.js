@@ -78,7 +78,7 @@ function renderizarBalanceDashboard(balance) {
 
   const negativo = Number(balance.saldo_caja) < 0;
   const cuerpo = document.getElementById('card_dashboard_caja_body');
-  cuerpo?.classList.toggle('text-bg-dark', !negativo);
+  cuerpo?.classList.toggle('text-bg-info', !negativo);
   cuerpo?.classList.toggle('text-bg-danger', negativo);
   document.getElementById('balance_saldo_caja')?.classList.toggle('text-danger', negativo);
 
