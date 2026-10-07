@@ -130,6 +130,47 @@
               </div>
             </div>
           </div>
+          <!-- Solo admin/tesorero: el backend no envía el balance a otros roles -->
+          <div id="card_dashboard_caja" class="col-6 col-md-3 d-none">
+            <div id="card_dashboard_caja_body" class="card text-bg-dark shadow-sm border-0">
+              <div class="card-body shadow-sm border-0">
+                <h5 class="card-title"><i class="bi bi-safe2"></i> Total en caja</h5>
+                <h2 id="saldo_caja">$0</h2>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="dashboard_balance" class="card shadow-sm border-0 mb-4 d-none">
+          <div class="card-body">
+            <h6 class="text-muted mb-3"><i class="bi bi-journal-text"></i> Balance general del club</h6>
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <tbody>
+                  <tr>
+                    <td>Pagos de socios <small class="text-muted">(cuotas y aportes)</small></td>
+                    <td class="text-end" id="balance_pagos_socios">$0</td>
+                  </tr>
+                  <tr>
+                    <td>Ingresos de terceros <small class="text-muted">(donaciones, premios, proyectos)</small></td>
+                    <td class="text-end" id="balance_ingresos_terceros">$0</td>
+                  </tr>
+                  <tr class="fw-semibold">
+                    <td>Total ingresos</td>
+                    <td class="text-end text-success" id="balance_total_ingresos">$0</td>
+                  </tr>
+                  <tr class="fw-semibold">
+                    <td>Total egresos <small class="text-muted fw-normal">(gastos)</small></td>
+                    <td class="text-end text-danger" id="balance_total_egresos">$0</td>
+                  </tr>
+                  <tr class="fw-bold border-top">
+                    <td>Saldo en caja</td>
+                    <td class="text-end" id="balance_saldo_caja">$0</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         <div id="dashboard_asistencia_stats" class="mb-4">

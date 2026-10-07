@@ -38,12 +38,52 @@ function cargarDashboard() {
       set('total_pagado',   formatearMonto(data.pagos_mes    ?? 0));
       set('deuda_total',    formatearMonto(data.deuda_total  ?? 0));
 
+      renderizarBalanceDashboard(data.balance);
+
       // Estadísticas por bloque usan asistenciasTabla ya cargado (sin fetch extra)
       renderizarAsistenciaDashboard(
         Array.isArray(asistenciasTabla) ? asistenciasTabla : []
       );
     })
     .catch(err => console.error(err));
+}
+
+// =====================================
+// BALANCE GENERAL / TOTAL EN CAJA
+// =====================================
+
+// El backend solo envía `balance` a admin y tesorero; sin él, la tarjeta y el
+// bloque quedan ocultos (entrenador u otro rol).
+function renderizarBalanceDashboard(balance) {
+  const tarjeta = document.getElementById('card_dashboard_caja');
+  const bloque  = document.getElementById('dashboard_balance');
+
+  if (!balance) {
+    tarjeta?.classList.add('d-none');
+    bloque?.classList.add('d-none');
+    return;
+  }
+
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = formatearMonto(val ?? 0);
+  };
+
+  set('saldo_caja',                balance.saldo_caja);
+  set('balance_pagos_socios',      balance.pagos_socios);
+  set('balance_ingresos_terceros', balance.ingresos_terceros);
+  set('balance_total_ingresos',    balance.total_ingresos);
+  set('balance_total_egresos',     balance.total_egresos);
+  set('balance_saldo_caja',        balance.saldo_caja);
+
+  const negativo = Number(balance.saldo_caja) < 0;
+  const cuerpo = document.getElementById('card_dashboard_caja_body');
+  cuerpo?.classList.toggle('text-bg-dark', !negativo);
+  cuerpo?.classList.toggle('text-bg-danger', negativo);
+  document.getElementById('balance_saldo_caja')?.classList.toggle('text-danger', negativo);
+
+  tarjeta?.classList.remove('d-none');
+  bloque?.classList.remove('d-none');
 }
 
 // =====================================

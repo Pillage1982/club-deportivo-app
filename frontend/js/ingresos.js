@@ -87,6 +87,7 @@ function crearIngreso() {
       document.getElementById('ingreso_comprobante').value = '';
 
       cargarTablaIngresos();
+      cargarDashboard();
     })
     .catch(err => {
       mostrarAlerta(
@@ -243,6 +244,7 @@ function ejecutarEliminarIngreso(id) {
     .then(data => {
       mostrarAlerta(data.mensaje || 'Ingreso eliminado correctamente', 'warning');
       cargarTablaIngresos();
+      cargarDashboard();
     })
     .catch(err => {
       mostrarAlerta(obtenerMensajeError(err, 'No se pudo eliminar el ingreso'), 'danger');
