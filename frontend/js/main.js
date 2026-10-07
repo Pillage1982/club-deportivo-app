@@ -48,6 +48,7 @@ window.onload = () => {
   configurarFiltrosAsistencias();
   configurarFiltrosDashboardAsistencia();
   configurarFiltrosGastos();
+  configurarFiltrosIngresos();
 
   if (puedeVerOperacion) {
     // Un solo fetch a /eventos — luego ambas funciones usan el caché
@@ -70,6 +71,7 @@ window.onload = () => {
     cargarTablaPagos();
     cargarCuotas();
     cargarTablaGastos();
+    cargarTablaIngresos();
   }
 
   cargarDashboard();
@@ -143,7 +145,9 @@ function aplicarRolesTabs() {
     document.getElementById('nav_subtab_multas')?.classList.add('d-none');
     document.getElementById('nav_subtab_finanzas')?.classList.add('d-none');
     document.getElementById('nav_subtab_gastos')?.classList.add('d-none');
+    document.getElementById('nav_subtab_ingresos')?.classList.add('d-none');
     document.getElementById('nav_subtab_form_pago')?.classList.add('d-none');
     document.getElementById('nav_subtab_form_gasto')?.classList.add('d-none');
+    document.getElementById('nav_subtab_form_ingreso')?.classList.add('d-none');
   }
 }

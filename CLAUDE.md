@@ -66,6 +66,8 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - **Depósitos en Portal del Socio (oct-2026):** Documentos → "Datos para depositar" (cuenta en `backend/config/cuentaDeposito.js`) y "Enviar comprobante de depósito" (tabla `comprobantes_deposito`, archivo en `uploads/comprobantes_deposito`, correo a `EMAIL_TESORERIA` o tesoreria@gdcayquina.cl). Solo avisa: tesorería registra el pago en el panel
 - **Temporadas (oct-2026):** la abre la actividad marcada "Inicia temporada" (`eventos.inicia_temporada`); corta ranking, selector de temporadas y formaciones. 2026-2027 la abre la Misa a la Chilena del 26-09-2026. Cuotas de la temporada vigente: `PERIODOS_CUOTAS_TEMPORADA_VIGENTE` en `estatutoGdcRules.js` (oct-2026 a jul-2027)
 - **Módulo de Gastos (jul-2026):** registro, categorías, responsable, comprobante adjunto y exportación
+- **Módulo de Ingresos de terceros (oct-2026):** tabla `ingresos` (sin `persona_id`) para donaciones, premios y proyectos adjudicados; Tablas → Ingresos y Formularios → Ingreso, comprobante adjunto, exportación Excel/PDF. No afecta deuda ni puntaje
+- **Balance general y Total en caja (oct-2026):** `/dashboard` entrega `balance` solo a admin/tesorero = (SUM pagos + SUM ingresos) − SUM gastos, calculado en vivo; tarjeta "Total en caja" + bloque "Balance general" en Dashboard; se refresca al guardar/eliminar pagos, gastos e ingresos
 - Sesión de 20 días y continuidad offline sin cierre forzado por falta de conexión
 
 ### Pendiente calamena

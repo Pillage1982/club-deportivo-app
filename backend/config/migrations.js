@@ -208,6 +208,27 @@ async function asegurarTablaGastos() {
   `);
 }
 
+// Ingresos de terceros: dinero que entra al club sin venir de la cuota o multa
+// de un integrante (donaciones, premios, proyectos adjudicados). Por eso no
+// tiene persona_id y no afecta la deuda ni el puntaje de ningún socio.
+async function asegurarTablaIngresos() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS ingresos (
+      id                INT AUTO_INCREMENT PRIMARY KEY,
+      descripcion       VARCHAR(200) NOT NULL,
+      categoria         VARCHAR(50) NOT NULL,
+      origen            VARCHAR(150) NOT NULL,
+      monto             DECIMAL(10,2) NOT NULL,
+      fecha             DATE NOT NULL,
+      responsable       VARCHAR(150) NULL,
+      comprobante_path  VARCHAR(255) NULL,
+      registrado_por    INT NULL,
+      created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      KEY idx_ingresos_fecha (fecha)
+    )
+  `);
+}
+
 // Esta bonificacion se cargo por una interpretacion incorrecta de los estatutos.
 // Se elimina de forma idempotente sin afectar los puntos normales de cada cuota.
 async function eliminarBonificacionPagoAnual() {
@@ -536,6 +557,7 @@ async function ejecutarMigraciones() {
   await eliminarBonificacionPagoAnual();
   await ajustarPagoAnualInicioCiclo();
   await asegurarTablaGastos();
+  await asegurarTablaIngresos();
   await asegurarTablasFormaciones();
   await asegurarTablaSociosAuth();
   await asegurarDatosActualizadosSocios();
