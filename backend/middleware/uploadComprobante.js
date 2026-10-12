@@ -98,9 +98,6 @@ if (multer) {
   uploadComprobante = {
     single: () => (req, res, next) => {
       next(new Error('Subida de comprobantes no disponible: falta ejecutar npm install en el servidor.'));
-    },
-    fields: () => (req, res, next) => {
-      next(new Error('Subida de comprobantes no disponible: falta ejecutar npm install en el servidor.'));
     }
   };
 }

@@ -18,7 +18,6 @@ function crearIngreso() {
   const fecha       = document.getElementById('ingreso_fecha').value;
   const responsable = document.getElementById('ingreso_responsable').value.trim();
   const archivo     = document.getElementById('ingreso_comprobante').files[0] || null;
-  const documento   = document.getElementById('ingreso_documento').files[0] || null;
 
   if (!descripcion || descripcion.length < 3) {
     mostrarAlerta('Ingrese una descripción válida', 'warning');
@@ -45,9 +44,9 @@ function crearIngreso() {
     return;
   }
 
-  if (!archivo && !documento) {
+  if (!archivo) {
     mostrarAlerta(
-      'Se guardará sin archivos adjuntos. Se recomienda adjuntar el comprobante de depósito o el documento de respaldo para la asamblea.',
+      'Se guardará sin comprobante adjunto. Se recomienda adjuntar el respaldo (transferencia, acta o resolución) para la asamblea.',
       'warning'
     );
   }
@@ -60,7 +59,6 @@ function crearIngreso() {
   formData.append('fecha', fecha);
   if (responsable) formData.append('responsable', responsable);
   if (archivo) formData.append('comprobante', archivo);
-  if (documento) formData.append('documento', documento);
 
   const estadoBoton = bloquearBoton('btn_guardar_ingreso', 'Guardando...');
   if (!estadoBoton) return;
@@ -87,7 +85,6 @@ function crearIngreso() {
       document.getElementById('ingreso_fecha').value       = '';
       document.getElementById('ingreso_responsable').value = '';
       document.getElementById('ingreso_comprobante').value = '';
-      document.getElementById('ingreso_documento').value   = '';
 
       cargarTablaIngresos();
       cargarDashboard();
@@ -172,20 +169,10 @@ function renderizarTablaIngresos(ingresos) {
       <td>${ingreso.responsable ? escaparHtml(ingreso.responsable) : '—'}</td>
       <td class="text-nowrap">
         ${ingreso.comprobante_path
-          ? `<button type="button" class="btn btn-sm btn-outline-primary" title="Ver comprobante de depósito" onclick="verAdjuntoIngreso(${ingreso.id}, 'comprobante')">
-               <i class="bi bi-receipt"></i>
-             </button>`
-          : ''
-        }
-        ${ingreso.documento_path
-          ? `<button type="button" class="btn btn-sm btn-outline-secondary ms-1" title="Ver documento de respaldo" onclick="verAdjuntoIngreso(${ingreso.id}, 'documento')">
+          ? `<button type="button" class="btn btn-sm btn-outline-primary" title="Ver comprobante" onclick="verComprobanteIngreso(${ingreso.id})">
                <i class="bi bi-file-earmark-text"></i>
              </button>`
-          : ''
-        }
-        ${!ingreso.comprobante_path && !ingreso.documento_path
-          ? '<span class="text-muted small">Sin adjuntos</span>'
-          : ''
+          : '<span class="text-muted small">Sin comprobante</span>'
         }
         <button type="button" class="btn btn-sm btn-outline-danger ms-1" title="Eliminar" onclick="eliminarIngreso(${ingreso.id})">
           <i class="bi bi-trash"></i>
@@ -216,13 +203,12 @@ function configurarFiltrosIngresos() {
   });
 }
 
-// tipo: 'comprobante' (depósito) o 'documento' (respaldo)
-function verAdjuntoIngreso(id, tipo) {
-  fetch(`${API_URL}/ingresos/${id}/${tipo}`, { headers: getAuthHeaders() })
+function verComprobanteIngreso(id) {
+  fetch(`${API_URL}/ingresos/${id}/comprobante`, { headers: getAuthHeaders() })
     .then(async res => {
       if (!res.ok) {
         const data = await leerRespuestaJson(res);
-        throw new Error(data.mensaje || 'No se pudo obtener el archivo');
+        throw new Error(data.mensaje || 'No se pudo obtener el comprobante');
       }
       return res.blob();
     })
@@ -232,13 +218,13 @@ function verAdjuntoIngreso(id, tipo) {
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     })
     .catch(err => {
-      mostrarAlerta(obtenerMensajeError(err, 'No se pudo obtener el archivo'), 'danger');
+      mostrarAlerta(obtenerMensajeError(err, 'No se pudo obtener el comprobante'), 'danger');
     });
 }
 
 function eliminarIngreso(id) {
   mostrarConfirmacion(
-    'Esta acción eliminará el ingreso y sus archivos adjuntos. ¿Deseas continuar?',
+    'Esta acción eliminará el ingreso y su comprobante adjunto. ¿Deseas continuar?',
     () => ejecutarEliminarIngreso(id)
   );
 }

@@ -20,24 +20,6 @@ function textoValido(valor, minimo = 3) {
   return tieneLetrasONumeros && caracteresPermitidos;
 }
 
-// Adjuntos opcionales de un ingreso: comprobante de depósito y documento de respaldo
-const CAMPOS_ARCHIVO = ['comprobante', 'documento'];
-
-function archivosSubidos(req) {
-  return CAMPOS_ARCHIVO
-    .map(campo => (req.files && req.files[campo] && req.files[campo][0]) || null)
-    .filter(Boolean);
-}
-
-function borrarArchivosSubidos(req) {
-  archivosSubidos(req).forEach(archivo => fs.unlink(archivo.path, () => {}));
-}
-
-function rutaGuardada(req, campo) {
-  const archivo = req.files && req.files[campo] && req.files[campo][0];
-  return archivo ? `comprobantes/${archivo.filename}` : null;
-}
-
 function validarIngreso(body) {
   const descripcion = body.descripcion ? body.descripcion.trim() : '';
   const categoria   = body.categoria   ? body.categoria.trim()   : '';
@@ -86,19 +68,19 @@ exports.crear = async (req, res) => {
   const errorValidacion = validarIngreso(req.body);
 
   if (errorValidacion) {
-    borrarArchivosSubidos(req);
+    if (req.file) fs.unlink(req.file.path, () => {});
     return res.status(400).json({ mensaje: errorValidacion });
   }
 
-  for (const archivo of archivosSubidos(req)) {
+  if (req.file) {
     let firmaValida = false;
     try {
-      firmaValida = await uploadComprobante.verificarFirmaArchivo(archivo.path, archivo.mimetype);
+      firmaValida = await uploadComprobante.verificarFirmaArchivo(req.file.path, req.file.mimetype);
     } catch (e) {
       firmaValida = false;
     }
     if (!firmaValida) {
-      borrarArchivosSubidos(req);
+      fs.unlink(req.file.path, () => {});
       return res.status(400).json({ mensaje: 'El archivo no corresponde a una imagen o PDF válido' });
     }
   }
@@ -110,14 +92,13 @@ exports.crear = async (req, res) => {
     monto: Number(req.body.monto),
     fecha: req.body.fecha,
     responsable: req.body.responsable ? req.body.responsable.trim() : null,
-    comprobante_path: rutaGuardada(req, 'comprobante'),
-    documento_path: rutaGuardada(req, 'documento'),
+    comprobante_path: req.file ? `comprobantes/${req.file.filename}` : null,
     registrado_por: req.usuario ? req.usuario.id : null
   };
 
   ingresoModel.crearIngreso(data, (err) => {
     if (err) {
-      borrarArchivosSubidos(req);
+      if (req.file) fs.unlink(req.file.path, () => {});
       return res.status(500).json({ mensaje: 'Error al registrar el ingreso' });
     }
     res.json({ mensaje: 'Ingreso registrado' });
@@ -141,47 +122,38 @@ exports.eliminar = (req, res) => {
         return res.status(500).json({ mensaje: 'Error al eliminar el ingreso' });
       }
 
-      [ingreso.comprobante_path, ingreso.documento_path].filter(Boolean).forEach(ruta => {
-        fs.unlink(path.join(__dirname, '..', 'uploads', ruta), () => {});
-      });
+      if (ingreso.comprobante_path) {
+        const rutaArchivo = path.join(__dirname, '..', 'uploads', ingreso.comprobante_path);
+        fs.unlink(rutaArchivo, () => {});
+      }
 
       res.json({ mensaje: 'Ingreso eliminado' });
     });
   });
 };
 
-function descargarAdjunto(columna, nombreArchivo, mensajeSinArchivo) {
-  return (req, res) => {
-    const id = req.params.id;
+exports.descargarComprobante = (req, res) => {
+  const id = req.params.id;
 
-    ingresoModel.obtenerIngresoPorId(id, (err, ingreso) => {
-      if (err) {
-        return res.status(500).json({ mensaje: 'Error al buscar el ingreso' });
+  ingresoModel.obtenerIngresoPorId(id, (err, ingreso) => {
+    if (err) {
+      return res.status(500).json({ mensaje: 'Error al buscar el ingreso' });
+    }
+
+    if (!ingreso || !ingreso.comprobante_path) {
+      return res.status(404).json({ mensaje: 'Este ingreso no tiene comprobante adjunto' });
+    }
+
+    const rutaArchivo = path.join(__dirname, '..', 'uploads', ingreso.comprobante_path);
+    const extension = path.extname(rutaArchivo).toLowerCase();
+    const mimeSeguro = MIME_POR_EXTENSION[extension] || 'application/octet-stream';
+
+    res.set('Content-Disposition', `attachment; filename="comprobante${extension}"`);
+    res.type(mimeSeguro);
+    res.sendFile(rutaArchivo, (sendErr) => {
+      if (sendErr && !res.headersSent) {
+        res.status(404).json({ mensaje: 'Comprobante no encontrado' });
       }
-
-      if (!ingreso || !ingreso[columna]) {
-        return res.status(404).json({ mensaje: mensajeSinArchivo });
-      }
-
-      const rutaArchivo = path.join(__dirname, '..', 'uploads', ingreso[columna]);
-      const extension = path.extname(rutaArchivo).toLowerCase();
-      const mimeSeguro = MIME_POR_EXTENSION[extension] || 'application/octet-stream';
-
-      res.set('Content-Disposition', `attachment; filename="${nombreArchivo}${extension}"`);
-      res.type(mimeSeguro);
-      res.sendFile(rutaArchivo, (sendErr) => {
-        if (sendErr && !res.headersSent) {
-          res.status(404).json({ mensaje: 'Archivo no encontrado' });
-        }
-      });
     });
-  };
-}
-
-exports.descargarComprobante = descargarAdjunto(
-  'comprobante_path', 'comprobante_deposito', 'Este ingreso no tiene comprobante de depósito adjunto'
-);
-
-exports.descargarDocumento = descargarAdjunto(
-  'documento_path', 'documento_respaldo', 'Este ingreso no tiene documento de respaldo adjunto'
-);
+  });
+};
