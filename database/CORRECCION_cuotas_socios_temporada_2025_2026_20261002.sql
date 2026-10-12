@@ -18,6 +18,11 @@
 -- Socios honorarios: no deben tener cuotas; este script no los toca (PASO 0
 -- solo los lista para revisarlos aparte).
 --
+-- DESPUÉS de este script, correr CORRECCION_repartir_saldo_socios_20261002.sql:
+-- reparte lo pagado de más (cuotas que estaban pagadas a $12.000) entre las
+-- cuotas impagas del mismo socio. Sin ese paso el socio ve deuda $0 y, a la vez,
+-- cuotas "vencidas".
+--
 -- ORDEN: ejecutar primero en la BD de pruebas (u402516660_Diablada_dev), revisar
 -- los PASOS 0 a 3 (solo lectura) y recién después el PASO 4. Repetir en
 -- producción con un respaldo de la BD descargado antes desde phpMyAdmin.
