@@ -1,5 +1,5 @@
 // Acceso MySQL de las solicitudes "Súmate a la promesa" (formulario público del
-// sitio gdcayquina.cl). Aprobar crea el integrante (o reactiva uno dado de baja)
+// sitio web de la agrupación). Aprobar crea el integrante (o reactiva uno dado de baja)
 // con los datos básicos; el resto lo completa él en su primer ingreso al Portal.
 const db = require('../config/db');
 

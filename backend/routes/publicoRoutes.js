@@ -1,4 +1,4 @@
-// Rutas /publico: sin sesión, para el sitio gdcayquina.cl.
+// Rutas /publico: sin sesión, para el sitio web de la agrupación.
 // Tienen su propio CORS abierto porque el CORS global puede estar restringido a
 // FRONTEND_URL (la app), y el sitio público vive en otro dominio. Van montadas
 // antes de express.json() global, por eso el router lee el JSON por su cuenta.

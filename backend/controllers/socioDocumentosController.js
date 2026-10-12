@@ -22,7 +22,7 @@ const REFERENCIAS = ['ensayo', 'reunion', 'salida', 'otro'];
 const TIPOS_SOLICITADOS = ['justificado', 'licencia_medica'];
 const CONDICIONES = ['bailarin', 'socio'];
 
-const RUTA_ESTATUTOS = path.join(__dirname, '..', 'documentos', 'Estatutos_BaileGDC.pdf');
+const RUTA_ESTATUTOS = path.join(__dirname, '..', 'documentos', 'Estatutos.pdf');
 
 function textoLimpio(valor, max) {
   const texto = String(valor ?? '').trim();
@@ -373,7 +373,7 @@ exports.enviarComprobante = async (req, res) => {
 // ESTATUTOS (PDF, solo socios autenticados)
 // =====================================
 exports.descargarEstatutos = (req, res) => {
-  res.set('Content-Disposition', 'inline; filename="Estatutos_GDC_2016.pdf"');
+  res.set('Content-Disposition', 'inline; filename="Estatutos_Union_Morenada_Centralista.pdf"');
   res.type('application/pdf');
   res.sendFile(RUTA_ESTATUTOS, err => {
     if (err && !res.headersSent) {

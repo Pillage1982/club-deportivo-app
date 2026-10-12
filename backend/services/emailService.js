@@ -1,4 +1,6 @@
 // Servicio de correo: crea el transporte y notifica ausencias sin bloquear el cierre de una actividad.
+const CLIENTE = require('../config/cliente');
+
 let nodemailer = null;
 
 try {
@@ -14,7 +16,7 @@ function emailConfigurado() {
 }
 
 // Sin EMAIL_HOST se mantiene Gmail (comportamiento original). Con EMAIL_HOST se
-// usa ese SMTP, p. ej. los buzones @gdcayquina.cl de Hostinger:
+// usa ese SMTP, p. ej. los buzones de la agrupación en Hostinger:
 // EMAIL_HOST=smtp.hostinger.com, EMAIL_PORT=465.
 function crearTransporter() {
   const auth = {
@@ -42,7 +44,7 @@ function enviarCorreo({ destinatario, asunto, cuerpo, cc, replyTo, adjuntos }) {
   }
 
   return crearTransporter().sendMail({
-    from: `"Gran Diablada Calameña" <${process.env.EMAIL_USER}>`,
+    from: `"${CLIENTE.nombre}" <${process.env.EMAIL_USER}>`,
     to: destinatario,
     cc: cc || undefined,
     replyTo: replyTo || undefined,
@@ -94,7 +96,7 @@ function notificarAusenteEvento(persona, evento) {
 
   const cuerpo = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #222;">
-      <h2 style="color: #333;">Gran Diablada Calameña</h2>
+      <h2 style="color: #333;">${CLIENTE.nombre}</h2>
       <p>Estimado/a <strong>${escaparHtml(nombre)}</strong>:</p>
       <p>
         Usted ha quedado registrado/a como <strong style="color: #dc3545;">ausente</strong>
@@ -162,11 +164,11 @@ function enviarEnlaceRecuperacion({ destinatario, nombre, enlace, esSocio, minut
   const queCambia = esSocio ? 'tu contraseña del Portal del Socio' : 'tu contraseña del panel de la directiva';
   const cuerpo = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">Gran Diablada Calameña</h2>
+      <h2 style="color: #333;">${CLIENTE.nombre}</h2>
       <p>Hola <strong>${nombre}</strong>,</p>
       <p>Recibimos una solicitud para restablecer ${queCambia}.</p>
       <p style="text-align: center; margin: 28px 0;">
-        <a href="${enlace}" style="background: #f47a22; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+        <a href="${enlace}" style="background: #d5152b; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
           Crear una contraseña nueva
         </a>
       </p>
@@ -183,7 +185,7 @@ function enviarEnlaceRecuperacion({ destinatario, nombre, enlace, esSocio, minut
 
   return enviarCorreo({
     destinatario,
-    asunto: 'Restablecer tu contraseña — Gran Diablada Calameña',
+    asunto: `Restablecer tu contraseña — ${CLIENTE.nombre}`,
     cuerpo
   }).then(() => true);
 }
@@ -198,10 +200,10 @@ function enviarEnlaceRecuperacion({ destinatario, nombre, enlace, esSocio, minut
 
 const path = require('path');
 
-const RUTA_LOGO = path.join(__dirname, '..', '..', 'frontend', 'img', 'logo-calamena.jpeg');
+const RUTA_LOGO = path.join(__dirname, '..', '..', 'frontend', 'img', CLIENTE.logo);
 
-const DESTINO_JUSTIFICACIONES = () => process.env.EMAIL_JUSTIFICACIONES || 'justificaciones@gdcayquina.cl';
-const DESTINO_CAPORALES = () => process.env.EMAIL_CAPORALES || 'caporales@gdcayquina.cl';
+const DESTINO_JUSTIFICACIONES = () => process.env.EMAIL_JUSTIFICACIONES || process.env.EMAIL_USER;
+const DESTINO_CAPORALES = () => process.env.EMAIL_CAPORALES || process.env.EMAIL_USER;
 
 function formatearFolio(id) {
   return String(id).padStart(5, '0');
@@ -222,15 +224,15 @@ function membreteCarta(folio, fecha) {
     <table role="presentation" width="100%" style="border-collapse: collapse;">
       <tr>
         <td style="width: 90px; vertical-align: middle;">
-          <img src="cid:logo-gdc" alt="GDC" width="80" style="display: block; border-radius: 50%;">
+          <img src="cid:logo-agrupacion" alt="${CLIENTE.nombre}" width="80" style="display: block;">
         </td>
         <td style="text-align: center; vertical-align: middle; font-size: 18px; color: #222;">
-          BAILE RELIGIOSO<br>“GRAN DIABLADA CALAMEÑA”
+          ${CLIENTE.membrete}
         </td>
       </tr>
     </table>
     <p style="text-align: right; margin: 24px 0 4px;"><strong>Folio Nº ${formatearFolio(folio)}</strong></p>
-    <p style="text-align: right; margin: 0 0 24px;"><strong>Calama,</strong> ${fechaCarta(fecha)}</p>
+    <p style="text-align: right; margin: 0 0 24px;"><strong>${CLIENTE.ciudadCarta},</strong> ${fechaCarta(fecha)}</p>
   `;
 }
 
@@ -239,7 +241,7 @@ function constanciaEnvio(fecha) {
 }
 
 function adjuntoLogo() {
-  return { filename: 'logo-gdc.jpeg', path: RUTA_LOGO, cid: 'logo-gdc' };
+  return { filename: CLIENTE.logo, path: RUTA_LOGO, cid: 'logo-agrupacion' };
 }
 
 const ETIQUETA_TIPO_JUSTIFICACION = {
@@ -340,7 +342,7 @@ function enviarPostulacionBloque(datos) {
       <p style="margin: 0 0 4px;">Respetados Srs:</p>
       <p style="margin: 0 0 24px; text-indent: 40px;">
         Me dirijo a Ustedes, para comunicar mi postulación como bailarín/a del
-        Baile Religioso “Gran Diablada Calameña”.
+        Baile Religioso “${CLIENTE.nombre}”.
       </p>
       <p style="margin: 0 0 16px;">Bloque y/o Fila al que pertenezco: <strong>${bloqueActual}</strong></p>
       <p style="margin: 0 0 8px;">Primera opción de postulación: <strong>${escaparHtml(datos.opcion1)}</strong></p>
@@ -368,7 +370,7 @@ function enviarPostulacionBloque(datos) {
   }).then(() => true);
 }
 
-const DESTINO_TESORERIA = () => process.env.EMAIL_TESORERIA || 'tesoreria@gdcayquina.cl';
+const DESTINO_TESORERIA = () => process.env.EMAIL_TESORERIA || process.env.EMAIL_USER;
 
 // datos: { folio, creadoEn, persona, monto, fechaDeposito, concepto, adjunto: {path, filename} }
 // Devuelve false si el correo no está configurado (el comprobante igual queda guardado).
@@ -426,7 +428,7 @@ function notificarResolucionJustificacion({ persona, folio, aprobada, estadoApli
 
   const cuerpo = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">Gran Diablada Calameña</h2>
+      <h2 style="color: #333;">${CLIENTE.nombre}</h2>
       <p>Hola <strong>${escaparHtml(nombre)}</strong>,</p>
       <p>Tu carta de justificación folio <strong>${formatearFolio(folio)}</strong>
         (${escaparHtml(actividad)}) fue ${resultado}.</p>
@@ -445,12 +447,12 @@ function notificarResolucionJustificacion({ persona, folio, aprobada, estadoApli
 }
 
 // =====================================
-// SOLICITUDES "SÚMATE A LA PROMESA" (sitio gdcayquina.cl)
+// SOLICITUDES "SÚMATE A LA PROMESA" (sitio web de la agrupación)
 // =====================================
 const DESTINO_SOLICITUDES_INGRESO = () => process.env.EMAIL_SOLICITUDES_INGRESO
-  || 'presidencia@gdcayquina.cl, secretaria@gdcayquina.cl, caporales@gdcayquina.cl';
+  || process.env.EMAIL_USER;
 
-const URL_APP = () => process.env.FRONTEND_URL || 'https://app.gdcayquina.cl';
+const URL_APP = () => process.env.FRONTEND_URL || '';
 
 function filaDato(etiqueta, valor) {
   return `<tr><td style="padding: 4px 16px 4px 0; vertical-align: top;"><strong>${etiqueta}:</strong></td><td>${escaparHtml(valor || '—')}</td></tr>`;
@@ -474,7 +476,7 @@ function enviarSolicitudIngreso(s) {
       <p style="margin: 0 0 16px; padding-bottom: 6px; border-bottom: 3px solid #222;">
         <strong>Referencia: Solicitud de ingreso — Súmate a la promesa.</strong>
       </p>
-      <p style="margin: 0 0 16px;">Se recibió una nueva solicitud desde el sitio gdcayquina.cl:</p>
+      <p style="margin: 0 0 16px;">Se recibió una nueva solicitud desde el sitio web de la agrupación:</p>
       <table role="presentation" style="border-collapse: collapse; margin: 0 0 20px;">
         ${filaDato('Nombre', nombre)}
         ${filaDato('Rut', s.rut)}
@@ -536,7 +538,7 @@ function notificarResolucionSolicitudIngreso({ solicitud, aprobada, observacion 
 
   const cuerpo = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">Gran Diablada Calameña</h2>
+      <h2 style="color: #333;">${CLIENTE.nombre}</h2>
       <p>Hola <strong>${escaparHtml(nombre)}</strong>,</p>
       ${detalle}
       ${observacion ? `<p>Mensaje de la directiva: <em>${escaparHtml(observacion)}</em></p>` : ''}
@@ -548,7 +550,7 @@ function notificarResolucionSolicitudIngreso({ solicitud, aprobada, observacion 
   return enviarCorreo({
     destinatario: solicitud.email,
     asunto: aprobada
-      ? 'Bienvenido/a a la Gran Diablada Calameña'
+      ? `Bienvenido/a a la ${CLIENTE.nombre}`
       : `Solicitud de ingreso folio ${formatearFolio(solicitud.id)}`,
     cuerpo
   }).then(() => true);

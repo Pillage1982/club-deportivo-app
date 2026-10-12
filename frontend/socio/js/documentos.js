@@ -233,8 +233,8 @@ function casillaCarta(marcada) {
 function membreteCarta(destinatarios) {
   return `
     <div class="carta-membrete">
-      <img src="../img/logo-calamena.jpeg" alt="GDC">
-      <div>BAILE RELIGIOSO<br>“GRAN DIABLADA CALAMEÑA”</div>
+      <img src="../img/logo-morenada.png" alt="Unión Morenada Centralista">
+      <div>BAILE RELIGIOSO<br>“UNIÓN MORENADA CENTRALISTA”</div>
     </div>
     <p class="carta-derecha"><strong>Folio Nº</strong> <span class="text-muted">(se asigna al enviar)</span></p>
     <p class="carta-derecha"><strong>Calama,</strong> ${fechaLargaHoy()}</p>
@@ -406,7 +406,7 @@ function actualizarPreviewPostulacion() {
     <p class="mb-1">Respetados Srs:</p>
     <p class="carta-sangria">
       Me dirijo a Ustedes, para comunicar mi postulación como bailarín/a del
-      Baile Religioso “Gran Diablada Calameña”.
+      Baile Religioso “Unión Morenada Centralista”.
     </p>
     <p>Bloque y/o Fila al que pertenezco: <strong>${escaparHtml(bloqueActual)}</strong></p>
     <p class="mb-1">Primera opción de postulación: <strong>${textoOVacio(f.opcion1, '(primera opción)')}</strong></p>
@@ -621,7 +621,7 @@ function abrirEstatutos() {
       } else {
         const enlace = document.createElement('a');
         enlace.href = url;
-        enlace.download = 'Estatutos_GDC_2016.pdf';
+        enlace.download = 'Estatutos_Union_Morenada_Centralista.pdf';
         enlace.click();
       }
       setTimeout(() => URL.revokeObjectURL(url), 60000);

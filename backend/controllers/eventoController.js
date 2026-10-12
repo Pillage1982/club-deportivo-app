@@ -223,7 +223,7 @@ exports.cerrar = (req, res) => {
 
 };
 
-// GET /publico/actividades (sin sesión): próximas actividades para gdcayquina.cl.
+// GET /publico/actividades (sin sesión): próximas actividades para el sitio web de la agrupación.
 exports.listarProximosPublicos = (req, res) => {
   eventoModel.obtenerProximosPublicos(6, (err, rows) => {
     if (err) {

@@ -9,7 +9,7 @@ const { limpiarTexto, validarEmail } = require('../utils/validacionesPersona');
 const BCRYPT_ROUNDS = 10;
 const PASSWORD_MIN_LARGO = 8;
 // Clave genérica con la que la directiva crea usuarios nuevos: nunca puede quedar como definitiva.
-const PASSWORD_GENERICA = 'gdc123';
+const PASSWORD_GENERICA = 'umc123';
 
 // Pendientes del primer ingreso. El email se pide para "¿Olvidaste tu contraseña?"
 // y se registra en el primer ingreso (no por SQL) porque la directiva está en

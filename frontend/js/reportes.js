@@ -34,9 +34,9 @@ function _fechaExcel(fecha) {
 
 // ── Excel helpers ─────────────────────────────────────────────────────────────
 // ExcelJS (no SheetJS): la versión gratuita de SheetJS no escribe colores de
-// celda, y la fila 1 necesita el naranja corporativo de la agrupación.
+// celda, y la fila 1 necesita el rojo corporativo de la agrupación.
 
-const COLOR_NARANJA_CORPORATIVO = 'FFF47A22';
+const COLOR_CORPORATIVO = 'FFD5152B';
 
 function _excelDisponible() {
   if (!window.ExcelJS) {
@@ -60,7 +60,7 @@ function _descargarBlob(buffer, nombreArchivo) {
 
 function _estilizarEncabezado(fila) {
   fila.eachCell(cell => {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_NARANJA_CORPORATIVO } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_CORPORATIVO } };
     cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
   });
 }
@@ -665,7 +665,7 @@ function exportarIntegrantesPDF() {
     body,
     foot: [['', '', '', '', '', '', `Total: ${personasTabla.length} integrante(s)`, '']],
     styles:             { fontSize: 7, cellPadding: 2 },
-    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+    headStyles:         { fillColor: [213, 21, 43], textColor: 255, fontStyle: 'bold' },
     footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [250, 250, 250] }
   });
@@ -700,7 +700,7 @@ async function exportarAsistenciasPDF() {
       b.cumplimientoPct === null ? '—' : `${b.cumplimientoPct.toFixed(1)}%`
     ]),
     styles:             { fontSize: 9, cellPadding: 3 },
-    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+    headStyles:         { fillColor: [213, 21, 43], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [250, 250, 250] },
     columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'center', fontStyle: 'bold' } }
   });
@@ -736,7 +736,7 @@ async function exportarAsistenciasPDF() {
       ];
     }),
     styles:             { fontSize: 5.5, cellPadding: 1 },
-    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold', fontSize: 5.5 },
+    headStyles:         { fillColor: [213, 21, 43], textColor: 255, fontStyle: 'bold', fontSize: 5.5 },
     alternateRowStyles: { fillColor: [250, 250, 250] },
     columnStyles:       { [6 + columnas.length]: { fontStyle: 'bold', halign: 'center' } }
   });
@@ -773,7 +773,7 @@ function exportarPuntajePDF() {
     ]),
     foot: [['', '', '', '', `${rankingCargado.length} integrante(s)`, '', '', '', '', totalPuntos, '']],
     styles:             { fontSize: 7, cellPadding: 2 },
-    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+    headStyles:         { fillColor: [213, 21, 43], textColor: 255, fontStyle: 'bold' },
     footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [250, 250, 250] },
     columnStyles: {
@@ -834,7 +834,7 @@ async function exportarFormacionesPDF() {
           grupo.integrantes.map(p => `${Number(p.puntaje_utilizado || 0)} pts`)
         ],
         styles: { fontSize: 7, cellPadding: 2, halign: 'center' },
-        headStyles: { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+        headStyles: { fillColor: [213, 21, 43], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [250, 250, 250] },
         margin: { left: 14, right: 14 }
       });
@@ -869,7 +869,7 @@ function exportarGastosPDF() {
     ]),
     foot: [['', '', `Total: ${gastosCargados.length} gasto(s)`, formatearMonto(totalGastos), '', '']],
     styles:             { fontSize: 8, cellPadding: 2 },
-    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+    headStyles:         { fillColor: [213, 21, 43], textColor: 255, fontStyle: 'bold' },
     footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [250, 250, 250] },
     columnStyles:       { 3: { halign: 'right' } }
@@ -902,7 +902,7 @@ function exportarIngresosPDF() {
     ]),
     foot: [['', '', '', `Total: ${ingresosCargados.length} ingreso(s)`, formatearMonto(totalIngresos), '', '']],
     styles:             { fontSize: 8, cellPadding: 2 },
-    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold' },
+    headStyles:         { fillColor: [213, 21, 43], textColor: 255, fontStyle: 'bold' },
     footStyles:         { fillColor: [30, 30, 30],   textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [250, 250, 250] },
     columnStyles:       { 4: { halign: 'right' } }
@@ -960,7 +960,7 @@ async function exportarDeudoresPDF() {
       ];
     }),
     styles:             { fontSize: 6, cellPadding: 1.5 },
-    headStyles:         { fillColor: [244, 122, 34], textColor: 255, fontStyle: 'bold', fontSize: 6 },
+    headStyles:         { fillColor: [213, 21, 43], textColor: 255, fontStyle: 'bold', fontSize: 6 },
     alternateRowStyles: { fillColor: [250, 250, 250] }
   });
 

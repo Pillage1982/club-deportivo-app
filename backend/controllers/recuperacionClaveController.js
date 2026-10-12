@@ -19,7 +19,7 @@ const { validarClaveSocio } = require('../utils/politicaClave');
 
 const BCRYPT_ROUNDS = 10;
 const PASSWORD_MIN_LARGO = 8;
-const PASSWORD_GENERICA = 'gdc123';
+const PASSWORD_GENERICA = 'umc123';
 
 const MENSAJE_SOLICITUD =
   'Si los datos corresponden a una cuenta con email registrado, te enviamos un enlace para ' +

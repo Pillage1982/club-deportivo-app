@@ -13,8 +13,8 @@ body {
     linear-gradient(
       135deg,
       #050505,
-      #2b1608,
-      #f47a22
+      #4a0a12,
+      #d5152b
     );
   overflow: hidden;
 }
@@ -31,7 +31,7 @@ body {
 .shape1 {
   width: 300px;
   height: 300px;
-  background: #f47a22;
+  background: #d5152b;
   top: -100px;
   left: -100px;
 }
@@ -56,7 +56,7 @@ body {
   background: rgba(5, 5, 5, 0.58);
   backdrop-filter: blur(24px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(244, 122, 34, 0.35);
+  border: 1px solid rgba(213, 21, 43, 0.35);
   color: white;
 }
 
@@ -81,10 +81,8 @@ body {
 .login-logo {
   width: 92px;
   height: 92px;
-  object-fit: cover;
-  border-radius: 50%;
-  border: 3px solid #f47a22;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  object-fit: contain;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45));
 }
 
 /* Inputs */
@@ -137,7 +135,7 @@ body {
   height: 52px;
   border: none;
   border-radius: 14px;
-  background: linear-gradient(135deg, #f47a22, #c95712);
+  background: linear-gradient(135deg, #d5152b, #a00f1f);
   color: white;
   font-weight: 600;
   transition: 0.3s;
@@ -145,7 +143,7 @@ body {
 
 .btn-login:hover {
   transform: translateY(-2px);
-  background: linear-gradient(135deg, #ff8a35, #c95712);
+  background: linear-gradient(135deg, #e8323f, #a00f1f);
 }
 
 .btn-login:active {
@@ -161,7 +159,7 @@ body {
   margin-bottom: 24px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(244, 122, 34, 0.25);
+  border: 1px solid rgba(213, 21, 43, 0.25);
 }
 
 .login-selector a {
@@ -183,7 +181,7 @@ body {
 
 .login-selector a.activo {
   color: white;
-  background: linear-gradient(135deg, #f47a22, #c95712);
+  background: linear-gradient(135deg, #d5152b, #a00f1f);
 }
 
 /* Requisitos de contraseña (Portal del Socio) */
@@ -239,7 +237,7 @@ body {
   bottom: 18px;
   margin: 0;
   text-align: center;
-  color: rgba(244, 122, 34, 0.9);
+  color: rgba(213, 21, 43, 0.9);
   font-size: 0.78rem;
   font-weight: 400;
   letter-spacing: 0;

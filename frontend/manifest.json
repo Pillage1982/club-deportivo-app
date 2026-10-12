@@ -1,22 +1,22 @@
 {
-  "name": "Gran Diablada Calameña",
-  "short_name": "GDC Asistencia",
-  "description": "Sistema de asistencia Gran Diablada Calameña",
+  "name": "Unión Morenada Centralista",
+  "short_name": "UMC.APP",
+  "description": "Sistema de gestión de la Unión Morenada Centralista",
   "start_url": "/index.html",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#050505",
+  "background_color": "#4a0a12",
   "theme_color": "#050505",
   "icons": [
     {
-      "src": "img/logo-calamena.jpeg",
+      "src": "img/icon-192.png",
       "sizes": "192x192",
-      "type": "image/jpeg"
+      "type": "image/png"
     },
     {
-      "src": "img/logo-calamena.jpeg",
+      "src": "img/icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/png"
     }
   ]
 }

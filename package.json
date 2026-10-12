@@ -2,8 +2,7 @@
   "scripts": {
     "build": "echo build complete",
     "start": "node backend/server.js",
-    "test": "node --test backend/scripts/gdc-migration/*.test.js",
-    "gdc:dry-run": "node backend/scripts/gdc-migration/cli.js"
+    "test": "node --test backend/tests/*.test.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

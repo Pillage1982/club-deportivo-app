@@ -1,4 +1,4 @@
-/* Portal del Socio: shell mobile-first, mismos colores de marca que login.css (naranja/negro GDC). */
+/* Portal del Socio: shell mobile-first, mismos colores de marca que login.css (rojo/negro de la agrupación). */
 * {
   font-family: 'Poppins', sans-serif;
 }
@@ -16,7 +16,7 @@ body {
 
 .socio-main h5,
 .socio-main h6 {
-  color: #2b1608;
+  color: #4a0a12;
 }
 
 /* Barra superior */
@@ -25,7 +25,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  background: linear-gradient(135deg, #050505, #2b1608, #f47a22);
+  background: linear-gradient(135deg, #050505, #4a0a12, #d5152b);
   color: white;
   position: sticky;
   top: 0;
@@ -35,9 +35,7 @@ body {
 .socio-logo {
   width: 38px;
   height: 38px;
-  object-fit: cover;
-  border-radius: 50%;
-  border: 2px solid #f47a22;
+  object-fit: contain;
 }
 
 .socio-topbar-titulo {
@@ -91,7 +89,7 @@ body {
 .socio-stat-valor {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #2b1608;
+  color: #4a0a12;
 }
 
 .socio-stat-sub {
@@ -180,7 +178,7 @@ body {
 }
 
 .socio-nav-btn.active {
-  color: #f47a22;
+  color: #d5152b;
 }
 
 /* Navegación inferior con 5 botones: etiquetas más cortas caben en 320px */
@@ -192,8 +190,8 @@ body {
 
 /* ===== Documentos ===== */
 .btn-gdc {
-  background: #f47a22;
-  border-color: #f47a22;
+  background: #d5152b;
+  border-color: #d5152b;
   color: white;
   font-weight: 600;
 }
@@ -201,8 +199,8 @@ body {
 .btn-gdc:hover,
 .btn-gdc:focus,
 .btn-gdc:disabled {
-  background: #d9661a;
-  border-color: #d9661a;
+  background: #b01020;
+  border-color: #b01020;
   color: white;
 }
 
@@ -218,7 +216,7 @@ body {
 
 .socio-doc-opcion > i:first-child {
   font-size: 1.5rem;
-  color: #f47a22;
+  color: #d5152b;
 }
 
 .socio-doc-opcion span {

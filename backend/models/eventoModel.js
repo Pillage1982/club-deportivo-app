@@ -154,7 +154,7 @@ exports.cerrarEvento = (id, callback) => {
   );
 };
 
-// Próximas actividades para el sitio público gdcayquina.cl: solo campos que pueden
+// Próximas actividades para el sitio público de la agrupación: solo campos que pueden
 // mostrarse sin sesión (sin descripción ni datos internos). La sesión MySQL está en
 // hora de Chile (ver config/db.js), así que CURDATE() es el día local.
 exports.obtenerProximosPublicos = (limite, callback) => {

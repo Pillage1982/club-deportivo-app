@@ -1,4 +1,4 @@
-// Solicitudes "Súmate a la promesa": el sitio gdcayquina.cl envía los datos básicos
+// Solicitudes "Súmate a la promesa": el sitio web de la agrupación envía los datos básicos
 // (POST público /publico/solicitud-ingreso) y se avisa por correo a la directiva.
 // En el panel (Tablas → Solicitudes) se aceptan o rechazan; aceptar crea el
 // integrante y el postulante completa el resto en su primer ingreso al Portal.

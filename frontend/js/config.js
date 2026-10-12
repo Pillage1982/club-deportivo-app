@@ -1,16 +1,16 @@
 // Configuración visual y funcional del cliente; concentra marca, textos, roles y tipos de actividad visibles.
 window.APP_CONFIG = {
   producto: {
-    nombre: 'GDC.APP',
+    nombre: 'UMC.APP',
     descripcion: 'Sistema administrativo adaptable para organizaciones'
   },
 
   cliente: {
-    nombre: 'Gran Diablada Calameña',
-    nombreCorto: 'Diablada Calameña',
-    fundacion: 'Fundada el 22 de octubre de 1961',
-    logo: 'img/logo-calamena.jpeg',
-    logoOscuro: 'img/logo-calamena-black.jpeg'
+    nombre: 'Unión Morenada Centralista',
+    nombreCorto: 'Morenada Centralista',
+    fundacion: 'Fundada el 9 de septiembre de 2000',
+    logo: 'img/logo-morenada.png',
+    logoOscuro: 'img/logo-morenada.png'
   },
 
   textos: {
@@ -43,7 +43,7 @@ window.APP_CONFIG = {
   asistencia: {
     // Minutos de gracia desde la hora de inicio del evento antes de marcar "atrasado"
     // automáticamente en el escaneo QR (ver aplicarAtrasoAsistencia en asistencias.js).
-    // Confirmado por el cliente (GDC).
+    // Valor heredado de GDC: confirmar con la directiva de la Unión Morenada Centralista.
     toleranciaMinutosAtraso: 30,
 
     // Ayudas para escanear el QR en poca luz (ver asistencias.js).

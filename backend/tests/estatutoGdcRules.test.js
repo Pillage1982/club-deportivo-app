@@ -11,7 +11,7 @@ const {
   POLITICA_TEMPORADA_2025_2026,
   PERIODOS_CUOTAS_2025_2026,
   esPagoAnualInicioCiclo
-} = require('../../utils/estatutoGdcRules');
+} = require('../utils/estatutoGdcRules');
 
 test('articulo 8.4 aplica puntajes exactos de asistencia', () => {
   assert.equal(calcularPuntosAsistencia('presente', true).puntos, 10);

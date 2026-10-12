@@ -386,7 +386,7 @@ async function asegurarCamposPagos() {
 async function consolidarTiposCuota() {
   const mensualidades = await ejecutar("SELECT id FROM tipos_cuotas WHERE nombre='Mensualidad' ORDER BY id");
   if (!mensualidades.length) {
-    await ejecutar("INSERT INTO tipos_cuotas (nombre,monto_base,descripcion) VALUES ('Mensualidad',12000,'Cuota mensual GDC')");
+    await ejecutar("INSERT INTO tipos_cuotas (nombre,monto_base,descripcion) VALUES ('Mensualidad',12000,'Cuota mensual')");
     return;
   }
   const canonico = mensualidades[0].id;
@@ -395,7 +395,7 @@ async function consolidarTiposCuota() {
     await ejecutar('DELETE FROM cuotas WHERE tipo_cuota_id=?', [duplicado.id]);
     await ejecutar('DELETE FROM tipos_cuotas WHERE id=?', [duplicado.id]);
   }
-  await ejecutar("UPDATE tipos_cuotas SET monto_base=12000, descripcion='Cuota mensual GDC' WHERE id=?", [canonico]);
+  await ejecutar("UPDATE tipos_cuotas SET monto_base=12000, descripcion='Cuota mensual' WHERE id=?", [canonico]);
 }
 
 // Corte oficial de temporada (art. 9.1.1): la actividad marcada con
@@ -508,7 +508,7 @@ async function asegurarTablasDocumentosSocio() {
   `);
 }
 
-// Solicitudes "Súmate a la promesa" del sitio gdcayquina.cl: datos básicos del
+// Solicitudes "Súmate a la promesa" del sitio web de la agrupación: datos básicos del
 // postulante (y del apoderado si es menor). Al aprobarla se crea el integrante;
 // el resto de los datos los completa él mismo en su primer ingreso al Portal.
 async function asegurarTablaSolicitudesIngreso() {

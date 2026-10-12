@@ -1,12 +1,12 @@
-/* Estilos globales del panel: tema GDC, navegación, tablas, formularios, responsive y scanner QR. */
+/* Estilos globales del panel: tema de la agrupación, navegación, tablas, formularios, responsive y scanner QR. */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
 
 :root {
   --primary: #050505;
-  --secondary: #1c120b;
-  --accent: #f47a22;
-  --accent-dark: #c95712;
-  --gold: #f3b84a;
+  --secondary: #2a0a0e;
+  --accent: #d5152b;
+  --accent-dark: #a00f1f;
+  --gold: #f5c400;
   --cream: #fff7ec;
   --wine: #7a1f2b;
 
@@ -67,7 +67,7 @@ body {
 ===================================== */
 
 .sidebar-mobile {
-  background: linear-gradient(180deg, var(--primary), #17110d);
+  background: linear-gradient(180deg, var(--primary), #1f0a0d);
   box-shadow: var(--shadow);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -93,14 +93,14 @@ body {
 }
 
 .nav-link:hover {
-  background: rgba(244, 122, 34, 0.18);
+  background: rgba(213, 21, 43, 0.18);
   color: white !important;
   padding-left: 22px;
   transform: translateX(4px);
 }
 
 .offcanvas {
-  background: linear-gradient(180deg, var(--primary), #17110d);
+  background: linear-gradient(180deg, var(--primary), #1f0a0d);
   width: 260px;
 }
 
@@ -361,7 +361,7 @@ canvas {
 }
 
 .table tbody tr:hover {
-  background: rgba(244, 122, 34, 0.07);
+  background: rgba(213, 21, 43, 0.07);
 }
 
 .table td,
@@ -388,7 +388,7 @@ canvas {
 .form-control:focus,
 .form-select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 0.2rem rgba(244, 122, 34, 0.15);
+  box-shadow: 0 0 0 0.2rem rgba(213, 21, 43, 0.15);
 }
 
 .btn {
@@ -452,7 +452,7 @@ canvas {
   border-radius: 14px;
   box-shadow:
     0 0 0 999px rgba(15, 23, 42, 0.18),
-    0 0 22px rgba(244, 122, 34, 0.28);
+    0 0 22px rgba(213, 21, 43, 0.28);
   pointer-events: none;
 }
 
@@ -470,8 +470,7 @@ img[data-config-img="cliente.logo"] {
   height: 44px;
   max-width: 44px;
   max-height: 44px;
-  object-fit: cover;
-  border-radius: 50%;
+  object-fit: contain;
   display: block;
   flex: 0 0 auto;
 }
@@ -596,7 +595,7 @@ img[data-config-img="cliente.logo"] {
 }
 
 .subtabs .nav-link:hover {
-  background: rgba(244, 122, 34, 0.14);
+  background: rgba(213, 21, 43, 0.14);
   color: var(--accent) !important;
   padding-left: 16px !important;
 }
@@ -1006,7 +1005,7 @@ img[data-config-img="cliente.logo"] {
 }
 
 #lista_eventos_modal .btn-evento-item:hover {
-  background: rgba(244,122,34,0.08);
+  background: rgba(213, 21, 43,0.08);
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -1164,7 +1163,6 @@ img[data-config-img="cliente.logo"] {
 }
 .scanner-logo-img {
   width: min(180px, 45vw);
-  border-radius: 50%;
   opacity: 0.18;
   pointer-events: none;
   user-select: none;
