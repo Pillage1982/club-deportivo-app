@@ -88,15 +88,25 @@ function calcularPuntosCuota(mes, anio) {
   return null; // fuera de plazo — sin puntaje
 }
 
+// Fecha (hora de Chile) con que se registra el puntaje de una cuota: la del pago,
+// pero nunca antes del 1 de octubre de la temporada de esa cuota. Así una cuota de
+// la temporada pagada por adelantado antes de la Misa a la Chilena (inicio de
+// temporada) suma en el ranking de su temporada y no queda fuera del corte.
+function fechaPuntajeCuota(cuota) {
+  const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Santiago' }).format(new Date());
+  const anioInicio = Number(cuota.mes) >= 10 ? Number(cuota.anio) : Number(cuota.anio) - 1;
+  const inicioTemporada = `${anioInicio}-10-01`;
+  return hoy > inicioTemporada ? hoy : inicioTemporada;
+}
+
 function procesarPuntajeCuota(persona_id, cuota_id) {
   cuotaModel.obtenerCuotaPorId(cuota_id, (err, cuota) => {
     if (err || !cuota) return;
     const resultado = calcularPuntosCuota(cuota.mes, cuota.anio);
     if (!resultado) return;
-    const fecha = new Date().toISOString().substring(0, 10);
     puntajeModel.insertarPuntajeCuota({
       persona_id, cuota_id, puntos: resultado.puntos,
-      detalle: resultado.detalle, fecha
+      detalle: resultado.detalle, fecha: fechaPuntajeCuota(cuota)
     }).catch(e => console.error('Error puntaje cuota:', e));
   });
 }
@@ -114,7 +124,6 @@ function recalcularAsistenciasPersona(personaId) {
 function procesarPuntajeCuotasAnual(persona_id, cuotas) {
   const periodosPagados = cuotas.map(c => ({ mes: Number(c.mes), anio: Number(c.anio) }));
   const esAnualInicio = esPagoAnualInicioCiclo(periodosPagados, periodosCuotasTemporadaVigente(), new Date());
-  const fecha = new Date().toISOString().substring(0, 10);
 
   cuotas.forEach(cuota => {
     const resultado = esAnualInicio
@@ -123,7 +132,7 @@ function procesarPuntajeCuotasAnual(persona_id, cuotas) {
     if (!resultado) return;
     puntajeModel.insertarPuntajeCuota({
       persona_id, cuota_id: cuota.id, puntos: resultado.puntos,
-      detalle: resultado.detalle, fecha
+      detalle: resultado.detalle, fecha: fechaPuntajeCuota(cuota)
     }).catch(e => console.error('Error puntaje cuota anual:', e));
   });
 }
@@ -445,7 +454,8 @@ exports.obtener = (req, res) => {
 exports.obtenerReporteCuotas = (req, res) => {
   pagoModel.obtenerPagosCuotaPorMesReal((err, pagosPorMes) => {
     if (err) return res.status(500).json(err);
-    puntajeModel.obtenerPuntosCuotasPorPersona()
+    puntajeModel.obtenerInicioTemporadaVigente()
+      .then(inicio => puntajeModel.obtenerPuntosCuotasPorPersona(inicio))
       .then(puntosCuotas => res.json({ pagosPorMes, puntosCuotas }))
       .catch(() => res.status(500).json({ mensaje: 'No se pudieron obtener los puntos de cuotas' }));
   });

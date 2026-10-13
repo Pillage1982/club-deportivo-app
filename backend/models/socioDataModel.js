@@ -143,7 +143,12 @@ exports.obtenerHistorialPagos = (personaId, desde, callback) => {
        pa.referencia_externa,
        pa.tipo_pago, pa.detalle,
        GROUP_CONCAT(
-         DISTINCT CONCAT(c.mes, '/', c.anio)
+         DISTINCT CONCAT(
+           c.mes, '/', c.anio,
+           -- Si el pago no cubrió la cuota completa, se indica el abono (ej. "5/2027 (abono $2.000)")
+           IF(pd.monto_pagado < c.monto,
+              CONCAT(' (abono $', REPLACE(FORMAT(pd.monto_pagado, 0), ',', '.'), ')'), '')
+         )
          ORDER BY c.anio, c.mes SEPARATOR ', '
        ) AS cuotas_cubiertas
      FROM pagos pa
