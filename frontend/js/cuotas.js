@@ -82,12 +82,19 @@ function ejecutarGeneracionCuotas() {
 
 }
 
+// Misma regla que el servidor: desde octubre corre la temporada nueva
+// (octubre de este año a julio del siguiente); antes, la del octubre anterior.
+function anioInicioTemporadaCuotas() {
+  const hoy = new Date();
+  return hoy.getMonth() + 1 >= 10 ? hoy.getFullYear() : hoy.getFullYear() - 1;
+}
+
 // Genera de una vez las cuotas de los 10 meses de la temporada (incluidos meses
 // futuros): necesario para poder registrar un pago anual completo (art. 9.3),
 // ya que un pago no puede vincularse a una cuota que todavía no existe.
 function generarCuotasTemporada() {
   mostrarConfirmacion(
-    'Esta acción generará las cuotas de la temporada 2026-2027 (octubre 2026 a julio 2027, 10 meses) para todos los integrantes activos, incluidos los meses futuros. Las cuotas que ya existan no se duplican. ¿Deseas continuar?',
+    `Esta acción generará las cuotas de la temporada ${anioInicioTemporadaCuotas()}-${anioInicioTemporadaCuotas() + 1} (octubre ${anioInicioTemporadaCuotas()} a julio ${anioInicioTemporadaCuotas() + 1}, 10 meses) para todos los integrantes activos, incluidos los meses futuros. Las cuotas que ya existan no se duplican. ¿Deseas continuar?`,
     ejecutarGeneracionCuotasTemporada
   );
 }

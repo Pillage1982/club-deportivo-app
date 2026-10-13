@@ -148,7 +148,10 @@ function cargarFinanzas() {
       mostrarTemporada(data.temporada_desde);
 
       const deudaEl = document.getElementById('finanzas_deuda');
-      deudaEl.textContent = formatearMonto(data.deuda_actual);
+      // Deuda negativa = pagó más que las cuotas generadas: se muestra como saldo a favor
+      deudaEl.textContent = data.deuda_actual < 0
+        ? `${formatearMonto(-data.deuda_actual)} a favor`
+        : formatearMonto(data.deuda_actual);
       deudaEl.style.color = data.deuda_actual > 0 ? '#c0392b' : '#2e7d32';
 
       const tablaCuotas = document.getElementById('tabla_finanzas_cuotas');

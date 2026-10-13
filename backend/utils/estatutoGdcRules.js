@@ -125,10 +125,25 @@ const PERIODOS_CUOTAS_2026_2027 = Object.freeze([
   { mes: 4, anio: 2027 }, { mes: 5, anio: 2027 }, { mes: 6, anio: 2027 }, { mes: 7, anio: 2027 }
 ]);
 
-// Temporada vigente para "Generar cuotas de toda la temporada" y el pago anual.
-// Al pasar de temporada: agregar sus periodos arriba y apuntar aqui (el reporte
-// de pago de cuotas arma sus columnas solo, desde las cuotas y pagos existentes).
-const PERIODOS_CUOTAS_TEMPORADA_VIGENTE = PERIODOS_CUOTAS_2026_2027;
+// Temporada de cuotas vigente según la fecha (hora de Chile), para "Generar cuotas
+// de toda la temporada" y el pago anual: desde octubre corre la temporada nueva
+// (octubre de ese año a julio del siguiente); de enero a septiembre sigue la que
+// empezó el octubre anterior. Ya no hay que tocar el código al cambiar de temporada.
+function periodosCuotasTemporadaVigente(fecha = new Date()) {
+  const [anio, mes] = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Santiago', year: 'numeric', month: '2-digit'
+  }).format(fecha).split('-').map(Number);
+  const anioInicio = mes >= 10 ? anio : anio - 1;
+
+  return Object.freeze([
+    ...[10, 11, 12].map(m => ({ mes: m, anio: anioInicio })),
+    ...[1, 2, 3, 4, 5, 6, 7].map(m => ({ mes: m, anio: anioInicio + 1 }))
+  ]);
+}
+
+function esPeriodoTemporadaVigente(mes, anio, fecha = new Date()) {
+  return periodosCuotasTemporadaVigente(fecha).some(p => p.mes === Number(mes) && p.anio === Number(anio));
+}
 
 // Art. 9.3, escenario (a) de la tabla de simulacion de pagos: cancelar las cuotas
 // completas de la temporada al inicio del ciclo anual otorga el bono de anticipado
@@ -171,6 +186,7 @@ module.exports = {
   PONDERACION_BLOQUES,
   PERIODOS_CUOTAS_2025_2026,
   PERIODOS_CUOTAS_2026_2027,
-  PERIODOS_CUOTAS_TEMPORADA_VIGENTE,
+  periodosCuotasTemporadaVigente,
+  esPeriodoTemporadaVigente,
   esPagoAnualInicioCiclo
 };

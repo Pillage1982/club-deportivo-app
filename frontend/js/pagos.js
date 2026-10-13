@@ -35,8 +35,7 @@ function actualizarTipoPago() {
   document.getElementById('pago_anual_grupo')?.classList.toggle('d-none', !esCuota);
 
   if (!esCuota) {
-    const selectCuota = document.getElementById('pago_cuota_id');
-    if (selectCuota) selectCuota.value = '';
+    marcarCuotasPago(false);
     const check = document.getElementById('pago_anual_check');
     if (check?.checked) {
       check.checked = false;
@@ -66,6 +65,10 @@ function editarPago(pago) {
 
   cargarDepositosPago(pago.persona_id);
 
+  // Editar no cambia los meses vinculados: solo pagos sin cuotas se pueden editar
+  document.getElementById('pago_cuota_grupo')?.classList.add('d-none');
+  document.getElementById('pago_anual_grupo')?.classList.add('d-none');
+
   document.getElementById('btn_guardar_pago').innerText =
     'Actualizar Pago';
 
@@ -74,24 +77,76 @@ function editarPago(pago) {
 
 const MESES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
+// Lista de casillas con TODAS las cuotas pendientes del integrante (cualquier
+// temporada): tesorería marca a mano los meses que cubre el pago.
 function cargarCuotasPendientesPago(persona_id) {
-  const select = document.getElementById('pago_cuota_id');
-  if (!select) return;
-  select.innerHTML = '<option value="">Sin vincular a cuota</option>';
+  const lista = document.getElementById('pago_cuotas_lista');
+  if (!lista) return;
+  lista.innerHTML = '<span class="text-muted small">Seleccione un integrante</span>';
+  actualizarSeleccionCuotasPago();
   if (!persona_id) return;
 
+  lista.innerHTML = '<span class="text-muted small">Cargando cuotas...</span>';
   fetch(`${API_URL}/cuotas/pendientes/${persona_id}`, { headers: getAuthHeaders() })
     .then(res => res.json())
     .then(cuotas => {
-      if (!Array.isArray(cuotas) || cuotas.length === 0) return;
-      cuotas.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = `${MESES[c.mes]} ${c.anio} — saldo ${formatearMonto(c.saldo)} (${c.estado})`;
-        select.appendChild(opt);
-      });
+      if (!Array.isArray(cuotas) || cuotas.length === 0) {
+        lista.innerHTML = '<span class="text-muted small">Este integrante no tiene cuotas pendientes</span>';
+        return;
+      }
+      lista.innerHTML = cuotas.map(c => `
+        <div class="form-check">
+          <input class="form-check-input pago-cuota-check" type="checkbox" id="pago_cuota_${Number(c.id)}"
+            value="${Number(c.id)}" data-saldo="${Number(c.saldo)}" data-mes="${Number(c.mes)}" data-anio="${Number(c.anio)}"
+            onchange="actualizarSeleccionCuotasPago()">
+          <label class="form-check-label" for="pago_cuota_${Number(c.id)}">
+            ${MESES[c.mes]} ${Number(c.anio)} — saldo ${formatearMonto(c.saldo)}
+            <span class="badge ${c.estado === 'vencido' ? 'bg-danger' : 'bg-secondary'} ms-1">${escaparHtml(c.estado)}</span>
+          </label>
+        </div>
+      `).join('');
+      if (document.getElementById('pago_anual_check')?.checked) marcarCuotasPago(false, true);
     })
-    .catch(() => {});
+    .catch(() => {
+      lista.innerHTML = '<span class="text-danger small">No se pudieron cargar las cuotas</span>';
+    });
+}
+
+function cuotasMarcadasPago() {
+  return [...document.querySelectorAll('.pago-cuota-check:checked')];
+}
+
+function marcarCuotasPago(marcar, deshabilitar = null) {
+  document.querySelectorAll('.pago-cuota-check').forEach(check => {
+    check.checked = marcar;
+    if (deshabilitar !== null) check.disabled = deshabilitar;
+  });
+  actualizarSeleccionCuotasPago();
+}
+
+// Monto = suma de saldos marcados, editable: si se escribe uno menor, se pagan
+// primero los meses más antiguos y el último queda con abono parcial.
+function actualizarSeleccionCuotasPago() {
+  if (document.getElementById('pago_anual_check')?.checked) return;
+
+  const marcadas = cuotasMarcadasPago();
+  const monto = document.getElementById('pago_monto');
+  const resumen = document.getElementById('pago_cuotas_resumen');
+  const total = marcadas.reduce((suma, c) => suma + Number(c.dataset.saldo), 0);
+
+  if (monto) {
+    if (marcadas.length) monto.value = total;
+    monto.readOnly = false;
+  }
+
+  if (resumen) {
+    resumen.textContent = !marcadas.length
+      ? ''
+      : `${marcadas.length} mes(es): ${marcadas.map(c => `${MESES[c.dataset.mes]} ${c.dataset.anio}`).join(', ')} — total ${formatearMonto(total)}`
+        + (marcadas.length === 1
+          ? ' (puede ingresar un monto menor para un abono parcial)'
+          : ' (si el monto es menor, se pagan primero los más antiguos y el último queda con abono parcial)');
+  }
 }
 
 function configurarSelectorCuotaPago() {
@@ -112,19 +167,21 @@ let cuotasPendientesParaAnual = [];
 
 function actualizarModoPagoAnual() {
   const activo       = Boolean(document.getElementById('pago_anual_check')?.checked);
-  const selectCuota  = document.getElementById('pago_cuota_id');
   const inputMonto   = document.getElementById('pago_monto');
 
-  if (selectCuota) selectCuota.disabled = activo;
-  if (inputMonto)  inputMonto.readOnly  = activo;
-
   if (activo) {
+    marcarCuotasPago(false, true);
+    if (inputMonto) inputMonto.readOnly = true;
     cargarPagoAnual();
   } else {
     cuotasPendientesParaAnual = [];
-    if (inputMonto) inputMonto.value = '';
+    if (inputMonto) {
+      inputMonto.value = '';
+      inputMonto.readOnly = false;
+    }
     const aviso = document.getElementById('pago_anual_aviso');
     if (aviso) aviso.textContent = '';
+    marcarCuotasPago(false, false);
   }
 }
 
@@ -138,7 +195,9 @@ function cargarPagoAnual() {
   if (aviso) aviso.textContent = '';
   if (!personaId) return;
 
-  fetch(`${API_URL}/cuotas/pendientes/${personaId}`, { headers: getAuthHeaders() })
+  // Solo cuotas de la temporada vigente: las atrasadas de temporadas anteriores
+  // se pagan aparte, vinculando el pago a esa cuota.
+  fetch(`${API_URL}/cuotas/pendientes/${personaId}?temporada=vigente`, { headers: getAuthHeaders() })
     .then(res => res.json())
     .then(cuotas => {
       if (!Array.isArray(cuotas)) return;
@@ -146,9 +205,10 @@ function cargarPagoAnual() {
       const total = cuotas.reduce((suma, c) => suma + Number(c.saldo), 0);
       if (inputMonto) inputMonto.value = total;
       if (aviso) {
+        const meses = cuotas.map(c => `${MESES[c.mes]} ${c.anio}`).join(', ');
         aviso.textContent = cuotas.length >= 2
-          ? `${cuotas.length} cuota(s) pendiente(s) por ${formatearMonto(total)}`
-          : 'Este integrante no tiene al menos dos cuotas pendientes para un pago anual.';
+          ? `${cuotas.length} cuota(s) de la temporada vigente por ${formatearMonto(total)}: ${meses}`
+          : 'Este integrante no tiene al menos dos cuotas pendientes de la temporada vigente (¿se generaron las cuotas de la temporada?).';
       }
     })
     .catch(() => {});
@@ -188,6 +248,15 @@ function crearPago() {
     return;
   }
 
+  if (!esAnual && tipoPago === 'cuota') {
+    const marcadas = cuotasMarcadasPago();
+    const totalMarcado = marcadas.reduce((suma, c) => suma + Number(c.dataset.saldo), 0);
+    if (marcadas.length && montoTotal > totalMarcado) {
+      mostrarAlerta(`El monto supera la suma de los meses marcados (${formatearMonto(totalMarcado)}). Marque más meses.`, 'warning');
+      return;
+    }
+  }
+
   if (esAnual && tipoPago === 'cuota') {
     if (cuotasPendientesParaAnual.length < 2) {
       mostrarAlerta('Se necesitan al menos dos cuotas pendientes para un pago anual.', 'warning');
@@ -204,8 +273,8 @@ function crearPago() {
   data.append('metodo', metodo);
   data.append('tipo_pago', tipoPago);
   if (detalle) data.append('detalle', detalle);
-  const cuotaId = tipoPago === 'cuota' ? document.getElementById('pago_cuota_id')?.value : '';
-  if (cuotaId) data.append('cuota_id', cuotaId);
+  const cuotaIds = tipoPago === 'cuota' ? cuotasMarcadasPago().map(c => Number(c.value)) : [];
+  if (cuotaIds.length) data.append('cuota_ids', JSON.stringify(cuotaIds));
   const archivo = document.getElementById('pago_comprobante')?.files[0];
   if (archivo) data.append('comprobante', archivo);
   const depositoId = document.getElementById('pago_deposito_id')?.value;
@@ -256,10 +325,8 @@ function crearPago() {
       document.getElementById('pago_comprobante').value = '';
       limpiarDepositosPago();
       actualizarTipoPago();
-      const selectCuota = document.getElementById('pago_cuota_id');
-      if (selectCuota) {
-        selectCuota.innerHTML = '<option value="">Sin vincular a cuota</option>';
-      }
+      document.getElementById('pago_monto').readOnly = false;
+      cargarCuotasPendientesPago(document.getElementById('pago_persona_id').value);
 
       cargarTablaPagos();
       cargarTablaDepositos();

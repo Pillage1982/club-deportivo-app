@@ -11,7 +11,7 @@ const personaModel = require('../models/personaModel');
 const cuotaModel   = require('../models/cuotaModel');
 const puntajeModel = require('../models/puntajeModel');
 const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
-const { PERIODOS_CUOTAS_TEMPORADA_VIGENTE, esPagoAnualInicioCiclo } = require('../utils/estatutoGdcRules');
+const { periodosCuotasTemporadaVigente, esPeriodoTemporadaVigente, esPagoAnualInicioCiclo } = require('../utils/estatutoGdcRules');
 
 const MIME_POR_EXTENSION = Object.fromEntries(
   Object.entries(uploadComprobante.extensionPorMime).map(([mime, ext]) => [ext, mime])
@@ -53,6 +53,18 @@ async function resolverComprobanteDeposito(req, personaId) {
 
   req.body.comprobante_path = deposito.adjunto_path;
   return deposito.id;
+}
+
+// cuota_ids llega como arreglo (JSON) o como texto JSON (FormData); se aceptan
+// también el campo antiguo cuota_id (una sola cuota).
+function leerIdsCuotas(body) {
+  let ids = body.cuota_ids;
+  if (typeof ids === 'string') {
+    try { ids = JSON.parse(ids); } catch (e) { ids = []; }
+  }
+  if (!Array.isArray(ids)) ids = [];
+  if (!ids.length && body.cuota_id) ids = [body.cuota_id];
+  return [...new Set(ids.map(Number).filter(id => Number.isInteger(id) && id > 0))];
 }
 
 function vincularDeposito(depositoId, pagoId) {
@@ -101,7 +113,7 @@ function recalcularAsistenciasPersona(personaId) {
 // Si no, cada cuota recibe su puntaje individual normal (igual que un pago suelto).
 function procesarPuntajeCuotasAnual(persona_id, cuotas) {
   const periodosPagados = cuotas.map(c => ({ mes: Number(c.mes), anio: Number(c.anio) }));
-  const esAnualInicio = esPagoAnualInicioCiclo(periodosPagados, PERIODOS_CUOTAS_TEMPORADA_VIGENTE, new Date());
+  const esAnualInicio = esPagoAnualInicioCiclo(periodosPagados, periodosCuotasTemporadaVigente(), new Date());
   const fecha = new Date().toISOString().substring(0, 10);
 
   cuotas.forEach(cuota => {
@@ -183,7 +195,10 @@ function validarPago(body) {
       return res.status(403).json({ mensaje: 'Los integrantes honorarios están exentos de cuotas' });
     }
 
-    const cuotaId = esCuota && req.body.cuota_id ? Number(req.body.cuota_id) : null;
+    const cuotaIds = esCuota ? leerIdsCuotas(req.body) : [];
+    if (cuotaIds.length >= 2) return crearPagoVariasCuotas(req, res, persona, cuotaIds);
+    if (esCuota && !cuotaIds.length) return crearPagoCuotasMasAntiguas(req, res, persona);
+    const cuotaId = cuotaIds[0] || null;
     const guardar = (cuota, depositoId) => {
       const completa = cuota ? Number(req.body.monto_total) === Number(cuota.saldo) : false;
       const detalles = cuota
@@ -220,6 +235,101 @@ function validarPago(body) {
 
 };
 
+const NOMBRES_MES = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+function nombreCuota(cuota) {
+  return `${NOMBRES_MES[Number(cuota.mes)]} ${cuota.anio}`;
+}
+
+// Reparte el monto entre las cuotas de la más antigua a la más reciente: las que
+// alcanza a cubrir quedan pagadas; la siguiente recibe el resto como abono parcial
+// (sigue pendiente/vencida con su saldo). Lo que sobre después de la última queda
+// como saldo a favor del integrante (no se vincula a ninguna cuota).
+function repartirMontoEnCuotas(cuotas, monto) {
+  const ordenadas = [...cuotas].sort((a, b) =>
+    (Number(a.anio) * 100 + Number(a.mes)) - (Number(b.anio) * 100 + Number(b.mes)));
+  let restante = monto;
+  const detalles = [];
+  const pagadas = [];
+  let abono = null;
+
+  for (const cuota of ordenadas) {
+    if (restante <= 0) break;
+    const saldo = Number(cuota.saldo);
+    const aplicado = Math.min(restante, saldo);
+    const completa = aplicado === saldo;
+    detalles.push({ cuotaId: cuota.id, monto: aplicado, marcarPagada: completa });
+    if (completa) pagadas.push(cuota);
+    else abono = { cuota, monto: aplicado, saldo: saldo - aplicado };
+    restante -= aplicado;
+  }
+
+  return { detalles, pagadas, abono, sobrante: restante };
+}
+
+function mensajeReparto({ pagadas, abono, sobrante }) {
+  const partes = [];
+  if (pagadas.length) partes.push(`${pagadas.length} cuota(s) pagadas (${pagadas.map(nombreCuota).join(', ')})`);
+  if (abono) partes.push(`abono de $${abono.monto} a ${nombreCuota(abono.cuota)} (saldo pendiente $${abono.saldo})`);
+  if (sobrante > 0) partes.push(`$${sobrante} quedan a favor del integrante`);
+  return partes.length ? `Pago registrado: ${partes.join('; ')}` : 'Pago registrado';
+}
+
+// Guarda un pago de cuotas repartido (casos: varios meses marcados a mano, o sin
+// meses marcados = se aplica a las pendientes más antiguas). Cada cuota que queda
+// pagada recibe su puntaje individual.
+function guardarPagoRepartido(req, res, persona, cuotas) {
+  const reparto = repartirMontoEnCuotas(cuotas, Number(req.body.monto_total));
+
+  resolverComprobanteDeposito(req, persona.id).then(depositoId => {
+    pagoModel.crearPagoConDetalles(req.body, reparto.detalles, (errPago, resultado) => {
+      if (errPago) return res.status(500).json({ mensaje: 'No se pudo registrar el pago' });
+      vincularDeposito(depositoId, resultado.pagoId);
+      if (reparto.pagadas.length) {
+        procesarPuntajeCuotasAnual(Number(persona.id), reparto.pagadas);
+        recalcularAsistenciasPersona(Number(persona.id));
+      }
+      res.json({ mensaje: mensajeReparto(reparto) });
+    });
+  }).catch(error => responderError(res, error, 'No se pudo registrar el pago'));
+}
+
+// Varios meses marcados a mano (cualquier temporada, p. ej. cuotas atrasadas). Si el
+// monto no alcanza, se pagan los más antiguos y el último queda con abono parcial.
+function crearPagoVariasCuotas(req, res, persona, cuotaIds) {
+  cuotaModel.obtenerCuotasConSaldoPorIds(cuotaIds, (errCuotas, cuotas) => {
+    if (errCuotas) return res.status(500).json({ mensaje: 'No se pudieron verificar las cuotas' });
+    if (cuotas.length !== cuotaIds.length) {
+      return res.status(400).json({ mensaje: 'Alguna cuota seleccionada no existe' });
+    }
+    if (cuotas.some(c => Number(c.persona_id) !== Number(persona.id))) {
+      return res.status(400).json({ mensaje: 'Todas las cuotas deben pertenecer al integrante seleccionado' });
+    }
+    const yaPagada = cuotas.find(c => c.estado === 'pagado' || Number(c.saldo) <= 0);
+    if (yaPagada) {
+      return res.status(409).json({ mensaje: `La cuota ${yaPagada.mes}/${yaPagada.anio} ya está pagada` });
+    }
+
+    const sumaSaldos = cuotas.reduce((suma, c) => suma + Number(c.saldo), 0);
+    if (Number(req.body.monto_total) > sumaSaldos) {
+      return res.status(400).json({
+        mensaje: `El monto supera la suma de los meses marcados ($${sumaSaldos}). Marque más meses o registre la diferencia aparte`
+      });
+    }
+
+    guardarPagoRepartido(req, res, persona, cuotas);
+  });
+}
+
+// Pago de cuota sin meses marcados: se aplica a las cuotas pendientes más antiguas
+// del integrante (cualquier temporada).
+function crearPagoCuotasMasAntiguas(req, res, persona) {
+  cuotaModel.obtenerCuotasPendientesPorPersona(persona.id, (errCuotas, cuotas) => {
+    if (errCuotas) return res.status(500).json({ mensaje: 'No se pudieron obtener las cuotas pendientes' });
+    guardarPagoRepartido(req, res, persona, cuotas || []);
+  });
+}
+
 // =====================================
 // REGISTRAR PAGO ANUAL (varias cuotas en un solo pago)
 // =====================================
@@ -236,13 +346,7 @@ exports.crearAnual = (req, res) => {
   }
 
   // Con comprobante adjunto la petición llega como FormData: cuota_ids viene como JSON
-  let cuotaIdsRecibidas = req.body.cuota_ids;
-  if (typeof cuotaIdsRecibidas === 'string') {
-    try { cuotaIdsRecibidas = JSON.parse(cuotaIdsRecibidas); } catch (e) { cuotaIdsRecibidas = []; }
-  }
-  const cuotaIds = Array.isArray(cuotaIdsRecibidas)
-    ? [...new Set(cuotaIdsRecibidas.map(Number).filter(Number.isInteger))]
-    : [];
+  const cuotaIds = leerIdsCuotas({ cuota_ids: req.body.cuota_ids });
 
   if (cuotaIds.length < 2) {
     return res.status(400).json({ mensaje: 'Seleccione al menos dos cuotas para un pago anual' });
@@ -264,6 +368,14 @@ exports.crearAnual = (req, res) => {
       const ajena = cuotas.find(c => Number(c.persona_id) !== Number(req.body.persona_id));
       if (ajena) {
         return res.status(400).json({ mensaje: 'Todas las cuotas deben pertenecer al integrante seleccionado' });
+      }
+      // El pago anual cubre solo la temporada vigente; las cuotas atrasadas de
+      // temporadas anteriores se pagan como pago normal vinculado a esa cuota.
+      const fueraDeTemporada = cuotas.find(c => !esPeriodoTemporadaVigente(c.mes, c.anio));
+      if (fueraDeTemporada) {
+        return res.status(400).json({
+          mensaje: `La cuota ${fueraDeTemporada.mes}/${fueraDeTemporada.anio} no es de la temporada vigente; el pago anual solo cubre la temporada actual`
+        });
       }
       const yaPagada = cuotas.find(c => c.estado === 'pagado' || Number(c.saldo) <= 0);
       if (yaPagada) {
