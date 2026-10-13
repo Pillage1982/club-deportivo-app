@@ -23,12 +23,10 @@ function cargarPersonas() {
 
       // Selectores asistencia y pagos
       const select = document.getElementById('persona_id');
-      const selectPago = document.getElementById('pago_persona_id');
 
       select.innerHTML =
         '<option value="">Seleccione un integrante</option>';
 
-      selectPago.innerHTML = '';
 
       if (!Array.isArray(data)) {
         mostrarAlerta(
@@ -49,12 +47,10 @@ function cargarPersonas() {
           select.appendChild(option);
         }
 
-        if (!persona.es_honorario) {
-          const optionPago = option.cloneNode(true);
-          selectPago.appendChild(optionPago);
-        }
-
       });
+
+      // Pagos: incluye honorarios (exentos de cuotas, pero pueden pagar trajes y otros extras)
+      cargarOpcionesPersonaPago(data);
 
     })
     .catch(err => console.error(err));

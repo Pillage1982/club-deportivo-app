@@ -54,8 +54,7 @@ function editarPago(pago) {
   document.getElementById('pago_detalle').value = pago.detalle || '';
   actualizarTipoPago();
 
-  document.getElementById('pago_persona_id').value =
-    pago.persona_id || '';
+  seleccionarPersonaPago(pago.persona_id);
 
   document.getElementById('pago_monto').value =
     pago.monto_total || '';
@@ -147,6 +146,68 @@ function actualizarSeleccionCuotasPago() {
           ? ' (puede ingresar un monto menor para un abono parcial)'
           : ' (si el monto es menor, se pagan primero los más antiguos y el último queda con abono parcial)');
   }
+}
+
+// =====================================
+// BUSCADOR DE INTEGRANTE EN EL FORMULARIO DE PAGO
+// =====================================
+// Filtra el selector por nombre, apellidos o RUT (palabras en cualquier orden,
+// sin importar tildes). Si queda un solo integrante, se selecciona solo.
+
+let personasPago = [];
+
+function cargarOpcionesPersonaPago(personas) {
+  personasPago = (Array.isArray(personas) ? personas : [])
+    .filter(p => (p.estado || 'activo') !== 'inactivo')
+    .map(p => {
+      const nombre = `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno || ''}`.trim();
+      return {
+        id: String(p.id),
+        etiqueta: p.es_honorario ? `${nombre} (honorario)` : nombre,
+        busqueda: normalizarTextoPago(`${nombre} ${p.rut || ''} ${String(p.rut || '').replace(/[.\-]/g, '')}`)
+      };
+    });
+  renderizarOpcionesPersonaPago();
+}
+
+function renderizarOpcionesPersonaPago() {
+  const select = document.getElementById('pago_persona_id');
+  if (!select) return;
+
+  const seleccionado = select.value;
+  const palabras = normalizarTextoPago(document.getElementById('pago_persona_buscar')?.value)
+    .split(/\s+/).filter(Boolean);
+  const visibles = personasPago.filter(p => palabras.every(palabra => p.busqueda.includes(palabra)));
+
+  select.innerHTML = `<option value="">${palabras.length
+    ? `${visibles.length} integrante(s) encontrado(s)`
+    : 'Seleccione un integrante'}</option>`;
+  visibles.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.etiqueta;
+    select.appendChild(opt);
+  });
+
+  const nuevoValor = palabras.length && visibles.length === 1
+    ? visibles[0].id
+    : (visibles.some(p => p.id === seleccionado) ? seleccionado : '');
+  select.value = nuevoValor;
+  if (nuevoValor !== seleccionado) select.dispatchEvent(new Event('change'));
+}
+
+// Selecciona un integrante desde código (editar pago, registrar depósito): limpia
+// el buscador para que la opción exista en la lista.
+function seleccionarPersonaPago(personaId) {
+  const buscar = document.getElementById('pago_persona_buscar');
+  if (buscar) buscar.value = '';
+  renderizarOpcionesPersonaPago();
+  const select = document.getElementById('pago_persona_id');
+  if (select) select.value = personaId ? String(personaId) : '';
+}
+
+function configurarBuscadorPersonaPago() {
+  document.getElementById('pago_persona_buscar')?.addEventListener('input', renderizarOpcionesPersonaPago);
 }
 
 function configurarSelectorCuotaPago() {
@@ -696,7 +757,7 @@ function registrarPagoDesdeDeposito(id) {
 
   pagoEditando = null;
   document.getElementById('btn_guardar_pago').innerText = 'Guardar Pago';
-  document.getElementById('pago_persona_id').value = deposito.persona_id;
+  seleccionarPersonaPago(deposito.persona_id);
   document.getElementById('pago_monto').value = deposito.monto;
   document.getElementById('pago_detalle').value = '';
   cargarCuotasPendientesPago(deposito.persona_id);
