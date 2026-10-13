@@ -160,7 +160,9 @@ function cargarFinanzas() {
             <tr>
               <td>${nombreMes(c.mes)}/${c.anio}</td>
               <td>${formatearMonto(c.monto)}</td>
-              <td>${badgeEstadoCuota(c.estado)}</td>
+              <td>${badgeEstadoCuota(c.estado)}${c.estado !== 'pagado' && Number(c.monto_pagado) > 0
+                ? ` <span class="badge bg-info text-dark">Abono ${formatearMonto(c.monto_pagado)}</span>`
+                : ''}</td>
             </tr>
           `).join('')
         : '<tr><td colspan="3" class="text-center text-muted">Sin cuotas registradas en esta temporada</td></tr>';

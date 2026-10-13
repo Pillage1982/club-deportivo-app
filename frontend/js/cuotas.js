@@ -161,6 +161,18 @@ function cargarCuotas() {
 
 }
 
+// Cuota pendiente/vencida con pagos parciales: etiqueta "Abono $X" (lo pagado)
+// y el saldo que falta.
+function tieneAbonoCuota(cuota) {
+  return cuota.estado !== 'pagado' && Number(cuota.monto_pagado) > 0;
+}
+
+function badgeAbonoCuota(cuota) {
+  if (!tieneAbonoCuota(cuota)) return '';
+  return ` <span class="badge bg-info text-dark">Abono ${formatearMonto(cuota.monto_pagado)}</span>`
+    + `<div class="small text-muted">Saldo ${formatearMonto(cuota.saldo)}</div>`;
+}
+
 function filtrarCuotas(cuotas) {
   const busqueda =
     normalizarTextoCuota(
@@ -187,7 +199,8 @@ function filtrarCuotas(cuotas) {
       !busqueda || nombreCompleto.includes(busqueda);
 
     const coincideEstado =
-      !estado || cuota.estado === estado;
+      !estado
+      || (estado === 'abono' ? tieneAbonoCuota(cuota) : cuota.estado === estado);
 
     const coincideMes =
       !mes || String(cuota.mes) === String(Number(mes));
@@ -230,7 +243,7 @@ function renderizarTablaCuotas(cuotas) {
       <td>${cuota.mes}</td>
       <td>${cuota.anio}</td>
       <td>${formatearFecha(cuota.fecha_vencimiento)}</td>
-      <td>${obtenerBadgeCuota(cuota.estado)}</td>
+      <td>${obtenerBadgeCuota(cuota.estado)}${badgeAbonoCuota(cuota)}</td>
     </tr>
   `).join('');
 }

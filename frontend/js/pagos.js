@@ -101,6 +101,7 @@ function cargarCuotasPendientesPago(persona_id) {
           <label class="form-check-label" for="pago_cuota_${Number(c.id)}">
             ${MESES[c.mes]} ${Number(c.anio)} — saldo ${formatearMonto(c.saldo)}
             <span class="badge ${c.estado === 'vencido' ? 'bg-danger' : 'bg-secondary'} ms-1">${escaparHtml(c.estado)}</span>
+            ${Number(c.monto_pagado) > 0 ? `<span class="badge bg-info text-dark ms-1">Abono ${formatearMonto(c.monto_pagado)}</span>` : ''}
           </label>
         </div>
       `).join('');

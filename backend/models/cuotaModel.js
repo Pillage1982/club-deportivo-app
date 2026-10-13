@@ -147,6 +147,7 @@ exports.generarMensualidadMasiva = (data, callback) => {
 exports.obtenerCuotasPendientesPorPersona = (persona_id, callback) => {
   db.query(
     `SELECT c.id,c.mes,c.anio,c.monto,c.fecha_vencimiento,c.estado,
+            COALESCE(SUM(d.monto_pagado),0) AS monto_pagado,
             GREATEST(c.monto-COALESCE(SUM(d.monto_pagado),0),0) AS saldo
      FROM cuotas c
      LEFT JOIN pago_detalle d ON d.tipo='cuota' AND d.referencia_id=c.id

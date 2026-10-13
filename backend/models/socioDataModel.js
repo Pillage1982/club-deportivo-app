@@ -92,19 +92,28 @@ const CONDICION_PAGO_TEMPORADA = `(
   )
 )`;
 
-// Deuda = total cuotas - total pagado de la temporada, igual que
-// vista_estado_financiero pero sin su filtro "estado='activo'" (un socio en
-// receso también puede ver y pagar su deuda).
+// Deuda = total cuotas - total pagado de la temporada, sin el filtro
+// "estado='activo'" de vista_estado_financiero (un socio en receso también puede
+// ver y pagar su deuda). Lo pagado se cuenta POR CUOTA: lo abonado a las cuotas de
+// esta temporada, más el saldo a favor (parte de un pago de cuota hecho en la
+// temporada que no quedó asignada a ninguna cuota). Así un pago hecho hoy para
+// cuotas atrasadas de la temporada anterior no rebaja la deuda de esta.
 exports.obtenerResumenDeuda = (personaId, desde, callback) => {
   const periodo = periodoDesde(desde);
   db.query(
     `SELECT
        (SELECT COALESCE(SUM(monto), 0) FROM cuotas
          WHERE persona_id = ? AND anio * 100 + mes >= ?) AS total_cuotas,
-       (SELECT COALESCE(SUM(pa.monto_total), 0) FROM pagos pa
-         WHERE pa.persona_id = ? AND pa.tipo_pago = 'cuota'
-           AND ${CONDICION_PAGO_TEMPORADA}) AS total_pagado`,
-    [personaId, periodo, personaId, desde, periodo],
+       (SELECT COALESCE(SUM(d.monto_pagado), 0)
+          FROM pago_detalle d
+          JOIN cuotas c ON c.id = d.referencia_id
+         WHERE d.tipo = 'cuota' AND c.persona_id = ? AND c.anio * 100 + c.mes >= ?)
+       + (SELECT COALESCE(SUM(GREATEST(pa.monto_total - COALESCE(asignado.total, 0), 0)), 0)
+            FROM pagos pa
+            LEFT JOIN (SELECT pago_id, SUM(monto_pagado) AS total
+                         FROM pago_detalle GROUP BY pago_id) asignado ON asignado.pago_id = pa.id
+           WHERE pa.persona_id = ? AND pa.tipo_pago = 'cuota' AND pa.fecha >= ?) AS total_pagado`,
+    [personaId, periodo, personaId, periodo, personaId, desde],
     (err, rows) => callback(err, rows ? rows[0] : null)
   );
 };
