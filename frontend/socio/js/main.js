@@ -168,12 +168,23 @@ function cargarFinanzas() {
             <tr>
               <td>${formatearFecha(p.fecha)}</td>
               <td>${formatearMonto(p.monto_total)}</td>
-              <td>${p.cuotas_cubiertas ? escaparHtml(p.cuotas_cubiertas) : '—'}</td>
+              <td>${escaparHtml(descripcionPagoSocio(p))}</td>
             </tr>
           `).join('')
         : '<tr><td colspan="3" class="text-center text-muted">Sin pagos registrados en esta temporada</td></tr>';
     })
     .catch(err => console.error('Error cargando finanzas:', err));
+}
+
+// Pagos extra (traje, chaqueta, otro) se muestran con su tipo; los de cuota,
+// con los meses que cubrieron.
+function descripcionPagoSocio(p) {
+  const tipos = { traje: 'Traje', chaqueta: 'Chaqueta institucional', otro: 'Otro' };
+  if (p.tipo_pago && p.tipo_pago !== 'cuota') {
+    const tipo = tipos[p.tipo_pago] || 'Otro';
+    return p.detalle ? `${tipo} — ${p.detalle}` : tipo;
+  }
+  return p.cuotas_cubiertas || '—';
 }
 
 function badgeEstadoCuota(estado) {

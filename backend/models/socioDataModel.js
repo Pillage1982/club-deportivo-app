@@ -102,7 +102,8 @@ exports.obtenerResumenDeuda = (personaId, desde, callback) => {
        (SELECT COALESCE(SUM(monto), 0) FROM cuotas
          WHERE persona_id = ? AND anio * 100 + mes >= ?) AS total_cuotas,
        (SELECT COALESCE(SUM(pa.monto_total), 0) FROM pagos pa
-         WHERE pa.persona_id = ? AND ${CONDICION_PAGO_TEMPORADA}) AS total_pagado`,
+         WHERE pa.persona_id = ? AND pa.tipo_pago = 'cuota'
+           AND ${CONDICION_PAGO_TEMPORADA}) AS total_pagado`,
     [personaId, periodo, personaId, desde, periodo],
     (err, rows) => callback(err, rows ? rows[0] : null)
   );
@@ -131,6 +132,7 @@ exports.obtenerHistorialPagos = (personaId, desde, callback) => {
        pa.id, pa.monto_total, pa.metodo, pa.fecha,
        COALESCE(pa.fecha_precision, 'exacta') AS fecha_precision,
        pa.referencia_externa,
+       pa.tipo_pago, pa.detalle,
        GROUP_CONCAT(
          DISTINCT CONCAT(c.mes, '/', c.anio)
          ORDER BY c.anio, c.mes SEPARATOR ', '
@@ -139,7 +141,8 @@ exports.obtenerHistorialPagos = (personaId, desde, callback) => {
      LEFT JOIN pago_detalle pd ON pd.pago_id = pa.id AND pd.tipo = 'cuota'
      LEFT JOIN cuotas c ON c.id = pd.referencia_id
      WHERE pa.persona_id = ? AND ${CONDICION_PAGO_TEMPORADA}
-     GROUP BY pa.id, pa.monto_total, pa.metodo, pa.fecha, pa.fecha_precision, pa.referencia_externa
+     GROUP BY pa.id, pa.monto_total, pa.metodo, pa.fecha, pa.fecha_precision, pa.referencia_externa,
+              pa.tipo_pago, pa.detalle
      ORDER BY pa.fecha DESC`,
     [personaId, desde, periodoDesde(desde)],
     callback

@@ -47,6 +47,8 @@ async function asegurarEstadoIntegrantes(colsPersonas) {
 async function reconstruirVistaEstadoFinanciero() {
   // Multas se muestran como informativo pero NO suman a deuda_actual
   // (la agrupación no las cobra actualmente — se reactivarán cuando lo decidan)
+  // Solo los pagos de tipo 'cuota' rebajan la deuda: trajes, chaquetas y otros
+  // pagos extra entran a caja pero no son abono a cuotas.
   await ejecutar(`
     CREATE OR REPLACE VIEW vista_estado_financiero AS
 
@@ -80,6 +82,7 @@ async function reconstruirVistaEstadoFinanciero() {
     LEFT JOIN (
       SELECT persona_id, SUM(monto_total) AS total_pagado
       FROM pagos
+      WHERE tipo_pago = 'cuota'
       GROUP BY persona_id
     ) pg ON p.id = pg.persona_id
 
@@ -381,6 +384,19 @@ async function asegurarCamposPagos() {
   if (!cols.has('fecha_precision')) {
     await ejecutar("ALTER TABLE pagos ADD COLUMN fecha_precision ENUM('exacta','mensual') NOT NULL DEFAULT 'exacta'");
   }
+  // Tipo de pago: 'cuota' (mensualidad) o un pago extra del integrante (traje,
+  // chaqueta institucional, otro). Solo los de tipo 'cuota' rebajan la deuda.
+  // DEFAULT 'cuota': todos los pagos existentes quedan como pago de cuota.
+  if (!cols.has('tipo_pago')) {
+    await ejecutar("ALTER TABLE pagos ADD COLUMN tipo_pago VARCHAR(30) NOT NULL DEFAULT 'cuota'");
+  }
+  if (!cols.has('detalle')) {
+    await ejecutar('ALTER TABLE pagos ADD COLUMN detalle VARCHAR(200) NULL');
+  }
+  // Comprobante opcional del pago (transferencia, boleta), en uploads/comprobantes
+  if (!cols.has('comprobante_path')) {
+    await ejecutar('ALTER TABLE pagos ADD COLUMN comprobante_path VARCHAR(255) NULL');
+  }
 }
 
 async function consolidarTiposCuota() {
@@ -506,6 +522,11 @@ async function asegurarTablasDocumentosSocio() {
       CONSTRAINT fk_comprobante_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
     )
   `);
+  // Pago en que tesorería usó el comprobante (NULL = pendiente de registrar)
+  const colsComprobantes = await columnasExistentes('comprobantes_deposito');
+  if (!colsComprobantes.has('pago_id')) {
+    await ejecutar('ALTER TABLE comprobantes_deposito ADD COLUMN pago_id BIGINT NULL');
+  }
 }
 
 // Solicitudes "Súmate a la promesa" del sitio gdcayquina.cl: datos básicos del

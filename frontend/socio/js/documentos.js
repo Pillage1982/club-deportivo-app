@@ -119,7 +119,9 @@ function renderizarHistorialDocumentos() {
               ${formatearMonto(dato.monto)} · depositado ${formatearFecha(dato.fecha_deposito)}${dato.concepto ? ` · ${escaparHtml(dato.concepto)}` : ''}
             </small>
           </div>
-          ${dato.email_enviado
+          ${dato.pago_id
+            ? '<span class="badge bg-success">Pago registrado</span>'
+            : dato.email_enviado
             ? '<span class="badge bg-secondary">Enviado a tesorería</span>'
             : '<span class="badge bg-warning text-dark">Correo no enviado</span>'}
         </div>
