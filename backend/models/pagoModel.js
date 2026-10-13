@@ -23,6 +23,7 @@ exports.obtenerPagos = (
     SELECT
 
       pa.id,
+      pa.persona_id,
 
       p.nombres,
       p.apellido_paterno,
@@ -33,6 +34,9 @@ exports.obtenerPagos = (
       pa.fecha,
       COALESCE(pa.fecha_precision, 'exacta') AS fecha_precision,
       pa.referencia_externa,
+      pa.tipo_pago,
+      pa.detalle,
+      pa.comprobante_path,
       EXISTS(SELECT 1 FROM pago_detalle d WHERE d.pago_id=pa.id) AS tiene_detalle
 
     FROM pagos pa
@@ -73,8 +77,8 @@ exports.crearPagoConDetalles = (data, detalles, callback) => {
       if (errTx) { cerrar(errTx); return callback(errTx); }
 
       conexion.query(
-        'INSERT INTO pagos (persona_id, monto_total, metodo) VALUES (?, ?, ?)',
-        [data.persona_id, data.monto_total, data.metodo],
+        'INSERT INTO pagos (persona_id, monto_total, metodo, tipo_pago, detalle, comprobante_path) VALUES (?, ?, ?, ?, ?, ?)',
+        [data.persona_id, data.monto_total, data.metodo, data.tipo_pago || 'cuota', data.detalle || null, data.comprobante_path || null],
         (errPago, resultPago) => {
           if (errPago) return fallar(errPago);
           const pagoId = resultPago.insertId;
@@ -133,6 +137,20 @@ exports.obtenerPagosCuotaPorMesReal = callback => {
   db.query(query, callback);
 };
 
+exports.obtenerPagoBasico = (id, callback) => {
+  db.query('SELECT id, persona_id, comprobante_path FROM pagos WHERE id = ?', [id],
+    (err, rows) => callback(err, rows && rows[0] ? rows[0] : null));
+};
+
+exports.obtenerComprobantePath = (id, callback) => {
+  db.query('SELECT comprobante_path FROM pagos WHERE id = ?', [id],
+    (err, rows) => callback(err, rows && rows[0] ? rows[0].comprobante_path : null));
+};
+
+exports.actualizarComprobante = (id, comprobantePath, callback) => {
+  db.query('UPDATE pagos SET comprobante_path = ? WHERE id = ?', [comprobantePath, id], callback);
+};
+
 exports.tieneDetalles = (id, callback) => {
   db.query('SELECT EXISTS(SELECT 1 FROM pago_detalle WHERE pago_id=?) AS tiene', [id],
     (err, rows) => callback(err, rows ? Boolean(rows[0].tiene) : false));
@@ -161,7 +179,10 @@ exports.actualizarPago = (
 
       persona_id = ?,
       monto_total = ?,
-      metodo = ?
+      metodo = ?,
+      tipo_pago = ?,
+      detalle = ?,
+      comprobante_path = COALESCE(?, comprobante_path)
 
     WHERE id = ?
 
@@ -177,6 +198,9 @@ exports.actualizarPago = (
       data.persona_id,
       data.monto_total,
       data.metodo,
+      data.tipo_pago || 'cuota',
+      data.detalle || null,
+      data.comprobante_path || null,
 
       id
 

@@ -90,7 +90,9 @@ function verHistorialPuntaje(persona_id, nombre) {
   const modal = new bootstrap.Modal(document.getElementById('modal_historial_puntaje'));
   modal.show();
 
-  fetch(`${API_URL}/puntaje/historial/${persona_id}`, { headers: getAuthHeaders() })
+  const temporada = document.getElementById('filtro_puntaje_temporada')?.value || '';
+  const query = temporada ? `?temporada=${encodeURIComponent(temporada)}` : '';
+  fetch(`${API_URL}/puntaje/historial/${persona_id}${query}`, { headers: getAuthHeaders() })
     .then(res => res.json())
     .then(data => {
       if (!Array.isArray(data) || data.length === 0) {

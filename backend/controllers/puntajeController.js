@@ -42,15 +42,15 @@ exports.listarTemporadas = async (req, res) => {
   }
 };
 
+// Temporada pedida por ?temporada=<id>; sin ella (o si no existe), la vigente.
+async function resolverTemporada(idSolicitado) {
+  const temporadas = construirTemporadas(await puntajeModel.obtenerTemporadas());
+  return temporadas.find(t => t.id === idSolicitado) || temporadas.find(t => t.actual);
+}
+
 exports.listarRanking = async (req, res) => {
   try {
-    const eventosDespedida = await puntajeModel.obtenerTemporadas();
-    const temporadas = construirTemporadas(eventosDespedida);
-
-    const idSolicitado = req.query.temporada;
-    const temporada =
-      temporadas.find(t => t.id === idSolicitado) ||
-      temporadas.find(t => t.actual);
+    const temporada = await resolverTemporada(req.query.temporada);
 
     const ranking = await puntajeModel.obtenerRankingPorTemporada(
       temporada.fecha_inicio,
@@ -65,7 +65,11 @@ exports.listarRanking = async (req, res) => {
 
 exports.listarHistorial = async (req, res) => {
   try {
-    const historial = await puntajeModel.obtenerHistorial(req.params.persona_id);
+    // Mismo corte que el ranking: la temporada elegida (por defecto, la vigente)
+    const temporada = await resolverTemporada(req.query.temporada);
+    const historial = await puntajeModel.obtenerHistorial(
+      req.params.persona_id, temporada.fecha_inicio, temporada.fecha_fin
+    );
     res.json(historial);
   } catch (err) {
     console.error('Error obteniendo historial puntaje:', err);

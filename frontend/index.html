@@ -125,7 +125,7 @@
           <div id="card_dashboard_deuda" class="col-6 col-md-3">
             <div class="card text-bg-warning shadow-sm border-0">
               <div class="card-body shadow-sm border-0">
-                <h5 class="card-title"><i class="bi bi-wallet2"></i> Deuda</h5>
+                <h5 class="card-title"><i class="bi bi-wallet2"></i> Deuda proyectada</h5>
                 <h2 id="deuda_total">$0</h2>
               </div>
             </div>
@@ -134,7 +134,7 @@
           <div id="card_dashboard_caja" class="col-6 col-md-3 d-none">
             <div id="card_dashboard_caja_body" class="card text-bg-info shadow-sm border-0">
               <div class="card-body shadow-sm border-0">
-                <h5 class="card-title"><i class="bi bi-safe2"></i> Total en caja</h5>
+                <h5 class="card-title"><i class="bi bi-safe2"></i> Total disponible</h5>
                 <h2 id="saldo_caja">$0</h2>
               </div>
             </div>
@@ -343,6 +343,12 @@
         <li class="nav-item" role="presentation" id="nav_subtab_pagos">
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_pagos" role="tab">
             <i class="bi bi-cash"></i> Pagos
+          </a>
+        </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_depositos">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_depositos" role="tab">
+            <i class="bi bi-receipt"></i> Depósitos
+            <span id="badge_depositos" class="badge bg-warning text-dark ms-1 d-none">0</span>
           </a>
         </li>
         <li class="nav-item" role="presentation" id="nav_subtab_multas">
@@ -613,6 +619,16 @@
               <label for="buscar_pagos" class="form-label">Buscar Integrante</label>
               <input type="search" id="buscar_pagos" class="form-control" placeholder="Buscar por nombre">
             </div>
+            <div class="col-md-2">
+              <label for="filtro_pago_tipo" class="form-label">Tipo</label>
+              <select id="filtro_pago_tipo" class="form-select">
+                <option value="">Todos</option>
+                <option value="cuota">Cuota mensual</option>
+                <option value="traje">Traje</option>
+                <option value="chaqueta">Chaqueta institucional</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
             <div class="col-md-3">
               <label for="filtro_pago_metodo" class="form-label">Método</label>
               <select id="filtro_pago_metodo" class="form-select">
@@ -631,6 +647,7 @@
               <thead class="table-dark">
                 <tr>
                   <th>Integrante</th>
+                  <th>Tipo</th>
                   <th>Monto</th>
                   <th>Método</th>
                   <th>Fecha</th>
@@ -638,6 +655,46 @@
                 </tr>
               </thead>
               <tbody id="tabla_pagos"></tbody>
+            </table>
+          </div>
+          <!-- Selector oculto para adjuntar comprobante a un pago ya registrado -->
+          <input type="file" id="pago_comprobante_adjuntar" class="d-none" accept="image/jpeg,image/png,image/webp,application/pdf">
+        </div>
+
+        <!-- Depósitos: comprobantes que los socios envían desde el Portal -->
+        <div class="tab-pane fade" id="subtab_depositos" role="tabpanel">
+          <p class="text-muted small mb-2">
+            Comprobantes que los socios envían desde el Portal del Socio. Revisa la cartola y usa <strong>Registrar pago</strong>:
+            el comprobante queda adjunto al pago y el depósito pasa a <em>Registrado</em>.
+          </p>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label for="buscar_depositos" class="form-label">Buscar Integrante</label>
+              <input type="search" id="buscar_depositos" class="form-control" placeholder="Buscar por nombre">
+            </div>
+            <div class="col-md-3">
+              <label for="filtro_deposito_estado" class="form-label">Estado</label>
+              <select id="filtro_deposito_estado" class="form-select">
+                <option value="pendiente">Pendientes</option>
+                <option value="registrado">Registrados</option>
+                <option value="">Todos</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive tabla-scroll">
+            <table class="table table-bordered table-striped mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Folio</th>
+                  <th>Integrante</th>
+                  <th>Monto</th>
+                  <th>Depositado</th>
+                  <th>Concepto</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_depositos"></tbody>
             </table>
           </div>
         </div>
@@ -762,6 +819,7 @@
                   <option value="pendiente">Pendiente</option>
                   <option value="pagado">Pagado</option>
                   <option value="vencido">Vencido</option>
+                  <option value="abono">Con abono</option>
                 </select>
               </div>
               <div class="col-md-2">
@@ -1261,20 +1319,30 @@
             <div class="card p-4 shadow-sm border-0">
               <div class="row">
                 <div class="col-md-3 mb-3">
-                  <label class="form-label">Integrante</label>
-                  <select id="pago_persona_id" class="form-select"></select>
-                </div>
-                <div class="col-md-3 mb-3">
-                  <label class="form-label">Cuota a pagar <small class="text-muted">(opcional)</small></label>
-                  <select id="pago_cuota_id" class="form-select">
-                    <option value="">Sin vincular a cuota</option>
+                  <label for="pago_tipo" class="form-label">Tipo de pago</label>
+                  <select id="pago_tipo" class="form-select" onchange="actualizarTipoPago()">
+                    <option value="cuota">Cuota mensual</option>
+                    <option value="traje">Traje</option>
+                    <option value="chaqueta">Chaqueta institucional</option>
+                    <option value="otro">Otro</option>
                   </select>
                 </div>
-                <div class="col-md-3 mb-3">
+                <div class="col-md-9 mb-3">
+                  <label for="pago_detalle" class="form-label">Detalle <small class="text-muted" id="pago_detalle_ayuda">(opcional)</small></label>
+                  <input type="text" id="pago_detalle" class="form-control" maxlength="200" placeholder="Ej: abono traje de caporal, talla M">
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label for="pago_persona_buscar" class="form-label">Integrante</label>
+                  <input type="search" id="pago_persona_buscar" class="form-control mb-2" placeholder="Buscar por nombre, apellido o RUT" autocomplete="off">
+                  <select id="pago_persona_id" class="form-select"></select>
+                </div>
+                <div class="col-md-4 mb-3">
                   <label class="form-label">Monto</label>
                   <input type="number" id="pago_monto" class="form-control">
                 </div>
-                <div class="col-md-3 mb-3">
+                <div class="col-md-4 mb-3">
                   <label class="form-label">Método Pago</label>
                   <select id="pago_metodo" class="form-select">
                     <option value="efectivo">Efectivo</option>
@@ -1283,7 +1351,31 @@
                   </select>
                 </div>
               </div>
-              <div class="form-check mb-3">
+              <div class="mb-3" id="pago_cuota_grupo">
+                <label class="form-label">Meses que se pagan
+                  <small class="text-muted">(marque las cuotas que cubre este pago; si no marca ninguna, se aplica a las cuotas pendientes más antiguas)</small>
+                </label>
+                <div id="pago_cuotas_lista" class="border rounded p-2" style="max-height: 240px; overflow-y: auto;">
+                  <span class="text-muted small">Seleccione un integrante</span>
+                </div>
+                <div id="pago_cuotas_resumen" class="form-text"></div>
+              </div>
+              <div class="mb-3">
+                <label for="pago_comprobante" class="form-label">Comprobante <small class="text-muted">(transferencia o boleta, opcional)</small></label>
+                <input type="file" id="pago_comprobante" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
+              </div>
+              <div class="mb-3 d-none" id="pago_deposito_grupo">
+                <label for="pago_deposito_id" class="form-label">O usar un comprobante enviado por el socio desde el Portal</label>
+                <div class="input-group">
+                  <select id="pago_deposito_id" class="form-select" onchange="actualizarDepositoPago()">
+                    <option value="">No usar</option>
+                  </select>
+                  <button type="button" class="btn btn-outline-primary" title="Ver comprobante" aria-label="Ver comprobante" onclick="verDepositoSeleccionadoPago()">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="form-check mb-3" id="pago_anual_grupo">
                 <input class="form-check-input" type="checkbox" id="pago_anual_check" onchange="actualizarModoPagoAnual()">
                 <label class="form-check-label" for="pago_anual_check">
                   Pago anual (cubre todas las cuotas pendientes del integrante en un solo pago)
@@ -1432,6 +1524,25 @@
               <tbody id="tabla_historial_puntaje"></tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Adjuntar comprobante a un pago ya registrado -->
+  <div class="modal fade" id="modal_adjuntar_comprobante_pago" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-paperclip me-2"></i>Adjuntar comprobante</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-2">Comprobantes enviados por el socio desde el Portal, aún sin registrar:</p>
+          <div id="lista_depositos_adjuntar" class="list-group mb-3"></div>
+          <button type="button" class="btn btn-outline-secondary w-100" onclick="subirArchivoComprobantePago()">
+            <i class="bi bi-upload me-1"></i> Subir otro archivo
+          </button>
         </div>
       </div>
     </div>
