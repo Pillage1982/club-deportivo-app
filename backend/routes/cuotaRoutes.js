@@ -27,6 +27,13 @@ router.post(
 );
 
 router.post(
+  '/aplicar-saldos-favor',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.aplicarSaldosAFavor
+);
+
+router.post(
   '/generar-temporada',
   authMiddleware,
   roleMiddleware('admin', 'tesorero'),

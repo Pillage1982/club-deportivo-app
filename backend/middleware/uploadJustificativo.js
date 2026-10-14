@@ -5,6 +5,7 @@
 // dos listas que puedan desalinearse.
 const path = require('path');
 const fs = require('fs');
+const { DIRECTORIO_UPLOADS } = require('../config/uploads');
 const uploadComprobante = require('./uploadComprobante');
 
 let multer = null;
@@ -17,9 +18,9 @@ try {
 
 const { extensionPorMime, verificarFirmaArchivo } = uploadComprobante;
 
-// carpeta: subcarpeta de backend/uploads (ej. 'justificativos').
+// carpeta: subcarpeta de la carpeta de uploads (ej. 'justificativos'), ver config/uploads.js.
 function crearUploadSocio(carpeta) {
-  const destino = path.join(__dirname, '..', 'uploads', carpeta);
+  const destino = path.join(DIRECTORIO_UPLOADS, carpeta);
   let upload;
 
   if (multer) {

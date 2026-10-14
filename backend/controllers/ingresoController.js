@@ -1,6 +1,7 @@
 // Controlador HTTP de ingresos de terceros: valida datos, administra comprobantes
 // y coordina el CRUD con ingresoModel (mismo patrón que gastoController).
-const path = require('path');
+const path = require('path');
+const { rutaUpload } = require('../config/uploads');
 const fs = require('fs');
 const ingresoModel = require('../models/ingresoModel');
 const uploadComprobante = require('../middleware/uploadComprobante');
@@ -123,7 +124,7 @@ exports.eliminar = (req, res) => {
       }
 
       if (ingreso.comprobante_path) {
-        const rutaArchivo = path.join(__dirname, '..', 'uploads', ingreso.comprobante_path);
+        const rutaArchivo = rutaUpload(ingreso.comprobante_path);
         fs.unlink(rutaArchivo, () => {});
       }
 
@@ -144,7 +145,7 @@ exports.descargarComprobante = (req, res) => {
       return res.status(404).json({ mensaje: 'Este ingreso no tiene comprobante adjunto' });
     }
 
-    const rutaArchivo = path.join(__dirname, '..', 'uploads', ingreso.comprobante_path);
+    const rutaArchivo = rutaUpload(ingreso.comprobante_path);
     const extension = path.extname(rutaArchivo).toLowerCase();
     const mimeSeguro = MIME_POR_EXTENSION[extension] || 'application/octet-stream';
 

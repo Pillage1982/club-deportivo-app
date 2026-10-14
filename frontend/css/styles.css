@@ -1187,3 +1187,13 @@ img[data-config-img="cliente.logo"] {
     grid-template-columns: repeat(12, minmax(0, 1fr));
   }
 }
+
+/* Roles sin permiso de eliminar (director1-3): se ocultan los botones de borrar.
+   El servidor igual rechaza cualquier eliminación (roleMiddleware). */
+body.sin-eliminar [onclick*="eliminarEvento"],
+body.sin-eliminar [onclick*="eliminarPersona"],
+body.sin-eliminar [onclick*="eliminarPago"],
+body.sin-eliminar [onclick*="eliminarGasto"],
+body.sin-eliminar [onclick*="eliminarIngreso"] {
+  display: none !important;
+}

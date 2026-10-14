@@ -28,6 +28,9 @@ Cliente activo: Gran Diablada Calameña (rama `cliente/calamena`).
 - Revisar en devnexo antes de fusionar a main
 - **Pedir autorización antes de commit y push**
 
+## Roles del panel
+`backend/config/roles.js`: cada rol hereda permisos de un rol base y puede o no eliminar (roleMiddleware bloquea DELETE). `admin`, `tesorero`, `entrenador` (base); `secretaria` = admin; `director1` = admin sin eliminar; `director2` = tesorero sin eliminar; `director3` = entrenador sin eliminar. El panel usa `rol_base` (obtenerRolActual) y oculta botones de borrar con `body.sin-eliminar`. Usuarios se crean por SQL con clave `gdc123` (cambio obligatorio en el primer ingreso).
+
 ## Estados de socios
 - `activo` → participa y genera cuotas
 - `receso` → pausado de asistencia y nuevas cuotas, puede hacer pagos
@@ -72,6 +75,8 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - **Tipo de pago y comprobante (oct-2026):** `pagos.tipo_pago` (cuota/traje/chaqueta/otro) + `detalle`; solo `tipo_pago='cuota'` rebaja la deuda (vista_estado_financiero y Portal), los extras suman a caja. `pagos.comprobante_path` opcional (uploads/comprobantes), ver/adjuntar desde Tablas → Pagos
 - **Meses que se pagan (oct-2026):** en Formularios → Pago se marcan a mano las cuotas pendientes (cualquier temporada). 1 mes: abono parcial permitido. Varios meses con monto menor: se pagan los más antiguos y el último queda con abono. Sin meses marcados (tipo cuota): se aplica a las pendientes más antiguas; el sobrante queda a favor. El pago anual solo toma la temporada vigente. Cuotas con pagos parciales muestran la etiqueta "Abono $X" (formulario, Tablas → Cuotas con filtro "Con abono", Portal). La deuda del Portal se calcula por cuota (abonos a cuotas de la temporada + saldo a favor de pagos de cuota de la temporada), no por fecha de pago
 - Dashboard: tarjetas "Deuda proyectada" y "Total disponible" (antes Deuda / Total en caja)
+- **Ficha Historial por integrante (oct-2026):** botón en Tablas → Finanzas; resumen, cuotas con abono/saldo y pagos (temporada vigente o todo), exportable a Excel/PDF. Endpoint `GET /finanzas/historial/:persona_id?alcance=temporada|todo` (reusa las consultas del Portal)
+- **Saldo a favor (oct-2026):** `services/saldoFavorService.js` aplica la parte no asignada de pagos de cuota a las cuotas pendientes más antiguas del integrante; automático al generar cuotas y con botón "Aplicar saldos a favor" en Cuotas (vista previa con `simular` antes de escribir). Puntaje según la fecha del pago original (`utils/puntajeCuotas.js`)
 
 ### Pendiente calamena
 - UI para asignar manualmente `vestimenta_distinta` y `retiro_sin_aviso` (justificado y licencia_medica ya entran por Justificaciones)
@@ -97,8 +102,13 @@ Ver `documentacion/roadmap_maestro_producto_adaptable.md`
 
 ## Hosting Hostinger — comandos clave
 ```bash
-# Ruta del proyecto
-cd ~/domains/dev.gdcayquina.cl/nodejs   # o app.gdcayquina.cl
+# SSH (cuenta del cliente): ssh -p 65002 u402516660@45.152.44.96
+# Ruta del proyecto (cada despliegue crea hbuilds/versions/<uuid>; solo queda la activa)
+cd ~/domains/dev.gdcayquina.cl/hbuilds/current/nodejs   # o app.gdcayquina.cl
+
+# Archivos subidos: FUERA de la app (el zip reemplaza la versión y borraría uploads).
+# Variable de entorno UPLOADS_DIR en hPanel → sitio → Variables de entorno:
+#   dev: /home/u402516660/uploads_gdc/dev   prod: /home/u402516660/uploads_gdc/app
 
 # npm (no está en PATH, usar ruta completa)
 /opt/alt/alt-nodejs22/root/usr/bin/npm install

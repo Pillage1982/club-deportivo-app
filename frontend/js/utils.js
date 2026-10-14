@@ -343,7 +343,7 @@ function mostrarUsuario() {
     };
 
   const rolVisual =
-    rolesVisuales[usuario.rol] || usuario.rol;
+    usuario.rol_nombre || rolesVisuales[usuario.rol] || usuario.rol;
 
   const usuarioLogeado =
     document.getElementById('usuario_logeado');
@@ -412,7 +412,7 @@ function aplicarRolesFrontend() {
 
   if (!usuario) return;
 
-  const rol = usuario.rol;
+  const rol = obtenerRolActual();
 
   if (rol === 'admin') {
     return;
@@ -493,8 +493,9 @@ function formatearFecha(fecha) {
 
   }
 
+  // Acepta 'YYYY-MM-DD', 'YYYY-MM-DDTHH:MM:SS' y 'YYYY-MM-DD HH:MM:SS' (DATETIME de MySQL)
   const fechaLimpia =
-    fecha.split('T')[0];
+    String(fecha).split(/[T ]/)[0];
 
   const partes =
     fechaLimpia.split('-');
@@ -690,12 +691,24 @@ function restaurarBoton(estadoBoton, textoFinal) {
     textoFinal || estadoBoton.textoOriginal;
 }
 
+// Rol para decidir permisos en pantalla: el rol base (admin/tesorero/entrenador)
+// que hereda el rol del usuario (secretaria, director1-3...). Sesiones anteriores
+// a los roles nuevos no traen rol_base: se usa el rol tal cual. Sin rol no se
+// asume ninguno (antes se asumía 'admin' y mostraba pestañas sin permiso).
 function obtenerRolActual() {
   const usuario = JSON.parse(
     localStorage.getItem('usuario')
   );
 
-  return usuario?.rol || 'admin';
+  return usuario?.rol_base || usuario?.rol || '';
+}
+
+// Roles sin permiso de eliminar (director1-3): se ocultan los botones de borrar
+// (el servidor igual rechaza cualquier eliminación).
+function aplicarPermisoEliminar() {
+  const usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+  const puede = usuario?.puede_eliminar !== false;
+  document.body.classList.toggle('sin-eliminar', !puede);
 }
 
 function formatearFechaHora(fecha) {

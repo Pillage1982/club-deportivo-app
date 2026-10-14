@@ -295,3 +295,55 @@ function configurarFiltrosCuotas() {
     );
   });
 }
+
+// =====================================
+// APLICAR SALDOS A FAVOR
+// =====================================
+// Primero calcula sin escribir (vista previa) y pide confirmación con el detalle;
+// recién al confirmar se aplican los saldos a las cuotas pendientes más antiguas.
+
+function aplicarSaldosAFavor() {
+  const estadoBoton = bloquearBoton('btn_aplicar_saldos', 'Calculando...');
+  if (!estadoBoton) return;
+
+  enviarAplicacionSaldos(true)
+    .then(data => {
+      const r = data.resumen;
+      if (!r.monto) {
+        mostrarAlerta('No hay saldos a favor por aplicar.', 'info');
+        return;
+      }
+      mostrarConfirmacion(
+        `Se aplicarán ${formatearMonto(r.monto)} de saldo a favor de ${r.integrantes} integrante(s): `
+          + `${r.cuotas_pagadas} cuota(s) quedarán pagadas y ${r.cuotas_abonadas} con abono. ¿Deseas continuar?`,
+        ejecutarAplicacionSaldos
+      );
+    })
+    .catch(err => mostrarAlerta(obtenerMensajeError(err, 'No se pudieron calcular los saldos a favor'), 'danger'))
+    .finally(() => restaurarBoton(estadoBoton, 'Aplicar saldos a favor'));
+}
+
+function ejecutarAplicacionSaldos() {
+  enviarAplicacionSaldos(false)
+    .then(data => {
+      const r = data.resumen;
+      mostrarAlerta(`Saldo a favor aplicado: ${formatearMonto(r.monto)} (${r.cuotas_pagadas} cuota(s) pagadas, ${r.cuotas_abonadas} con abono).`, 'success');
+      cargarCuotas();
+      cargarFinanzas();
+      cargarTablaPagos();
+      cargarDashboard();
+    })
+    .catch(err => mostrarAlerta(obtenerMensajeError(err, 'No se pudieron aplicar los saldos a favor'), 'danger'));
+}
+
+function enviarAplicacionSaldos(simular) {
+  return fetch(`${API_URL}/cuotas/aplicar-saldos-favor`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ simular })
+  }).then(async res => {
+    const data = await leerRespuestaJson(res);
+    if (!res.ok) throw new Error(data.mensaje || 'Error con los saldos a favor');
+    return data;
+  });
+}

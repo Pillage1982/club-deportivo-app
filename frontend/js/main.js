@@ -123,6 +123,7 @@ window.onload = () => {
 };
 
 function aplicarRolesTabs() {
+  aplicarPermisoEliminar();
   const rol = obtenerRolActual();
   const puedeVerOperacion = rol === 'admin' || rol === 'entrenador';
   const puedeVerFinanzas  = rol === 'admin' || rol === 'tesorero';

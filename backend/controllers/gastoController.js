@@ -1,5 +1,6 @@
 // Controlador HTTP de gastos: valida datos, administra comprobantes y coordina el CRUD con gastoModel.
-const path = require('path');
+const path = require('path');
+const { rutaUpload } = require('../config/uploads');
 const fs = require('fs');
 const gastoModel = require('../models/gastoModel');
 const uploadComprobante = require('../middleware/uploadComprobante');
@@ -115,7 +116,7 @@ exports.eliminar = (req, res) => {
       }
 
       if (gasto.comprobante_path) {
-        const rutaArchivo = path.join(__dirname, '..', 'uploads', gasto.comprobante_path);
+        const rutaArchivo = rutaUpload(gasto.comprobante_path);
         fs.unlink(rutaArchivo, () => {});
       }
 
@@ -136,7 +137,7 @@ exports.descargarComprobante = (req, res) => {
       return res.status(404).json({ mensaje: 'Este gasto no tiene comprobante adjunto' });
     }
 
-    const rutaArchivo = path.join(__dirname, '..', 'uploads', gasto.comprobante_path);
+    const rutaArchivo = rutaUpload(gasto.comprobante_path);
     const extension = path.extname(rutaArchivo).toLowerCase();
     const mimeSeguro = MIME_POR_EXTENSION[extension] || 'application/octet-stream';
 

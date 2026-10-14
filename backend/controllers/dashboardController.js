@@ -1,6 +1,7 @@
 // Controlador HTTP del dashboard: entrega el resumen consolidado preparado por dashboardModel.
 const dashboardModel = require('../models/dashboardModel');
 
+const { rolBase } = require('../config/roles');
 const ROLES_BALANCE = ['admin', 'tesorero'];
 
 // Balance general del club (caja): todo lo que entró (pagos de socios +
@@ -32,7 +33,7 @@ exports.resumen = (req, res) => {
     const { total_pagos_socios, total_ingresos_terceros, total_gastos, ...resumen } = results[0];
 
     // El entrenador también usa el dashboard, pero no debe ver montos de caja
-    if (ROLES_BALANCE.includes(req.usuario && req.usuario.rol)) {
+    if (ROLES_BALANCE.includes(rolBase(req.usuario && req.usuario.rol))) {
       resumen.balance = armarBalance({ total_pagos_socios, total_ingresos_terceros, total_gastos });
     }
 
