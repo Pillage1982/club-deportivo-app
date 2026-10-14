@@ -20,5 +20,11 @@ INSERT IGNORE INTO usuarios (usuario, password, rol, debe_cambiar_password) VALU
   ('director3',  '$2b$10$Knx5y8cuaHteLVykmB8WE.uF2Yl4n3MzAks7/0dghoFOb3YL8x0sa', 'director3',  1),
   ('secretaria', '$2b$10$Knx5y8cuaHteLVykmB8WE.uF2Yl4n3MzAks7/0dghoFOb3YL8x0sa', 'secretaria', 1);
 
--- PASO 3: verificación.
+-- PASO 2b (SOLO si el INSERT se corrió antes de desplegar): MySQL guardó el rol
+-- vacío ('') porque el ENUM todavía no lo tenía. Con el ENUM ya ampliado (PASO 1),
+-- esto corrige el rol de esos usuarios. No toca a ningún otro usuario.
+UPDATE usuarios SET rol = usuario
+WHERE usuario IN ('director1', 'director2', 'director3', 'secretaria') AND rol = '';
+
+-- PASO 3: verificación (ningún usuario debe quedar con rol vacío).
 SELECT id, usuario, rol, debe_cambiar_password, email FROM usuarios ORDER BY id;

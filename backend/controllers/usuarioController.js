@@ -86,6 +86,16 @@ exports.login = (req, res) => {
         });
       }
 
+      // Un rol que no está en config/roles.js (ej. vacío porque se creó el usuario
+      // antes de que la BD tuviera ese rol) no tiene permisos: se avisa en vez de
+      // dejarlo entrar a un panel que no carga nada.
+      if (!ROLES[user.rol]) {
+        console.warn('Usuario con rol no válido:', usuario, JSON.stringify(user.rol));
+        return res.status(403).json({
+          mensaje: 'Tu usuario no tiene un rol válido. Pide al administrador que lo revise.'
+        });
+      }
+
       if (!process.env.JWT_SECRET) {
         console.error('JWT_SECRET no configurado');
         return res.status(500).json({ mensaje: 'JWT no configurado' });

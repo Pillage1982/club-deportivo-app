@@ -3,7 +3,8 @@
 // MODELO PAGOS
 // =====================================
 
-const path         = require('path');
+const path         = require('path');
+const { rutaUpload } = require('../config/uploads');
 const fs           = require('fs');
 const pagoModel    = require('../models/pagoModel');
 const uploadComprobante = require('../middleware/uploadComprobante');
@@ -23,7 +24,7 @@ const MIME_POR_EXTENSION = Object.fromEntries(
 // es del depósito y se conserva.
 function borrarComprobante(comprobantePath) {
   if (!comprobantePath || !comprobantePath.startsWith('comprobantes/')) return;
-  fs.unlink(path.join(__dirname, '..', 'uploads', comprobantePath), () => {});
+  fs.unlink(rutaUpload(comprobantePath), () => {});
 }
 
 function errorHttp(status, mensaje) {
@@ -587,7 +588,7 @@ exports.descargarComprobante = (req, res) => {
 };
 
 function enviarArchivoComprobante(res, comprobantePath) {
-  const rutaArchivo = path.join(__dirname, '..', 'uploads', comprobantePath);
+  const rutaArchivo = rutaUpload(comprobantePath);
   const extension = path.extname(rutaArchivo).toLowerCase();
   const mimeSeguro = MIME_POR_EXTENSION[extension] || 'application/octet-stream';
 

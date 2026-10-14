@@ -102,8 +102,13 @@ Ver `documentacion/roadmap_maestro_producto_adaptable.md`
 
 ## Hosting Hostinger — comandos clave
 ```bash
-# Ruta del proyecto
-cd ~/domains/dev.gdcayquina.cl/nodejs   # o app.gdcayquina.cl
+# SSH (cuenta del cliente): ssh -p 65002 u402516660@45.152.44.96
+# Ruta del proyecto (cada despliegue crea hbuilds/versions/<uuid>; solo queda la activa)
+cd ~/domains/dev.gdcayquina.cl/hbuilds/current/nodejs   # o app.gdcayquina.cl
+
+# Archivos subidos: FUERA de la app (el zip reemplaza la versión y borraría uploads).
+# Variable de entorno UPLOADS_DIR en hPanel → sitio → Variables de entorno:
+#   dev: /home/u402516660/uploads_gdc/dev   prod: /home/u402516660/uploads_gdc/app
 
 # npm (no está en PATH, usar ruta completa)
 /opt/alt/alt-nodejs22/root/usr/bin/npm install

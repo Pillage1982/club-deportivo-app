@@ -3,7 +3,8 @@
 // (Art. 8.4) y recalcula el puntaje del integrante; rechazar solo deja constancia.
 // En ambos casos se avisa al socio por correo si tiene email.
 const fs = require('fs');
-const path = require('path');
+const path = require('path');
+const { rutaUpload } = require('../config/uploads');
 const justificacionModel = require('../models/justificacionModel');
 const puntajeModel = require('../models/puntajeModel');
 const emailService = require('../services/emailService');
@@ -136,7 +137,7 @@ exports.descargarAdjunto = async (req, res) => {
       return res.status(404).json({ mensaje: 'Esta justificación no tiene archivo adjunto' });
     }
 
-    const rutaArchivo = path.join(__dirname, '..', 'uploads', justificacion.adjunto_path);
+    const rutaArchivo = rutaUpload(justificacion.adjunto_path);
     const extension = path.extname(rutaArchivo).toLowerCase();
 
     if (!fs.existsSync(rutaArchivo)) {

@@ -1,6 +1,7 @@
 // Carga de comprobantes de gastos con Multer: valida destino, extensión y disponibilidad de la dependencia.
 const path = require('path');
 const fs = require('fs');
+const { DIRECTORIO_UPLOADS } = require('../config/uploads');
 
 let multer = null;
 
@@ -10,7 +11,7 @@ try {
   console.warn('[Gastos] multer no disponible. Ejecute npm install en el servidor.');
 }
 
-const carpetaComprobantes = path.join(__dirname, '..', 'uploads', 'comprobantes');
+const carpetaComprobantes = path.join(DIRECTORIO_UPLOADS, 'comprobantes');
 
 const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 

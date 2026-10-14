@@ -693,13 +693,14 @@ function restaurarBoton(estadoBoton, textoFinal) {
 
 // Rol para decidir permisos en pantalla: el rol base (admin/tesorero/entrenador)
 // que hereda el rol del usuario (secretaria, director1-3...). Sesiones anteriores
-// a los roles nuevos no traen rol_base: se usa el rol tal cual.
+// a los roles nuevos no traen rol_base: se usa el rol tal cual. Sin rol no se
+// asume ninguno (antes se asumía 'admin' y mostraba pestañas sin permiso).
 function obtenerRolActual() {
   const usuario = JSON.parse(
     localStorage.getItem('usuario')
   );
 
-  return usuario?.rol_base || usuario?.rol || 'admin';
+  return usuario?.rol_base || usuario?.rol || '';
 }
 
 // Roles sin permiso de eliminar (director1-3): se ocultan los botones de borrar
