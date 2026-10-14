@@ -5,6 +5,7 @@ const usuarioModel = require('../models/usuarioModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { limpiarTexto, validarEmail } = require('../utils/validacionesPersona');
+const { ROLES, rolBase, puedeEliminar } = require('../config/roles');
 
 const BCRYPT_ROUNDS = 10;
 const PASSWORD_MIN_LARGO = 8;
@@ -39,11 +40,16 @@ function firmarToken(user, { debeCambiarPassword, debeRegistrarEmail }) {
   });
 }
 
+// rol_base y puede_eliminar: el panel decide qué pestañas y botones mostrar con el
+// rol base (admin/tesorero/entrenador); rol_nombre es el que se muestra arriba.
 function datosUsuario(user, { debeCambiarPassword, debeRegistrarEmail }) {
   return {
     id: user.id,
     usuario: user.usuario,
     rol: user.rol,
+    rol_base: rolBase(user.rol),
+    rol_nombre: ROLES[user.rol] ? ROLES[user.rol].nombre : user.rol,
+    puede_eliminar: puedeEliminar(user.rol),
     debeCambiarPassword,
     debeRegistrarEmail
   };

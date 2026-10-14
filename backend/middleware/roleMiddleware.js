@@ -1,32 +1,19 @@
 // Middleware de autorización: permite continuar solo a los roles indicados por cada ruta.
-// =====================================
-// MIDDLEWARE AUTORIZACION POR ROLES
-// =====================================
+// Las rutas nombran los roles base (admin, tesorero, entrenador); los demás roles
+// (secretaria, director1-3) heredan los permisos de su base según config/roles.js.
+// Además, un rol sin permiso de eliminar no puede hacer ninguna petición DELETE.
+const { rolBase, puedeEliminar } = require('../config/roles');
 
-// Recibe lista dinámica
-// de roles autorizados
-module.exports = (...rolesPermitidos) => {
+module.exports = (...rolesPermitidos) => (req, res, next) => {
+  const rolUsuario = req.usuario && req.usuario.rol;
 
-  return (req, res, next) => {
+  if (!rolesPermitidos.includes(rolBase(rolUsuario))) {
+    return res.status(403).send('No tienes permisos');
+  }
 
-    // Obtiene rol usuario autenticado
-    const rolUsuario = req.usuario.rol;
+  if (req.method === 'DELETE' && !puedeEliminar(rolUsuario)) {
+    return res.status(403).json({ mensaje: 'Tu rol no permite eliminar registros' });
+  }
 
-    // Bloquea acceso si rol
-    // no tiene permisos
-    if (!rolesPermitidos.includes(rolUsuario)) {
-
-      // Error permisos insuficientes
-      return res.status(403).send(
-        'No tienes permisos'
-      );
-
-    }
-
-    // Continúa ejecución
-    // si rol autorizado
-    next();
-
-  };
-
+  next();
 };

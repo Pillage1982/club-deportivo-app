@@ -11,6 +11,8 @@ function ejecutar(sql, params = []) {
 }
 
 // Una sola query a INFORMATION_SCHEMA por tabla — devuelve Set con nombres de columnas existentes
+const { ROLES } = require('./roles');
+
 async function columnasExistentes(tabla) {
   const filas = await ejecutar(
     `SELECT COLUMN_NAME, COLUMN_TYPE
@@ -373,6 +375,13 @@ async function asegurarCambioPasswordUsuarios() {
   const cols = await columnasExistentes('usuarios');
   if (!cols.has('debe_cambiar_password')) {
     await ejecutar('ALTER TABLE usuarios ADD COLUMN debe_cambiar_password TINYINT(1) NOT NULL DEFAULT 1');
+  }
+  // Roles del panel (ver config/roles.js). MODIFY solo si falta alguno, para no
+  // reconstruir la tabla en cada arranque.
+  const rolesFaltantes = Object.keys(ROLES).filter(rol => !String(cols._tipos.rol || '').includes(`'${rol}'`));
+  if (rolesFaltantes.length) {
+    const lista = Object.keys(ROLES).map(rol => `'${rol}'`).join(', ');
+    await ejecutar(`ALTER TABLE usuarios MODIFY COLUMN rol ENUM(${lista}) DEFAULT 'admin'`);
   }
 }
 
