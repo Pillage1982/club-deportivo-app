@@ -11,6 +11,7 @@ const personaModel = require('../models/personaModel');
 const cuotaModel   = require('../models/cuotaModel');
 const puntajeModel = require('../models/puntajeModel');
 const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
+const { calcularPuntosCuota, fechaPuntajeCuota, recalcularAsistenciasPersona } = require('../utils/puntajeCuotas');
 const { periodosCuotasTemporadaVigente, esPeriodoTemporadaVigente, esPagoAnualInicioCiclo } = require('../utils/estatutoGdcRules');
 
 const MIME_POR_EXTENSION = Object.fromEntries(
@@ -73,32 +74,6 @@ function vincularDeposito(depositoId, pagoId) {
     .catch(e => console.error('Error vinculando comprobante de depósito:', e));
 }
 
-function calcularPuntosCuota(mes, anio) {
-  const hoy     = new Date();
-  const mesHoy  = hoy.getMonth() + 1;
-  const anioHoy = hoy.getFullYear();
-
-  const anticipado = anioHoy < anio || (anioHoy === anio && mesHoy < mes);
-  const oportuno   = anioHoy === anio && mesHoy === mes;
-  const meses = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
-  if (anticipado) return { puntos: 20, detalle: `Cuota ${meses[mes]} ${anio} pagada anticipadamente` };
-  if (oportuno)   return { puntos: 10, detalle: `Cuota ${meses[mes]} ${anio} pagada oportunamente` };
-  return null; // fuera de plazo — sin puntaje
-}
-
-// Fecha (hora de Chile) con que se registra el puntaje de una cuota: la del pago,
-// pero nunca antes del 1 de octubre de la temporada de esa cuota. Así una cuota de
-// la temporada pagada por adelantado antes de la Misa a la Chilena (inicio de
-// temporada) suma en el ranking de su temporada y no queda fuera del corte.
-function fechaPuntajeCuota(cuota) {
-  const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Santiago' }).format(new Date());
-  const anioInicio = Number(cuota.mes) >= 10 ? Number(cuota.anio) : Number(cuota.anio) - 1;
-  const inicioTemporada = `${anioInicio}-10-01`;
-  return hoy > inicioTemporada ? hoy : inicioTemporada;
-}
-
 function procesarPuntajeCuota(persona_id, cuota_id) {
   cuotaModel.obtenerCuotaPorId(cuota_id, (err, cuota) => {
     if (err || !cuota) return;
@@ -109,12 +84,6 @@ function procesarPuntajeCuota(persona_id, cuota_id) {
       detalle: resultado.detalle, fecha: fechaPuntajeCuota(cuota)
     }).catch(e => console.error('Error puntaje cuota:', e));
   });
-}
-
-function recalcularAsistenciasPersona(personaId) {
-  return puntajeModel.eliminarPuntajesAsistenciasAusentes(personaId)
-    .then(() => puntajeModel.recalcularPuntajesAsistencia(personaId))
-    .catch(error => console.error('Error recalculando puntaje de asistencias:', error));
 }
 
 // Puntaje del pago anual (varias cuotas en un solo pago): si cubre las 10 cuotas

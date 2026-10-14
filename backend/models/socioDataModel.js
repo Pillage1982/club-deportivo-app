@@ -142,6 +142,7 @@ exports.obtenerHistorialPagos = (personaId, desde, callback) => {
        COALESCE(pa.fecha_precision, 'exacta') AS fecha_precision,
        pa.referencia_externa,
        pa.tipo_pago, pa.detalle,
+       (pa.comprobante_path IS NOT NULL) AS tiene_comprobante,
        GROUP_CONCAT(
          DISTINCT CONCAT(
            c.mes, '/', c.anio,
@@ -156,7 +157,7 @@ exports.obtenerHistorialPagos = (personaId, desde, callback) => {
      LEFT JOIN cuotas c ON c.id = pd.referencia_id
      WHERE pa.persona_id = ? AND ${CONDICION_PAGO_TEMPORADA}
      GROUP BY pa.id, pa.monto_total, pa.metodo, pa.fecha, pa.fecha_precision, pa.referencia_externa,
-              pa.tipo_pago, pa.detalle
+              pa.tipo_pago, pa.detalle, pa.comprobante_path
      ORDER BY pa.fecha DESC`,
     [personaId, desde, periodoDesde(desde)],
     callback

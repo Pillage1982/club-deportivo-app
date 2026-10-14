@@ -805,6 +805,10 @@
               <button type="button" id="btn_generar_temporada" class="btn btn-outline-success" onclick="generarCuotasTemporada()">
                 Generar cuotas de toda la temporada
               </button>
+              <button type="button" id="btn_aplicar_saldos" class="btn btn-outline-primary" onclick="aplicarSaldosAFavor()"
+                title="Aplica la parte de pagos de cuota que quedó a favor del integrante a sus cuotas pendientes más antiguas">
+                Aplicar saldos a favor
+              </button>
             </div>
 
             <div class="row g-2 mb-3">
@@ -904,6 +908,7 @@
                     <th>Total Cuotas</th>
                     <th>Total Pagado</th>
                     <th>Deuda Actual</th>
+                    <th>Historial</th>
                   </tr>
                 </thead>
                 <tbody id="tabla_finanzas"></tbody>
@@ -1522,6 +1527,55 @@
                 </tr>
               </thead>
               <tbody id="tabla_historial_puntaje"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Historial financiero de un integrante -->
+  <div class="modal fade" id="modal_historial_financiero" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title mb-0"><i class="bi bi-journal-text me-2"></i>Historial financiero — <span id="hf_nombre"></span></h5>
+            <small class="text-muted" id="hf_datos"></small>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+            <div>
+              <label for="hf_alcance" class="form-label mb-1">Mostrar</label>
+              <select id="hf_alcance" class="form-select" onchange="cargarHistorialFinanciero()">
+                <option value="temporada">Temporada vigente</option>
+                <option value="todo">Todo el historial</option>
+              </select>
+            </div>
+            <div class="btn-group ms-auto">
+              <button type="button" class="btn btn-outline-danger" onclick="exportarHistorialFinancieroPDF()"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+              <button type="button" class="btn btn-outline-success" onclick="exportarHistorialFinancieroExcel()"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+            </div>
+          </div>
+          <div class="row g-2 mb-3" id="hf_resumen"></div>
+          <h6 class="mt-2">Cuotas</h6>
+          <div class="table-responsive mb-3">
+            <table class="table table-sm table-bordered mb-0">
+              <thead class="table-dark">
+                <tr><th>Mes</th><th>Monto</th><th>Abonado</th><th>Saldo</th><th>Estado</th></tr>
+              </thead>
+              <tbody id="hf_cuotas"></tbody>
+            </table>
+          </div>
+          <h6>Pagos</h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0">
+              <thead class="table-dark">
+                <tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Tipo</th><th>Cubrió</th><th>Comprobante</th></tr>
+              </thead>
+              <tbody id="hf_pagos"></tbody>
             </table>
           </div>
         </div>

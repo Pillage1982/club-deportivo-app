@@ -493,8 +493,9 @@ function formatearFecha(fecha) {
 
   }
 
+  // Acepta 'YYYY-MM-DD', 'YYYY-MM-DDTHH:MM:SS' y 'YYYY-MM-DD HH:MM:SS' (DATETIME de MySQL)
   const fechaLimpia =
-    fecha.split('T')[0];
+    String(fecha).split(/[T ]/)[0];
 
   const partes =
     fechaLimpia.split('-');
