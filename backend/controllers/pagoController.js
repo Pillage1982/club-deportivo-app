@@ -3,8 +3,8 @@
 // MODELO PAGOS
 // =====================================
 
-const path         = require('path');
-const { rutaUpload } = require('../config/uploads');
+
+const { rutaUpload, enviarArchivoSubido } = require('../config/uploads');
 const fs           = require('fs');
 const pagoModel    = require('../models/pagoModel');
 const uploadComprobante = require('../middleware/uploadComprobante');
@@ -14,10 +14,6 @@ const puntajeModel = require('../models/puntajeModel');
 const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
 const { calcularPuntosCuota, fechaPuntajeCuota, recalcularAsistenciasPersona } = require('../utils/puntajeCuotas');
 const { periodosCuotasTemporadaVigente, esPeriodoTemporadaVigente, esPagoAnualInicioCiclo } = require('../utils/estatutoGdcRules');
-
-const MIME_POR_EXTENSION = Object.fromEntries(
-  Object.entries(uploadComprobante.extensionPorMime).map(([mime, ext]) => [ext, mime])
-);
 
 // Solo borra archivos subidos desde el panel (uploads/comprobantes). Si el pago usaba
 // un comprobante enviado por el socio (uploads/comprobantes_deposito), ese archivo
@@ -588,15 +584,5 @@ exports.descargarComprobante = (req, res) => {
 };
 
 function enviarArchivoComprobante(res, comprobantePath) {
-  const rutaArchivo = rutaUpload(comprobantePath);
-  const extension = path.extname(rutaArchivo).toLowerCase();
-  const mimeSeguro = MIME_POR_EXTENSION[extension] || 'application/octet-stream';
-
-  res.set('Content-Disposition', `attachment; filename="comprobante${extension}"`);
-  res.type(mimeSeguro);
-  res.sendFile(rutaArchivo, (sendErr) => {
-    if (sendErr && !res.headersSent) {
-      res.status(404).json({ mensaje: 'Comprobante no encontrado' });
-    }
-  });
+  enviarArchivoSubido(res, comprobantePath, 'comprobante');
 }

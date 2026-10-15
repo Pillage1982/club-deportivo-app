@@ -1,16 +1,12 @@
 // Controlador HTTP de ingresos de terceros: valida datos, administra comprobantes
 // y coordina el CRUD con ingresoModel (mismo patrón que gastoController).
-const path = require('path');
-const { rutaUpload } = require('../config/uploads');
+
+const { rutaUpload, enviarArchivoSubido } = require('../config/uploads');
 const fs = require('fs');
 const ingresoModel = require('../models/ingresoModel');
 const uploadComprobante = require('../middleware/uploadComprobante');
 
 const CATEGORIAS_INGRESO = ['Donación', 'Premio', 'Proyecto adjudicado', 'Otro'];
-
-const MIME_POR_EXTENSION = Object.fromEntries(
-  Object.entries(uploadComprobante.extensionPorMime).map(([mime, ext]) => [ext, mime])
-);
 
 function textoValido(valor, minimo = 3) {
   if (typeof valor !== 'string') return false;
@@ -145,16 +141,6 @@ exports.descargarComprobante = (req, res) => {
       return res.status(404).json({ mensaje: 'Este ingreso no tiene comprobante adjunto' });
     }
 
-    const rutaArchivo = rutaUpload(ingreso.comprobante_path);
-    const extension = path.extname(rutaArchivo).toLowerCase();
-    const mimeSeguro = MIME_POR_EXTENSION[extension] || 'application/octet-stream';
-
-    res.set('Content-Disposition', `attachment; filename="comprobante${extension}"`);
-    res.type(mimeSeguro);
-    res.sendFile(rutaArchivo, (sendErr) => {
-      if (sendErr && !res.headersSent) {
-        res.status(404).json({ mensaje: 'Comprobante no encontrado' });
-      }
-    });
+    enviarArchivoSubido(res, ingreso.comprobante_path, 'comprobante');
   });
 };
