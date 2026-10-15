@@ -574,7 +574,7 @@ function verComprobanteDeposito(id) {
 
 // Descarga con el token y abre el archivo en otra pestaña (mismo patrón que Ingresos).
 function abrirArchivoProtegido(url) {
-  fetch(url, { headers: getAuthHeaders() })
+  fetch(url, { headers: getAuthHeaders(), cache: 'no-store' })
     .then(async res => {
       if (!res.ok) {
         const data = await leerRespuestaJson(res);

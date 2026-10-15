@@ -228,7 +228,7 @@ function resolverJustificacion(accion) {
 }
 
 function verAdjuntoJustificacion(id) {
-  fetch(`${API_URL}/justificaciones/${id}/adjunto`, { headers: getAuthHeaders() })
+  fetch(`${API_URL}/justificaciones/${id}/adjunto`, { headers: getAuthHeaders(), cache: 'no-store' })
     .then(async res => {
       if (!res.ok) {
         const data = await leerRespuestaJson(res);
