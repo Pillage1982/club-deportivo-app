@@ -2,22 +2,14 @@
 // del Socio. Aprobar cambia la asistencia del evento a justificado/licencia_medica
 // (Art. 8.4) y recalcula el puntaje del integrante; rechazar solo deja constancia.
 // En ambos casos se avisa al socio por correo si tiene email.
-const fs = require('fs');
-const path = require('path');
-const { rutaUpload } = require('../config/uploads');
+
+const { enviarArchivoSubido } = require('../config/uploads');
 const justificacionModel = require('../models/justificacionModel');
 const puntajeModel = require('../models/puntajeModel');
 const emailService = require('../services/emailService');
 
 const ESTADOS_FILTRO = ['pendiente', 'aprobada', 'rechazada'];
 const ESTADOS_APLICABLES = ['justificado', 'licencia_medica'];
-
-const MIME_POR_EXTENSION = {
-  '.jpg': 'image/jpeg',
-  '.png': 'image/png',
-  '.webp': 'image/webp',
-  '.pdf': 'application/pdf'
-};
 
 function textoActividad(j) {
   return j.evento || j.referencia_otro || 'actividad';
@@ -137,16 +129,12 @@ exports.descargarAdjunto = async (req, res) => {
       return res.status(404).json({ mensaje: 'Esta justificación no tiene archivo adjunto' });
     }
 
-    const rutaArchivo = rutaUpload(justificacion.adjunto_path);
-    const extension = path.extname(rutaArchivo).toLowerCase();
-
-    if (!fs.existsSync(rutaArchivo)) {
-      return res.status(404).json({ mensaje: 'Archivo no encontrado en el servidor' });
-    }
-
-    res.set('Content-Disposition', `attachment; filename="justificativo-folio-${emailService.formatearFolio(justificacion.id)}${extension}"`);
-    res.type(MIME_POR_EXTENSION[extension] || 'application/octet-stream');
-    res.sendFile(rutaArchivo);
+    enviarArchivoSubido(
+      res,
+      justificacion.adjunto_path,
+      `justificativo-folio-${emailService.formatearFolio(justificacion.id)}`,
+      'Archivo no encontrado en el servidor'
+    );
   } catch (err) {
     console.error('Error descargando adjunto de justificación:', err);
     res.status(500).json({ mensaje: 'No se pudo descargar el archivo' });
