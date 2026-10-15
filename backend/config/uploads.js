@@ -46,13 +46,14 @@ function enviarArchivoSubido(res, rutaRelativa, nombreDescarga, mensajeNoEncontr
   fs.readFile(ruta, (err, contenido) => {
     if (err) {
       console.error(`[uploads] No se pudo leer ${ruta}: ${err.code || ''} ${err.message}`);
-      if (!res.headersSent) res.status(404).json({ mensaje: mensajeNoEncontrado });
+      if (!res.headersSent) res.set('Cache-Control', 'no-store, private').status(404).json({ mensaje: mensajeNoEncontrado });
       return;
     }
     const extension = path.extname(ruta).toLowerCase();
     // Content-Type explícito y Content-Disposition: attachment como defensa
     // adicional si el archivo se abre por navegación directa en vez de fetch()+blob().
     res.set('Content-Disposition', `attachment; filename="${nombreDescarga}${extension}"`);
+    res.set('Cache-Control', 'no-store, private');
     res.type(MIME_POR_EXTENSION[extension] || 'application/octet-stream');
     res.send(contenido);
   });
