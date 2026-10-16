@@ -29,7 +29,7 @@ Cliente activo: Gran Diablada Calameña (rama `cliente/calamena`).
 - **Pedir autorización antes de commit y push**
 
 ## Roles del panel
-`backend/config/roles.js`: cada rol hereda permisos de un rol base y puede o no eliminar (roleMiddleware bloquea DELETE). `admin`, `tesorero`, `entrenador` (base); `secretaria` = admin; `director1` = admin sin eliminar; `director2` = tesorero sin eliminar; `director3` = entrenador sin eliminar. El panel usa `rol_base` (obtenerRolActual) y oculta botones de borrar con `body.sin-eliminar`. Usuarios se crean por SQL con clave `gdc123` (cambio obligatorio en el primer ingreso).
+`backend/config/roles.js`: cada rol hereda permisos de un rol base y puede o no eliminar (roleMiddleware bloquea DELETE). `admin`, `tesorero`, `entrenador` (base); `secretaria` = admin; `director1` = admin sin eliminar; `director2` = tesorero sin eliminar; `director3` = entrenador sin eliminar; `coordinador` = entrenador sin eliminar. El panel usa `rol_base` (obtenerRolActual) y oculta botones de borrar con `body.sin-eliminar`. Usuarios se crean por SQL con clave `gdc123` (cambio obligatorio en el primer ingreso).
 
 ## Estados de socios
 - `activo` → participa y genera cuotas

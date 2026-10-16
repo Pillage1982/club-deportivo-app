@@ -9,7 +9,8 @@ const ROLES = Object.freeze({
   secretaria: { base: 'admin',      eliminar: true,  nombre: 'Secretaria' },
   director1:  { base: 'admin',      eliminar: false, nombre: 'Director 1' },
   director2:  { base: 'tesorero',   eliminar: false, nombre: 'Director 2' },
-  director3:  { base: 'entrenador', eliminar: false, nombre: 'Director 3' }
+  director3:  { base: 'entrenador', eliminar: false, nombre: 'Director 3' },
+  coordinador: { base: 'entrenador', eliminar: false, nombre: 'Coordinador' }
 });
 
 function rolBase(rol) {
