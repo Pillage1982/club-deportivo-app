@@ -11,6 +11,9 @@
   content="width=device-width, initial-scale=1.0">
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#050505">
+  <link rel="apple-touch-icon" href="img/icons/apple-touch-icon.png">
 
   <title>GDC.APP | Login</title>
 
@@ -143,5 +146,9 @@
   </p>
 
   <script src="js/login.js"></script>
+  <script>
+    // Registra el SW desde el login para que el navegador ofrezca "Instalar" antes de entrar.
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  </script>
 </body>
 </html>
