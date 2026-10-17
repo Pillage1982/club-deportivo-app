@@ -8,7 +8,7 @@ const roleMiddleware = require('../middleware/roleMiddleware');
 router.get(
   '/',
   authMiddleware,
-  roleMiddleware('admin', 'entrenador'),
+  roleMiddleware('admin', 'tesorero', 'entrenador'),
   controller.listar
 );
 

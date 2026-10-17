@@ -8,14 +8,14 @@ const roleMiddleware = require('../middleware/roleMiddleware');
 router.get(
   '/',
   authMiddleware,
-  roleMiddleware('admin', 'entrenador'),
+  roleMiddleware('admin', 'tesorero', 'entrenador'),
   controller.listar
 );
 
 router.post(
   '/',
   authMiddleware,
-  roleMiddleware('admin', 'entrenador'),
+  roleMiddleware('admin', 'tesorero', 'entrenador'),
   controller.registrar
 );
 

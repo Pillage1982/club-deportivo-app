@@ -419,13 +419,8 @@ function aplicarRolesFrontend() {
   }
 
   if (rol === 'tesorero') {
-  ocultarSelector('.nav-asistencias');
-  ocultarSelector('.nav-eventos');
-
-  ocultarElemento('modulo_asistencia');
+  // El tesorero toma asistencia: no se ocultan scanner, actividades ni asistencias
   ocultarElemento('modulo_personas');
-  ocultarElemento('eventos');
-  ocultarElemento('asistencias');
 
   document
     .querySelectorAll('#tabla_personas button')
