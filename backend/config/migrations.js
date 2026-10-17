@@ -376,6 +376,11 @@ async function asegurarCambioPasswordUsuarios() {
   if (!cols.has('debe_cambiar_password')) {
     await ejecutar('ALTER TABLE usuarios ADD COLUMN debe_cambiar_password TINYINT(1) NOT NULL DEFAULT 1');
   }
+  // Versión de sesión: va en el JWT (claim sv). "Reiniciar acceso" la sube y así
+  // invalida todos los tokens ya emitidos de ese usuario (duran 20 días).
+  if (!cols.has('sesion_version')) {
+    await ejecutar('ALTER TABLE usuarios ADD COLUMN sesion_version INT NOT NULL DEFAULT 0');
+  }
   // Roles del panel (ver config/roles.js). MODIFY solo si falta alguno, para no
   // reconstruir la tabla en cada arranque.
   const rolesFaltantes = Object.keys(ROLES).filter(rol => !String(cols._tipos.rol || '').includes(`'${rol}'`));

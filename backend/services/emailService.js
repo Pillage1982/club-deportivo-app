@@ -1,4 +1,7 @@
 // Servicio de correo: crea el transporte y notifica ausencias sin bloquear el cierre de una actividad.
+const cuotaIntegracion = require('../config/cuotaIntegracion');
+const cuentaDeposito = require('../config/cuentaDeposito');
+
 let nodemailer = null;
 
 try {
@@ -540,6 +543,29 @@ function enviarSolicitudIngreso(s) {
   }).then(() => true);
 }
 
+// Cuota de integración y cuenta para depositarla (correo de bienvenida).
+function bloqueCuotaIntegracion() {
+  const cuenta = cuentaDeposito;
+  const datosCuenta = cuenta.numero
+    ? `
+        <ul style="margin: 8px 0 0;">
+          ${[
+            ['Titular', cuenta.titular], ['RUT', cuenta.rut], ['Banco', cuenta.banco],
+            ['Tipo de cuenta', cuenta.tipo_cuenta], ['N° de cuenta', cuenta.numero], ['Correo', cuenta.email]
+          ].filter(([, v]) => v).map(([k, v]) => `<li><strong>${k}:</strong> ${escaparHtml(v)}</li>`).join('')}
+        </ul>
+        <p style="margin: 8px 0 0;">En el comentario de la transferencia escribe tu nombre, RUT y "cuota de integración".
+        Después envía el comprobante desde el Portal → Documentos → "Enviar comprobante de depósito".</p>`
+    : '<p style="margin: 8px 0 0;">Consulta con tesorería los datos para depositar.</p>';
+
+  return `
+      <div style="background: #fff8e1; border-left: 4px solid #f9a825; padding: 12px 16px; margin: 20px 0;">
+        <p style="margin: 0;"><strong>Cuota de integración: $${Number(cuotaIntegracion.monto).toLocaleString('es-CL')}</strong> (pago único)</p>
+        <p style="margin: 8px 0 0;">Todo nuevo integrante paga esta cuota una sola vez, además de las cuotas mensuales de la temporada.</p>
+        ${datosCuenta}
+      </div>`;
+}
+
 // Aviso al postulante cuando la directiva acepta o rechaza su solicitud. Si es
 // aceptada, le explica cómo entrar por primera vez al Portal del Integrante.
 function notificarResolucionSolicitudIngreso({ solicitud, aprobada, observacion }) {
@@ -557,6 +583,7 @@ function notificarResolucionSolicitudIngreso({ solicitud, aprobada, observacion 
         <li><strong>Clave:</strong> tu RUT sin puntos ni guion (ej. 12345678K)</li>
       </ul>
       <p>En ese primer ingreso crearás tu contraseña y completarás los datos que faltan.</p>
+      ${bloqueCuotaIntegracion()}
       <p style="margin: 24px 0;">
         <a href="${urlPortal}" style="background: #8b1a1a; color: #fff; padding: 12px 22px; text-decoration: none; border-radius: 4px; display: inline-block;">
           Ir al Portal del Integrante

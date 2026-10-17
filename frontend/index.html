@@ -52,6 +52,10 @@
       </span>
       <div class="d-flex align-items-center gap-2">
         <span class="text-white small d-none d-sm-inline" id="usuario_logeado"></span>
+        <button type="button" class="btn btn-outline-light btn-sm d-none" id="btn_soporte_usuarios" onclick="abrirUsuariosSoporte()" title="Usuarios del panel">
+          <i class="bi bi-person-gear"></i>
+          <span class="d-none d-md-inline"> Usuarios</span>
+        </button>
         <span id="badge_offline" class="badge bg-warning text-dark d-none" title="Asistencias pendientes de sincronizar" style="cursor:pointer" onclick="sincronizarManual()">
           <i class="bi bi-wifi-off"></i> <span>0</span>
         </span>
@@ -627,6 +631,7 @@
               <select id="filtro_pago_tipo" class="form-select">
                 <option value="">Todos</option>
                 <option value="cuota">Cuota mensual</option>
+                <option value="integracion">Cuota de integración</option>
                 <option value="traje">Traje</option>
                 <option value="chaqueta">Chaqueta institucional</option>
                 <option value="otro">Otro</option>
@@ -1330,6 +1335,7 @@
                   <label for="pago_tipo" class="form-label">Tipo de pago</label>
                   <select id="pago_tipo" class="form-select" onchange="actualizarTipoPago()">
                     <option value="cuota">Cuota mensual</option>
+                    <option value="integracion">Cuota de integración</option>
                     <option value="traje">Traje</option>
                     <option value="chaqueta">Chaqueta institucional</option>
                     <option value="otro">Otro</option>
@@ -1713,6 +1719,34 @@
     </div>
   </div>
 
+  <!-- Modal: Usuarios del panel (solo cuenta de soporte) -->
+  <div class="modal fade" id="modal_usuarios_soporte" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-person-gear me-2"></i>Usuarios del panel</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted">
+            <strong>Reiniciar acceso</strong> cierra todas las sesiones abiertas del usuario, borra su email
+            y le asigna una clave temporal que deberá cambiar al entrar. Úsalo cuando una cuenta quedó
+            en manos de quien no corresponde.
+          </p>
+          <div id="usuarios_soporte_clave"></div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr><th>Usuario</th><th>Rol</th><th>Email</th><th>Estado</th><th></th></tr>
+              </thead>
+              <tbody id="tabla_usuarios_soporte"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="app-footer text-center py-3 mt-4">
     <small>Diseño de Mario Riquelme</small>
   </footer>
@@ -1729,6 +1763,7 @@
   <script src="js/accesoSocios.js"></script>
   <script src="js/justificaciones.js"></script>
   <script src="js/solicitudesIngreso.js"></script>
+  <script src="js/usuariosSoporte.js"></script>
   <script src="js/multas.js"></script>
   <script src="js/puntaje.js"></script>
   <script src="js/formaciones.js?v=30"></script>
