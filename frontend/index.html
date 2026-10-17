@@ -149,7 +149,7 @@
               <table class="table table-sm mb-0">
                 <tbody>
                   <tr>
-                    <td>Pagos de socios <small class="text-muted">(cuotas y aportes)</small></td>
+                    <td>Pagos de integrantes <small class="text-muted">(cuotas y aportes)</small></td>
                     <td class="text-end" id="balance_pagos_socios">$0</td>
                   </tr>
                   <tr>
@@ -384,7 +384,7 @@
         </li>
         <li class="nav-item" role="presentation" id="nav_subtab_acceso_socios">
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_acceso_socios" role="tab">
-            <i class="bi bi-shield-lock"></i> Acceso Socios
+            <i class="bi bi-shield-lock"></i> Acceso Integrantes
           </a>
         </li>
       </ul>
@@ -529,10 +529,10 @@
         </div>
 
         <!-- Sin asignar (asistencias offline sin evento) -->
-        <!-- Justificaciones: cartas enviadas desde el Portal del Socio (Documentos) -->
+        <!-- Justificaciones: cartas enviadas desde el Portal del Integrante (Documentos) -->
         <div class="tab-pane fade" id="subtab_justificaciones" role="tabpanel">
           <div class="alert alert-info small">
-            Cartas de justificación enviadas por los integrantes desde el Portal del Socio
+            Cartas de justificación enviadas por los integrantes desde el Portal del Integrante
             (solo se reciben hasta el cierre de asistencia, Art. 8.7). Al <strong>aprobar</strong>,
             la asistencia de esa actividad queda como justificada o licencia médica y se recalcula el puntaje. El integrante recibe un aviso por correo.
           </div>
@@ -581,6 +581,8 @@
                   <th>1ª opción</th>
                   <th>2ª opción</th>
                   <th>Contacto</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="tabla_postulaciones"></tbody>
@@ -665,7 +667,7 @@
         <!-- Depósitos: comprobantes que los socios envían desde el Portal -->
         <div class="tab-pane fade" id="subtab_depositos" role="tabpanel">
           <p class="text-muted small mb-2">
-            Comprobantes que los socios envían desde el Portal del Socio. Revisa la cartola y usa <strong>Registrar pago</strong>:
+            Comprobantes que los integrantes envían desde el Portal del Integrante. Revisa la cartola y usa <strong>Registrar pago</strong>:
             el comprobante queda adjunto al pago y el depósito pasa a <em>Registrado</em>.
           </p>
           <div class="row g-2 mb-3">
@@ -967,7 +969,7 @@
           <div class="alert alert-info small">
             Dinero que entra a la agrupación <strong>sin venir de la cuota de un integrante</strong>:
             donaciones, premios ganados y fondos de proyectos adjudicados.
-            No afecta la deuda ni el puntaje de ningún socio.
+            No afecta la deuda ni el puntaje de ningún integrante.
           </div>
           <div class="row g-2 mb-3">
             <div class="col-md-4">
@@ -1027,7 +1029,7 @@
           <div class="alert alert-info small">
             Solicitudes de ingreso enviadas desde el botón <strong>"Súmate a la promesa"</strong> del sitio
             gdcayquina.cl (también llegan por correo a presidencia, secretaría y caporales).
-            Al <strong>aceptar</strong>, la persona queda como integrante activo: entra al Portal del Socio con su RUT
+            Al <strong>aceptar</strong>, la persona queda como integrante activo: entra al Portal del Integrante con su RUT
             como clave, crea su contraseña y completa el resto de sus datos. Recibe un aviso por correo.
           </div>
           <div class="row g-2 mb-3 align-items-end">
@@ -1070,7 +1072,7 @@
           <div class="alert alert-info d-flex align-items-start gap-2">
             <i class="bi bi-info-circle-fill fs-4"></i>
             <div>
-              <strong>Portal del Socio.</strong> Cada integrante activo entra desde su celular con su
+              <strong>Portal del Integrante.</strong> Cada integrante activo entra desde su celular con su
               <strong>RUT como usuario y como clave</strong> (la clave sin puntos ni guion, ej. 12345678K).
               En ese primer ingreso el portal le pide crear su contraseña personal
               (mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo).
@@ -1085,7 +1087,7 @@
               <div>
                 <h5 class="card-title mb-1">Actualización de datos</h5>
                 <p class="card-text text-muted mb-0">
-                  Vuelve a exigir a todos los socios que revisen y actualicen sus datos en su próximo ingreso
+                  Vuelve a exigir a todos los integrantes que revisen y actualicen sus datos en su próximo ingreso
                   (por ejemplo, al comenzar una temporada).
                 </p>
               </div>
@@ -1371,7 +1373,7 @@
                 <input type="file" id="pago_comprobante" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
               </div>
               <div class="mb-3 d-none" id="pago_deposito_grupo">
-                <label for="pago_deposito_id" class="form-label">O usar un comprobante enviado por el socio desde el Portal</label>
+                <label for="pago_deposito_id" class="form-label">O usar un comprobante enviado por el integrante desde el Portal</label>
                 <div class="input-group">
                   <select id="pago_deposito_id" class="form-select" onchange="actualizarDepositoPago()">
                     <option value="">No usar</option>
@@ -1437,7 +1439,7 @@
           <div id="modulo_ingresos">
             <div class="card p-4 shadow-sm border-0">
               <p class="small text-muted mb-3">
-                Para donaciones, premios o proyectos adjudicados. Los pagos de cuotas de socios se registran en <strong>Pago</strong>.
+                Para donaciones, premios o proyectos adjudicados. Los pagos de cuotas de integrantes se registran en <strong>Pago</strong>.
               </p>
               <div class="row">
                 <div class="col-md-6 mb-3">
@@ -1593,7 +1595,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <p class="small text-muted mb-2">Comprobantes enviados por el socio desde el Portal, aún sin registrar:</p>
+          <p class="small text-muted mb-2">Comprobantes enviados por el integrante desde el Portal, aún sin registrar:</p>
           <div id="lista_depositos_adjuntar" class="list-group mb-3"></div>
           <button type="button" class="btn btn-outline-secondary w-100" onclick="subirArchivoComprobantePago()">
             <i class="bi bi-upload me-1"></i> Subir otro archivo
@@ -1637,6 +1639,37 @@
           </button>
           <button type="button" class="btn btn-success" id="btn_aprobar_justificacion" onclick="resolverJustificacion('aprobar')">
             <i class="bi bi-check-circle me-1"></i>Aprobar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Revisar postulación a bloques -->
+  <div class="modal fade" id="modal_revisar_postulacion" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-grid-3x3-gap me-2"></i>Postulación folio <span id="revisar_post_folio"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="revisar_post_detalle" class="mb-3"></div>
+          <div id="revisar_post_acciones">
+            <label for="revisar_post_opcion" class="form-label">Bloque que se asigna al aceptar</label>
+            <select id="revisar_post_opcion" class="form-select mb-2"></select>
+            <label for="revisar_post_observacion" class="form-label">Observación <span class="text-muted">(obligatoria si se rechaza)</span></label>
+            <input type="text" id="revisar_post_observacion" class="form-control" maxlength="300">
+          </div>
+        </div>
+        <div class="modal-footer" id="revisar_post_footer">
+          <button type="button" class="btn btn-outline-danger" id="btn_rechazar_postulacion" onclick="resolverPostulacion('rechazar')">
+            <i class="bi bi-x-circle me-1"></i>Rechazar
+          </button>
+          <button type="button" class="btn btn-success" id="btn_aceptar_postulacion" onclick="resolverPostulacion('aceptar')">
+            <i class="bi bi-check-circle me-1"></i>Aceptar
           </button>
         </div>
       </div>

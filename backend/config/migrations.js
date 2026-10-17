@@ -328,7 +328,7 @@ async function asegurarTablaSociosAuth() {
   `);
 }
 
-// Actualización de datos obligatoria en el Portal del Socio (después de crear el
+// Actualización de datos obligatoria en el Portal del Integrante (después de crear el
 // PIN): mientras datos_actualizados=0 el socio no ve su página personal. El admin
 // puede volver a exigirla (ej. cada temporada) poniendo el flag en 0.
 async function asegurarDatosActualizadosSocios() {
@@ -368,7 +368,7 @@ async function asegurarRecuperacionClave() {
 }
 
 // Cambio de clave obligatorio en el primer ingreso del panel admin (mismo criterio
-// que el PIN del Portal del Socio). DEFAULT 1: al crear la columna, todos los
+// que el PIN del Portal del Integrante). DEFAULT 1: al crear la columna, todos los
 // usuarios existentes quedan obligados a cambiar su clave en el próximo login, y
 // todo usuario nuevo creado por SQL (clave genérica de la directiva) también.
 async function asegurarCambioPasswordUsuarios() {
@@ -466,11 +466,33 @@ async function reconstruirVistaRankingPuntaje() {
   `);
 }
 
-// Pestaña "Documentos" del Portal del Socio: cartas que antes se entregaban en
+// Pestaña "Documentos" del Portal del Integrante: cartas que antes se entregaban en
 // papel. id = Nº de folio. Una justificación aprobada cambia la asistencia del
 // evento a justificado/licencia_medica (Art. 8.4); evento_id NULL = "Otro"
 // (actividad que no está en el sistema). Solo se reciben hasta el cierre de
 // asistencia (Art. 8.7), lo valida el controller, no la tabla.
+// Revisión de postulaciones a bloques por la directiva: aceptar asigna la 1ª o 2ª
+// opción como bloque del integrante; rechazar deja constancia con el motivo.
+// Mismos estados que las justificaciones. DEFAULT 'pendiente' para las ya enviadas.
+async function asegurarRevisionPostulaciones() {
+  const cols = await columnasExistentes('postulaciones_bloque');
+  if (!cols.has('estado')) {
+    await ejecutar("ALTER TABLE postulaciones_bloque ADD COLUMN estado ENUM('pendiente','aprobada','rechazada') NOT NULL DEFAULT 'pendiente'");
+  }
+  if (!cols.has('bloque_asignado')) {
+    await ejecutar('ALTER TABLE postulaciones_bloque ADD COLUMN bloque_asignado VARCHAR(100) NULL');
+  }
+  if (!cols.has('observacion_directiva')) {
+    await ejecutar('ALTER TABLE postulaciones_bloque ADD COLUMN observacion_directiva VARCHAR(300) NULL');
+  }
+  if (!cols.has('revisado_por')) {
+    await ejecutar('ALTER TABLE postulaciones_bloque ADD COLUMN revisado_por BIGINT NULL');
+  }
+  if (!cols.has('revisado_en')) {
+    await ejecutar('ALTER TABLE postulaciones_bloque ADD COLUMN revisado_en DATETIME NULL');
+  }
+}
+
 async function asegurarTablasDocumentosSocio() {
   await ejecutar(`
     CREATE TABLE IF NOT EXISTS justificaciones (
@@ -595,6 +617,7 @@ async function ejecutarMigraciones() {
   await asegurarRecuperacionClave();
   await asegurarCamposPagos();
   await asegurarTablasDocumentosSocio();
+  await asegurarRevisionPostulaciones();
   await asegurarTablaSolicitudesIngreso();
   await consolidarTiposCuota();
   await reconstruirVistaRankingPuntaje();

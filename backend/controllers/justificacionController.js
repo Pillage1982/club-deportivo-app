@@ -44,6 +44,60 @@ exports.listarPostulaciones = (req, res) => {
     });
 };
 
+function avisarPostulacion(id, extra) {
+  justificacionModel.obtenerPostulacion(id)
+    .then(postulacion => postulacion && emailService.notificarResolucionPostulacion({ postulacion, ...extra }))
+    .catch(err => console.error('[Email] Error avisando resolución de postulación:', err));
+}
+
+// Aceptar una postulación a bloques: la directiva elige la 1ª o 2ª opción y queda
+// como bloque del integrante en su ficha.
+exports.aceptarPostulacion = async (req, res) => {
+  const id = Number(req.params.id);
+  const opcion = Number(req.body?.opcion);
+  const observacion = String(req.body?.observacion || '').trim().substring(0, 300) || null;
+
+  if (![1, 2].includes(opcion)) {
+    return res.status(400).json({ mensaje: 'Indica qué opción se asigna (1ª o 2ª)' });
+  }
+
+  try {
+    const r = await justificacionModel.aceptarPostulacion({ id, opcion, observacion, usuarioId: req.usuario.id });
+
+    if (r.resultado === 'no_encontrada') return res.status(404).json({ mensaje: 'Postulación no encontrada' });
+    if (r.resultado === 'ya_revisada') return res.status(409).json({ mensaje: 'Esta postulación ya fue revisada' });
+    if (r.resultado === 'sin_opcion') return res.status(400).json({ mensaje: 'La postulación no tiene 2ª opción' });
+
+    avisarPostulacion(id, { aprobada: true, observacion });
+    res.json({ mensaje: `Postulación aceptada. El integrante quedó en el bloque ${r.bloque}.` });
+  } catch (err) {
+    console.error('Error aceptando postulación:', err);
+    res.status(500).json({ mensaje: 'No se pudo aceptar la postulación' });
+  }
+};
+
+exports.rechazarPostulacion = async (req, res) => {
+  const id = Number(req.params.id);
+  const observacion = String(req.body?.observacion || '').trim().substring(0, 300) || null;
+
+  if (!observacion) {
+    return res.status(400).json({ mensaje: 'Indica el motivo del rechazo (se le informa al integrante)' });
+  }
+
+  try {
+    const result = await justificacionModel.rechazarPostulacion({ id, observacion, usuarioId: req.usuario.id });
+    if (!result.affectedRows) {
+      return res.status(409).json({ mensaje: 'La postulación no existe o ya fue revisada' });
+    }
+
+    avisarPostulacion(id, { aprobada: false, observacion });
+    res.json({ mensaje: 'Postulación rechazada' });
+  } catch (err) {
+    console.error('Error rechazando postulación:', err);
+    res.status(500).json({ mensaje: 'No se pudo rechazar la postulación' });
+  }
+};
+
 exports.aprobar = async (req, res) => {
   const id = Number(req.params.id);
   const estadoAplicado = req.body?.estado_aplicado;

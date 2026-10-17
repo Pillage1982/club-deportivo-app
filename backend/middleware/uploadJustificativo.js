@@ -1,4 +1,4 @@
-// Adjuntos que envían los socios desde el Portal del Socio: respaldo de las cartas
+// Adjuntos que envían los socios desde el Portal del Integrante: respaldo de las cartas
 // de justificación (licencia médica, certificado...) y comprobantes de depósito.
 // Mismas reglas que los comprobantes de gastos (tipos, 5MB, extensión según
 // mimetype, firma binaria): se reutilizan de uploadComprobante para no mantener
@@ -13,7 +13,7 @@ let multer = null;
 try {
   multer = require('multer');
 } catch (e) {
-  console.warn('[Portal del Socio] multer no disponible. Ejecute npm install en el servidor.');
+  console.warn('[Portal del Integrante] multer no disponible. Ejecute npm install en el servidor.');
 }
 
 const { extensionPorMime, verificarFirmaArchivo } = uploadComprobante;

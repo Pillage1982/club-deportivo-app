@@ -11,6 +11,8 @@ router.use(authMiddleware, roleMiddleware('admin', 'entrenador'));
 
 router.get('/', controller.listar);
 router.get('/postulaciones', controller.listarPostulaciones);
+router.post('/postulaciones/:id/aceptar', controller.aceptarPostulacion);
+router.post('/postulaciones/:id/rechazar', controller.rechazarPostulacion);
 router.get('/:id/adjunto', controller.descargarAdjunto);
 router.post('/:id/aprobar', controller.aprobar);
 router.post('/:id/rechazar', controller.rechazar);

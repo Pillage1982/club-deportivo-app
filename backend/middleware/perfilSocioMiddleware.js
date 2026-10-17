@@ -1,4 +1,4 @@
-// Primer ingreso del Portal del Socio en el servidor (no solo en el frontend):
+// Primer ingreso del Portal del Integrante en el servidor (no solo en el frontend):
 // mientras el socio no cree su contraseña y no complete "Actualizar datos", la API no
 // entrega su ficha, finanzas, asistencia ni puntaje. Va después de
 // authSocioMiddleware (necesita req.socio). Responde 403 con `codigo` para que

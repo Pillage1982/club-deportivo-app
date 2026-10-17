@@ -1,4 +1,4 @@
-// Datos propios del Portal del Socio: ficha, finanzas, asistencia y puntaje (solo
+// Datos propios del Portal del Integrante: ficha, finanzas, asistencia y puntaje (solo
 // lectura), "Actualizar datos" (lo único que el socio puede editar) y las cartas
 // de la pestaña "Documentos" (justificación, postulación a bloques). Montado
 // bajo /socio-auth en server.js (no /socio: esa ruta la sirve el frontend

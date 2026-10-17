@@ -1,4 +1,4 @@
-// Login del Portal del Socio: RUT + clave contra /socio-auth/login (endpoint público,
+// Login del Portal del Integrante: RUT + clave contra /socio-auth/login (endpoint público,
 // rate-limited en el servidor). La clave es el RUT sin puntos ni guion hasta que el
 // socio crea su contraseña; si aún no la crea, se le envía a cambiar-pin.html.
 

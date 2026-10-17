@@ -43,7 +43,7 @@ async function resolverComprobanteDeposito(req, personaId) {
   if (req.file || !Number.isInteger(depositoId) || depositoId <= 0) return null;
 
   const deposito = await comprobanteDepositoModel.obtenerPorId(depositoId);
-  if (!deposito) throw errorHttp(400, 'Comprobante del socio no encontrado');
+  if (!deposito) throw errorHttp(400, 'Comprobante del integrante no encontrado');
   if (Number(deposito.persona_id) !== Number(personaId)) {
     throw errorHttp(400, 'El comprobante elegido pertenece a otro integrante');
   }
@@ -554,13 +554,13 @@ exports.adjuntarComprobante = (req, res) => {
 exports.listarDepositos = (req, res) => {
   comprobanteDepositoModel.listarPanel()
     .then(filas => res.json(filas))
-    .catch(error => responderError(res, error, 'No se pudieron obtener los comprobantes de los socios'));
+    .catch(error => responderError(res, error, 'No se pudieron obtener los comprobantes de los integrantes'));
 };
 
 exports.listarDepositosPendientesPersona = (req, res) => {
   comprobanteDepositoModel.listarPendientesPersona(Number(req.params.personaId))
     .then(filas => res.json(filas))
-    .catch(error => responderError(res, error, 'No se pudieron obtener los comprobantes del socio'));
+    .catch(error => responderError(res, error, 'No se pudieron obtener los comprobantes del integrante'));
 };
 
 exports.descargarDeposito = (req, res) => {

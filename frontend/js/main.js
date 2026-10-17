@@ -107,7 +107,7 @@ window.onload = () => {
     tabFormaciones.addEventListener('shown.bs.tab', () => inicializarFormaciones());
   }
 
-  // Cartas de justificación del Portal del Socio
+  // Cartas de justificación del Portal del Integrante
   const tabJustificaciones = document.querySelector('[href="#subtab_justificaciones"]');
   if (tabJustificaciones) {
     tabJustificaciones.addEventListener('shown.bs.tab', () => inicializarJustificaciones());

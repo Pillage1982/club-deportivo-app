@@ -1,4 +1,4 @@
-// Portal del Socio → Documentos: cartas de justificación de inasistencia y de
+// Portal del Integrante → Documentos: cartas de justificación de inasistencia y de
 // postulación a bloques con el mismo formato que las cartas en papel de la
 // agrupación. Nombre, RUT, celular y email se autocompletan (el servidor los toma
 // de la BD, no del formulario); la vista previa muestra la carta tal como llega
@@ -137,8 +137,11 @@ function renderizarHistorialDocumentos() {
               ${escaparHtml(dato.opcion_1)}${dato.opcion_2 ? ` / ${escaparHtml(dato.opcion_2)}` : ''}
               · enviada ${formatearFecha(dato.creado_en)}
             </small>
+            ${dato.observacion_directiva ? `<small class="d-block fst-italic">Directiva: ${escaparHtml(dato.observacion_directiva)}</small>` : ''}
           </div>
-          <span class="badge bg-secondary">Enviada</span>
+          ${dato.estado === 'aprobada'
+            ? `<span class="badge bg-success">Aceptada · ${escaparHtml(dato.bloque_asignado || '')}</span>`
+            : badgeEstadoCarta(dato.estado || 'pendiente')}
         </div>
       `;
     }

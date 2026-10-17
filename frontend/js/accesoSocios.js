@@ -1,4 +1,4 @@
-// Panel admin "Acceso Socios": seguimiento del login del Portal del Socio.
+// Panel admin "Acceso Socios": seguimiento del login del Portal del Integrante.
 // No hay clave que generar: todo integrante activo entra la primera vez con su RUT
 // como usuario y como clave (sin puntos ni guion) y el portal le exige crear su
 // contraseña, y luego debe actualizar sus datos (obligatorio). Desde aquí
@@ -92,7 +92,7 @@ function renderizarTablaAccesoSocios(personas) {
 // =====================================
 function restablecerAccesoSocio(personaId) {
   const confirmar = confirm(
-    'La contraseña actual del socio dejará de servir. Su clave volverá a ser su RUT sin puntos ni guion ' +
+    'La contraseña actual del integrante dejará de servir. Su clave volverá a ser su RUT sin puntos ni guion ' +
     'y al entrar deberá crear una contraseña nueva.\n\n¿Continuar?'
   );
   if (!confirmar) return;
@@ -118,8 +118,8 @@ function restablecerAccesoSocio(personaId) {
 // =====================================
 function solicitarActualizacionDatos(personaId) {
   const confirmar = confirm(personaId
-    ? 'En su próximo ingreso, el socio deberá revisar y actualizar sus datos antes de ver su página personal.\n\n¿Continuar?'
-    : 'Todos los socios que ya actualizaron sus datos deberán hacerlo de nuevo en su próximo ingreso.\n\n¿Continuar?');
+    ? 'En su próximo ingreso, el integrante deberá revisar y actualizar sus datos antes de ver su página personal.\n\n¿Continuar?'
+    : 'Todos los integrantes que ya actualizaron sus datos deberán hacerlo de nuevo en su próximo ingreso.\n\n¿Continuar?');
   if (!confirmar) return;
 
   const url = personaId
@@ -152,7 +152,7 @@ function construirLinkWhatsapp(persona) {
   const nombre = `${persona.nombres || ''} ${persona.apellido_paterno || ''}`.trim();
   const rutLimpio = String(persona.rut || '').replace(/[.\-]/g, '').toUpperCase();
   const texto = encodeURIComponent(
-    `Hola ${nombre}, ya puedes entrar al Portal del Socio:\n` +
+    `Hola ${nombre}, ya puedes entrar al Portal del Integrante:\n` +
     `${window.location.origin}/socio/login.html\n\n` +
     `Usuario: tu RUT (${persona.rut})\n` +
     `Clave: tu RUT sin puntos ni guion (${rutLimpio})\n\n` +

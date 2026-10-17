@@ -159,7 +159,7 @@ function enviarEnlaceRecuperacion({ destinatario, nombre, enlace, esSocio, minut
     return Promise.resolve(false);
   }
 
-  const queCambia = esSocio ? 'tu contraseña del Portal del Socio' : 'tu contraseña del panel de la directiva';
+  const queCambia = esSocio ? 'tu contraseña del Portal del Integrante' : 'tu contraseña del panel de la directiva';
   const cuerpo = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">Gran Diablada Calameña</h2>
@@ -235,7 +235,7 @@ function membreteCarta(folio, fecha) {
 }
 
 function constanciaEnvio(fecha) {
-  return `Enviada electrónicamente desde el Portal del Socio con la sesión del titular (${escaparHtml(fecha)}).`;
+  return `Enviada electrónicamente desde el Portal del Integrante con la sesión del titular (${escaparHtml(fecha)}).`;
 }
 
 function adjuntoLogo() {
@@ -431,7 +431,7 @@ function notificarResolucionJustificacion({ persona, folio, aprobada, estadoApli
       <p>Tu carta de justificación folio <strong>${formatearFolio(folio)}</strong>
         (${escaparHtml(actividad)}) fue ${resultado}.</p>
       ${observacion ? `<p>Observación de la directiva: <em>${escaparHtml(observacion)}</em></p>` : ''}
-      <p>Puedes revisarla en el Portal del Socio → Documentos.</p>
+      <p>Puedes revisarla en el Portal del Integrante → Documentos.</p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
       <p style="color: #888; font-size: 12px;">Este es un mensaje automático. No respondas a este correo.</p>
     </div>
@@ -440,6 +440,36 @@ function notificarResolucionJustificacion({ persona, folio, aprobada, estadoApli
   return enviarCorreo({
     destinatario: persona.email,
     asunto: `Justificación folio ${formatearFolio(folio)}: ${aprobada ? 'aprobada' : 'rechazada'}`,
+    cuerpo
+  }).then(() => true);
+}
+
+// Aviso al integrante cuando la directiva acepta o rechaza su postulación a bloques.
+// Usa el email que puso en la carta y, si no, el de su ficha.
+function notificarResolucionPostulacion({ postulacion, aprobada, observacion }) {
+  const destinatario = postulacion.email || postulacion.email_persona;
+  if (!emailConfigurado() || !destinatario) return Promise.resolve(false);
+
+  const nombre = [postulacion.nombres, postulacion.apellido_paterno].join(' ').trim();
+  const resultado = aprobada
+    ? `<strong style="color: #2e7d32;">ACEPTADA</strong>: desde ahora tu bloque es <strong>${escaparHtml(postulacion.bloque_asignado)}</strong>`
+    : '<strong style="color: #c0392b;">RECHAZADA</strong>';
+
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">Gran Diablada Calameña</h2>
+      <p>Hola <strong>${escaparHtml(nombre)}</strong>,</p>
+      <p>Tu postulación a bloques folio <strong>${formatearFolio(postulacion.id)}</strong> fue ${resultado}.</p>
+      ${observacion ? `<p>Observación de la directiva: <em>${escaparHtml(observacion)}</em></p>` : ''}
+      <p>Puedes revisarla en el Portal del Integrante → Documentos.</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="color: #888; font-size: 12px;">Este es un mensaje automático. No respondas a este correo.</p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    destinatario,
+    asunto: `Postulación a bloques folio ${formatearFolio(postulacion.id)}: ${aprobada ? 'aceptada' : 'rechazada'}`,
     cuerpo
   }).then(() => true);
 }
@@ -495,7 +525,7 @@ function enviarSolicitudIngreso(s) {
       <p style="color: #888; font-size: 12px; margin: 0;">
         Revisar y aceptar o rechazar en el panel de la directiva → Tablas → Solicitudes
         (folio ${formatearFolio(s.id)}). Al aceptarla, el postulante queda como integrante
-        y completa el resto de sus datos en su primer ingreso al Portal del Socio.
+        y completa el resto de sus datos en su primer ingreso al Portal del Integrante.
         Responder este correo le escribe directamente al postulante.
       </p>
     </div>
@@ -511,7 +541,7 @@ function enviarSolicitudIngreso(s) {
 }
 
 // Aviso al postulante cuando la directiva acepta o rechaza su solicitud. Si es
-// aceptada, le explica cómo entrar por primera vez al Portal del Socio.
+// aceptada, le explica cómo entrar por primera vez al Portal del Integrante.
 function notificarResolucionSolicitudIngreso({ solicitud, aprobada, observacion }) {
   if (!emailConfigurado() || !solicitud.email) return Promise.resolve(false);
 
@@ -521,7 +551,7 @@ function notificarResolucionSolicitudIngreso({ solicitud, aprobada, observacion 
   const detalle = aprobada
     ? `
       <p>¡Bienvenido/a a la promesa! Tu solicitud fue <strong style="color: #2e7d32;">aceptada</strong>.</p>
-      <p>Para terminar tu inscripción, entra al Portal del Socio:</p>
+      <p>Para terminar tu inscripción, entra al Portal del Integrante:</p>
       <ul>
         <li><strong>RUT:</strong> tu RUT</li>
         <li><strong>Clave:</strong> tu RUT sin puntos ni guion (ej. 12345678K)</li>
@@ -529,7 +559,7 @@ function notificarResolucionSolicitudIngreso({ solicitud, aprobada, observacion 
       <p>En ese primer ingreso crearás tu contraseña y completarás los datos que faltan.</p>
       <p style="margin: 24px 0;">
         <a href="${urlPortal}" style="background: #8b1a1a; color: #fff; padding: 12px 22px; text-decoration: none; border-radius: 4px; display: inline-block;">
-          Ir al Portal del Socio
+          Ir al Portal del Integrante
         </a>
       </p>`
     : `<p>Tu solicitud de ingreso folio <strong>${formatearFolio(solicitud.id)}</strong> no fue aceptada por ahora.</p>`;
@@ -569,6 +599,7 @@ module.exports = {
   enviarPostulacionBloque,
   enviarComprobanteDeposito,
   notificarResolucionJustificacion,
+  notificarResolucionPostulacion,
   enviarSolicitudIngreso,
   notificarResolucionSolicitudIngreso,
   formatearFolio

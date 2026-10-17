@@ -1,4 +1,4 @@
-// "¿Olvidaste tu contraseña?" del Portal del Socio (ver recuperacionClaveController).
+// "¿Olvidaste tu contraseña?" del Portal del Integrante (ver recuperacionClaveController).
 // Sin ?token: pide el RUT y solicita el enlace. Con ?token: crea la contraseña nueva.
 // Usa API_URL, escaparHtml y la política de contraseña (REQUISITOS_CLAVE) de api.js.
 

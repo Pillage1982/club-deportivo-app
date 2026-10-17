@@ -1,4 +1,4 @@
-// Acceso MySQL para la autenticación del Portal del Socio: PIN, intentos fallidos y bloqueo temporal.
+// Acceso MySQL para la autenticación del Portal del Integrante: PIN, intentos fallidos y bloqueo temporal.
 // Tabla separada de `personas` a propósito (ver migrations.js) para que el hash del PIN
 // nunca viaje junto con el resto de la ficha del integrante.
 // Sin fila en socios_auth = el socio aún no crea su PIN y su clave es el RUT

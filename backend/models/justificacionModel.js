@@ -1,4 +1,4 @@
-// Acceso MySQL de la pestaña "Documentos" del Portal del Socio: cartas de
+// Acceso MySQL de la pestaña "Documentos" del Portal del Integrante: cartas de
 // justificación de inasistencia y postulaciones a bloques. Lo del socio siempre
 // filtra por su persona_id; la revisión (aprobar/rechazar) es solo del panel admin.
 const db = require('../config/db');
@@ -130,7 +130,8 @@ exports.marcarEmailPostulacion = id =>
 
 exports.listarPostulacionesSocio = (personaId, desde) =>
   ejecutar(`
-    SELECT id, bloque_actual, es_nuevo, opcion_1, opcion_2, creado_en
+    SELECT id, bloque_actual, es_nuevo, opcion_1, opcion_2, creado_en,
+           estado, bloque_asignado, observacion_directiva
     FROM postulaciones_bloque
     WHERE persona_id = ? AND creado_en >= ?
     ORDER BY creado_en DESC
@@ -262,9 +263,80 @@ exports.listarPostulaciones = () =>
   ejecutar(`
     SELECT pb.id, pb.bloque_actual, pb.es_nuevo, pb.opcion_1, pb.opcion_2,
            pb.celular, pb.email, pb.email_enviado, pb.creado_en,
-           p.rut, p.nombres, p.apellido_paterno, p.apellido_materno
+           pb.estado, pb.bloque_asignado, pb.observacion_directiva, pb.revisado_en,
+           p.rut, p.nombres, p.apellido_paterno, p.apellido_materno,
+           u.usuario AS revisado_por_usuario
     FROM postulaciones_bloque pb
     JOIN personas p ON p.id = pb.persona_id
-    ORDER BY pb.creado_en DESC
+    LEFT JOIN usuarios u ON u.id = pb.revisado_por
+    ORDER BY (pb.estado = 'pendiente') DESC, pb.creado_en DESC
     LIMIT 500
   `);
+
+exports.obtenerPostulacion = id =>
+  ejecutar(`
+    SELECT pb.*, p.nombres, p.apellido_paterno, p.apellido_materno,
+           p.email AS email_persona
+    FROM postulaciones_bloque pb
+    JOIN personas p ON p.id = pb.persona_id
+    WHERE pb.id = ?
+    LIMIT 1
+  `, [id]).then(rows => rows[0] || null);
+
+// Aceptar: en una transacción marca la postulación y asigna la opción elegida
+// (1ª o 2ª) como bloque del integrante en su ficha.
+exports.aceptarPostulacion = ({ id, opcion, observacion, usuarioId }) =>
+  new Promise((resolve, reject) => {
+    db.getConnection(async (errConn, conexion) => {
+      if (errConn) return reject(errConn);
+      const conn = conexion.promise();
+
+      try {
+        await conn.beginTransaction();
+
+        const [filas] = await conn.query(
+          'SELECT id, persona_id, opcion_1, opcion_2, estado FROM postulaciones_bloque WHERE id = ? FOR UPDATE',
+          [id]
+        );
+        const postulacion = filas[0];
+
+        if (!postulacion) {
+          await conn.rollback();
+          return resolve({ resultado: 'no_encontrada' });
+        }
+        if (postulacion.estado !== 'pendiente') {
+          await conn.rollback();
+          return resolve({ resultado: 'ya_revisada' });
+        }
+
+        const bloque = opcion === 2 ? postulacion.opcion_2 : postulacion.opcion_1;
+        if (!bloque) {
+          await conn.rollback();
+          return resolve({ resultado: 'sin_opcion' });
+        }
+
+        await conn.query('UPDATE personas SET bloque = ? WHERE id = ?', [bloque, postulacion.persona_id]);
+        await conn.query(`
+          UPDATE postulaciones_bloque
+          SET estado = 'aprobada', bloque_asignado = ?, observacion_directiva = ?,
+              revisado_por = ?, revisado_en = NOW()
+          WHERE id = ?
+        `, [bloque, observacion, usuarioId, id]);
+
+        await conn.commit();
+        resolve({ resultado: 'aprobada', bloque });
+      } catch (err) {
+        await conn.rollback().catch(() => {});
+        reject(err);
+      } finally {
+        conexion.release();
+      }
+    });
+  });
+
+exports.rechazarPostulacion = ({ id, observacion, usuarioId }) =>
+  ejecutar(`
+    UPDATE postulaciones_bloque
+    SET estado = 'rechazada', observacion_directiva = ?, revisado_por = ?, revisado_en = NOW()
+    WHERE id = ? AND estado = 'pendiente'
+  `, [observacion, usuarioId, id]);

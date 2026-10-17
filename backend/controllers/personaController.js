@@ -11,7 +11,7 @@ const {
 } = require('../utils/validacionesPersona');
 
 // Celulares en formato único +569XXXXXXXX (pedido del cliente GDC, sep-2026),
-// igual que en "Actualizar datos" del Portal del Socio. Si no es un celular
+// igual que en "Actualizar datos" del Portal del Integrante. Si no es un celular
 // válido se deja el texto tal cual para que validarPersona lo rechace.
 function normalizarTelefono(telefono) {
   return normalizarCelular(telefono) || limpiarTexto(telefono);
