@@ -152,6 +152,15 @@ exports.aprobarSolicitud = ({ id, bloque, observacion, usuarioId }) =>
     });
   });
 
+// Entró por "Súmate a la promesa" y aún no tiene un pago tipo 'integracion':
+// el Portal le avisa la cuota de integración hasta que tesorería la registre.
+exports.debeCuotaIntegracion = personaId =>
+  ejecutar(`
+    SELECT
+      EXISTS (SELECT 1 FROM solicitudes_ingreso WHERE persona_id = ? AND estado = 'aprobada')
+      AND NOT EXISTS (SELECT 1 FROM pagos WHERE persona_id = ? AND tipo_pago = 'integracion') AS debe
+  `, [personaId, personaId]).then(rows => Boolean(Number(rows[0].debe)));
+
 exports.rechazarSolicitud = ({ id, observacion, usuarioId }) =>
   ejecutar(`
     UPDATE solicitudes_ingreso

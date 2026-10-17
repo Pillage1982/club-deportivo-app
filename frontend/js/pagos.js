@@ -13,9 +13,10 @@ function normalizarTextoPago(valor) {
 }
 
 // Tipos de pago: solo 'cuota' rebaja la deuda; el resto son pagos extra
-// (trajes, chaquetas, otros) que entran a caja sin abonar cuotas.
+// (integración, trajes, chaquetas, otros) que entran a caja sin abonar cuotas.
 const TIPOS_PAGO = {
   cuota: 'Cuota mensual',
+  integracion: 'Cuota de integración',
   traje: 'Traje',
   chaqueta: 'Chaqueta institucional',
   otro: 'Otro'

@@ -30,6 +30,7 @@ function cargarDocumentos() {
       datosDocumentos = data;
       document.getElementById('txt_minutos_cierre').textContent = data.minutos_cierre;
       renderizarHistorialDocumentos();
+      renderizarAvisoIntegracion();
       prepararFormularioJustificacion();
       prepararFormularioPostulacion();
     })
@@ -508,6 +509,22 @@ function abrirDatosCuenta() {
     `;
   }
   mostrarVistaDocumentos('docs_cuenta');
+}
+
+// Cuota de integración: solo llega para quienes ingresaron por solicitud y
+// aún no tienen el pago registrado por tesorería.
+function renderizarAvisoIntegracion() {
+  const cuota = datosDocumentos.cuota_integracion;
+  const html = cuota ? `
+    <div class="alert alert-warning small mb-3">
+      <i class="bi bi-info-circle-fill me-1"></i>
+      <strong>Cuota de integración: ${formatearMonto(cuota.monto)}</strong> (pago único).
+      Todo nuevo integrante la paga una sola vez, además de las cuotas mensuales de la temporada.
+      Deposítala en la cuenta de la agrupación (en el comentario escribe
+      "cuota de integración") y envía el comprobante a tesorería.
+    </div>` : '';
+  document.getElementById('docs_aviso_integracion').innerHTML = html;
+  document.getElementById('cuenta_aviso_integracion').innerHTML = html;
 }
 
 // Sin clave copia todos los datos (para pegarlos en la app del banco).

@@ -111,7 +111,7 @@ function procesarPuntajeCuotasAnual(persona_id, cuotas) {
 
 // Tipos de pago: 'cuota' rebaja la deuda de cuotas; el resto son pagos extra del
 // integrante (entran a caja, no rebajan deuda ni dan puntaje).
-const tiposPagoPermitidos = ['cuota', 'traje', 'chaqueta', 'otro'];
+const tiposPagoPermitidos = ['cuota', 'integracion', 'traje', 'chaqueta', 'otro'];
 
 function validarPago(body) {
   const personaId = Number(body.persona_id);

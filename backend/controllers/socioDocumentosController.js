@@ -8,7 +8,9 @@ const path = require('path');
 const justificacionModel = require('../models/justificacionModel');
 const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
 const puntajeModel = require('../models/puntajeModel');
+const solicitudIngresoModel = require('../models/solicitudIngresoModel');
 const cuentaDeposito = require('../config/cuentaDeposito');
+const cuotaIntegracion = require('../config/cuotaIntegracion');
 const uploadJustificativo = require('../middleware/uploadJustificativo');
 const emailService = require('../services/emailService');
 
@@ -47,13 +49,14 @@ exports.datosFormularios = async (req, res) => {
   try {
     // "Mis envíos" muestra solo la temporada vigente
     const desde = await puntajeModel.obtenerInicioTemporadaVigente();
-    const [persona, eventos, bloques, justificaciones, postulaciones, comprobantes] = await Promise.all([
+    const [persona, eventos, bloques, justificaciones, postulaciones, comprobantes, debeIntegracion] = await Promise.all([
       justificacionModel.obtenerDatosCarta(personaId),
       justificacionModel.listarEventosJustificables(personaId),
       justificacionModel.listarBloques(),
       justificacionModel.listarJustificacionesSocio(personaId, desde),
       justificacionModel.listarPostulacionesSocio(personaId, desde),
-      comprobanteDepositoModel.listarSocio(personaId, desde)
+      comprobanteDepositoModel.listarSocio(personaId, desde),
+      solicitudIngresoModel.debeCuotaIntegracion(personaId)
     ]);
 
     if (!persona) {
@@ -79,7 +82,8 @@ exports.datosFormularios = async (req, res) => {
       justificaciones,
       postulaciones,
       comprobantes,
-      cuenta_deposito: cuentaDeposito
+      cuenta_deposito: cuentaDeposito,
+      cuota_integracion: debeIntegracion ? { monto: cuotaIntegracion.monto } : null
     });
   } catch (err) {
     console.error('Error cargando documentos del socio:', err);
