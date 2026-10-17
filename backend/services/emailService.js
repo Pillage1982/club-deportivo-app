@@ -444,6 +444,36 @@ function notificarResolucionJustificacion({ persona, folio, aprobada, estadoApli
   }).then(() => true);
 }
 
+// Aviso al integrante cuando la directiva acepta o rechaza su postulación a bloques.
+// Usa el email que puso en la carta y, si no, el de su ficha.
+function notificarResolucionPostulacion({ postulacion, aprobada, observacion }) {
+  const destinatario = postulacion.email || postulacion.email_persona;
+  if (!emailConfigurado() || !destinatario) return Promise.resolve(false);
+
+  const nombre = [postulacion.nombres, postulacion.apellido_paterno].join(' ').trim();
+  const resultado = aprobada
+    ? `<strong style="color: #2e7d32;">ACEPTADA</strong>: desde ahora tu bloque es <strong>${escaparHtml(postulacion.bloque_asignado)}</strong>`
+    : '<strong style="color: #c0392b;">RECHAZADA</strong>';
+
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">Gran Diablada Calameña</h2>
+      <p>Hola <strong>${escaparHtml(nombre)}</strong>,</p>
+      <p>Tu postulación a bloques folio <strong>${formatearFolio(postulacion.id)}</strong> fue ${resultado}.</p>
+      ${observacion ? `<p>Observación de la directiva: <em>${escaparHtml(observacion)}</em></p>` : ''}
+      <p>Puedes revisarla en el Portal del Integrante → Documentos.</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="color: #888; font-size: 12px;">Este es un mensaje automático. No respondas a este correo.</p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    destinatario,
+    asunto: `Postulación a bloques folio ${formatearFolio(postulacion.id)}: ${aprobada ? 'aceptada' : 'rechazada'}`,
+    cuerpo
+  }).then(() => true);
+}
+
 // =====================================
 // SOLICITUDES "SÚMATE A LA PROMESA" (sitio gdcayquina.cl)
 // =====================================
@@ -569,6 +599,7 @@ module.exports = {
   enviarPostulacionBloque,
   enviarComprobanteDeposito,
   notificarResolucionJustificacion,
+  notificarResolucionPostulacion,
   enviarSolicitudIngreso,
   notificarResolucionSolicitudIngreso,
   formatearFolio

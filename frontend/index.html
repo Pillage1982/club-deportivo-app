@@ -581,6 +581,8 @@
                   <th>1ª opción</th>
                   <th>2ª opción</th>
                   <th>Contacto</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="tabla_postulaciones"></tbody>
@@ -1637,6 +1639,37 @@
           </button>
           <button type="button" class="btn btn-success" id="btn_aprobar_justificacion" onclick="resolverJustificacion('aprobar')">
             <i class="bi bi-check-circle me-1"></i>Aprobar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Revisar postulación a bloques -->
+  <div class="modal fade" id="modal_revisar_postulacion" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-grid-3x3-gap me-2"></i>Postulación folio <span id="revisar_post_folio"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="revisar_post_detalle" class="mb-3"></div>
+          <div id="revisar_post_acciones">
+            <label for="revisar_post_opcion" class="form-label">Bloque que se asigna al aceptar</label>
+            <select id="revisar_post_opcion" class="form-select mb-2"></select>
+            <label for="revisar_post_observacion" class="form-label">Observación <span class="text-muted">(obligatoria si se rechaza)</span></label>
+            <input type="text" id="revisar_post_observacion" class="form-control" maxlength="300">
+          </div>
+        </div>
+        <div class="modal-footer" id="revisar_post_footer">
+          <button type="button" class="btn btn-outline-danger" id="btn_rechazar_postulacion" onclick="resolverPostulacion('rechazar')">
+            <i class="bi bi-x-circle me-1"></i>Rechazar
+          </button>
+          <button type="button" class="btn btn-success" id="btn_aceptar_postulacion" onclick="resolverPostulacion('aceptar')">
+            <i class="bi bi-check-circle me-1"></i>Aceptar
           </button>
         </div>
       </div>

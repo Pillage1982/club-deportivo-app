@@ -471,6 +471,28 @@ async function reconstruirVistaRankingPuntaje() {
 // evento a justificado/licencia_medica (Art. 8.4); evento_id NULL = "Otro"
 // (actividad que no está en el sistema). Solo se reciben hasta el cierre de
 // asistencia (Art. 8.7), lo valida el controller, no la tabla.
+// Revisión de postulaciones a bloques por la directiva: aceptar asigna la 1ª o 2ª
+// opción como bloque del integrante; rechazar deja constancia con el motivo.
+// Mismos estados que las justificaciones. DEFAULT 'pendiente' para las ya enviadas.
+async function asegurarRevisionPostulaciones() {
+  const cols = await columnasExistentes('postulaciones_bloque');
+  if (!cols.has('estado')) {
+    await ejecutar("ALTER TABLE postulaciones_bloque ADD COLUMN estado ENUM('pendiente','aprobada','rechazada') NOT NULL DEFAULT 'pendiente'");
+  }
+  if (!cols.has('bloque_asignado')) {
+    await ejecutar('ALTER TABLE postulaciones_bloque ADD COLUMN bloque_asignado VARCHAR(100) NULL');
+  }
+  if (!cols.has('observacion_directiva')) {
+    await ejecutar('ALTER TABLE postulaciones_bloque ADD COLUMN observacion_directiva VARCHAR(300) NULL');
+  }
+  if (!cols.has('revisado_por')) {
+    await ejecutar('ALTER TABLE postulaciones_bloque ADD COLUMN revisado_por BIGINT NULL');
+  }
+  if (!cols.has('revisado_en')) {
+    await ejecutar('ALTER TABLE postulaciones_bloque ADD COLUMN revisado_en DATETIME NULL');
+  }
+}
+
 async function asegurarTablasDocumentosSocio() {
   await ejecutar(`
     CREATE TABLE IF NOT EXISTS justificaciones (
@@ -595,6 +617,7 @@ async function ejecutarMigraciones() {
   await asegurarRecuperacionClave();
   await asegurarCamposPagos();
   await asegurarTablasDocumentosSocio();
+  await asegurarRevisionPostulaciones();
   await asegurarTablaSolicitudesIngreso();
   await consolidarTiposCuota();
   await reconstruirVistaRankingPuntaje();

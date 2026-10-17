@@ -260,12 +260,27 @@ function cargarPostulacionesBloque() {
       const tabla = document.getElementById('tabla_postulaciones');
       const filas = Array.isArray(data) ? data : [];
 
+      cachePostulaciones = filas;
+
       if (!filas.length) {
-        tabla.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay postulaciones</td></tr>';
+        tabla.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No hay postulaciones</td></tr>';
         return;
       }
 
-      tabla.innerHTML = filas.map(p => `
+      tabla.innerHTML = filas.map(p => {
+        const pendiente = p.estado === 'pendiente';
+        const acciones = pendiente
+          ? `<button type="button" class="btn btn-sm btn-success" onclick="abrirRevisionPostulacion(${p.id}, 'aceptar')">
+               <i class="bi bi-check-circle"></i> Aceptar
+             </button>
+             <button type="button" class="btn btn-sm btn-outline-danger" onclick="abrirRevisionPostulacion(${p.id}, 'rechazar')">
+               <i class="bi bi-x-circle"></i> Rechazar
+             </button>`
+          : `<button type="button" class="btn btn-sm btn-outline-secondary" onclick="abrirRevisionPostulacion(${p.id})">
+               <i class="bi bi-eye"></i> Ver
+             </button>`;
+
+        return `
         <tr>
           <td>${folioJustificacion(p.id)}${p.email_enviado ? '' : '<i class="bi bi-envelope-x text-warning ms-1" title="El correo a los caporales no se pudo enviar"></i>'}</td>
           <td>${formatearFechaHora(p.creado_en)}</td>
@@ -274,10 +289,111 @@ function cargarPostulacionesBloque() {
           <td>${escaparHtml(p.opcion_1)}</td>
           <td>${escaparHtml(p.opcion_2 || '—')}</td>
           <td class="small">${escaparHtml(p.celular || '—')}<br>${escaparHtml(p.email || '—')}</td>
+          <td>${badgeEstadoPostulacion(p)}</td>
+          <td class="text-nowrap">${acciones}</td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
     })
     .catch(err => {
       mostrarAlerta(escaparHtml(obtenerMensajeError(err)), 'danger');
+    });
+}
+
+let cachePostulaciones = [];
+let postulacionEnRevision = null;
+
+function badgeEstadoPostulacion(p) {
+  if (p.estado === 'aprobada') return crearBadge(`Aceptada · ${p.bloque_asignado || ''}`, 'bg-success');
+  if (p.estado === 'rechazada') return crearBadge('Rechazada', 'bg-danger');
+  return crearBadge('Pendiente', 'bg-warning text-dark');
+}
+
+// accion: 'aceptar' o 'rechazar' según el botón de la fila (solo ubica el foco);
+// sin accion, la postulación ya revisada se abre en modo lectura.
+function abrirRevisionPostulacion(id, accion) {
+  const p = cachePostulaciones.find(item => item.id === id);
+  if (!p) return;
+  postulacionEnRevision = p;
+  const pendiente = p.estado === 'pendiente';
+
+  document.getElementById('revisar_post_folio').textContent = folioJustificacion(p.id);
+  document.getElementById('revisar_post_detalle').innerHTML = `
+    <dl class="row mb-0">
+      <dt class="col-sm-4">Integrante</dt>
+      <dd class="col-sm-8">${escaparHtml(nombreIntegranteJust(p))} — ${escaparHtml(p.rut)}</dd>
+      <dt class="col-sm-4">Bloque actual</dt>
+      <dd class="col-sm-8">${p.es_nuevo ? 'Nuevo (sin bloque)' : escaparHtml(p.bloque_actual || '—')}</dd>
+      <dt class="col-sm-4">1ª opción</dt>
+      <dd class="col-sm-8">${escaparHtml(p.opcion_1)}</dd>
+      <dt class="col-sm-4">2ª opción</dt>
+      <dd class="col-sm-8">${escaparHtml(p.opcion_2 || '—')}</dd>
+      <dt class="col-sm-4">Recibida</dt>
+      <dd class="col-sm-8">${formatearFechaHora(p.creado_en)}</dd>
+      ${!pendiente ? `
+      <dt class="col-sm-4">Resolución</dt>
+      <dd class="col-sm-8">${badgeEstadoPostulacion(p)} ${p.revisado_por_usuario ? `por ${escaparHtml(p.revisado_por_usuario)}` : ''} ${p.revisado_en ? `el ${formatearFechaHora(p.revisado_en)}` : ''}</dd>
+      ${p.observacion_directiva ? `
+      <dt class="col-sm-4">Observación</dt>
+      <dd class="col-sm-8">${escaparHtml(p.observacion_directiva)}</dd>` : ''}` : ''}
+    </dl>
+  `;
+
+  const selector = document.getElementById('revisar_post_opcion');
+  selector.innerHTML = `<option value="1">1ª opción: ${escaparHtml(p.opcion_1)}</option>` +
+    (p.opcion_2 ? `<option value="2">2ª opción: ${escaparHtml(p.opcion_2)}</option>` : '');
+  document.getElementById('revisar_post_observacion').value = '';
+  document.getElementById('revisar_post_acciones').classList.toggle('d-none', !pendiente);
+  document.getElementById('revisar_post_footer').classList.toggle('d-none', !pendiente);
+
+  const modal = document.getElementById('modal_revisar_postulacion');
+  modal.addEventListener('shown.bs.modal', () => {
+    if (accion === 'rechazar') document.getElementById('revisar_post_observacion').focus();
+    else if (accion === 'aceptar') selector.focus();
+  }, { once: true });
+  bootstrap.Modal.getOrCreateInstance(modal).show();
+}
+
+function resolverPostulacion(accion) {
+  const p = postulacionEnRevision;
+  if (!p) return;
+
+  const observacion = document.getElementById('revisar_post_observacion').value.trim();
+  const opcion = Number(document.getElementById('revisar_post_opcion').value);
+
+  if (accion === 'rechazar' && !observacion) {
+    mostrarAlerta('Escribe el motivo del rechazo en "Observación": se le informa al integrante.', 'warning');
+    document.getElementById('revisar_post_observacion').focus();
+    return;
+  }
+
+  const botones = ['btn_aceptar_postulacion', 'btn_rechazar_postulacion'];
+  botones.forEach(id => { document.getElementById(id).disabled = true; });
+
+  fetch(`${API_URL}/justificaciones/postulaciones/${p.id}/${accion}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ opcion, observacion })
+  })
+    .then(async res => {
+      const data = await leerRespuestaJson(res);
+      if (!res.ok) throw new Error(data.mensaje || 'No se pudo guardar la revisión');
+      return data;
+    })
+    .then(data => {
+      bootstrap.Modal.getInstance(document.getElementById('modal_revisar_postulacion'))?.hide();
+      mostrarAlerta(escaparHtml(data.mensaje), 'success');
+      cargarPostulacionesBloque();
+      // El bloque del integrante cambió: refrescar la tabla de integrantes.
+      if (accion === 'aceptar' && typeof cargarTablaPersonas === 'function') {
+        invalidarCacheApi('personas');
+        cargarTablaPersonas();
+      }
+    })
+    .catch(err => {
+      mostrarAlerta(escaparHtml(obtenerMensajeError(err)), 'danger');
+    })
+    .finally(() => {
+      botones.forEach(id => { document.getElementById(id).disabled = false; });
     });
 }
