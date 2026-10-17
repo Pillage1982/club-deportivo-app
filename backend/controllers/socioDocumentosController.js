@@ -1,4 +1,4 @@
-// Pestaña "Documentos" del Portal del Socio: carta de justificación de inasistencia
+// Pestaña "Documentos" del Portal del Integrante: carta de justificación de inasistencia
 // (formato de Carta_Justificacion.doc) y postulación a bloques (formato de
 // Carta_Postulacion_Bloques.doc), autocompletadas con los datos del socio y
 // enviadas por correo. Nombre y RUT salen siempre de la BD (req.socio.persona_id),

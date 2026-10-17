@@ -1,4 +1,4 @@
-// "Actualizar datos" del Portal del Socio: paso obligatorio después de crear la contraseña
+// "Actualizar datos" del Portal del Integrante: paso obligatorio después de crear la contraseña
 // (y cada vez que la directiva lo vuelva a exigir). Todos los campos editables son
 // obligatorios salvo la fecha de ingreso (vacía = se conserva la registrada);
 // RUT, nombre, escuadra, estado y honorario son solo lectura (los mantiene la

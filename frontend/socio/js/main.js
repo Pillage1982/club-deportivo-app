@@ -1,4 +1,4 @@
-// Portal del Socio: navegación entre las 5 pantallas y carga de datos propios
+// Portal del Integrante: navegación entre las 5 pantallas y carga de datos propios
 // (solo lectura) desde /socio-auth/mi-*; Documentos vive en documentos.js.
 // Cada pantalla se carga una sola vez (cache en memoria) y se refresca al
 // volver a entrar a index.html.

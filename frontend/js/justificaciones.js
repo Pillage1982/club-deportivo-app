@@ -1,4 +1,4 @@
-// Panel admin "Justificaciones": cartas enviadas desde el Portal del Socio
+// Panel admin "Justificaciones": cartas enviadas desde el Portal del Integrante
 // (pestaña Documentos). La directiva revisa y aprueba o rechaza cada carta; al
 // aprobar, el backend deja la asistencia en justificado/licencia_medica, borra la
 // multa pendiente y recalcula el puntaje. Debajo, las postulaciones a bloques

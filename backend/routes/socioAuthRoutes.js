@@ -1,4 +1,4 @@
-// Rutas /socio-auth: login del Portal del Socio (RUT + clave), cambio de PIN, y
+// Rutas /socio-auth: login del Portal del Integrante (RUT + clave), cambio de PIN, y
 // herramientas admin (restablecer acceso, re-solicitar actualización de datos y
 // seguimiento de accesos).
 const express = require('express');

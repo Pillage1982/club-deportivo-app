@@ -1,4 +1,4 @@
-// Controlador de autenticación del Portal del Socio: login por RUT + clave, creación
+// Controlador de autenticación del Portal del Integrante: login por RUT + clave, creación
 // obligatoria de la contraseña propia en el primer ingreso, y herramientas admin.
 //
 // Primer ingreso (pedido del cliente GDC, sep-2026): la clave inicial es el propio
@@ -224,7 +224,7 @@ exports.solicitarActualizacionAdmin = (req, res) => {
     res.json({
       mensaje: personaId
         ? 'Listo: en su próximo ingreso deberá actualizar sus datos'
-        : `Listo: ${result.affectedRows} socio(s) deberán actualizar sus datos en su próximo ingreso`
+        : `Listo: ${result.affectedRows} integrante(s) deberán actualizar sus datos en su próximo ingreso`
     });
   });
 };

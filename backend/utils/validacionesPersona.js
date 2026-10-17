@@ -1,5 +1,5 @@
 // Validaciones y normalizaciones de datos de integrantes compartidas entre el
-// panel admin (personaController) y el Portal del Socio (socioPerfilController).
+// panel admin (personaController) y el Portal del Integrante (socioPerfilController).
 
 function limpiarTexto(valor) {
   return String(valor || '').trim().replace(/\s+/g, ' ');

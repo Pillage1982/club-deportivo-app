@@ -88,7 +88,7 @@ exports.obtenerPuntosCuotasPorPersona = (desde = null) =>
 // evento_id (es NULL), así que un INNER JOIN los descartaba silenciosamente
 // del historial aunque sí sumaran al puntaje_total del ranking.
 // `desde` / `hasta` opcionales ('YYYY-MM-DD'): solo puntajes de ese rango [desde, hasta)
-// (temporada vigente en el Portal del Socio, temporada elegida en el panel).
+// (temporada vigente en el Portal del Integrante, temporada elegida en el panel).
 exports.obtenerHistorial = (persona_id, desde = null, hasta = null) =>
   ejecutar(`
     SELECT

@@ -1,4 +1,4 @@
-// Acceso MySQL de datos propios del socio (Portal del Socio): ficha, finanzas y
+// Acceso MySQL de datos propios del socio (Portal del Integrante): ficha, finanzas y
 // asistencia de UN solo persona_id — nunca listas completas ni datos de otros
 // integrantes. El puntaje reutiliza puntajeModel (ranking completo + historial)
 // y filtra/deriva la posición propia en el controller, sin duplicar esa lógica aquí.

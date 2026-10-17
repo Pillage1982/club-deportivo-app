@@ -1,6 +1,6 @@
 // Panel admin "Solicitudes": postulaciones enviadas desde el botón "Súmate a la
 // promesa" del sitio gdcayquina.cl. Aceptar crea el integrante con los datos
-// básicos (el resto lo completa él en su primer ingreso al Portal del Socio);
+// básicos (el resto lo completa él en su primer ingreso al Portal del Integrante);
 // en ambos casos el backend avisa al postulante por correo.
 
 let cacheSolicitudes = [];

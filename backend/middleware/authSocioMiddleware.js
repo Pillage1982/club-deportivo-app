@@ -1,4 +1,4 @@
-// Middleware de autenticación del Portal del Socio: valida el JWT y exige el
+// Middleware de autenticación del Portal del Integrante: valida el JWT y exige el
 // claim tipo === 'socio'. Deliberadamente separado de authMiddleware (admin)
 // para que un token de socio nunca sirva en una ruta admin ni viceversa,
 // aunque ambos se firmen con el mismo JWT_SECRET.

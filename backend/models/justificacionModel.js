@@ -1,4 +1,4 @@
-// Acceso MySQL de la pestaña "Documentos" del Portal del Socio: cartas de
+// Acceso MySQL de la pestaña "Documentos" del Portal del Integrante: cartas de
 // justificación de inasistencia y postulaciones a bloques. Lo del socio siempre
 // filtra por su persona_id; la revisión (aprobar/rechazar) es solo del panel admin.
 const db = require('../config/db');

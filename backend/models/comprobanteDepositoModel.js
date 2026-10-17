@@ -1,5 +1,5 @@
 // Acceso MySQL de los comprobantes de depósito que los socios envían a tesorería
-// desde el Portal del Socio (pestaña Documentos).
+// desde el Portal del Integrante (pestaña Documentos).
 const db = require('../config/db');
 
 function ejecutar(sql, params = []) {

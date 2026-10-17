@@ -21,7 +21,7 @@ exports.listar = (req, res) => {
 // FICHA DE HISTORIAL FINANCIERO DE UN INTEGRANTE
 // =====================================
 // ?alcance=temporada (por defecto): desde el inicio de la temporada vigente, igual
-// que el Portal del Socio. ?alcance=todo: todo el historial.
+// que el Portal del Integrante. ?alcance=todo: todo el historial.
 // Reutiliza las consultas del Portal: deuda calculada por cuota, cuotas con lo
 // abonado y pagos con lo que cubrió cada uno.
 const DESDE_TODO = '1900-01-01';

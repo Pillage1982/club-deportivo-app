@@ -1,4 +1,4 @@
-// Portal del Socio → Documentos: cartas de justificación de inasistencia y de
+// Portal del Integrante → Documentos: cartas de justificación de inasistencia y de
 // postulación a bloques con el mismo formato que las cartas en papel de la
 // agrupación. Nombre, RUT, celular y email se autocompletan (el servidor los toma
 // de la BD, no del formulario); la vista previa muestra la carta tal como llega

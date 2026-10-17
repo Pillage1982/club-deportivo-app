@@ -1,4 +1,4 @@
-// Helpers compartidos del Portal del Socio: token propio (socio_token, nunca el
+// Helpers compartidos del Portal del Integrante: token propio (socio_token, nunca el
 // 'token' admin), headers, formato y expiración de sesión. Deliberadamente
 // autocontenido (no incluye ../js/utils.js) para no depender de estado ni
 // convenciones del panel admin.
