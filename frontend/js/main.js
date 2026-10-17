@@ -19,6 +19,9 @@ window.onload = () => {
 
   const puedeVerOperacion = rol === 'admin' || rol === 'entrenador';
 
+  // El tesorero también toma asistencia (scanner, actividades, asistencias, sin asignar)
+  const puedeTomarAsistencia = puedeVerOperacion || rol === 'tesorero';
+
   const puedeVerFinanzas  = rol === 'admin' || rol === 'tesorero';
 
   verificarExpiracionToken();
@@ -53,7 +56,7 @@ window.onload = () => {
   configurarFiltrosGastos();
   configurarFiltrosIngresos();
 
-  if (puedeVerOperacion) {
+  if (puedeTomarAsistencia) {
     // Un solo fetch a /eventos — luego ambas funciones usan el caché
     fetch(`${API_URL}/eventos`, { headers: getAuthHeaders() })
       .then(res => res.json())
@@ -64,6 +67,9 @@ window.onload = () => {
         cargarTablaEventos();
       });
     cargarAsistencias();
+  }
+
+  if (puedeVerOperacion) {
     actualizarBadgeJustificaciones();
   }
 
@@ -135,12 +141,15 @@ function aplicarRolesTabs() {
     document.getElementById('nav_subtab_solicitudes')?.classList.add('d-none');
   }
 
-  if (!puedeVerOperacion) {
+  if (!puedeVerOperacion && rol !== 'tesorero') {
     document.getElementById('nav_tab_asistencia')?.classList.add('d-none');
     document.getElementById('nav_subtab_eventos')?.classList.add('d-none');
     document.getElementById('nav_subtab_asistencias')?.classList.add('d-none');
-    document.getElementById('nav_subtab_form_evento')?.classList.add('d-none');
     document.getElementById('nav_subtab_sin_evento')?.classList.add('d-none');
+  }
+
+  if (!puedeVerOperacion) {
+    document.getElementById('nav_subtab_form_evento')?.classList.add('d-none');
     document.getElementById('nav_subtab_justificaciones')?.classList.add('d-none');
     document.getElementById('nav_subtab_puntaje')?.classList.add('d-none');
   }
