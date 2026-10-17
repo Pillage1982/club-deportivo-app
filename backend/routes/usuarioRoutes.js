@@ -30,4 +30,8 @@ router.post(
   controller.registrarEmail
 );
 
+// Soporte (cuenta Pillage): usuarios del panel y "Reiniciar acceso".
+router.get('/soporte', authMiddleware, controller.soloSoporte, controller.listarUsuarios);
+router.post('/soporte/:id/reiniciar', authMiddleware, controller.soloSoporte, controller.reiniciarAcceso);
+
 module.exports = router;

@@ -355,6 +355,9 @@ function mostrarUsuario() {
 
   }
 
+  document.getElementById('btn_soporte_usuarios')
+    ?.classList.toggle('d-none', !usuario.es_soporte);
+
 }
 
 /// =====================================

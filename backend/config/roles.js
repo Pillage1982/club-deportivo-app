@@ -21,4 +21,12 @@ function puedeEliminar(rol) {
   return ROLES[rol] ? ROLES[rol].eliminar : false;
 }
 
-module.exports = { ROLES, rolBase, puedeEliminar };
+// Cuentas de soporte (desarrollador): además de su rol, ven "Usuarios del panel"
+// y pueden reiniciar el acceso de cualquier otro usuario.
+const USUARIOS_SOPORTE = Object.freeze(['pillage']);
+
+function esSoporte(usuario) {
+  return USUARIOS_SOPORTE.includes(String(usuario || '').toLowerCase());
+}
+
+module.exports = { ROLES, rolBase, puedeEliminar, esSoporte };

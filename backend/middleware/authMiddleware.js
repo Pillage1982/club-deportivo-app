@@ -4,6 +4,25 @@
 // =====================================
 
 const jwt = require('jsonwebtoken');
+const usuarioModel = require('../models/usuarioModel');
+
+// Versión de sesión por usuario (usuarios.sesion_version), en caché 60 s para no
+// consultar la BD en cada petición. "Reiniciar acceso" la sube y borra la caché
+// de ese usuario: sus tokens anteriores dejan de servir de inmediato.
+const CACHE_SESION_MS = 60 * 1000;
+const cacheSesion = new Map();
+
+async function sesionVersionVigente(id) {
+  const enCache = cacheSesion.get(id);
+  if (enCache && Date.now() - enCache.t < CACHE_SESION_MS) return enCache.v;
+  const v = await usuarioModel.obtenerSesionVersion(id);
+  cacheSesion.set(id, { v, t: Date.now() });
+  return v;
+}
+
+function olvidarSesion(id) {
+  cacheSesion.delete(id);
+}
 
 // =====================================
 // MIDDLEWARE AUTENTICACION JWT
@@ -13,7 +32,7 @@ const jwt = require('jsonwebtoken');
 // registro del email) aceptan un token con `cambiarPassword` o `registrarEmail`;
 // el resto lo rechaza.
 function crearMiddleware({ permitirCambioPendiente = false } = {}) {
-  return (req, res, next) => {
+  return async (req, res, next) => {
 
   // Obtiene header Authorization
   const authHeader = req.headers.authorization;
@@ -62,6 +81,22 @@ function crearMiddleware({ permitirCambioPendiente = false } = {}) {
       });
     }
 
+    // Sesión reiniciada o usuario eliminado: el token ya no vale. Tokens emitidos
+    // antes de existir sesion_version no traen sv y cuentan como versión 0.
+    let vigente;
+    try {
+      vigente = await sesionVersionVigente(decoded.id);
+    } catch (errDb) {
+      console.error('Error validando sesión del usuario:', errDb);
+      // 503 y no 401: una caída de la BD no debe cerrar la sesión en el panel.
+      return res.status(503).json({ mensaje: 'Servicio no disponible, intenta nuevamente' });
+    }
+    if (vigente === null || (Number(decoded.sv) || 0) !== vigente) {
+      return res.status(401).json({
+        mensaje: 'Token inválido'
+      });
+    }
+
     // Guarda usuario autenticado
     // para siguientes middlewares
     req.usuario = decoded;
@@ -82,3 +117,4 @@ function crearMiddleware({ permitirCambioPendiente = false } = {}) {
 
 module.exports = crearMiddleware();
 module.exports.permitirCambioPendiente = crearMiddleware({ permitirCambioPendiente: true });
+module.exports.olvidarSesion = olvidarSesion;

@@ -3,8 +3,8 @@
 // SERVICE WORKER — NexoComunidad PWA
 // =====================================
 
-const CACHE_STATIC  = 'nexo-static-v93';
-const CACHE_API     = 'nexo-api-v93';
+const CACHE_STATIC  = 'nexo-static-v95';
+const CACHE_API     = 'nexo-api-v95';
 
 const LOCAL_ASSETS = [
   '/index.html',
@@ -30,6 +30,7 @@ const LOCAL_ASSETS = [
   '/js/accesoSocios.js',
   '/js/justificaciones.js',
   '/js/solicitudesIngreso.js',
+  '/js/usuariosSoporte.js',
   '/img/logo-calamena.jpeg',
   '/img/logo-calamena-black.jpeg',
   '/img/icons/icon-192.png',
