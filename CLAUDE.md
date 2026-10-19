@@ -62,8 +62,9 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - **Pagos vinculados a cuotas (jul-2026):** campo `cuota_id` opcional en formulario de pago; al vincular → cuota pasa a `pagado` + dispara puntaje Fase 2
 - **Multas desacopladas (jul-2026):** `deuda_actual = cuotas − pagos` (multas excluidas de la deuda); columna multas en Estado Financiero es informativa; fácil de reactivar en una línea cuando la agrupación decida cobrarlas
 - Estados extendidos de asistencia: `justificado`, `licencia_medica`, `vestimenta_distinta`, `retiro_sin_aviso` (en BD y puntaje)
-- **Vestimenta distinta (oct-2026):** botón por registro en Tablas → Asistencias y en Últimos registros del escáner (`PATCH /asistencia/:id/vestimenta`); solo sobre presente/atrasado, al quitarla vuelve a atrasado si tiene minutos y si no a presente; recalcula el puntaje
+- **Vestimenta distinta y retiro sin aviso (oct-2026):** dos botones por registro en Tablas → Asistencias y en la lista "Asistentes registrados" bajo el lector QR (lista completa con scroll; `PATCH /asistencia/:id/vestimenta` y `/:id/retiro`, body `{activo}`); solo sobre presente/atrasado, al quitarla vuelve a atrasado si tiene minutos y si no a presente; recalcula el puntaje
 - Matching por cercanía horaria cuando existen varias actividades el mismo día
+- Selector de toma de asistencia: solo actividades no finalizadas y hasta 12 h después de su inicio (`config.js` → `horasActividadSeleccionable`); el panel "Sin asignar" sigue viendo todas
 - Tolerancia de atraso por actividad (oct-2026): selector en el formulario de Actividades (`eventos.tolerancia_minutos`); por defecto 15 min (`config.js` → `toleranciaMinutosAtraso`), que también usan las actividades sin margen guardado
 - Categorías de actividad (oct-2026): Ensayo (`entrenamiento`), Misa (`misa`), Reunión (`reunion`), Presentación (`partido`), Otros (`otro`)
 - **Justificaciones (oct-2026):** el socio envía la carta desde el Portal del Socio; al aprobarla en Tablas → Justificaciones la asistencia queda `justificado`/`licencia_medica`, se borra la multa y se recalcula el puntaje
@@ -82,7 +83,6 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - **Saldo a favor (oct-2026):** `services/saldoFavorService.js` aplica la parte no asignada de pagos de cuota a las cuotas pendientes más antiguas del integrante; automático al generar cuotas y con botón "Aplicar saldos a favor" en Cuotas (vista previa con `simular` antes de escribir). Puntaje según la fecha del pago original (`utils/puntajeCuotas.js`)
 
 ### Pendiente calamena
-- UI para asignar manualmente `retiro_sin_aviso` (`vestimenta_distinta` ya se marca desde Tablas → Asistencias y Últimos registros; justificado y licencia_medica entran por Justificaciones)
 - Cancionero (Spotify + letras)
 
 ### En espera de definición del cliente

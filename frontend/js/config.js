@@ -49,6 +49,11 @@ window.APP_CONFIG = {
     // este valor es el preseleccionado y el que usan las actividades sin margen guardado.
     toleranciaMinutosAtraso: 15,
 
+    // Horas desde el inicio de la actividad durante las que se puede elegir en el
+    // selector de toma de asistencia; pasado ese plazo deja de aparecer
+    // (ver actividadVigenteParaAsistencia en eventos.js).
+    horasActividadSeleccionable: 12,
+
     // Ayudas para escanear el QR en poca luz (ver asistencias.js).
     qrPocaLuz: {
       // Luminancia media del cuadro (0–255) bajo la cual se considera "poca luz".

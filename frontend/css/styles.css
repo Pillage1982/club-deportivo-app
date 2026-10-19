@@ -1139,6 +1139,18 @@ img[data-config-img="cliente.logo"] {
   letter-spacing: 0.08em;
   margin-bottom: 0.5rem;
 }
+/* Lista completa con scroll propio: alto según la pantalla, sin alargar la vista. */
+.ultimos-registros-scroll {
+  max-height: 40vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+@media (min-width: 768px) {
+  .ultimos-registros-scroll {
+    max-height: 50vh;
+  }
+}
 .ultimos-registros-tabla {
   width: 100%;
   border-collapse: collapse;
@@ -1152,6 +1164,10 @@ img[data-config-img="cliente.logo"] {
 .ultimos-registros-tabla td:last-child {
   text-align: right;
   white-space: nowrap;
+}
+.ultimos-registros-tabla .btn-outline-dark {
+  color: rgba(255,255,255,0.85);
+  border-color: rgba(255,255,255,0.5);
 }
 
 /* ── Logo institucional en panel scanner ── */

@@ -55,7 +55,7 @@ exports.crearAsistencia = (data, callback) => {
 };
 
 // =====================================
-// VESTIMENTA DISTINTA (Art. 8.4)
+// VESTIMENTA DISTINTA / RETIRO SIN AVISO (Art. 8.4)
 // =====================================
 
 function ejecutar(sql, params = []) {
@@ -68,14 +68,16 @@ exports.obtenerAsistenciaPorId = id =>
   ejecutar('SELECT id, persona_id, evento_id, estado, minutos_atraso FROM asistencias WHERE id = ?', [id])
     .then(rows => rows[0] || null);
 
-// Solo cambia entre presente/atrasado y vestimenta_distinta: nunca pisa un
-// ausente, una justificación o un retiro.
-exports.actualizarEstadoVestimenta = (id, estadoNuevo) =>
+// Solo cambia entre presente/atrasado y las marcas manuales: nunca pisa un
+// ausente ni una justificación.
+exports.ESTADOS_MARCABLES = ['presente', 'atrasado', 'vestimenta_distinta', 'retiro_sin_aviso'];
+
+exports.actualizarEstadoManual = (id, estadoNuevo) =>
   ejecutar(`
     UPDATE asistencias
     SET estado = ?
-    WHERE id = ? AND estado IN ('presente', 'atrasado', 'vestimenta_distinta')
-  `, [estadoNuevo, id]);
+    WHERE id = ? AND estado IN (?)
+  `, [estadoNuevo, id, exports.ESTADOS_MARCABLES]);
 
 // =====================================
 // REGISTRAR AUSENTES AL CERRAR EVENTO

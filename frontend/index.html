@@ -278,10 +278,12 @@
           </div>
 
           <div id="ultimos_registros_wrapper" class="ultimos-registros-wrapper d-none">
-            <p class="ultimos-registros-titulo"><i class="bi bi-clock-history"></i> Últimos registros</p>
-            <table class="ultimos-registros-tabla">
-              <tbody id="ultimos_registros_body"></tbody>
-            </table>
+            <p class="ultimos-registros-titulo"><i class="bi bi-people"></i> Asistentes registrados (<span id="ultimos_registros_total">0</span>)</p>
+            <div class="ultimos-registros-scroll">
+              <table class="ultimos-registros-tabla">
+                <tbody id="ultimos_registros_body"></tbody>
+              </table>
+            </div>
           </div>
 
           <div class="scanner-logo-bg">
@@ -501,6 +503,7 @@
                 <option value="atrasado">Atrasado</option>
                 <option value="ausente">Ausente</option>
                 <option value="vestimenta_distinta">Vestimenta distinta</option>
+                <option value="retiro_sin_aviso">Retiro sin aviso</option>
                 <option value="justificado">Justificado</option>
                 <option value="licencia_medica">Licencia médica</option>
               </select>
@@ -534,7 +537,7 @@
                   <th>Actividad</th>
                   <th>Estado</th>
                   <th>Minutos</th>
-                  <th class="text-center">Vestimenta</th>
+                  <th class="text-center">Vestimenta / Retiro</th>
                 </tr>
               </thead>
               <tbody id="tabla_asistencias"></tbody>

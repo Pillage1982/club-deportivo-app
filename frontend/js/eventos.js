@@ -56,6 +56,42 @@ function seleccionarToleranciaEvento(minutos) {
   select.value = valor;
 }
 
+// Una actividad se puede elegir para tomar asistencia hasta N horas después de
+// su inicio (config.js → asistencia.horasActividadSeleccionable). Las futuras
+// siempre aparecen; si la fecha no se puede leer, no se oculta.
+function actividadVigenteParaAsistencia(evento, ahora = new Date()) {
+  const fecha = new Date(String(evento.fecha || '').replace(' ', 'T'));
+  if (Number.isNaN(fecha.getTime())) return true;
+  const horas = Number((window.APP_CONFIG || {}).asistencia?.horasActividadSeleccionable) || 12;
+  return ahora.getTime() - fecha.getTime() < horas * 60 * 60 * 1000;
+}
+
+// Con el panel abierto mucho rato, quita del selector las actividades que ya
+// pasaron el plazo; si la seleccionada era una de ellas, la deselecciona.
+function quitarActividadesVencidasDelSelector() {
+  const select = document.getElementById('evento_id');
+  if (!select || !eventosAsistencia.length) return;
+
+  const vencidas = eventosAsistencia.filter(e => !actividadVigenteParaAsistencia(e));
+  if (!vencidas.length) return;
+
+  const idsVencidas = new Set(vencidas.map(e => String(e.id)));
+  const seleccionadaVencida = idsVencidas.has(select.value);
+
+  eventosAsistencia = eventosAsistencia.filter(e => !idsVencidas.has(String(e.id)));
+  Array.from(select.options)
+    .filter(o => idsVencidas.has(o.value))
+    .forEach(o => o.remove());
+
+  if (seleccionadaVencida) {
+    select.value = '';
+    select.dispatchEvent(new Event('change'));
+    mostrarAlerta('La actividad seleccionada ya cerró su plazo para tomar asistencia.', 'warning');
+  }
+}
+
+setInterval(quitarActividadesVencidasDelSelector, 5 * 60 * 1000);
+
 // =====================================
 // CARGAR EVENTOS EN SELECTOR
 // =====================================
@@ -86,7 +122,7 @@ function cargarEventos() {
       }
 
       const datosOrdenados = data
-        .filter(evento => !evento.finalizado)
+        .filter(evento => !evento.finalizado && actividadVigenteParaAsistencia(evento))
         .sort((a, b) => {
           const fechaA = new Date(String(a.fecha || '').replace(' ', 'T'));
           const fechaB = new Date(String(b.fecha || '').replace(' ', 'T'));

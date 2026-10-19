@@ -1022,11 +1022,16 @@ async function obtenerEventosParaQrAsistencia() {
     );
   }
 
+  // Mismo criterio que el selector (eventos.js): sin finalizadas ni vencidas.
+  const vigentes = data.filter(evento =>
+    !evento.finalizado && actividadVigenteParaAsistencia(evento)
+  );
+
   if (typeof eventosAsistencia !== 'undefined') {
-    eventosAsistencia = data;
+    eventosAsistencia = vigentes;
   }
 
-  return data;
+  return vigentes;
 }
 
 function parsearFechaEventoAsistencia(fecha) {
@@ -1373,7 +1378,7 @@ function renderizarTablaAsistencias(asistencias) {
           <td class="text-muted small">—</td>
           <td>${obtenerBadgeAsistencia(a.estado)}</td>
           <td>${a.minutos_atraso}</td>
-          <td class="text-center">${botonVestimentaAsistencia(a)}</td>
+          <td class="text-center text-nowrap">${botonesMarcasAsistencia(a)}</td>
         </tr>`;
     }
   }
@@ -1382,49 +1387,65 @@ function renderizarTablaAsistencias(asistencias) {
 }
 
 // =====================================
-// VESTIMENTA DISTINTA (Art. 8.4)
+// VESTIMENTA DISTINTA / RETIRO SIN AVISO (Art. 8.4)
 // =====================================
-// Botón por registro: en presente/atrasado lo marca con vestimenta distinta;
-// en vestimenta distinta la quita. Otros estados no llevan botón.
-function botonVestimentaAsistencia(a, compacto = false) {
+// Dos botones por registro presente/atrasado: marcan vestimenta distinta o
+// retiro sin aviso. Si el registro ya tiene una marca, su botón pasa a "quitar"
+// y el otro la cambia. Ausentes y justificados no llevan botones.
+const MARCAS_ASISTENCIA = {
+  vestimenta_distinta: {
+    ruta: 'vestimenta',
+    nombre: 'vestimenta distinta',
+    texto: 'Vestimenta',
+    icono: 'bi-person-exclamation',
+    clase: 'btn-vestimenta',
+    aviso: 'Su puntaje en esta actividad baja (Art. 8.4).'
+  },
+  retiro_sin_aviso: {
+    ruta: 'retiro',
+    nombre: 'retiro sin aviso',
+    texto: 'Retiro',
+    icono: 'bi-box-arrow-right',
+    clase: 'btn-outline-dark',
+    aviso: 'Resta 3 puntos en esta actividad (Art. 8.4).'
+  }
+};
+
+function botonesMarcasAsistencia(a, compacto = false) {
+  const marcables = ['presente', 'atrasado', 'vestimenta_distinta', 'retiro_sin_aviso'];
+  if (!marcables.includes(a.estado)) return '';
+
   const tamano = compacto ? 'btn-sm py-0 px-1' : 'btn-sm';
 
-  if (a.estado === 'vestimenta_distinta') {
-    return `<button type="button" class="btn btn-outline-secondary ${tamano}"
-      title="Quitar vestimenta distinta"
-      onclick="cambiarVestimentaAsistencia(${Number(a.id)}, false)">
-      <i class="bi bi-arrow-counterclockwise"></i>${compacto ? '' : ' Quitar'}
+  return Object.entries(MARCAS_ASISTENCIA).map(([estado, m]) => {
+    const activa = a.estado === estado;
+    return `<button type="button"
+      class="btn ${activa ? 'btn-outline-secondary' : m.clase} ${tamano}"
+      title="${activa ? 'Quitar' : 'Marcar'} ${m.nombre}"
+      onclick="cambiarMarcaAsistencia(${Number(a.id)}, '${estado}', ${!activa})">
+      <i class="bi ${activa ? 'bi-arrow-counterclockwise' : m.icono}"></i>${compacto ? '' : ` ${activa ? 'Quitar' : m.texto}`}
     </button>`;
-  }
-
-  if (a.estado === 'presente' || a.estado === 'atrasado') {
-    return `<button type="button" class="btn btn-vestimenta ${tamano}"
-      title="Marcar vestimenta distinta"
-      onclick="cambiarVestimentaAsistencia(${Number(a.id)}, true)">
-      <i class="bi bi-person-exclamation"></i>${compacto ? '' : ' Vestimenta'}
-    </button>`;
-  }
-
-  return '';
+  }).join(' ');
 }
 
-async function cambiarVestimentaAsistencia(id, marcar) {
+async function cambiarMarcaAsistencia(id, estado, marcar) {
+  const marca = MARCAS_ASISTENCIA[estado];
   const asistencia = asistenciasTabla.find(a => Number(a.id) === Number(id));
   const nombre = asistencia
     ? `${asistencia.nombres} ${asistencia.apellido_paterno}`
     : 'este integrante';
 
   const pregunta = marcar
-    ? `¿Marcar a ${nombre} con vestimenta distinta? Su puntaje en esta actividad baja (Art. 8.4).`
-    : `¿Quitar la vestimenta distinta a ${nombre}?`;
+    ? `¿Marcar a ${nombre} con ${marca.nombre}? ${marca.aviso}`
+    : `¿Quitar ${marca.nombre} a ${nombre}?`;
 
   if (!confirm(pregunta)) return;
 
   try {
-    const res = await fetch(`${API_URL}/asistencia/${id}/vestimenta`, {
+    const res = await fetch(`${API_URL}/asistencia/${id}/${marca.ruta}`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ vestimenta_distinta: marcar })
+      body: JSON.stringify({ activo: marcar })
     });
     const data = await res.json().catch(() => ({}));
 
@@ -1553,21 +1574,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ── Últimos 5 registros del evento en curso ──
+// ── Asistentes registrados en la actividad en curso ──
 function cargarUltimosRegistros() {
   const eventoId = document.getElementById('evento_id')?.value;
   const wrapper  = document.getElementById('ultimos_registros_wrapper');
   const tbody    = document.getElementById('ultimos_registros_body');
   if (!eventoId || !wrapper || !tbody) return;
 
+  // Todos los registros de la actividad (el más reciente arriba); la lista tiene
+  // scroll propio para no alargar la pantalla del lector.
   const filtrados = asistenciasTabla
-    .filter(a => String(a.evento_id) === String(eventoId))
-    .slice(0, 5);
+    .filter(a => String(a.evento_id) === String(eventoId));
 
   if (filtrados.length === 0) {
     wrapper.classList.add('d-none');
     return;
   }
+
+  const contador = document.getElementById('ultimos_registros_total');
+  if (contador) contador.textContent = filtrados.length;
 
   tbody.innerHTML = filtrados.map(a => {
     let horaFecha = '';
@@ -1584,7 +1609,7 @@ function cargarUltimosRegistros() {
         <td>${a.nombres} ${a.apellido_paterno}</td>
         <td>${obtenerBadgeAsistencia(a.estado)}</td>
         <td class="text-white small text-nowrap">${horaFecha}</td>
-        <td>${botonVestimentaAsistencia(a, true)}</td>
+        <td>${botonesMarcasAsistencia(a, true)}</td>
       </tr>`;
   }).join('');
 
