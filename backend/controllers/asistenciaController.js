@@ -138,6 +138,48 @@ function registrarAsistenciaInterna(req, res, evento) {
 };
 
 // =====================================
+// VESTIMENTA DISTINTA
+// =====================================
+// Body: { vestimenta_distinta: true|false }. Al quitarla vuelve a atrasado si
+// el registro tiene minutos de atraso, si no a presente. Recalcula el puntaje.
+exports.marcarVestimenta = async (req, res) => {
+  const marcar = req.body.vestimenta_distinta === true || req.body.vestimenta_distinta === 'true';
+
+  try {
+    const asistencia = await asistenciaModel.obtenerAsistenciaPorId(req.params.id);
+
+    if (!asistencia) {
+      return res.status(404).json({ mensaje: 'Asistencia no encontrada' });
+    }
+
+    if (!['presente', 'atrasado', 'vestimenta_distinta'].includes(asistencia.estado)) {
+      return res.status(400).json({
+        mensaje: 'Solo se puede marcar vestimenta distinta en una asistencia presente o atrasada.'
+      });
+    }
+
+    const estadoNuevo = marcar
+      ? 'vestimenta_distinta'
+      : (Number(asistencia.minutos_atraso) > 0 ? 'atrasado' : 'presente');
+
+    await asistenciaModel.actualizarEstadoVestimenta(asistencia.id, estadoNuevo);
+
+    puntajeModel.recalcularPuntajesAsistencia(asistencia.persona_id)
+      .catch(err => console.error('Error recalculando puntaje tras vestimenta:', err));
+
+    res.json({
+      mensaje: marcar
+        ? 'Asistencia marcada con vestimenta distinta. El puntaje se recalculará.'
+        : 'Se quitó la vestimenta distinta. El puntaje se recalculará.',
+      estado: estadoNuevo
+    });
+  } catch (err) {
+    console.error('Error actualizando vestimenta:', err);
+    res.status(500).json({ mensaje: 'Error al actualizar la asistencia' });
+  }
+};
+
+// =====================================
 // LISTAR ASISTENCIAS
 // =====================================
 

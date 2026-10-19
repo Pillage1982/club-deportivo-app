@@ -358,6 +358,10 @@ function mostrarUsuario() {
   document.getElementById('btn_soporte_usuarios')
     ?.classList.toggle('d-none', !usuario.es_soporte);
 
+  // Registro de actividad: solo el rol admin (exacto) y la cuenta de soporte.
+  document.getElementById('btn_auditoria')
+    ?.classList.toggle('d-none', !(usuario.rol === 'admin' || usuario.es_soporte));
+
 }
 
 /// =====================================
@@ -622,7 +626,11 @@ function obtenerBadgeAsistencia(estado) {
   const badges = {
     presente: crearBadge('Presente', 'bg-success'),
     atrasado: crearBadge('Atrasado', 'bg-warning text-dark'),
-    ausente: crearBadge('Ausente', 'bg-danger')
+    ausente: crearBadge('Ausente', 'bg-danger'),
+    justificado: crearBadge('Justificado', 'bg-info text-dark'),
+    licencia_medica: crearBadge('Licencia médica', 'bg-info text-dark'),
+    vestimenta_distinta: crearBadge('Vestimenta distinta', 'badge-vestimenta'),
+    retiro_sin_aviso: crearBadge('Retiro sin aviso', 'bg-dark')
   };
 
   return badges[estado] || crearBadge('Sin estado', 'bg-secondary');

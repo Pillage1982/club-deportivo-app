@@ -617,6 +617,35 @@ async function asegurarTablaSolicitudesIngreso() {
   `);
 }
 
+// Registro de actividad (auditoría interna, solo admin y soporte): quién hizo cada
+// movimiento que modifica datos, separado por módulo. Lo escribe auditoriaMiddleware.
+async function asegurarTablaAuditoria() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS auditoria (
+      id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+      fecha        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      actor_tipo   ENUM('usuario', 'integrante') NOT NULL,
+      actor_id     BIGINT NULL,
+      actor_nombre VARCHAR(100) NULL,
+      rol          VARCHAR(30) NULL,
+      rol_base     VARCHAR(30) NULL,
+      modulo       VARCHAR(40) NOT NULL,
+      accion       VARCHAR(40) NOT NULL,
+      metodo       VARCHAR(10) NOT NULL,
+      ruta         VARCHAR(255) NOT NULL,
+      registro_id  BIGINT NULL,
+      persona_id   BIGINT NULL,
+      evento_id    BIGINT NULL,
+      detalle      TEXT NULL,
+      resultado    VARCHAR(255) NULL,
+      ip           VARCHAR(45) NULL,
+      KEY idx_auditoria_modulo_fecha (modulo, fecha),
+      KEY idx_auditoria_actor (actor_tipo, actor_id),
+      KEY idx_auditoria_fecha (fecha)
+    )
+  `);
+}
+
 async function ejecutarMigraciones() {
   const [colsPersonas, colsEventos, colsAsistencias] = await Promise.all([
     columnasExistentes('personas'),
@@ -643,6 +672,7 @@ async function ejecutarMigraciones() {
   await asegurarTablasDocumentosSocio();
   await asegurarRevisionPostulaciones();
   await asegurarTablaSolicitudesIngreso();
+  await asegurarTablaAuditoria();
   await consolidarTiposCuota();
   await reconstruirVistaRankingPuntaje();
   await reconstruirVistaEstadoFinanciero();

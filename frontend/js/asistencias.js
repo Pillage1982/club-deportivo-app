@@ -1335,7 +1335,7 @@ function renderizarTablaAsistencias(asistencias) {
   tabla.innerHTML = '';
 
   if (!asistencias.length) {
-    tabla.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay registros para los filtros seleccionados</td></tr>';
+    tabla.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay registros para los filtros seleccionados</td></tr>';
     return;
   }
 
@@ -1358,7 +1358,7 @@ function renderizarTablaAsistencias(asistencias) {
 
     html += `
       <tr class="table-active border-top border-2">
-        <td colspan="4" class="py-2">
+        <td colspan="5" class="py-2">
           <i class="bi bi-calendar-event me-1"></i>
           <strong>${grupo.nombre}</strong>
           <span class="text-muted small ms-2">${fecha}</span>
@@ -1373,11 +1373,74 @@ function renderizarTablaAsistencias(asistencias) {
           <td class="text-muted small">—</td>
           <td>${obtenerBadgeAsistencia(a.estado)}</td>
           <td>${a.minutos_atraso}</td>
+          <td class="text-center">${botonVestimentaAsistencia(a)}</td>
         </tr>`;
     }
   }
 
   tabla.innerHTML = html;
+}
+
+// =====================================
+// VESTIMENTA DISTINTA (Art. 8.4)
+// =====================================
+// Botón por registro: en presente/atrasado lo marca con vestimenta distinta;
+// en vestimenta distinta la quita. Otros estados no llevan botón.
+function botonVestimentaAsistencia(a, compacto = false) {
+  const tamano = compacto ? 'btn-sm py-0 px-1' : 'btn-sm';
+
+  if (a.estado === 'vestimenta_distinta') {
+    return `<button type="button" class="btn btn-outline-secondary ${tamano}"
+      title="Quitar vestimenta distinta"
+      onclick="cambiarVestimentaAsistencia(${Number(a.id)}, false)">
+      <i class="bi bi-arrow-counterclockwise"></i>${compacto ? '' : ' Quitar'}
+    </button>`;
+  }
+
+  if (a.estado === 'presente' || a.estado === 'atrasado') {
+    return `<button type="button" class="btn btn-vestimenta ${tamano}"
+      title="Marcar vestimenta distinta"
+      onclick="cambiarVestimentaAsistencia(${Number(a.id)}, true)">
+      <i class="bi bi-person-exclamation"></i>${compacto ? '' : ' Vestimenta'}
+    </button>`;
+  }
+
+  return '';
+}
+
+async function cambiarVestimentaAsistencia(id, marcar) {
+  const asistencia = asistenciasTabla.find(a => Number(a.id) === Number(id));
+  const nombre = asistencia
+    ? `${asistencia.nombres} ${asistencia.apellido_paterno}`
+    : 'este integrante';
+
+  const pregunta = marcar
+    ? `¿Marcar a ${nombre} con vestimenta distinta? Su puntaje en esta actividad baja (Art. 8.4).`
+    : `¿Quitar la vestimenta distinta a ${nombre}?`;
+
+  if (!confirm(pregunta)) return;
+
+  try {
+    const res = await fetch(`${API_URL}/asistencia/${id}/vestimenta`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ vestimenta_distinta: marcar })
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      mostrarAlerta(data.mensaje || 'No se pudo actualizar la asistencia', 'warning');
+      return;
+    }
+
+    if (asistencia) asistencia.estado = data.estado;
+    renderizarTablaAsistencias(filtrarAsistencias());
+    cargarUltimosRegistros();
+    mostrarAlerta(data.mensaje, 'success');
+  } catch (err) {
+    console.error(err);
+    mostrarAlerta('Sin conexión: no se pudo actualizar la asistencia', 'danger');
+  }
 }
 
 function configurarFiltrosAsistencias() {
@@ -1521,6 +1584,7 @@ function cargarUltimosRegistros() {
         <td>${a.nombres} ${a.apellido_paterno}</td>
         <td>${obtenerBadgeAsistencia(a.estado)}</td>
         <td class="text-white small text-nowrap">${horaFecha}</td>
+        <td>${botonVestimentaAsistencia(a, true)}</td>
       </tr>`;
   }).join('');
 

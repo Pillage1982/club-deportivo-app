@@ -61,7 +61,8 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - **Exportación Excel/PDF (jul-2026):** SheetJS 0.18.5 + jsPDF + autoTable, 4 módulos (Integrantes, Asistencias, Deudores, Puntaje), dropdown unificado Bootstrap 5 por módulo
 - **Pagos vinculados a cuotas (jul-2026):** campo `cuota_id` opcional en formulario de pago; al vincular → cuota pasa a `pagado` + dispara puntaje Fase 2
 - **Multas desacopladas (jul-2026):** `deuda_actual = cuotas − pagos` (multas excluidas de la deuda); columna multas en Estado Financiero es informativa; fácil de reactivar en una línea cuando la agrupación decida cobrarlas
-- Estados extendidos de asistencia: `justificado`, `licencia_medica`, `vestimenta_distinta`, `retiro_sin_aviso` (en BD y puntaje; pendiente UI manual)
+- Estados extendidos de asistencia: `justificado`, `licencia_medica`, `vestimenta_distinta`, `retiro_sin_aviso` (en BD y puntaje)
+- **Vestimenta distinta (oct-2026):** botón por registro en Tablas → Asistencias y en Últimos registros del escáner (`PATCH /asistencia/:id/vestimenta`); solo sobre presente/atrasado, al quitarla vuelve a atrasado si tiene minutos y si no a presente; recalcula el puntaje
 - Matching por cercanía horaria cuando existen varias actividades el mismo día
 - Tolerancia de atraso por actividad (oct-2026): selector en el formulario de Actividades (`eventos.tolerancia_minutos`); por defecto 15 min (`config.js` → `toleranciaMinutosAtraso`), que también usan las actividades sin margen guardado
 - Categorías de actividad (oct-2026): Ensayo (`entrenamiento`), Misa (`misa`), Reunión (`reunion`), Presentación (`partido`), Otros (`otro`)
@@ -75,12 +76,13 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - Sesión de 20 días y continuidad offline sin cierre forzado por falta de conexión
 - **Tipo de pago y comprobante (oct-2026):** `pagos.tipo_pago` (cuota/traje/chaqueta/otro) + `detalle`; solo `tipo_pago='cuota'` rebaja la deuda (vista_estado_financiero y Portal), los extras suman a caja. `pagos.comprobante_path` opcional (uploads/comprobantes), ver/adjuntar desde Tablas → Pagos
 - **Meses que se pagan (oct-2026):** en Formularios → Pago se marcan a mano las cuotas pendientes (cualquier temporada). 1 mes: abono parcial permitido. Varios meses con monto menor: se pagan los más antiguos y el último queda con abono. Sin meses marcados (tipo cuota): se aplica a las pendientes más antiguas; el sobrante queda a favor. El pago anual solo toma la temporada vigente. Cuotas con pagos parciales muestran la etiqueta "Abono $X" (formulario, Tablas → Cuotas con filtro "Con abono", Portal). La deuda del Portal se calcula por cuota (abonos a cuotas de la temporada + saldo a favor de pagos de cuota de la temporada), no por fecha de pago
+- **Registro de actividad (oct-2026):** tabla `auditoria`, escrita por `middleware/auditoriaMiddleware.js` (montado en server.js antes de las rutas) en cada POST/PUT/PATCH/DELETE exitoso con sesión (panel o Portal); sin claves/PIN en el detalle; GET no se registran. Botón "Actividad" en la barra → modal con pestañas por módulo, filtro usuario/fechas. Solo rol `admin` exacto y cuenta de soporte (`GET /auditoria`)
 - Dashboard: tarjetas "Deuda proyectada" y "Total disponible" (antes Deuda / Total en caja)
 - **Ficha Historial por integrante (oct-2026):** botón en Tablas → Finanzas; resumen, cuotas con abono/saldo y pagos (temporada vigente o todo), exportable a Excel/PDF. Endpoint `GET /finanzas/historial/:persona_id?alcance=temporada|todo` (reusa las consultas del Portal)
 - **Saldo a favor (oct-2026):** `services/saldoFavorService.js` aplica la parte no asignada de pagos de cuota a las cuotas pendientes más antiguas del integrante; automático al generar cuotas y con botón "Aplicar saldos a favor" en Cuotas (vista previa con `simular` antes de escribir). Puntaje según la fecha del pago original (`utils/puntajeCuotas.js`)
 
 ### Pendiente calamena
-- UI para asignar manualmente `vestimenta_distinta` y `retiro_sin_aviso` (justificado y licencia_medica ya entran por Justificaciones)
+- UI para asignar manualmente `retiro_sin_aviso` (`vestimenta_distinta` ya se marca desde Tablas → Asistencias y Últimos registros; justificado y licencia_medica entran por Justificaciones)
 - Cancionero (Spotify + letras)
 
 ### En espera de definición del cliente

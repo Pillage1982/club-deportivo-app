@@ -27,7 +27,8 @@ const allowedOrigin = process.env.FRONTEND_URL;
 const RUTAS_API = [
   '/asistencia', '/personas', '/eventos', '/multas', '/usuarios', '/dashboard',
   '/finanzas', '/pagos', '/cuotas', '/puntaje', '/formaciones', '/gastos',
-  '/ingresos', '/justificaciones', '/solicitudes-ingreso', '/socio-auth', '/publico'
+  '/ingresos', '/justificaciones', '/solicitudes-ingreso', '/socio-auth', '/publico',
+  '/auditoria'
 ];
 app.use(RUTAS_API, (req, res, next) => {
   res.set('Cache-Control', 'no-store, private');
@@ -47,6 +48,10 @@ app.use(express.json());
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
+
+// Registro de actividad: anota quién hizo cada cambio (ver auditoriaMiddleware).
+app.use(require('./middleware/auditoriaMiddleware'));
+app.use('/auditoria', require('./routes/auditoriaRoutes'));
 
 app.use('/asistencia', require('./routes/asistenciaRoutes'));
 app.use('/personas', require('./routes/personaRoutes'));

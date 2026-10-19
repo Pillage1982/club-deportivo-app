@@ -19,4 +19,12 @@ router.post(
   controller.registrar
 );
 
+// Marca o quita "vestimenta distinta" (Art. 8.4) en una asistencia presente/atrasada.
+router.patch(
+  '/:id/vestimenta',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero', 'entrenador'),
+  controller.marcarVestimenta
+);
+
 module.exports = router;

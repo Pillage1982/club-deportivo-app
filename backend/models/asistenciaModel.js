@@ -55,6 +55,29 @@ exports.crearAsistencia = (data, callback) => {
 };
 
 // =====================================
+// VESTIMENTA DISTINTA (Art. 8.4)
+// =====================================
+
+function ejecutar(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.query(sql, params, (err, result) => (err ? reject(err) : resolve(result)));
+  });
+}
+
+exports.obtenerAsistenciaPorId = id =>
+  ejecutar('SELECT id, persona_id, evento_id, estado, minutos_atraso FROM asistencias WHERE id = ?', [id])
+    .then(rows => rows[0] || null);
+
+// Solo cambia entre presente/atrasado y vestimenta_distinta: nunca pisa un
+// ausente, una justificación o un retiro.
+exports.actualizarEstadoVestimenta = (id, estadoNuevo) =>
+  ejecutar(`
+    UPDATE asistencias
+    SET estado = ?
+    WHERE id = ? AND estado IN ('presente', 'atrasado', 'vestimenta_distinta')
+  `, [estadoNuevo, id]);
+
+// =====================================
 // REGISTRAR AUSENTES AL CERRAR EVENTO
 // =====================================
 

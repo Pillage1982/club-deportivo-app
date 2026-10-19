@@ -1197,3 +1197,21 @@ body.sin-eliminar [onclick*="eliminarGasto"],
 body.sin-eliminar [onclick*="eliminarIngreso"] {
   display: none !important;
 }
+
+/* Vestimenta distinta (Art. 8.4): badge y botón en Tablas → Asistencias */
+.badge-vestimenta {
+  background-color: #6f42c1;
+  color: #fff;
+}
+
+.btn-vestimenta {
+  color: #6f42c1;
+  border-color: #6f42c1;
+}
+
+.btn-vestimenta:hover,
+.btn-vestimenta:focus {
+  color: #fff;
+  background-color: #6f42c1;
+  border-color: #6f42c1;
+}
