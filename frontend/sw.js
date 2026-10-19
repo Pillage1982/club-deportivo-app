@@ -3,8 +3,8 @@
 // SERVICE WORKER — NexoComunidad PWA
 // =====================================
 
-const CACHE_STATIC  = 'nexo-static-v95';
-const CACHE_API     = 'nexo-api-v95';
+const CACHE_STATIC  = 'nexo-static-v97';
+const CACHE_API     = 'nexo-api-v97';
 
 const LOCAL_ASSETS = [
   '/index.html',

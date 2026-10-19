@@ -28,12 +28,32 @@ function obtenerTipoActividad(tipo) {
   const tipos =
     config.tiposActividad || {
       entrenamiento: 'Ensayo',
-      partido: 'Presentacion',
-      reunion: 'Reunion'
+      misa: 'Misa',
+      reunion: 'Reunión',
+      partido: 'Presentación',
+      otro: 'Otros'
     };
 
   return tipos[tipo] || tipo;
 
+}
+
+// Tolerancia de atraso por defecto (config.js → asistencia.toleranciaMinutosAtraso).
+function toleranciaGlobalAtraso() {
+  const valor = Number((window.APP_CONFIG || {}).asistencia?.toleranciaMinutosAtraso);
+  return Number.isFinite(valor) ? valor : 15;
+}
+
+// Selecciona la tolerancia guardada; si no está entre las opciones (ej. cargada
+// por SQL) se agrega para no perderla al volver a guardar.
+function seleccionarToleranciaEvento(minutos) {
+  const select = document.getElementById('evento_tolerancia');
+  if (!select) return;
+  const valor = String(Number(minutos) || 0);
+  if (![...select.options].some(o => o.value === valor)) {
+    select.add(new Option(`${valor} minutos`, valor));
+  }
+  select.value = valor;
 }
 
 // =====================================
@@ -131,7 +151,12 @@ function crearEvento() {
     inicia_temporada:
       document.getElementById(
         'evento_inicia_temporada'
-      ).checked
+      ).checked,
+
+    tolerancia_minutos:
+      document.getElementById(
+        'evento_tolerancia'
+      ).value
 
   };
 
@@ -145,8 +170,10 @@ function crearEvento() {
 
   const tiposPermitidos = [
     'entrenamiento',
+    'misa',
+    'reunion',
     'partido',
-    'reunion'
+    'otro'
   ];
 
   const textoValido = valor => {
@@ -252,6 +279,10 @@ document.getElementById(
 document.getElementById(
   'evento_inicia_temporada'
 ).checked = false;
+
+document.getElementById(
+  'evento_tolerancia'
+).value = String(toleranciaGlobalAtraso());
 
 // Refresca tabla y selector eventos
     invalidarCacheApi('eventos');
@@ -448,6 +479,10 @@ function editarEvento(evento) {
     'evento_inicia_temporada'
   ).checked =
     Boolean(Number(evento.inicia_temporada));
+
+  seleccionarToleranciaEvento(
+    evento.tolerancia_minutos ?? toleranciaGlobalAtraso()
+  );
 
   document.getElementById(
     'btn_guardar_evento'

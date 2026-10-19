@@ -1125,10 +1125,14 @@ function aplicarAtrasoAsistencia(evento, fechaEscaneo) {
       )
       : 0;
 
-  // Margen de gracia antes de marcar "atrasado" (config.js → asistencia.toleranciaMinutosAtraso,
+  // Margen de gracia antes de marcar "atrasado": el que se eligió en el formulario
+  // de la actividad; si no tiene, el global (config.js → asistencia.toleranciaMinutosAtraso,
   // confirmado por el cliente en 30 minutos).
+  const toleranciaEvento = evento.tolerancia_minutos;
   const toleranciaMinutos =
-    Number((window.APP_CONFIG || {}).asistencia?.toleranciaMinutosAtraso) || 0;
+    toleranciaEvento !== null && toleranciaEvento !== undefined && toleranciaEvento !== ''
+      ? Number(toleranciaEvento) || 0
+      : Number((window.APP_CONFIG || {}).asistencia?.toleranciaMinutosAtraso) || 0;
 
   if (estado) {
     estado.value =

@@ -450,8 +450,10 @@
               <select id="filtro_evento_tipo" class="form-select">
                 <option value="">Todos</option>
                 <option value="entrenamiento">Ensayo</option>
-                <option value="partido">Presentación</option>
+                <option value="misa">Misa</option>
                 <option value="reunion">Reunión</option>
+                <option value="partido">Presentación</option>
+                <option value="otro">Otros</option>
               </select>
             </div>
             <div class="col-md-3">
@@ -1294,21 +1296,37 @@
                   <label class="form-label">Tipo</label>
                   <select id="evento_tipo" class="form-select">
                     <option value="entrenamiento">Ensayo</option>
-                    <option value="partido">Presentación</option>
+                    <option value="misa">Misa</option>
                     <option value="reunion">Reunión</option>
+                    <option value="partido">Presentación</option>
+                    <option value="otro">Otros</option>
                   </select>
                 </div>
                 <div class="col-md-4 mb-3">
                   <label class="form-label">Fecha</label>
                   <input type="datetime-local" id="evento_fecha" class="form-control">
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                   <label class="form-label">Ubicación</label>
                   <input type="text" id="evento_ubicacion" class="form-control">
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                   <label class="form-label">Descripción</label>
                   <input type="text" id="evento_descripcion" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="evento_tolerancia" class="form-label">Tolerancia de atraso</label>
+                  <select id="evento_tolerancia" class="form-select">
+                    <option value="0">Sin tolerancia</option>
+                    <option value="5">5 minutos</option>
+                    <option value="10">10 minutos</option>
+                    <option value="15" selected>15 minutos</option>
+                    <option value="20">20 minutos</option>
+                    <option value="30">30 minutos</option>
+                    <option value="45">45 minutos</option>
+                    <option value="60">60 minutos</option>
+                  </select>
+                  <small class="text-muted">Pasado este margen desde la hora de la actividad, el escaneo QR queda como atraso</small>
                 </div>
                 <div class="col-12 mb-3">
                   <div class="form-check">

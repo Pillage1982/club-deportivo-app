@@ -63,7 +63,8 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - **Multas desacopladas (jul-2026):** `deuda_actual = cuotas − pagos` (multas excluidas de la deuda); columna multas en Estado Financiero es informativa; fácil de reactivar en una línea cuando la agrupación decida cobrarlas
 - Estados extendidos de asistencia: `justificado`, `licencia_medica`, `vestimenta_distinta`, `retiro_sin_aviso` (en BD y puntaje; pendiente UI manual)
 - Matching por cercanía horaria cuando existen varias actividades el mismo día
-- Tolerancia de atraso global en `config.js` (`toleranciaMinutosAtraso: 30`), confirmada por el cliente el 25-08-2026
+- Tolerancia de atraso por actividad (oct-2026): selector en el formulario de Actividades (`eventos.tolerancia_minutos`); por defecto 15 min (`config.js` → `toleranciaMinutosAtraso`), que también usan las actividades sin margen guardado
+- Categorías de actividad (oct-2026): Ensayo (`entrenamiento`), Misa (`misa`), Reunión (`reunion`), Presentación (`partido`), Otros (`otro`)
 - **Justificaciones (oct-2026):** el socio envía la carta desde el Portal del Socio; al aprobarla en Tablas → Justificaciones la asistencia queda `justificado`/`licencia_medica`, se borra la multa y se recalcula el puntaje
 - Correo saliente configurado en dev y producción (oct-2026): SMTP de Hostinger, buzones @gdcayquina.cl
 - **Depósitos en Portal del Socio (oct-2026):** Documentos → "Datos para depositar" (cuenta en `backend/config/cuentaDeposito.js`) y "Enviar comprobante de depósito" (tabla `comprobantes_deposito`, archivo en `uploads/comprobantes_deposito`, correo a `EMAIL_TESORERIA` o tesoreria@gdcayquina.cl). Tesorería los ve en Tablas → Depósitos y con "Registrar pago" (o 📎 en Tablas → Pagos) el pago usa ese mismo archivo como comprobante; `comprobantes_deposito.pago_id` marca el depósito como registrado (oct-2026)

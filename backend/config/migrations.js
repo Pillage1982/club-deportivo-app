@@ -135,6 +135,25 @@ async function asegurarCamposEventos(colsEventos) {
     `);
   }
 
+  // Categorías de actividad definidas por la agrupación (oct-2026): ensayo, misa,
+  // reunión, presentación y otros. Se amplía el ENUM conservando los valores
+  // existentes (entrenamiento = ensayo, partido = presentación).
+  if (!String(colsEventos._tipos['tipo'] || '').includes("'misa'")) {
+    await ejecutar(`
+      ALTER TABLE eventos
+      MODIFY COLUMN tipo ENUM('entrenamiento', 'partido', 'reunion', 'misa', 'otro') NOT NULL
+    `);
+  }
+
+  // Margen de tolerancia por actividad antes de marcar "atrasado" al escanear el QR.
+  // NULL = usar el valor global de config.js (asistencia.toleranciaMinutosAtraso).
+  if (!colsEventos.has('tolerancia_minutos')) {
+    await ejecutar(`
+      ALTER TABLE eventos
+      ADD COLUMN tolerancia_minutos SMALLINT UNSIGNED NULL DEFAULT NULL
+    `);
+  }
+
   // Marcador de inicio de temporada (casilla "Inicia temporada" del formulario de
   // actividades). Reemplaza el corte por nombre "Despedida de Pueblo": al crear la
   // columna se marcan una sola vez las Despedidas ya cargadas (para conservar las
