@@ -36,15 +36,23 @@ window.APP_CONFIG = {
 
   tiposActividad: {
     entrenamiento: 'Ensayo',
-    partido: 'Presentacion',
-    reunion: 'Reunion'
+    misa: 'Misa',
+    reunion: 'Reunión',
+    partido: 'Presentación',
+    otro: 'Otros'
   },
 
   asistencia: {
-    // Minutos de gracia desde la hora de inicio del evento antes de marcar "atrasado"
-    // automáticamente en el escaneo QR (ver aplicarAtrasoAsistencia en asistencias.js).
-    // Confirmado por el cliente (GDC).
-    toleranciaMinutosAtraso: 30,
+    // Minutos de gracia por defecto desde la hora de inicio del evento antes de marcar
+    // "atrasado" en el escaneo QR (ver aplicarAtrasoAsistencia en asistencias.js).
+    // Cada actividad puede elegir el suyo en el formulario (eventos.tolerancia_minutos);
+    // este valor es el preseleccionado y el que usan las actividades sin margen guardado.
+    toleranciaMinutosAtraso: 15,
+
+    // Horas desde el inicio de la actividad durante las que se puede elegir en el
+    // selector de toma de asistencia; pasado ese plazo deja de aparecer
+    // (ver actividadVigenteParaAsistencia en eventos.js).
+    horasActividadSeleccionable: 12,
 
     // Ayudas para escanear el QR en poca luz (ver asistencias.js).
     qrPocaLuz: {

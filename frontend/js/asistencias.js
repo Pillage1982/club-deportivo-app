@@ -1022,11 +1022,16 @@ async function obtenerEventosParaQrAsistencia() {
     );
   }
 
+  // Mismo criterio que el selector (eventos.js): sin finalizadas ni vencidas.
+  const vigentes = data.filter(evento =>
+    !evento.finalizado && actividadVigenteParaAsistencia(evento)
+  );
+
   if (typeof eventosAsistencia !== 'undefined') {
-    eventosAsistencia = data;
+    eventosAsistencia = vigentes;
   }
 
-  return data;
+  return vigentes;
 }
 
 function parsearFechaEventoAsistencia(fecha) {
@@ -1125,10 +1130,14 @@ function aplicarAtrasoAsistencia(evento, fechaEscaneo) {
       )
       : 0;
 
-  // Margen de gracia antes de marcar "atrasado" (config.js → asistencia.toleranciaMinutosAtraso,
+  // Margen de gracia antes de marcar "atrasado": el que se eligió en el formulario
+  // de la actividad; si no tiene, el global (config.js → asistencia.toleranciaMinutosAtraso,
   // confirmado por el cliente en 30 minutos).
+  const toleranciaEvento = evento.tolerancia_minutos;
   const toleranciaMinutos =
-    Number((window.APP_CONFIG || {}).asistencia?.toleranciaMinutosAtraso) || 0;
+    toleranciaEvento !== null && toleranciaEvento !== undefined && toleranciaEvento !== ''
+      ? Number(toleranciaEvento) || 0
+      : Number((window.APP_CONFIG || {}).asistencia?.toleranciaMinutosAtraso) || 0;
 
   if (estado) {
     estado.value =
@@ -1331,7 +1340,7 @@ function renderizarTablaAsistencias(asistencias) {
   tabla.innerHTML = '';
 
   if (!asistencias.length) {
-    tabla.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay registros para los filtros seleccionados</td></tr>';
+    tabla.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay registros para los filtros seleccionados</td></tr>';
     return;
   }
 
@@ -1354,7 +1363,7 @@ function renderizarTablaAsistencias(asistencias) {
 
     html += `
       <tr class="table-active border-top border-2">
-        <td colspan="4" class="py-2">
+        <td colspan="5" class="py-2">
           <i class="bi bi-calendar-event me-1"></i>
           <strong>${grupo.nombre}</strong>
           <span class="text-muted small ms-2">${fecha}</span>
@@ -1369,11 +1378,90 @@ function renderizarTablaAsistencias(asistencias) {
           <td class="text-muted small">—</td>
           <td>${obtenerBadgeAsistencia(a.estado)}</td>
           <td>${a.minutos_atraso}</td>
+          <td class="text-center text-nowrap">${botonesMarcasAsistencia(a)}</td>
         </tr>`;
     }
   }
 
   tabla.innerHTML = html;
+}
+
+// =====================================
+// VESTIMENTA DISTINTA / RETIRO SIN AVISO (Art. 8.4)
+// =====================================
+// Dos botones por registro presente/atrasado: marcan vestimenta distinta o
+// retiro sin aviso. Si el registro ya tiene una marca, su botón pasa a "quitar"
+// y el otro la cambia. Ausentes y justificados no llevan botones.
+const MARCAS_ASISTENCIA = {
+  vestimenta_distinta: {
+    ruta: 'vestimenta',
+    nombre: 'vestimenta distinta',
+    texto: 'Vestimenta',
+    icono: 'bi-person-exclamation',
+    clase: 'btn-vestimenta',
+    aviso: 'Su puntaje en esta actividad baja (Art. 8.4).'
+  },
+  retiro_sin_aviso: {
+    ruta: 'retiro',
+    nombre: 'retiro sin aviso',
+    texto: 'Retiro',
+    icono: 'bi-box-arrow-right',
+    clase: 'btn-outline-dark',
+    aviso: 'Resta 3 puntos en esta actividad (Art. 8.4).'
+  }
+};
+
+function botonesMarcasAsistencia(a, compacto = false) {
+  const marcables = ['presente', 'atrasado', 'vestimenta_distinta', 'retiro_sin_aviso'];
+  if (!marcables.includes(a.estado)) return '';
+
+  const tamano = compacto ? 'btn-sm py-0 px-1' : 'btn-sm';
+
+  return Object.entries(MARCAS_ASISTENCIA).map(([estado, m]) => {
+    const activa = a.estado === estado;
+    return `<button type="button"
+      class="btn ${activa ? 'btn-outline-secondary' : m.clase} ${tamano}"
+      title="${activa ? 'Quitar' : 'Marcar'} ${m.nombre}"
+      onclick="cambiarMarcaAsistencia(${Number(a.id)}, '${estado}', ${!activa})">
+      <i class="bi ${activa ? 'bi-arrow-counterclockwise' : m.icono}"></i>${compacto ? '' : ` ${activa ? 'Quitar' : m.texto}`}
+    </button>`;
+  }).join(' ');
+}
+
+async function cambiarMarcaAsistencia(id, estado, marcar) {
+  const marca = MARCAS_ASISTENCIA[estado];
+  const asistencia = asistenciasTabla.find(a => Number(a.id) === Number(id));
+  const nombre = asistencia
+    ? escaparHtml(`${asistencia.nombres} ${asistencia.apellido_paterno}`)
+    : 'este integrante';
+
+  const pregunta = marcar
+    ? `¿Marcar a ${nombre} con ${marca.nombre}? ${marca.aviso}`
+    : `¿Quitar ${marca.nombre} a ${nombre}?`;
+
+  if (!(await confirmarAccion(pregunta))) return;
+
+  try {
+    const res = await fetch(`${API_URL}/asistencia/${id}/${marca.ruta}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ activo: marcar })
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      mostrarAlerta(data.mensaje || 'No se pudo actualizar la asistencia', 'warning');
+      return;
+    }
+
+    if (asistencia) asistencia.estado = data.estado;
+    renderizarTablaAsistencias(filtrarAsistencias());
+    cargarUltimosRegistros();
+    mostrarAlerta(data.mensaje, 'success');
+  } catch (err) {
+    console.error(err);
+    mostrarAlerta('Sin conexión: no se pudo actualizar la asistencia', 'danger');
+  }
 }
 
 function configurarFiltrosAsistencias() {
@@ -1486,21 +1574,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ── Últimos 5 registros del evento en curso ──
+// ── Asistentes registrados en la actividad en curso ──
 function cargarUltimosRegistros() {
   const eventoId = document.getElementById('evento_id')?.value;
   const wrapper  = document.getElementById('ultimos_registros_wrapper');
   const tbody    = document.getElementById('ultimos_registros_body');
   if (!eventoId || !wrapper || !tbody) return;
 
+  // Todos los registros de la actividad (el más reciente arriba); la lista tiene
+  // scroll propio para no alargar la pantalla del lector.
   const filtrados = asistenciasTabla
-    .filter(a => String(a.evento_id) === String(eventoId))
-    .slice(0, 5);
+    .filter(a => String(a.evento_id) === String(eventoId));
 
   if (filtrados.length === 0) {
     wrapper.classList.add('d-none');
     return;
   }
+
+  const contador = document.getElementById('ultimos_registros_total');
+  if (contador) contador.textContent = filtrados.length;
 
   tbody.innerHTML = filtrados.map(a => {
     let horaFecha = '';
@@ -1517,6 +1609,7 @@ function cargarUltimosRegistros() {
         <td>${a.nombres} ${a.apellido_paterno}</td>
         <td>${obtenerBadgeAsistencia(a.estado)}</td>
         <td class="text-white small text-nowrap">${horaFecha}</td>
+        <td>${botonesMarcasAsistencia(a, true)}</td>
       </tr>`;
   }).join('');
 
@@ -1777,7 +1870,7 @@ async function asignarRegistroSinEvento(id) {
 }
 
 async function descartarRegistroSinEvento(id) {
-  if (!confirm('¿Eliminar este registro sin asignar?')) return;
+  if (!(await confirmarAccion('¿Eliminar este registro sin asignar?'))) return;
   await eliminarAsistenciaOffline(id);
   actualizarBadgeOffline();
   cargarPanelSinEvento();

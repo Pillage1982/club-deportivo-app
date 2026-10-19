@@ -135,6 +135,25 @@ async function asegurarCamposEventos(colsEventos) {
     `);
   }
 
+  // Categorías de actividad definidas por la agrupación (oct-2026): ensayo, misa,
+  // reunión, presentación y otros. Se amplía el ENUM conservando los valores
+  // existentes (entrenamiento = ensayo, partido = presentación).
+  if (!String(colsEventos._tipos['tipo'] || '').includes("'misa'")) {
+    await ejecutar(`
+      ALTER TABLE eventos
+      MODIFY COLUMN tipo ENUM('entrenamiento', 'partido', 'reunion', 'misa', 'otro') NOT NULL
+    `);
+  }
+
+  // Margen de tolerancia por actividad antes de marcar "atrasado" al escanear el QR.
+  // NULL = usar el valor global de config.js (asistencia.toleranciaMinutosAtraso).
+  if (!colsEventos.has('tolerancia_minutos')) {
+    await ejecutar(`
+      ALTER TABLE eventos
+      ADD COLUMN tolerancia_minutos SMALLINT UNSIGNED NULL DEFAULT NULL
+    `);
+  }
+
   // Marcador de inicio de temporada (casilla "Inicia temporada" del formulario de
   // actividades). Reemplaza el corte por nombre "Despedida de Pueblo": al crear la
   // columna se marcan una sola vez las Despedidas ya cargadas (para conservar las
@@ -598,6 +617,35 @@ async function asegurarTablaSolicitudesIngreso() {
   `);
 }
 
+// Registro de actividad (auditoría interna, solo admin y soporte): quién hizo cada
+// movimiento que modifica datos, separado por módulo. Lo escribe auditoriaMiddleware.
+async function asegurarTablaAuditoria() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS auditoria (
+      id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+      fecha        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      actor_tipo   ENUM('usuario', 'integrante') NOT NULL,
+      actor_id     BIGINT NULL,
+      actor_nombre VARCHAR(100) NULL,
+      rol          VARCHAR(30) NULL,
+      rol_base     VARCHAR(30) NULL,
+      modulo       VARCHAR(40) NOT NULL,
+      accion       VARCHAR(40) NOT NULL,
+      metodo       VARCHAR(10) NOT NULL,
+      ruta         VARCHAR(255) NOT NULL,
+      registro_id  BIGINT NULL,
+      persona_id   BIGINT NULL,
+      evento_id    BIGINT NULL,
+      detalle      TEXT NULL,
+      resultado    VARCHAR(255) NULL,
+      ip           VARCHAR(45) NULL,
+      KEY idx_auditoria_modulo_fecha (modulo, fecha),
+      KEY idx_auditoria_actor (actor_tipo, actor_id),
+      KEY idx_auditoria_fecha (fecha)
+    )
+  `);
+}
+
 async function ejecutarMigraciones() {
   const [colsPersonas, colsEventos, colsAsistencias] = await Promise.all([
     columnasExistentes('personas'),
@@ -624,6 +672,7 @@ async function ejecutarMigraciones() {
   await asegurarTablasDocumentosSocio();
   await asegurarRevisionPostulaciones();
   await asegurarTablaSolicitudesIngreso();
+  await asegurarTablaAuditoria();
   await consolidarTiposCuota();
   await reconstruirVistaRankingPuntaje();
   await reconstruirVistaEstadoFinanciero();

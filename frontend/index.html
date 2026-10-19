@@ -52,6 +52,10 @@
       </span>
       <div class="d-flex align-items-center gap-2">
         <span class="text-white small d-none d-sm-inline" id="usuario_logeado"></span>
+        <button type="button" class="btn btn-outline-light btn-sm d-none" id="btn_auditoria" onclick="abrirAuditoria()" title="Registro de actividad">
+          <i class="bi bi-journal-text"></i>
+          <span class="d-none d-md-inline"> Actividad</span>
+        </button>
         <button type="button" class="btn btn-outline-light btn-sm d-none" id="btn_soporte_usuarios" onclick="abrirUsuariosSoporte()" title="Usuarios del panel">
           <i class="bi bi-person-gear"></i>
           <span class="d-none d-md-inline"> Usuarios</span>
@@ -274,10 +278,12 @@
           </div>
 
           <div id="ultimos_registros_wrapper" class="ultimos-registros-wrapper d-none">
-            <p class="ultimos-registros-titulo"><i class="bi bi-clock-history"></i> Últimos registros</p>
-            <table class="ultimos-registros-tabla">
-              <tbody id="ultimos_registros_body"></tbody>
-            </table>
+            <p class="ultimos-registros-titulo"><i class="bi bi-people"></i> Asistentes registrados (<span id="ultimos_registros_total">0</span>)</p>
+            <div class="ultimos-registros-scroll">
+              <table class="ultimos-registros-tabla">
+                <tbody id="ultimos_registros_body"></tbody>
+              </table>
+            </div>
           </div>
 
           <div class="scanner-logo-bg">
@@ -450,8 +456,10 @@
               <select id="filtro_evento_tipo" class="form-select">
                 <option value="">Todos</option>
                 <option value="entrenamiento">Ensayo</option>
-                <option value="partido">Presentación</option>
+                <option value="misa">Misa</option>
                 <option value="reunion">Reunión</option>
+                <option value="partido">Presentación</option>
+                <option value="otro">Otros</option>
               </select>
             </div>
             <div class="col-md-3">
@@ -494,6 +502,10 @@
                 <option value="presente">Presente</option>
                 <option value="atrasado">Atrasado</option>
                 <option value="ausente">Ausente</option>
+                <option value="vestimenta_distinta">Vestimenta distinta</option>
+                <option value="retiro_sin_aviso">Retiro sin aviso</option>
+                <option value="justificado">Justificado</option>
+                <option value="licencia_medica">Licencia médica</option>
               </select>
             </div>
             <div class="col-md-3">
@@ -525,6 +537,7 @@
                   <th>Actividad</th>
                   <th>Estado</th>
                   <th>Minutos</th>
+                  <th class="text-center">Vestimenta / Retiro</th>
                 </tr>
               </thead>
               <tbody id="tabla_asistencias"></tbody>
@@ -1294,21 +1307,37 @@
                   <label class="form-label">Tipo</label>
                   <select id="evento_tipo" class="form-select">
                     <option value="entrenamiento">Ensayo</option>
-                    <option value="partido">Presentación</option>
+                    <option value="misa">Misa</option>
                     <option value="reunion">Reunión</option>
+                    <option value="partido">Presentación</option>
+                    <option value="otro">Otros</option>
                   </select>
                 </div>
                 <div class="col-md-4 mb-3">
                   <label class="form-label">Fecha</label>
                   <input type="datetime-local" id="evento_fecha" class="form-control">
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                   <label class="form-label">Ubicación</label>
                   <input type="text" id="evento_ubicacion" class="form-control">
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                   <label class="form-label">Descripción</label>
                   <input type="text" id="evento_descripcion" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="evento_tolerancia" class="form-label">Tolerancia de atraso</label>
+                  <select id="evento_tolerancia" class="form-select">
+                    <option value="0">Sin tolerancia</option>
+                    <option value="5">5 minutos</option>
+                    <option value="10">10 minutos</option>
+                    <option value="15" selected>15 minutos</option>
+                    <option value="20">20 minutos</option>
+                    <option value="30">30 minutos</option>
+                    <option value="45">45 minutos</option>
+                    <option value="60">60 minutos</option>
+                  </select>
+                  <small class="text-muted">Pasado este margen desde la hora de la actividad, el escaneo QR queda como atraso</small>
                 </div>
                 <div class="col-12 mb-3">
                   <div class="form-check">
@@ -1747,6 +1776,53 @@
     </div>
   </div>
 
+  <!-- Modal: Registro de actividad (solo rol admin y cuenta de soporte) -->
+  <div class="modal fade" id="modal_auditoria" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-journal-text me-2"></i>Registro de actividad</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-2">
+            Quién hizo cada movimiento que modificó datos en la app, separado por módulo.
+            Las consultas no se registran. Las asistencias tomadas sin conexión quedan con la hora en que se sincronizaron.
+          </p>
+          <div id="auditoria_modulos" class="d-flex flex-wrap gap-1 mb-3"></div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-4">
+              <label for="auditoria_usuario" class="form-label small mb-1">Usuario</label>
+              <select id="auditoria_usuario" class="form-select form-select-sm" onchange="cargarAuditoria()">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-3">
+              <label for="auditoria_desde" class="form-label small mb-1">Desde</label>
+              <input type="date" id="auditoria_desde" class="form-control form-control-sm" onchange="cargarAuditoria()">
+            </div>
+            <div class="col-6 col-md-3">
+              <label for="auditoria_hasta" class="form-label small mb-1">Hasta</label>
+              <input type="date" id="auditoria_hasta" class="form-control form-control-sm" onchange="cargarAuditoria()">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="button" class="btn btn-sm btn-outline-secondary w-100" onclick="limpiarFiltrosAuditoria()">Limpiar</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr><th>Fecha</th><th>Quién</th><th>Acción</th><th>Detalle</th></tr>
+              </thead>
+              <tbody id="tabla_auditoria"></tbody>
+            </table>
+          </div>
+          <p class="small text-muted mb-0">Se muestran los últimos 1.000 movimientos del módulo.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="app-footer text-center py-3 mt-4">
     <small>Diseño de Mario Riquelme</small>
   </footer>
@@ -1764,6 +1840,7 @@
   <script src="js/justificaciones.js"></script>
   <script src="js/solicitudesIngreso.js"></script>
   <script src="js/usuariosSoporte.js"></script>
+  <script src="js/auditoria.js"></script>
   <script src="js/multas.js"></script>
   <script src="js/puntaje.js"></script>
   <script src="js/formaciones.js?v=30"></script>

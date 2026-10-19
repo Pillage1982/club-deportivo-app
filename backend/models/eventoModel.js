@@ -1,6 +1,12 @@
 // Acceso MySQL de actividades: CRUD, consulta individual y cierre administrativo.
 const db = require('../config/db');
 
+// Minutos de tolerancia de atraso; vacío = usar el valor global del panel.
+function toleranciaONull(valor) {
+  if (valor === undefined || valor === null || valor === '') return null;
+  return Number(valor);
+}
+
 exports.obtenerEventos = (callback) => {
   const query = `
 
@@ -20,7 +26,9 @@ exports.obtenerEventos = (callback) => {
 
     finalizado,
 
-    inicia_temporada
+    inicia_temporada,
+
+    tolerancia_minutos
 
   FROM eventos
 
@@ -45,10 +53,11 @@ exports.crearEvento = (
       fecha,
       ubicacion,
       descripcion,
-      inicia_temporada
+      inicia_temporada,
+      tolerancia_minutos
     )
 
-    VALUES (?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
 
   `;
 
@@ -62,7 +71,8 @@ exports.crearEvento = (
       data.fecha,
       data.ubicacion,
       data.descripcion,
-      data.inicia_temporada ? 1 : 0
+      data.inicia_temporada ? 1 : 0,
+      toleranciaONull(data.tolerancia_minutos)
     ],
 
     callback
@@ -88,7 +98,8 @@ exports.actualizarEvento = (
       fecha = ?,
       ubicacion = ?,
       descripcion = ?,
-      inicia_temporada = ?
+      inicia_temporada = ?,
+      tolerancia_minutos = ?
 
     WHERE id = ?
 
@@ -106,6 +117,7 @@ exports.actualizarEvento = (
       data.ubicacion,
       data.descripcion,
       data.inicia_temporada ? 1 : 0,
+      toleranciaONull(data.tolerancia_minutos),
 
       id
 

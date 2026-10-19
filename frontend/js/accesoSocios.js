@@ -90,8 +90,8 @@ function renderizarTablaAccesoSocios(personas) {
 // =====================================
 // RESTABLECER ACCESO (olvidó su contraseña o quedó bloqueado)
 // =====================================
-function restablecerAccesoSocio(personaId) {
-  const confirmar = confirm(
+async function restablecerAccesoSocio(personaId) {
+  const confirmar = await confirmarAccion(
     'La contraseña actual del integrante dejará de servir. Su clave volverá a ser su RUT sin puntos ni guion ' +
     'y al entrar deberá crear una contraseña nueva.\n\n¿Continuar?'
   );
@@ -104,20 +104,20 @@ function restablecerAccesoSocio(personaId) {
     .then(async res => {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.mensaje || 'No se pudo restablecer el acceso');
-      alert(data.mensaje);
+      mostrarAlerta(data.mensaje, 'success');
       cargarEstadoAccesoSocios();
     })
     .catch(err => {
       console.error('Error restableciendo acceso:', err);
-      alert(err.message || 'Ocurrió un error restableciendo el acceso. Intenta nuevamente.');
+      mostrarAlerta(err.message || 'Ocurrió un error restableciendo el acceso. Intenta nuevamente.', 'danger');
     });
 }
 
 // =====================================
 // VOLVER A EXIGIR ACTUALIZACIÓN DE DATOS (individual, o a todos sin personaId)
 // =====================================
-function solicitarActualizacionDatos(personaId) {
-  const confirmar = confirm(personaId
+async function solicitarActualizacionDatos(personaId) {
+  const confirmar = await confirmarAccion(personaId
     ? 'En su próximo ingreso, el integrante deberá revisar y actualizar sus datos antes de ver su página personal.\n\n¿Continuar?'
     : 'Todos los integrantes que ya actualizaron sus datos deberán hacerlo de nuevo en su próximo ingreso.\n\n¿Continuar?');
   if (!confirmar) return;
@@ -130,12 +130,12 @@ function solicitarActualizacionDatos(personaId) {
     .then(async res => {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.mensaje || 'No se pudo solicitar la actualización');
-      alert(data.mensaje);
+      mostrarAlerta(data.mensaje, 'success');
       cargarEstadoAccesoSocios();
     })
     .catch(err => {
       console.error('Error solicitando actualización de datos:', err);
-      alert(err.message || 'Ocurrió un error. Intenta nuevamente.');
+      mostrarAlerta(err.message || 'Ocurrió un error. Intenta nuevamente.', 'danger');
     });
 }
 

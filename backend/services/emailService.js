@@ -80,6 +80,7 @@ function formatearFechaTexto(fecha) {
 // Tipo de actividad como lo nombra la agrupación (eventos.tipo).
 const NOMBRE_TIPO_ACTIVIDAD = {
   entrenamiento: 'el ensayo',
+  misa: 'la misa',
   reunion: 'la reunión',
   partido: 'la presentación'
 };

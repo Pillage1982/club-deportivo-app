@@ -3,8 +3,8 @@
 // SERVICE WORKER — NexoComunidad PWA
 // =====================================
 
-const CACHE_STATIC  = 'nexo-static-v95';
-const CACHE_API     = 'nexo-api-v95';
+const CACHE_STATIC  = 'nexo-static-v102';
+const CACHE_API     = 'nexo-api-v102';
 
 const LOCAL_ASSETS = [
   '/index.html',
@@ -31,6 +31,7 @@ const LOCAL_ASSETS = [
   '/js/justificaciones.js',
   '/js/solicitudesIngreso.js',
   '/js/usuariosSoporte.js',
+  '/js/auditoria.js',
   '/img/logo-calamena.jpeg',
   '/img/logo-calamena-black.jpeg',
   '/img/icons/icon-192.png',
@@ -52,6 +53,7 @@ const CDN_ASSETS = [
 // Rutas dinamicas reales expuestas por Express. Ninguna debe caer en la
 // estrategia cache-first reservada para archivos estaticos.
 const API_PATHS = [
+  '/auditoria',
   '/asistencia',
   '/personas',
   '/eventos',
