@@ -45,9 +45,9 @@ function cargarUsuariosSoporte() {
     });
 }
 
-function reiniciarAccesoUsuario(id) {
-  const usuario = usuariosSoporte.find(u => u.id === id)?.usuario || '';
-  if (!confirm(`¿Reiniciar el acceso de "${usuario}"?\n\nSe cerrarán sus sesiones abiertas en todos los dispositivos, se borrará su email y tendrá una clave temporal nueva.`)) return;
+async function reiniciarAccesoUsuario(id) {
+  const usuario = escaparHtml(usuariosSoporte.find(u => u.id === id)?.usuario || '');
+  if (!(await confirmarAccion(`¿Reiniciar el acceso de "${usuario}"?\n\nSe cerrarán sus sesiones abiertas en todos los dispositivos, se borrará su email y tendrá una clave temporal nueva.`))) return;
 
   fetch(`${API_URL}/usuarios/soporte/${id}/reiniciar`, { method: 'POST', headers: getAuthHeaders() })
     .then(async res => {

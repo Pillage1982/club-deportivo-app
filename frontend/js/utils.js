@@ -131,7 +131,7 @@ function mostrarConfirmacion(mensaje, onConfirmar) {
 
         <div class="modal-body">
           <p class="mb-0">
-            ${mensaje}
+            ${String(mensaje).replace(/\n/g, '<br>')}
           </p>
         </div>
 
@@ -176,8 +176,31 @@ function mostrarConfirmacion(mensaje, onConfirmar) {
     modal.remove();
   });
 
+  // Si se abre desde otro modal (ej. Usuarios del panel), queda por encima de él
+  // y de su fondo oscuro.
+  if (document.querySelector('.modal.show')) {
+    modal.style.zIndex = '1065';
+    modal.addEventListener('shown.bs.modal', () => {
+      const fondos = document.querySelectorAll('.modal-backdrop');
+      const ultimo = fondos[fondos.length - 1];
+      if (ultimo) ultimo.style.zIndex = '1060';
+    }, { once: true });
+  }
+
   modalBootstrap.show();
 
+}
+
+// Igual que mostrarConfirmacion, pero devuelve una promesa: true si confirma,
+// false si cancela o cierra. Reemplaza al confirm() nativo del navegador:
+//   if (!(await confirmarAccion('¿Eliminar?'))) return;
+function confirmarAccion(mensaje) {
+  return new Promise(resolve => {
+    let confirmado = false;
+    mostrarConfirmacion(mensaje, () => { confirmado = true; });
+    const modal = document.getElementById('modal_confirmacion_app');
+    modal.addEventListener('hidden.bs.modal', () => resolve(confirmado), { once: true });
+  });
 }
 
 // =====================================

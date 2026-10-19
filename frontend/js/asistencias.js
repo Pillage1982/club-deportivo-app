@@ -1432,14 +1432,14 @@ async function cambiarMarcaAsistencia(id, estado, marcar) {
   const marca = MARCAS_ASISTENCIA[estado];
   const asistencia = asistenciasTabla.find(a => Number(a.id) === Number(id));
   const nombre = asistencia
-    ? `${asistencia.nombres} ${asistencia.apellido_paterno}`
+    ? escaparHtml(`${asistencia.nombres} ${asistencia.apellido_paterno}`)
     : 'este integrante';
 
   const pregunta = marcar
     ? `¿Marcar a ${nombre} con ${marca.nombre}? ${marca.aviso}`
     : `¿Quitar ${marca.nombre} a ${nombre}?`;
 
-  if (!confirm(pregunta)) return;
+  if (!(await confirmarAccion(pregunta))) return;
 
   try {
     const res = await fetch(`${API_URL}/asistencia/${id}/${marca.ruta}`, {
@@ -1870,7 +1870,7 @@ async function asignarRegistroSinEvento(id) {
 }
 
 async function descartarRegistroSinEvento(id) {
-  if (!confirm('¿Eliminar este registro sin asignar?')) return;
+  if (!(await confirmarAccion('¿Eliminar este registro sin asignar?'))) return;
   await eliminarAsistenciaOffline(id);
   actualizarBadgeOffline();
   cargarPanelSinEvento();

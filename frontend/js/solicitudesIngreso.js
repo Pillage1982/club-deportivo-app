@@ -159,14 +159,14 @@ function abrirRevisionSolicitud(id) {
   bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_revisar_solicitud')).show();
 }
 
-function resolverSolicitudIngreso(accion) {
+async function resolverSolicitudIngreso(accion) {
   const s = solicitudEnRevision;
   if (!s) return;
 
   const confirmacion = accion === 'aprobar'
-    ? `¿Aceptar a ${nombreSolicitante(s)} como integrante activo?`
-    : `¿Rechazar la solicitud de ${nombreSolicitante(s)}? Se le enviará un aviso por correo.`;
-  if (!confirm(confirmacion)) return;
+    ? `¿Aceptar a ${escaparHtml(nombreSolicitante(s))} como integrante activo?`
+    : `¿Rechazar la solicitud de ${escaparHtml(nombreSolicitante(s))}? Se le enviará un aviso por correo.`;
+  if (!(await confirmarAccion(confirmacion))) return;
 
   const botones = ['btn_aprobar_solicitud', 'btn_rechazar_solicitud'];
   botones.forEach(id => { document.getElementById(id).disabled = true; });
