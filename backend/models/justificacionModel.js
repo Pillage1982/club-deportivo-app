@@ -148,7 +148,7 @@ exports.listarJustificaciones = estado => {
            j.fecha_actividad, j.tipo_solicitado, j.motivo_tipo, j.condicion, j.motivo,
            j.quien_entrega, (j.adjunto_path IS NOT NULL) AS tiene_adjunto,
            j.estado, j.estado_aplicado, j.observacion_directiva,
-           j.revisado_en, j.email_enviado, j.creado_en,
+           j.revisado_en, j.email_enviado, j.creado_en, j.origen,
            p.rut, p.nombres, p.apellido_paterno, p.apellido_materno, p.bloque,
            e.nombre AS evento, e.fecha AS fecha_evento,
            u.usuario AS revisado_por_usuario
@@ -173,76 +173,20 @@ exports.obtenerJustificacion = id =>
     LIMIT 1
   `, [id]).then(rows => rows[0] || null);
 
-// Aprobar: en una transacción marca la carta y deja la asistencia del evento en
-// justificado/licencia_medica (la crea si aún no existe, p. ej. el evento no se
-// ha cerrado) y elimina la multa pendiente de esa asistencia. Nunca pisa una
-// asistencia presente/atrasado/etc.: solo reemplaza ausente o una justificación
-// anterior. El puntaje se recalcula después, fuera de la transacción (controller).
-exports.aprobarJustificacion = ({ id, estadoAplicado, observacion, usuarioId }) =>
-  new Promise((resolve, reject) => {
+// Corre fn(conn) en una transacción. fn devuelve { commit: bool, valor }: con
+// commit false se deshace todo (validaciones que fallan dentro de la transacción).
+function enTransaccion(fn) {
+  return new Promise((resolve, reject) => {
     db.getConnection(async (errConn, conexion) => {
       if (errConn) return reject(errConn);
       const conn = conexion.promise();
 
       try {
         await conn.beginTransaction();
-
-        const [filas] = await conn.query(
-          'SELECT id, persona_id, evento_id, estado FROM justificaciones WHERE id = ? FOR UPDATE',
-          [id]
-        );
-        const justificacion = filas[0];
-
-        if (!justificacion) {
-          await conn.rollback();
-          return resolve({ resultado: 'no_encontrada' });
-        }
-        if (justificacion.estado !== 'pendiente') {
-          await conn.rollback();
-          return resolve({ resultado: 'ya_revisada' });
-        }
-
-        let asistencia = null;
-
-        if (justificacion.evento_id) {
-          await conn.query(`
-            INSERT INTO asistencias (evento_id, persona_id, estado, minutos_atraso)
-            VALUES (?, ?, ?, 0)
-            ON DUPLICATE KEY UPDATE estado = IF(
-              estado IN ('ausente', 'justificado', 'licencia_medica'), VALUES(estado), estado
-            )
-          `, [justificacion.evento_id, justificacion.persona_id, estadoAplicado]);
-
-          const [asis] = await conn.query(
-            'SELECT id, estado FROM asistencias WHERE evento_id = ? AND persona_id = ?',
-            [justificacion.evento_id, justificacion.persona_id]
-          );
-          asistencia = asis[0] || null;
-
-          if (asistencia && asistencia.estado === estadoAplicado) {
-            await conn.query(
-              "DELETE FROM multas WHERE asistencia_id = ? AND estado = 'pendiente'",
-              [asistencia.id]
-            );
-          }
-        }
-
-        await conn.query(`
-          UPDATE justificaciones
-          SET estado = 'aprobada', estado_aplicado = ?, observacion_directiva = ?,
-              revisado_por = ?, revisado_en = NOW()
-          WHERE id = ?
-        `, [estadoAplicado, observacion, usuarioId, id]);
-
-        await conn.commit();
-
-        resolve({
-          resultado: 'aprobada',
-          persona_id: justificacion.persona_id,
-          sinEvento: !justificacion.evento_id,
-          asistenciaAplicada: Boolean(asistencia && asistencia.estado === estadoAplicado),
-          estadoAsistencia: asistencia ? asistencia.estado : null
-        });
+        const { commit, valor } = await fn(conn);
+        if (commit) await conn.commit();
+        else await conn.rollback();
+        resolve(valor);
       } catch (err) {
         await conn.rollback().catch(() => {});
         reject(err);
@@ -250,6 +194,166 @@ exports.aprobarJustificacion = ({ id, estadoAplicado, observacion, usuarioId }) 
         conexion.release();
       }
     });
+  });
+}
+
+// Deja la asistencia del evento en justificado/licencia_medica (la crea si aún no
+// existe, p. ej. el evento no se ha cerrado) y elimina la multa pendiente de esa
+// asistencia. Nunca pisa una asistencia presente/atrasado/etc.: solo reemplaza
+// ausente o una justificación anterior. Devuelve la asistencia resultante.
+async function aplicarJustificacionEnAsistencia(conn, { eventoId, personaId, estadoAplicado }) {
+  await conn.query(`
+    INSERT INTO asistencias (evento_id, persona_id, estado, minutos_atraso)
+    VALUES (?, ?, ?, 0)
+    ON DUPLICATE KEY UPDATE estado = IF(
+      estado IN ('ausente', 'justificado', 'licencia_medica'), VALUES(estado), estado
+    )
+  `, [eventoId, personaId, estadoAplicado]);
+
+  const [asis] = await conn.query(
+    'SELECT id, estado FROM asistencias WHERE evento_id = ? AND persona_id = ?',
+    [eventoId, personaId]
+  );
+  const asistencia = asis[0] || null;
+
+  if (asistencia && asistencia.estado === estadoAplicado) {
+    await conn.query(
+      "DELETE FROM multas WHERE asistencia_id = ? AND estado = 'pendiente'",
+      [asistencia.id]
+    );
+  }
+  return asistencia;
+}
+
+// Aprobar: en una transacción marca la carta y aplica la justificación en la
+// asistencia del evento (ver aplicarJustificacionEnAsistencia). El puntaje se
+// recalcula después, fuera de la transacción (controller).
+exports.aprobarJustificacion = ({ id, estadoAplicado, observacion, usuarioId }) =>
+  enTransaccion(async conn => {
+    const [filas] = await conn.query(
+      'SELECT id, persona_id, evento_id, estado FROM justificaciones WHERE id = ? FOR UPDATE',
+      [id]
+    );
+    const justificacion = filas[0];
+
+    if (!justificacion) return { commit: false, valor: { resultado: 'no_encontrada' } };
+    if (justificacion.estado !== 'pendiente') return { commit: false, valor: { resultado: 'ya_revisada' } };
+
+    const asistencia = justificacion.evento_id
+      ? await aplicarJustificacionEnAsistencia(conn, {
+        eventoId: justificacion.evento_id, personaId: justificacion.persona_id, estadoAplicado
+      })
+      : null;
+
+    await conn.query(`
+      UPDATE justificaciones
+      SET estado = 'aprobada', estado_aplicado = ?, observacion_directiva = ?,
+          revisado_por = ?, revisado_en = NOW()
+      WHERE id = ?
+    `, [estadoAplicado, observacion, usuarioId, id]);
+
+    return {
+      commit: true,
+      valor: {
+        resultado: 'aprobada',
+        persona_id: justificacion.persona_id,
+        sinEvento: !justificacion.evento_id,
+        asistenciaAplicada: Boolean(asistencia && asistencia.estado === estadoAplicado),
+        estadoAsistencia: asistencia ? asistencia.estado : null
+      }
+    };
+  });
+
+// =====================================
+// ADMIN: justificación manual (cartas que llegan fuera del Portal, p. ej. al
+// correo antiguo de la agrupación). Solo temporada vigente y hasta un mes atrás.
+// =====================================
+
+// Fecha más antigua justificable a mano: la mayor entre el inicio de la temporada
+// vigente y hoy menos un mes (CURDATE está en hora de Chile, db.js).
+exports.obtenerDesdeJustificacionManual = inicioTemporada =>
+  ejecutar(
+    "SELECT DATE_FORMAT(GREATEST(?, DATE_SUB(CURDATE(), INTERVAL 1 MONTH)), '%Y-%m-%d') AS desde",
+    [inicioTemporada]
+  ).then(rows => rows[0].desde);
+
+exports.listarIntegrantesJustificacionManual = () =>
+  ejecutar(`
+    SELECT id, rut, nombres, apellido_paterno, apellido_materno, bloque,
+           COALESCE(estado, 'activo') AS estado
+    FROM personas
+    WHERE activo = 1 AND COALESCE(estado, 'activo') IN ('activo', 'receso')
+    ORDER BY nombres, apellido_paterno
+  `);
+
+// Actividades desde `desde` hasta 90 días adelante (igual que el Portal), incluidas
+// las ya finalizadas: la carta suele llegar después de la actividad.
+const CONDICION_EVENTO_MANUAL = 'DATE(e.fecha) >= ? AND e.fecha < NOW() + INTERVAL 90 DAY';
+
+exports.listarEventosJustificacionManual = desde =>
+  ejecutar(`
+    SELECT e.id, e.nombre, e.tipo, e.fecha, COALESCE(e.finalizado, 0) AS finalizado
+    FROM eventos e
+    WHERE ${CONDICION_EVENTO_MANUAL}
+    ORDER BY e.fecha DESC
+  `, [desde]);
+
+exports.obtenerEventoJustificacionManual = (eventoId, desde) =>
+  ejecutar(`
+    SELECT e.id, e.nombre, e.tipo, e.fecha
+    FROM eventos e
+    WHERE e.id = ? AND ${CONDICION_EVENTO_MANUAL}
+    LIMIT 1
+  `, [eventoId, desde]).then(rows => rows[0] || null);
+
+exports.obtenerIntegranteJustificacionManual = personaId =>
+  ejecutar(`
+    SELECT id FROM personas
+    WHERE id = ? AND activo = 1 AND COALESCE(estado, 'activo') IN ('activo', 'receso')
+    LIMIT 1
+  `, [personaId]).then(rows => rows[0] || null);
+
+// Crea la carta ya aprobada (origen 'manual') y la aplica en la asistencia, todo en
+// una transacción. Se deshace si el integrante ya tiene una carta pendiente o
+// aprobada para esa actividad, o si su asistencia figura como presente/atrasado/etc.
+exports.crearJustificacionManual = data =>
+  enTransaccion(async conn => {
+    if (data.evento_id) {
+      const [previas] = await conn.query(`
+        SELECT id FROM justificaciones
+        WHERE evento_id = ? AND persona_id = ? AND estado IN ('pendiente', 'aprobada')
+        LIMIT 1 FOR UPDATE
+      `, [data.evento_id, data.persona_id]);
+      if (previas.length) {
+        return { commit: false, valor: { resultado: 'duplicada', folio: previas[0].id } };
+      }
+    }
+
+    const [ins] = await conn.query(`
+      INSERT INTO justificaciones
+        (persona_id, evento_id, referencia, referencia_otro, fecha_actividad,
+         tipo_solicitado, motivo_tipo, condicion, motivo, adjunto_path, origen,
+         estado, estado_aplicado, observacion_directiva, revisado_por, revisado_en)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'manual', 'aprobada', ?, ?, ?, NOW())
+    `, [
+      data.persona_id, data.evento_id, data.referencia, data.referencia_otro,
+      data.fecha_actividad, data.estado_aplicado, data.motivo_tipo, data.condicion,
+      data.motivo, data.adjunto_path, data.estado_aplicado, data.observacion, data.usuario_id
+    ]);
+
+    if (data.evento_id) {
+      const asistencia = await aplicarJustificacionEnAsistencia(conn, {
+        eventoId: data.evento_id, personaId: data.persona_id, estadoAplicado: data.estado_aplicado
+      });
+      if (!asistencia || asistencia.estado !== data.estado_aplicado) {
+        return { commit: false, valor: { resultado: 'asistio', estadoAsistencia: asistencia && asistencia.estado } };
+      }
+    }
+
+    return {
+      commit: true,
+      valor: { resultado: 'aprobada', folio: ins.insertId, sinEvento: !data.evento_id }
+    };
   });
 
 exports.rechazarJustificacion = ({ id, observacion, usuarioId }) =>

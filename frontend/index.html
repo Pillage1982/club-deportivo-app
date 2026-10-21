@@ -169,6 +169,10 @@
                     <td class="text-end" id="balance_pagos_socios">$0</td>
                   </tr>
                   <tr>
+                    <td>Pago Inscripción <small class="text-muted">(Nuevo Integrante)</small></td>
+                    <td class="text-end" id="balance_pagos_integracion">$0</td>
+                  </tr>
+                  <tr>
                     <td>Ingresos de terceros <small class="text-muted">(donaciones, premios, proyectos)</small></td>
                     <td class="text-end" id="balance_ingresos_terceros">$0</td>
                   </tr>
@@ -624,8 +628,15 @@
             Cartas de justificación enviadas por los integrantes desde el Portal del Integrante
             (solo se reciben hasta el cierre de asistencia, Art. 8.7). Al <strong>aprobar</strong>,
             la asistencia de esa actividad queda como justificada o licencia médica y se recalcula el puntaje. El integrante recibe un aviso por correo.
+            Las cartas que llegan por otra vía (p. ej. el correo antiguo de la agrupación) se ingresan con
+            <strong>Registrar manual</strong>: quedan aprobadas al tiro (solo temporada en curso y hasta un mes atrás).
           </div>
           <div class="row g-2 mb-3 align-items-end">
+            <div class="col-md-4 order-md-last text-md-end">
+              <button type="button" class="btn btn-primary" onclick="abrirJustificacionManual()">
+                <i class="bi bi-plus-circle me-1"></i>Registrar manual
+              </button>
+            </div>
             <div class="col-md-3">
               <label for="filtro_justificaciones_estado" class="form-label">Estado</label>
               <select id="filtro_justificaciones_estado" class="form-select">
@@ -1788,6 +1799,106 @@
             <i class="bi bi-check-circle me-1"></i>Aprobar
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar justificación manual (cartas que llegan fuera del Portal) -->
+  <div class="modal fade" id="modal_justificacion_manual" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <!-- d-flex + overflow-hidden: el form queda dentro del alto del modal y modal-body hace scroll -->
+        <form id="form_justificacion_manual" class="d-flex flex-column overflow-hidden" onsubmit="registrarJustificacionManual(event)">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-envelope-plus me-2"></i>Registrar justificación manual</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-muted mb-3">
+              Para cartas recibidas fuera del Portal. Queda <strong>aprobada</strong> al guardar: la asistencia pasa a
+              justificada o licencia médica, se borra la multa pendiente, se recalcula el puntaje y se le avisa al integrante por correo.
+              Solo actividades desde el <strong id="just_manual_desde">—</strong> (temporada en curso, máximo un mes atrás).
+            </p>
+            <div class="row g-2">
+              <div class="col-12">
+                <label for="just_manual_buscar" class="form-label">Integrante</label>
+                <input type="search" id="just_manual_buscar" class="form-control mb-2" placeholder="Buscar por nombre, apellido o RUT" autocomplete="off">
+                <select id="just_manual_persona" class="form-select" required></select>
+              </div>
+              <div class="col-md-6">
+                <span class="form-label d-block">Condición</span>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="just_manual_condicion" id="just_manual_bailarin" value="bailarin" checked>
+                  <label class="form-check-label" for="just_manual_bailarin">Bailarín</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="just_manual_condicion" id="just_manual_socio" value="socio">
+                  <label class="form-check-label" for="just_manual_socio">Socio</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <label for="just_manual_evento" class="form-label">Actividad</label>
+                <select id="just_manual_evento" class="form-select" required></select>
+              </div>
+              <div id="just_manual_otro" class="col-12 d-none">
+                <div class="row g-2">
+                  <div class="col-md-4">
+                    <label for="just_manual_referencia" class="form-label">Tipo</label>
+                    <select id="just_manual_referencia" class="form-select">
+                      <option value="ensayo">Ensayo</option>
+                      <option value="misa">Misa</option>
+                      <option value="reunion">Reunión</option>
+                      <option value="salida">Presentación</option>
+                      <option value="otro">Otros</option>
+                    </select>
+                  </div>
+                  <div class="col-md-5">
+                    <label for="just_manual_referencia_otro" class="form-label">Nombre de la actividad</label>
+                    <input type="text" id="just_manual_referencia_otro" class="form-control" maxlength="150">
+                  </div>
+                  <div class="col-md-3">
+                    <label for="just_manual_fecha" class="form-label">Fecha</label>
+                    <input type="date" id="just_manual_fecha" class="form-control">
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="just_manual_motivo_tipo" class="form-label">Motivo</label>
+                <select id="just_manual_motivo_tipo" class="form-select">
+                  <option value="trabajo">Trabajo</option>
+                  <option value="licencia_medica">Licencia médica</option>
+                  <option value="estudio">Estudio</option>
+                  <option value="otro">Otros</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="just_manual_estado" class="form-label">Registrar asistencia como</label>
+                <select id="just_manual_estado" class="form-select">
+                  <option value="justificado">Justificado</option>
+                  <option value="licencia_medica">Licencia médica</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label for="just_manual_detalle" class="form-label">Detalle del motivo <span class="text-muted">(lo que dice la carta)</span></label>
+                <textarea id="just_manual_detalle" class="form-control" rows="3" maxlength="3000" required></textarea>
+              </div>
+              <div class="col-md-6">
+                <label for="just_manual_adjunto" class="form-label">Respaldo <span class="text-muted">(opcional: carta o certificado, imagen o PDF, máx. 5 MB)</span></label>
+                <input type="file" id="just_manual_adjunto" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
+              </div>
+              <div class="col-md-6">
+                <label for="just_manual_observacion" class="form-label">Observación <span class="text-muted">(opcional, se le informa al integrante)</span></label>
+                <input type="text" id="just_manual_observacion" class="form-control" maxlength="300" placeholder="Ej.: recibida en el correo antiguo el 20-10">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success" id="btn_guardar_just_manual">
+              <i class="bi bi-check-circle me-1"></i>Registrar y aprobar
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

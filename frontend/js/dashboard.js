@@ -75,6 +75,7 @@ function renderizarBalanceDashboard(balance) {
   set('saldo_caja',                balance.saldo_caja);
   set('balance_saldo_anterior',    balance.saldo_anio_anterior);
   set('balance_pagos_socios',      balance.pagos_socios);
+  set('balance_pagos_integracion', balance.pagos_integracion);
   set('balance_ingresos_terceros', balance.ingresos_terceros);
   set('balance_total_ingresos',    balance.total_ingresos);
   set('balance_total_egresos',     balance.total_egresos);

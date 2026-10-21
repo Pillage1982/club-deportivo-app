@@ -8,8 +8,22 @@ const justificacionModel = require('../models/justificacionModel');
 const puntajeModel = require('../models/puntajeModel');
 const emailService = require('../services/emailService');
 
+const fs = require('fs');
+const uploadJustificativo = require('../middleware/uploadJustificativo');
+
 const ESTADOS_FILTRO = ['pendiente', 'aprobada', 'rechazada'];
 const ESTADOS_APLICABLES = ['justificado', 'licencia_medica'];
+
+// Mismas categorías que la carta del Portal (socioDocumentosController).
+const REFERENCIA_POR_TIPO_EVENTO = {
+  entrenamiento: 'ensayo',
+  misa: 'misa',
+  reunion: 'reunion',
+  partido: 'salida'
+};
+const REFERENCIAS = ['ensayo', 'misa', 'reunion', 'salida', 'otro'];
+const MOTIVOS = ['trabajo', 'licencia_medica', 'estudio', 'otro'];
+const CONDICIONES = ['bailarin', 'socio'];
 
 function textoActividad(j) {
   return j.evento || j.referencia_otro || 'actividad';
@@ -172,6 +186,145 @@ exports.rechazar = async (req, res) => {
   } catch (err) {
     console.error('Error rechazando justificación:', err);
     res.status(500).json({ mensaje: 'No se pudo rechazar la justificación' });
+  }
+};
+
+// =====================================
+// JUSTIFICACIÓN MANUAL (multipart: adjunto opcional)
+// =====================================
+// Cartas que no llegan por el Portal (p. ej. al correo antiguo de la agrupación):
+// la directiva las ingresa y quedan aprobadas al tiro, con el mismo efecto que
+// aprobar una del Portal. Solo actividades de la temporada vigente y de hasta un
+// mes atrás (obtenerDesdeJustificacionManual).
+
+function descartarArchivo(req) {
+  if (req.file) fs.unlink(req.file.path, () => {});
+}
+
+function textoLimpio(valor, max) {
+  return String(valor ?? '').trim().substring(0, max);
+}
+
+async function desdeJustificacionManual() {
+  const inicioTemporada = await puntajeModel.obtenerInicioTemporadaVigente();
+  return justificacionModel.obtenerDesdeJustificacionManual(inicioTemporada);
+}
+
+exports.opcionesManual = async (req, res) => {
+  try {
+    const desde = await desdeJustificacionManual();
+    const [integrantes, eventos] = await Promise.all([
+      justificacionModel.listarIntegrantesJustificacionManual(),
+      justificacionModel.listarEventosJustificacionManual(desde)
+    ]);
+    res.json({ desde, integrantes, eventos });
+  } catch (err) {
+    console.error('Error cargando opciones de justificación manual:', err);
+    res.status(500).json({ mensaje: 'Error al cargar integrantes y actividades' });
+  }
+};
+
+exports.registrarManual = async (req, res) => {
+  const body = req.body || {};
+  const personaId = Number(body.persona_id);
+  const eventoId = body.evento_id ? Number(body.evento_id) : null;
+  const motivoTipo = body.motivo_tipo;
+  const estadoAplicado = body.estado_aplicado;
+  const condicion = body.condicion;
+  const motivo = textoLimpio(body.motivo, 3000);
+  const observacion = textoLimpio(body.observacion, 300) || null;
+
+  const rechazar = (status, mensaje) => {
+    descartarArchivo(req);
+    res.status(status).json({ mensaje });
+  };
+
+  if (!personaId) return rechazar(400, 'Selecciona el integrante');
+  if (!MOTIVOS.includes(motivoTipo)) return rechazar(400, 'Indica el motivo: trabajo, licencia médica, estudio u otros');
+  if (!ESTADOS_APLICABLES.includes(estadoAplicado)) return rechazar(400, 'Indica si se registra como justificado o licencia médica');
+  if (!CONDICIONES.includes(condicion)) return rechazar(400, 'Indica la condición (bailarín o socio)');
+  if (!motivo) return rechazar(400, 'Escribe el motivo que indica la carta');
+
+  try {
+    if (req.file) {
+      const firmaValida = await uploadJustificativo.verificarFirmaArchivo(req.file.path, req.file.mimetype)
+        .catch(() => false);
+      if (!firmaValida) return rechazar(400, 'El archivo no corresponde a una imagen o PDF válido');
+    }
+
+    if (!await justificacionModel.obtenerIntegranteJustificacionManual(personaId)) {
+      return rechazar(404, 'Integrante no encontrado o retirado');
+    }
+
+    const desde = await desdeJustificacionManual();
+    let evento = null;
+    let referencia;
+    let referenciaOtro = null;
+    let fechaActividad;
+
+    if (eventoId) {
+      evento = await justificacionModel.obtenerEventoJustificacionManual(eventoId, desde);
+      if (!evento) {
+        return rechazar(409, `Esa actividad no se puede justificar a mano: solo de la temporada en curso y desde el ${desde.split('-').reverse().join('-')}.`);
+      }
+      referencia = REFERENCIA_POR_TIPO_EVENTO[evento.tipo] || 'otro';
+      fechaActividad = String(evento.fecha).substring(0, 10);
+    } else {
+      // Actividad que no está registrada en el sistema: solo queda la constancia.
+      referencia = body.referencia;
+      referenciaOtro = textoLimpio(body.referencia_otro, 150) || null;
+      fechaActividad = String(body.fecha_actividad || '');
+
+      if (!REFERENCIAS.includes(referencia)) return rechazar(400, 'Indica el tipo de actividad');
+      if (!referenciaOtro) return rechazar(400, 'Indica el nombre de la actividad');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaActividad) || fechaActividad < desde) {
+        return rechazar(400, `La fecha de la actividad debe ser desde el ${desde.split('-').reverse().join('-')} (temporada en curso, máximo un mes atrás).`);
+      }
+    }
+
+    const r = await justificacionModel.crearJustificacionManual({
+      persona_id: personaId,
+      evento_id: evento ? evento.id : null,
+      referencia,
+      referencia_otro: referenciaOtro,
+      fecha_actividad: fechaActividad,
+      motivo_tipo: motivoTipo,
+      estado_aplicado: estadoAplicado,
+      condicion,
+      motivo,
+      observacion,
+      adjunto_path: req.file ? `justificativos/${req.file.filename}` : null,
+      usuario_id: req.usuario.id
+    });
+
+    if (r.resultado === 'duplicada') {
+      return rechazar(409, `Este integrante ya tiene una justificación pendiente o aprobada para esa actividad (folio ${emailService.formatearFolio(r.folio)}).`);
+    }
+    if (r.resultado === 'asistio') {
+      return rechazar(409, `No se registró: su asistencia a esa actividad figura como "${String(r.estadoAsistencia || '').replace(/_/g, ' ')}".`);
+    }
+
+    if (!r.sinEvento) {
+      puntajeModel.recalcularPuntajesAsistencia(personaId)
+        .catch(err => console.error('Error recalculando puntaje tras justificación manual:', err));
+    }
+
+    const justificacion = await justificacionModel.obtenerJustificacion(r.folio);
+    if (justificacion) {
+      avisarSocio(justificacion, { aprobada: true, estadoAplicado, observacion, manual: true });
+    }
+
+    let mensaje = `Justificación registrada y aprobada con folio ${emailService.formatearFolio(r.folio)}.`;
+    mensaje += r.sinEvento
+      ? ' No está asociada a una actividad del sistema: no se modificó ninguna asistencia.'
+      : ' La asistencia quedó registrada como justificada y el puntaje se recalculará.';
+    if (justificacion && justificacion.email) mensaje += ' Se le avisa al integrante por correo.';
+
+    res.status(201).json({ folio: r.folio, mensaje });
+  } catch (err) {
+    descartarArchivo(req);
+    console.error('Error registrando justificación manual:', err);
+    res.status(500).json({ mensaje: 'No se pudo registrar la justificación' });
   }
 };
 

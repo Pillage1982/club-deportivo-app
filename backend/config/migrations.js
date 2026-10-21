@@ -698,14 +698,25 @@ async function asegurarTablaCartasPermiso() {
 // siendo el estado que se propone aplicar (licencia_medica o justificado).
 async function asegurarMotivosJustificacion() {
   const cols = await columnasExistentes('justificaciones');
-  await ejecutar(`
-    ALTER TABLE justificaciones
-    MODIFY COLUMN referencia ENUM('ensayo', 'misa', 'reunion', 'salida', 'otro') NOT NULL
-  `);
+  // MODIFY solo si el ENUM no tiene 'misa' aún (evita rebuild de tabla en cada arranque)
+  if (!String(cols._tipos['referencia'] || '').includes("'misa'")) {
+    await ejecutar(`
+      ALTER TABLE justificaciones
+      MODIFY COLUMN referencia ENUM('ensayo', 'misa', 'reunion', 'salida', 'otro') NOT NULL
+    `);
+  }
   if (!cols.has('motivo_tipo')) {
     await ejecutar(`
       ALTER TABLE justificaciones
       ADD COLUMN motivo_tipo ENUM('trabajo', 'licencia_medica', 'estudio', 'otro') NULL AFTER tipo_solicitado
+    `);
+  }
+  // Justificación manual (oct-2026): cartas que llegan fuera del Portal (correo antiguo
+  // de la agrupación); la directiva las ingresa en el panel y quedan aprobadas.
+  if (!cols.has('origen')) {
+    await ejecutar(`
+      ALTER TABLE justificaciones
+      ADD COLUMN origen ENUM('portal', 'manual') NOT NULL DEFAULT 'portal'
     `);
   }
 }

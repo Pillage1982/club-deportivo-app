@@ -428,7 +428,8 @@ function enviarComprobanteDeposito(datos) {
 }
 
 // Aviso al socio cuando la directiva aprueba o rechaza su carta.
-function notificarResolucionJustificacion({ persona, folio, aprobada, estadoAplicado, observacion, actividad }) {
+// manual: la carta llegó fuera del Portal y la directiva la ingresó ya aprobada.
+function notificarResolucionJustificacion({ persona, folio, aprobada, estadoAplicado, observacion, actividad, manual }) {
   if (!emailConfigurado() || !persona.email) return Promise.resolve(false);
 
   const nombre = [persona.nombres, persona.apellido_paterno].join(' ').trim();
@@ -440,8 +441,11 @@ function notificarResolucionJustificacion({ persona, folio, aprobada, estadoApli
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">Gran Diablada Calameña</h2>
       <p>Hola <strong>${escaparHtml(nombre)}</strong>,</p>
-      <p>Tu carta de justificación folio <strong>${formatearFolio(folio)}</strong>
-        (${escaparHtml(actividad)}) fue ${resultado}.</p>
+      ${manual
+        ? `<p>Tu carta de justificación enviada por correo (${escaparHtml(actividad)}) quedó registrada
+        con el folio <strong>${formatearFolio(folio)}</strong> y fue ${resultado}.</p>`
+        : `<p>Tu carta de justificación folio <strong>${formatearFolio(folio)}</strong>
+        (${escaparHtml(actividad)}) fue ${resultado}.</p>`}
       ${observacion ? `<p>Observación de la directiva: <em>${escaparHtml(observacion)}</em></p>` : ''}
       <p>Puedes revisarla en el Portal del Integrante → Documentos.</p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
