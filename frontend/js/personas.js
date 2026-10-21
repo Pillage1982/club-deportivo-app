@@ -296,8 +296,10 @@ document.getElementById('es_honorario').checked = false;
 
     // Asistencia por bloque del dashboard compara contra los integrantes activos:
     // si las asistencias llegaron antes, se recalcula con los integrantes ya cargados.
+    // Lo mismo con el indicador de asistentes del lector QR.
     if (typeof asistenciasTabla !== 'undefined' && asistenciasTabla.length) {
       actualizarVistaAsistenciaDashboard(asistenciasTabla);
+      cargarUltimosRegistros();
     }
 
   })

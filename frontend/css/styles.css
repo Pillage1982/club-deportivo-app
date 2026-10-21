@@ -1178,6 +1178,36 @@ img[data-config-img="cliente.logo"] {
   border-top: 1px solid rgba(255,255,255,0.12);
   padding-top: 0.75rem;
 }
+/* Indicador de asistentes de la actividad (X/Y integrantes activos) */
+.indicador-asistentes {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 0.6rem 0.9rem;
+  color: #fff;
+}
+.indicador-asistentes-titulo {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+#indicador_asistentes_valor {
+  font-size: 1.4rem;
+  color: var(--accent);
+}
+#indicador_asistentes_pct {
+  color: rgba(255,255,255,0.7);
+}
+.indicador-asistentes-barra {
+  height: 6px;
+  margin-top: 0.4rem;
+  background: rgba(255,255,255,0.12);
+}
+.indicador-asistentes-barra .progress-bar {
+  background: var(--accent);
+}
+
 .ultimos-registros-titulo {
   color: rgba(255,255,255,0.5);
   font-size: 0.72rem;
