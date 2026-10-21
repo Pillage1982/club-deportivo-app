@@ -18,6 +18,27 @@ const ejecutarMigraciones = require('./config/migrations');
 
 const app = express();
 
+// En Hostinger la app corre detrás de proxies (LiteSpeed y la CDN hcdn). Sin
+// 'trust proxy', req.ip era la IP del proxy para todos: los límites de login,
+// recuperación de clave y verificación de cartas se compartían entre toda la
+// agrupación (11 ingresos en 15 minutos bloqueaban a todos). Por defecto se confía
+// solo en proxies de red local; con la variable TRUST_PROXY se ajusta (ej. 2 si la
+// CDN agrega un salto más que no es local).
+const TRUST_PROXY = process.env.TRUST_PROXY || 'loopback, linklocal, uniquelocal';
+app.set('trust proxy', /^\d+$/.test(TRUST_PROXY) ? Number(TRUST_PROXY) : TRUST_PROXY);
+
+// Diagnóstico: las primeras peticiones con X-Forwarded-For tras cada arranque dejan
+// en el registro la cadena de proxies y la IP que resultó, para confirmar el ajuste
+// de TRUST_PROXY en "Registros de tiempo de ejecución".
+let diagnosticosProxy = 3;
+app.use((req, res, next) => {
+  if (diagnosticosProxy > 0 && req.headers['x-forwarded-for']) {
+    diagnosticosProxy--;
+    console.log(`[proxy] x-forwarded-for="${req.headers['x-forwarded-for']}" remoto=${req.socket.remoteAddress} -> req.ip=${req.ip} (trust proxy: ${TRUST_PROXY})`);
+  }
+  next();
+});
+
 const allowedOrigin = process.env.FRONTEND_URL;
 
 // Las respuestas de la API nunca se guardan en caché. La CDN de Hostinger (hcdn)
