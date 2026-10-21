@@ -1,4 +1,4 @@
-// Política de contraseña del Portal del Socio (reemplazó al PIN de 6 dígitos,
+// Política de contraseña del Portal del Integrante (reemplazó al PIN de 6 dígitos,
 // sep-2026): mínimo 8 caracteres con mayúscula, minúscula, número y símbolo, y
 // sin contener el RUT. Mismas reglas en frontend/socio/js/api.js (REQUISITOS_CLAVE).
 

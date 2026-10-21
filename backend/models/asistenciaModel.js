@@ -55,6 +55,31 @@ exports.crearAsistencia = (data, callback) => {
 };
 
 // =====================================
+// VESTIMENTA DISTINTA / RETIRO SIN AVISO (Art. 8.4)
+// =====================================
+
+function ejecutar(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.query(sql, params, (err, result) => (err ? reject(err) : resolve(result)));
+  });
+}
+
+exports.obtenerAsistenciaPorId = id =>
+  ejecutar('SELECT id, persona_id, evento_id, estado, minutos_atraso FROM asistencias WHERE id = ?', [id])
+    .then(rows => rows[0] || null);
+
+// Solo cambia entre presente/atrasado y las marcas manuales: nunca pisa un
+// ausente ni una justificación.
+exports.ESTADOS_MARCABLES = ['presente', 'atrasado', 'vestimenta_distinta', 'retiro_sin_aviso'];
+
+exports.actualizarEstadoManual = (id, estadoNuevo) =>
+  ejecutar(`
+    UPDATE asistencias
+    SET estado = ?
+    WHERE id = ? AND estado IN (?)
+  `, [estadoNuevo, id, exports.ESTADOS_MARCABLES]);
+
+// =====================================
 // REGISTRAR AUSENTES AL CERRAR EVENTO
 // =====================================
 

@@ -11,6 +11,8 @@ function ejecutar(sql, params = []) {
 }
 
 // Una sola query a INFORMATION_SCHEMA por tabla — devuelve Set con nombres de columnas existentes
+const { ROLES } = require('./roles');
+
 async function columnasExistentes(tabla) {
   const filas = await ejecutar(
     `SELECT COLUMN_NAME, COLUMN_TYPE
@@ -47,6 +49,8 @@ async function asegurarEstadoIntegrantes(colsPersonas) {
 async function reconstruirVistaEstadoFinanciero() {
   // Multas se muestran como informativo pero NO suman a deuda_actual
   // (la agrupación no las cobra actualmente — se reactivarán cuando lo decidan)
+  // Solo los pagos de tipo 'cuota' rebajan la deuda: trajes, chaquetas y otros
+  // pagos extra entran a caja pero no son abono a cuotas.
   await ejecutar(`
     CREATE OR REPLACE VIEW vista_estado_financiero AS
 
@@ -80,6 +84,7 @@ async function reconstruirVistaEstadoFinanciero() {
     LEFT JOIN (
       SELECT persona_id, SUM(monto_total) AS total_pagado
       FROM pagos
+      WHERE tipo_pago = 'cuota'
       GROUP BY persona_id
     ) pg ON p.id = pg.persona_id
 
@@ -127,6 +132,25 @@ async function asegurarCamposEventos(colsEventos) {
     await ejecutar(`
       ALTER TABLE eventos
       MODIFY COLUMN fecha DATETIME NOT NULL
+    `);
+  }
+
+  // Categorías de actividad definidas por la agrupación (oct-2026): ensayo, misa,
+  // reunión, presentación y otros. Se amplía el ENUM conservando los valores
+  // existentes (entrenamiento = ensayo, partido = presentación).
+  if (!String(colsEventos._tipos['tipo'] || '').includes("'misa'")) {
+    await ejecutar(`
+      ALTER TABLE eventos
+      MODIFY COLUMN tipo ENUM('entrenamiento', 'partido', 'reunion', 'misa', 'otro') NOT NULL
+    `);
+  }
+
+  // Margen de tolerancia por actividad antes de marcar "atrasado" al escanear el QR.
+  // NULL = usar el valor global de config.js (asistencia.toleranciaMinutosAtraso).
+  if (!colsEventos.has('tolerancia_minutos')) {
+    await ejecutar(`
+      ALTER TABLE eventos
+      ADD COLUMN tolerancia_minutos SMALLINT UNSIGNED NULL DEFAULT NULL
     `);
   }
 
@@ -323,7 +347,7 @@ async function asegurarTablaSociosAuth() {
   `);
 }
 
-// Actualización de datos obligatoria en el Portal del Socio (después de crear el
+// Actualización de datos obligatoria en el Portal del Integrante (después de crear el
 // PIN): mientras datos_actualizados=0 el socio no ve su página personal. El admin
 // puede volver a exigirla (ej. cada temporada) poniendo el flag en 0.
 async function asegurarDatosActualizadosSocios() {
@@ -363,13 +387,25 @@ async function asegurarRecuperacionClave() {
 }
 
 // Cambio de clave obligatorio en el primer ingreso del panel admin (mismo criterio
-// que el PIN del Portal del Socio). DEFAULT 1: al crear la columna, todos los
+// que el PIN del Portal del Integrante). DEFAULT 1: al crear la columna, todos los
 // usuarios existentes quedan obligados a cambiar su clave en el próximo login, y
 // todo usuario nuevo creado por SQL (clave genérica de la directiva) también.
 async function asegurarCambioPasswordUsuarios() {
   const cols = await columnasExistentes('usuarios');
   if (!cols.has('debe_cambiar_password')) {
     await ejecutar('ALTER TABLE usuarios ADD COLUMN debe_cambiar_password TINYINT(1) NOT NULL DEFAULT 1');
+  }
+  // Versión de sesión: va en el JWT (claim sv). "Reiniciar acceso" la sube y así
+  // invalida todos los tokens ya emitidos de ese usuario (duran 20 días).
+  if (!cols.has('sesion_version')) {
+    await ejecutar('ALTER TABLE usuarios ADD COLUMN sesion_version INT NOT NULL DEFAULT 0');
+  }
+  // Roles del panel (ver config/roles.js). MODIFY solo si falta alguno, para no
+  // reconstruir la tabla en cada arranque.
+  const rolesFaltantes = Object.keys(ROLES).filter(rol => !String(cols._tipos.rol || '').includes(`'${rol}'`));
+  if (rolesFaltantes.length) {
+    const lista = Object.keys(ROLES).map(rol => `'${rol}'`).join(', ');
+    await ejecutar(`ALTER TABLE usuarios MODIFY COLUMN rol ENUM(${lista}) DEFAULT 'admin'`);
   }
 }
 
@@ -380,6 +416,19 @@ async function asegurarCamposPagos() {
   }
   if (!cols.has('fecha_precision')) {
     await ejecutar("ALTER TABLE pagos ADD COLUMN fecha_precision ENUM('exacta','mensual') NOT NULL DEFAULT 'exacta'");
+  }
+  // Tipo de pago: 'cuota' (mensualidad) o un pago extra del integrante (traje,
+  // chaqueta institucional, otro). Solo los de tipo 'cuota' rebajan la deuda.
+  // DEFAULT 'cuota': todos los pagos existentes quedan como pago de cuota.
+  if (!cols.has('tipo_pago')) {
+    await ejecutar("ALTER TABLE pagos ADD COLUMN tipo_pago VARCHAR(30) NOT NULL DEFAULT 'cuota'");
+  }
+  if (!cols.has('detalle')) {
+    await ejecutar('ALTER TABLE pagos ADD COLUMN detalle VARCHAR(200) NULL');
+  }
+  // Comprobante opcional del pago (transferencia, boleta), en uploads/comprobantes
+  if (!cols.has('comprobante_path')) {
+    await ejecutar('ALTER TABLE pagos ADD COLUMN comprobante_path VARCHAR(255) NULL');
   }
 }
 
@@ -441,11 +490,33 @@ async function reconstruirVistaRankingPuntaje() {
   `);
 }
 
-// Pestaña "Documentos" del Portal del Socio: cartas que antes se entregaban en
+// Pestaña "Documentos" del Portal del Integrante: cartas que antes se entregaban en
 // papel. id = Nº de folio. Una justificación aprobada cambia la asistencia del
 // evento a justificado/licencia_medica (Art. 8.4); evento_id NULL = "Otro"
 // (actividad que no está en el sistema). Solo se reciben hasta el cierre de
 // asistencia (Art. 8.7), lo valida el controller, no la tabla.
+// Revisión de postulaciones a bloques por la directiva: aceptar asigna la 1ª o 2ª
+// opción como bloque del integrante; rechazar deja constancia con el motivo.
+// Mismos estados que las justificaciones. DEFAULT 'pendiente' para las ya enviadas.
+async function asegurarRevisionPostulaciones() {
+  const cols = await columnasExistentes('postulaciones_bloque');
+  if (!cols.has('estado')) {
+    await ejecutar("ALTER TABLE postulaciones_bloque ADD COLUMN estado ENUM('pendiente','aprobada','rechazada') NOT NULL DEFAULT 'pendiente'");
+  }
+  if (!cols.has('bloque_asignado')) {
+    await ejecutar('ALTER TABLE postulaciones_bloque ADD COLUMN bloque_asignado VARCHAR(100) NULL');
+  }
+  if (!cols.has('observacion_directiva')) {
+    await ejecutar('ALTER TABLE postulaciones_bloque ADD COLUMN observacion_directiva VARCHAR(300) NULL');
+  }
+  if (!cols.has('revisado_por')) {
+    await ejecutar('ALTER TABLE postulaciones_bloque ADD COLUMN revisado_por BIGINT NULL');
+  }
+  if (!cols.has('revisado_en')) {
+    await ejecutar('ALTER TABLE postulaciones_bloque ADD COLUMN revisado_en DATETIME NULL');
+  }
+}
+
 async function asegurarTablasDocumentosSocio() {
   await ejecutar(`
     CREATE TABLE IF NOT EXISTS justificaciones (
@@ -506,6 +577,11 @@ async function asegurarTablasDocumentosSocio() {
       CONSTRAINT fk_comprobante_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
     )
   `);
+  // Pago en que tesorería usó el comprobante (NULL = pendiente de registrar)
+  const colsComprobantes = await columnasExistentes('comprobantes_deposito');
+  if (!colsComprobantes.has('pago_id')) {
+    await ejecutar('ALTER TABLE comprobantes_deposito ADD COLUMN pago_id BIGINT NULL');
+  }
 }
 
 // Solicitudes "Súmate a la promesa" del sitio web de la agrupación: datos básicos del
@@ -541,6 +617,110 @@ async function asegurarTablaSolicitudesIngreso() {
   `);
 }
 
+// Registro de actividad (auditoría interna, solo admin y soporte): quién hizo cada
+// movimiento que modifica datos, separado por módulo. Lo escribe auditoriaMiddleware.
+async function asegurarTablaAuditoria() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS auditoria (
+      id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+      fecha        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      actor_tipo   ENUM('usuario', 'integrante') NOT NULL,
+      actor_id     BIGINT NULL,
+      actor_nombre VARCHAR(100) NULL,
+      rol          VARCHAR(30) NULL,
+      rol_base     VARCHAR(30) NULL,
+      modulo       VARCHAR(40) NOT NULL,
+      accion       VARCHAR(40) NOT NULL,
+      metodo       VARCHAR(10) NOT NULL,
+      ruta         VARCHAR(255) NOT NULL,
+      registro_id  BIGINT NULL,
+      persona_id   BIGINT NULL,
+      evento_id    BIGINT NULL,
+      detalle      TEXT NULL,
+      resultado    VARCHAR(255) NULL,
+      ip           VARCHAR(45) NULL,
+      KEY idx_auditoria_modulo_fecha (modulo, fecha),
+      KEY idx_auditoria_actor (actor_tipo, actor_id),
+      KEY idx_auditoria_fecha (fecha)
+    )
+  `);
+}
+
+// Valores sueltos que se editan desde el panel (clave → valor). Por ahora solo
+// el saldo del año anterior del Balance general (dinero heredado que no está
+// registrado como pagos ni ingresos en la app).
+async function asegurarTablaConfiguracion() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS configuracion (
+      clave           VARCHAR(60) PRIMARY KEY,
+      valor           VARCHAR(255) NULL,
+      actualizado_por VARCHAR(100) NULL,
+      actualizado_en  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+// Cartas de permiso para el colegio (Portal → Documentos). Años e integrantes se
+// congelan al aprobar, así el PDF se puede regenerar idéntico cuando se descargue.
+// codigo_verificacion va en el QR de la carta (página pública /verificar.html).
+async function asegurarTablaCartasPermiso() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS cartas_permiso (
+      id                    BIGINT AUTO_INCREMENT PRIMARY KEY,
+      persona_id            BIGINT NOT NULL,
+      colegio               VARCHAR(150) NOT NULL,
+      director              VARCHAR(150) NOT NULL,
+      curso                 VARCHAR(60) NOT NULL,
+      fecha_desde           DATE NOT NULL,
+      fecha_hasta           DATE NOT NULL,
+      estado                ENUM('pendiente', 'aprobada', 'rechazada') NOT NULL DEFAULT 'pendiente',
+      observacion_directiva VARCHAR(300) NULL,
+      codigo_verificacion   CHAR(8) NULL,
+      anios                 INT NULL,
+      integrantes           INT NULL,
+      emitida_en            DATE NULL,
+      revisado_por          INT NULL,
+      revisado_en           DATETIME NULL,
+      email_enviado         TINYINT(1) NOT NULL DEFAULT 0,
+      email_carta_enviado   TINYINT(1) NOT NULL DEFAULT 0,
+      creado_en             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_carta_permiso_codigo (codigo_verificacion),
+      KEY idx_carta_permiso_persona (persona_id),
+      KEY idx_carta_permiso_estado (estado),
+      CONSTRAINT fk_carta_permiso_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
+    )
+  `);
+}
+
+// Justificaciones (oct-2026): tipos de actividad de la agrupación (se suma Misa; el
+// valor 'salida' se conserva y se muestra como "Presentación") y motivo de la
+// inasistencia (trabajo, licencia médica, estudio u otro). tipo_solicitado sigue
+// siendo el estado que se propone aplicar (licencia_medica o justificado).
+async function asegurarMotivosJustificacion() {
+  const cols = await columnasExistentes('justificaciones');
+  // MODIFY solo si el ENUM no tiene 'misa' aún (evita rebuild de tabla en cada arranque)
+  if (!String(cols._tipos['referencia'] || '').includes("'misa'")) {
+    await ejecutar(`
+      ALTER TABLE justificaciones
+      MODIFY COLUMN referencia ENUM('ensayo', 'misa', 'reunion', 'salida', 'otro') NOT NULL
+    `);
+  }
+  if (!cols.has('motivo_tipo')) {
+    await ejecutar(`
+      ALTER TABLE justificaciones
+      ADD COLUMN motivo_tipo ENUM('trabajo', 'licencia_medica', 'estudio', 'otro') NULL AFTER tipo_solicitado
+    `);
+  }
+  // Justificación manual (oct-2026): cartas que llegan fuera del Portal (correo antiguo
+  // de la agrupación); la directiva las ingresa en el panel y quedan aprobadas.
+  if (!cols.has('origen')) {
+    await ejecutar(`
+      ALTER TABLE justificaciones
+      ADD COLUMN origen ENUM('portal', 'manual') NOT NULL DEFAULT 'portal'
+    `);
+  }
+}
+
 async function ejecutarMigraciones() {
   const [colsPersonas, colsEventos, colsAsistencias] = await Promise.all([
     columnasExistentes('personas'),
@@ -565,7 +745,12 @@ async function ejecutarMigraciones() {
   await asegurarRecuperacionClave();
   await asegurarCamposPagos();
   await asegurarTablasDocumentosSocio();
+  await asegurarRevisionPostulaciones();
   await asegurarTablaSolicitudesIngreso();
+  await asegurarTablaAuditoria();
+  await asegurarTablaConfiguracion();
+  await asegurarTablaCartasPermiso();
+  await asegurarMotivosJustificacion();
   await consolidarTiposCuota();
   await reconstruirVistaRankingPuntaje();
   await reconstruirVistaEstadoFinanciero();

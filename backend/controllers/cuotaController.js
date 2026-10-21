@@ -1,17 +1,25 @@
 // Controlador HTTP de cuotas: lista, genera y administra cuotas delegando las consultas al modelo.
 const cuotaModel = require('../models/cuotaModel');
-const { PERIODOS_CUOTAS_TEMPORADA_VIGENTE } = require('../utils/estatutoGdcRules');
+const saldoFavorService = require('../services/saldoFavorService');
+const { periodosCuotasTemporadaVigente, esPeriodoTemporadaVigente } = require('../utils/estatutoGdcRules');
 
 // =====================================
 // CUOTAS PENDIENTES POR PERSONA
 // =====================================
 
+// ?temporada=vigente: solo cuotas de la temporada vigente (las usa el pago anual,
+// que no debe tomar cuotas atrasadas de temporadas anteriores).
 exports.listarPendientesPorPersona = (req, res) => {
   cuotaModel.obtenerCuotasPendientesPorPersona(req.params.persona_id, (err, results) => {
     if (err) return res.status(500).json(err);
-    res.json(results);
+    if (req.query.temporada !== 'vigente') return res.json(results);
+    res.json(results.filter(esCuotaTemporadaVigente));
   });
 };
+
+function esCuotaTemporadaVigente(cuota) {
+  return esPeriodoTemporadaVigente(cuota.mes, cuota.anio);
+}
 
 // =====================================
 // GENERAR CUOTAS MENSUALES
@@ -46,17 +54,53 @@ exports.generarMensualidad = (req, res) => {
       (err, result) => {
         if (err) return res.status(500).json(err);
         const creadas = result.affectedRows || 0;
-        return res.json({
-          mensaje: creadas > 0
-            ? 'Proceso de cuotas finalizado'
-            : 'Las cuotas de este mes ya estaban generadas',
+        const mensajeBase = creadas > 0
+          ? 'Proceso de cuotas finalizado'
+          : 'Las cuotas de este mes ya estaban generadas';
+        aplicarSaldosTrasGenerar(creadas).then(textoSaldo => res.json({
+          mensaje: mensajeBase + textoSaldo,
           mes,
           anio,
           cuotas_creadas: creadas
-        });
+        }));
       }
     );
   });
+};
+
+// Tras crear cuotas nuevas, los saldos a favor se aplican solos a ellas. Si falla,
+// las cuotas igual quedan creadas (se puede aplicar luego con el botón).
+function aplicarSaldosTrasGenerar(creadas) {
+  if (!creadas) return Promise.resolve('');
+  return saldoFavorService.aplicarSaldosAFavor()
+    .then(({ aplicaciones }) => {
+      if (!aplicaciones.length) return '';
+      const r = saldoFavorService.resumir(aplicaciones);
+      return `. Saldo a favor aplicado: $${r.monto} de ${r.integrantes} integrante(s) (${r.cuotas_pagadas} cuota(s) pagadas, ${r.cuotas_abonadas} con abono)`;
+    })
+    .catch(err => {
+      console.error('Error aplicando saldos a favor:', err);
+      return '. No se pudieron aplicar los saldos a favor; use "Aplicar saldos a favor"';
+    });
+}
+
+// =====================================
+// APLICAR SALDOS A FAVOR (manual, con vista previa)
+// =====================================
+// body.simular = true: solo calcula y devuelve el detalle, sin escribir.
+
+exports.aplicarSaldosAFavor = (req, res) => {
+  const simular = req.body?.simular === true || req.body?.simular === 'true';
+  saldoFavorService.aplicarSaldosAFavor({ simular })
+    .then(({ aplicaciones }) => res.json({
+      simulado: simular,
+      resumen: saldoFavorService.resumir(aplicaciones),
+      aplicaciones
+    }))
+    .catch(err => {
+      console.error('Error aplicando saldos a favor:', err);
+      res.status(500).json({ mensaje: 'No se pudieron aplicar los saldos a favor' });
+    });
 };
 
 // =====================================
@@ -72,7 +116,8 @@ exports.generarTemporadaCompleta = (req, res) => {
     if (!tipos.length) return res.status(404).json({ mensaje: 'No existe el tipo de cuota Mensualidad' });
 
     const tipoMensualidad = tipos[0];
-    const periodos = PERIODOS_CUOTAS_TEMPORADA_VIGENTE;
+    const periodos = periodosCuotasTemporadaVigente();
+    const nombreTemporada = `${periodos[0].anio}-${periodos[periodos.length - 1].anio}`;
     let pendientes  = periodos.length;
     let totalCreadas = 0;
     let respondido   = false;
@@ -97,7 +142,10 @@ exports.generarTemporadaCompleta = (req, res) => {
           totalCreadas += result.affectedRows || 0;
           if (pendientes === 0) {
             respondido = true;
-            res.json({ mensaje: 'Cuotas de toda la temporada generadas', cuotas_creadas: totalCreadas });
+            aplicarSaldosTrasGenerar(totalCreadas).then(textoSaldo => res.json({
+              mensaje: `Cuotas de la temporada ${nombreTemporada} generadas${textoSaldo}`,
+              cuotas_creadas: totalCreadas
+            }));
           }
         }
       );

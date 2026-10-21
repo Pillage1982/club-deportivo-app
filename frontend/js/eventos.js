@@ -28,13 +28,69 @@ function obtenerTipoActividad(tipo) {
   const tipos =
     config.tiposActividad || {
       entrenamiento: 'Ensayo',
-      partido: 'Presentacion',
-      reunion: 'Reunion'
+      misa: 'Misa',
+      reunion: 'Reunión',
+      partido: 'Presentación',
+      otro: 'Otros'
     };
 
   return tipos[tipo] || tipo;
 
 }
+
+// Tolerancia de atraso por defecto (config.js → asistencia.toleranciaMinutosAtraso).
+function toleranciaGlobalAtraso() {
+  const valor = Number((window.APP_CONFIG || {}).asistencia?.toleranciaMinutosAtraso);
+  return Number.isFinite(valor) ? valor : 15;
+}
+
+// Selecciona la tolerancia guardada; si no está entre las opciones (ej. cargada
+// por SQL) se agrega para no perderla al volver a guardar.
+function seleccionarToleranciaEvento(minutos) {
+  const select = document.getElementById('evento_tolerancia');
+  if (!select) return;
+  const valor = String(Number(minutos) || 0);
+  if (![...select.options].some(o => o.value === valor)) {
+    select.add(new Option(`${valor} minutos`, valor));
+  }
+  select.value = valor;
+}
+
+// Una actividad se puede elegir para tomar asistencia hasta N horas después de
+// su inicio (config.js → asistencia.horasActividadSeleccionable). Las futuras
+// siempre aparecen; si la fecha no se puede leer, no se oculta.
+function actividadVigenteParaAsistencia(evento, ahora = new Date()) {
+  const fecha = new Date(String(evento.fecha || '').replace(' ', 'T'));
+  if (Number.isNaN(fecha.getTime())) return true;
+  const horas = Number((window.APP_CONFIG || {}).asistencia?.horasActividadSeleccionable) || 12;
+  return ahora.getTime() - fecha.getTime() < horas * 60 * 60 * 1000;
+}
+
+// Con el panel abierto mucho rato, quita del selector las actividades que ya
+// pasaron el plazo; si la seleccionada era una de ellas, la deselecciona.
+function quitarActividadesVencidasDelSelector() {
+  const select = document.getElementById('evento_id');
+  if (!select || !eventosAsistencia.length) return;
+
+  const vencidas = eventosAsistencia.filter(e => !actividadVigenteParaAsistencia(e));
+  if (!vencidas.length) return;
+
+  const idsVencidas = new Set(vencidas.map(e => String(e.id)));
+  const seleccionadaVencida = idsVencidas.has(select.value);
+
+  eventosAsistencia = eventosAsistencia.filter(e => !idsVencidas.has(String(e.id)));
+  Array.from(select.options)
+    .filter(o => idsVencidas.has(o.value))
+    .forEach(o => o.remove());
+
+  if (seleccionadaVencida) {
+    select.value = '';
+    select.dispatchEvent(new Event('change'));
+    mostrarAlerta('La actividad seleccionada ya cerró su plazo para tomar asistencia.', 'warning');
+  }
+}
+
+setInterval(quitarActividadesVencidasDelSelector, 5 * 60 * 1000);
 
 // =====================================
 // CARGAR EVENTOS EN SELECTOR
@@ -66,7 +122,7 @@ function cargarEventos() {
       }
 
       const datosOrdenados = data
-        .filter(evento => !evento.finalizado)
+        .filter(evento => !evento.finalizado && actividadVigenteParaAsistencia(evento))
         .sort((a, b) => {
           const fechaA = new Date(String(a.fecha || '').replace(' ', 'T'));
           const fechaB = new Date(String(b.fecha || '').replace(' ', 'T'));
@@ -131,7 +187,12 @@ function crearEvento() {
     inicia_temporada:
       document.getElementById(
         'evento_inicia_temporada'
-      ).checked
+      ).checked,
+
+    tolerancia_minutos:
+      document.getElementById(
+        'evento_tolerancia'
+      ).value
 
   };
 
@@ -145,8 +206,10 @@ function crearEvento() {
 
   const tiposPermitidos = [
     'entrenamiento',
+    'misa',
+    'reunion',
     'partido',
-    'reunion'
+    'otro'
   ];
 
   const textoValido = valor => {
@@ -252,6 +315,10 @@ document.getElementById(
 document.getElementById(
   'evento_inicia_temporada'
 ).checked = false;
+
+document.getElementById(
+  'evento_tolerancia'
+).value = String(toleranciaGlobalAtraso());
 
 // Refresca tabla y selector eventos
     invalidarCacheApi('eventos');
@@ -448,6 +515,10 @@ function editarEvento(evento) {
     'evento_inicia_temporada'
   ).checked =
     Boolean(Number(evento.inicia_temporada));
+
+  seleccionarToleranciaEvento(
+    evento.tolerancia_minutos ?? toleranciaGlobalAtraso()
+  );
 
   document.getElementById(
     'btn_guardar_evento'

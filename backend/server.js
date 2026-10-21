@@ -18,7 +18,32 @@ const ejecutarMigraciones = require('./config/migrations');
 
 const app = express();
 
+// En Hostinger la app corre detrás de proxies (LiteSpeed y la CDN hcdn). Sin
+// 'trust proxy', req.ip era la IP del proxy para todos: los límites de login,
+// recuperación de clave y verificación de cartas se compartían entre toda la
+// agrupación (11 ingresos en 15 minutos bloqueaban a todos). Por defecto se confía
+// solo en proxies de red local (verificado en dev oct-2026: con este valor req.ip
+// ya es la IP real); con la variable TRUST_PROXY se ajusta (ej. 2 si la CDN
+// agrega un salto más que no es local).
+const TRUST_PROXY = process.env.TRUST_PROXY || 'loopback, linklocal, uniquelocal';
+app.set('trust proxy', /^\d+$/.test(TRUST_PROXY) ? Number(TRUST_PROXY) : TRUST_PROXY);
+
 const allowedOrigin = process.env.FRONTEND_URL;
+
+// Las respuestas de la API nunca se guardan en caché. La CDN de Hostinger (hcdn)
+// guardaba 7 días ("public, max-age=604800") respuestas con tipo de imagen: un
+// "no encontrado" viejo seguía llegando aunque el archivo ya existiera y, peor, un
+// comprobante real podía quedar servido por la CDN sin pasar por la autenticación.
+const RUTAS_API = [
+  '/asistencia', '/personas', '/eventos', '/multas', '/usuarios', '/dashboard',
+  '/finanzas', '/pagos', '/cuotas', '/puntaje', '/formaciones', '/gastos',
+  '/ingresos', '/justificaciones', '/solicitudes-ingreso', '/socio-auth', '/publico',
+  '/auditoria', '/cartas-permiso'
+];
+app.use(RUTAS_API, (req, res, next) => {
+  res.set('Cache-Control', 'no-store, private');
+  next();
+});
 
 // Antes se llamaba cors() sin opciones (abierto a cualquier origen) pese a
 // calcular allowedOrigin, que quedaba sin usar. Si no esta configurado el
@@ -33,6 +58,10 @@ app.use(express.json());
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
+
+// Registro de actividad: anota quién hizo cada cambio (ver auditoriaMiddleware).
+app.use(require('./middleware/auditoriaMiddleware'));
+app.use('/auditoria', require('./routes/auditoriaRoutes'));
 
 app.use('/asistencia', require('./routes/asistenciaRoutes'));
 app.use('/personas', require('./routes/personaRoutes'));
@@ -49,6 +78,7 @@ app.use('/gastos', require('./routes/gastoRoutes'));
 app.use('/ingresos', require('./routes/ingresoRoutes'));
 app.use('/justificaciones', require('./routes/justificacionRoutes'));
 app.use('/solicitudes-ingreso', require('./routes/solicitudIngresoRoutes'));
+app.use('/cartas-permiso', require('./routes/cartaPermisoRoutes'));
 // Ambos bajo /socio-auth (no /socio): el frontend del socio vive en la carpeta
 // /socio/ servida como estático (ver abajo) — si la API usara el prefijo /socio
 // colisionaría con esa ruta y el Service Worker cachearía mal el HTML/JS estático

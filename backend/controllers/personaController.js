@@ -11,7 +11,7 @@ const {
 } = require('../utils/validacionesPersona');
 
 // Celulares en formato único +569XXXXXXXX (pedido del cliente GDC, sep-2026),
-// igual que en "Actualizar datos" del Portal del Socio. Si no es un celular
+// igual que en "Actualizar datos" del Portal del Integrante. Si no es un celular
 // válido se deja el texto tal cual para que validarPersona lo rechace.
 function normalizarTelefono(telefono) {
   return normalizarCelular(telefono) || limpiarTexto(telefono);
@@ -112,6 +112,17 @@ exports.listar = (req, res) => {
   personaModel.obtenerPersonas((err, results) => {
     if (err) {
       return res.status(500).send(err);
+    }
+
+    res.json(results);
+  });
+};
+
+exports.listarRetirados = (req, res) => {
+  personaModel.obtenerRetirados((err, results) => {
+    if (err) {
+      console.error('Error listando integrantes retirados:', err);
+      return res.status(500).json({ mensaje: 'Error al cargar los integrantes retirados' });
     }
 
     res.json(results);

@@ -5,10 +5,13 @@ const multaModel = require('../models/multaModel');
 const multasConfig = require('../config/multas');
 const { notificarAusentesEvento } = require('../services/emailService');
 
+// Categorías de actividad de la agrupación: ensayo, misa, reunión, presentación y otros.
 const tiposPermitidos = [
   'entrenamiento',
+  'misa',
+  'reunion',
   'partido',
-  'reunion'
+  'otro'
 ];
 
 function textoValido(valor, minimo = 3) {
@@ -49,6 +52,14 @@ function validarEvento(body) {
 
   if (descripcion && !textoValido(descripcion)) {
     return 'Ingrese una descripcion valida';
+  }
+
+  const tolerancia = body.tolerancia_minutos;
+  if (tolerancia !== undefined && tolerancia !== null && tolerancia !== '') {
+    const minutos = Number(tolerancia);
+    if (!Number.isInteger(minutos) || minutos < 0 || minutos > 180) {
+      return 'Seleccione un margen de tolerancia valido';
+    }
   }
 
   return null;

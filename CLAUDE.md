@@ -28,6 +28,9 @@ Cliente activo: Gran Diablada Calameña (rama `cliente/calamena`).
 - Revisar en devnexo antes de fusionar a main
 - **Pedir autorización antes de commit y push**
 
+## Roles del panel
+`backend/config/roles.js`: cada rol hereda permisos de un rol base y puede o no eliminar (roleMiddleware bloquea DELETE). `admin`, `tesorero`, `entrenador` (base); `secretaria` = admin; `director1` = admin sin eliminar; `director2` = tesorero sin eliminar; `director3` = entrenador sin eliminar; `coordinador` = entrenador sin eliminar. El panel usa `rol_base` (obtenerRolActual) y oculta botones de borrar con `body.sin-eliminar`. Usuarios se crean por SQL con clave `gdc123` (cambio obligatorio en el primer ingreso).
+
 ## Estados de socios
 - `activo` → participa y genera cuotas
 - `receso` → pausado de asistencia y nuevas cuotas, puede hacer pagos
@@ -58,21 +61,33 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - **Exportación Excel/PDF (jul-2026):** SheetJS 0.18.5 + jsPDF + autoTable, 4 módulos (Integrantes, Asistencias, Deudores, Puntaje), dropdown unificado Bootstrap 5 por módulo
 - **Pagos vinculados a cuotas (jul-2026):** campo `cuota_id` opcional en formulario de pago; al vincular → cuota pasa a `pagado` + dispara puntaje Fase 2
 - **Multas desacopladas (jul-2026):** `deuda_actual = cuotas − pagos` (multas excluidas de la deuda); columna multas en Estado Financiero es informativa; fácil de reactivar en una línea cuando la agrupación decida cobrarlas
-- Estados extendidos de asistencia: `justificado`, `licencia_medica`, `vestimenta_distinta`, `retiro_sin_aviso` (en BD y puntaje; pendiente UI manual)
+- Estados extendidos de asistencia: `justificado`, `licencia_medica`, `vestimenta_distinta`, `retiro_sin_aviso` (en BD y puntaje)
+- **Vestimenta distinta y retiro sin aviso (oct-2026):** dos botones por registro en Tablas → Asistencias y en la lista "Asistentes registrados" bajo el lector QR (lista completa con scroll; `PATCH /asistencia/:id/vestimenta` y `/:id/retiro`, body `{activo}`); solo sobre presente/atrasado, al quitarla vuelve a atrasado si tiene minutos y si no a presente; recalcula el puntaje
 - Matching por cercanía horaria cuando existen varias actividades el mismo día
-- Tolerancia de atraso global en `config.js` (`toleranciaMinutosAtraso: 30`), confirmada por el cliente el 25-08-2026
-- **Justificaciones (oct-2026):** el socio envía la carta desde el Portal del Socio; al aprobarla en Tablas → Justificaciones la asistencia queda `justificado`/`licencia_medica`, se borra la multa y se recalcula el puntaje
+- Selector de toma de asistencia: solo actividades no finalizadas y hasta 12 h después de su inicio (`config.js` → `horasActividadSeleccionable`); el panel "Sin asignar" sigue viendo todas
+- Tolerancia de atraso por actividad (oct-2026): selector en el formulario de Actividades (`eventos.tolerancia_minutos`); por defecto 15 min (`config.js` → `toleranciaMinutosAtraso`), que también usan las actividades sin margen guardado
+- Categorías de actividad (oct-2026): Ensayo (`entrenamiento`), Misa (`misa`), Reunión (`reunion`), Presentación (`partido`), Otros (`otro`)
+- **Justificaciones (oct-2026):** el socio envía la carta desde el Portal del Socio (actividad: Ensayo/Misa/Reunión/Presentación/Otros, donde `referencia='salida'` = Presentación; motivo `motivo_tipo`: trabajo/licencia_medica/estudio/otro, y `tipo_solicitado` = licencia_medica solo si el motivo lo es); al aprobarla en Tablas → Justificaciones la asistencia queda `justificado`/`licencia_medica`, se borra la multa y se recalcula el puntaje. **Registro manual (oct-2026):** botón "Registrar manual" en Tablas → Justificaciones para cartas que llegan fuera del Portal (correo antiguo); queda aprobada al guardar (`POST /justificaciones/manual`, `justificaciones.origen='manual'`), mismo efecto en asistencia/multa/puntaje, aviso por correo al integrante; solo actividades de la temporada vigente y de hasta un mes atrás; no pisa presente/atrasado ni duplica una carta pendiente/aprobada
 - Correo saliente configurado en dev y producción (oct-2026): SMTP de Hostinger, buzones @gdcayquina.cl
-- **Depósitos en Portal del Socio (oct-2026):** Documentos → "Datos para depositar" (cuenta en `backend/config/cuentaDeposito.js`) y "Enviar comprobante de depósito" (tabla `comprobantes_deposito`, archivo en `uploads/comprobantes_deposito`, correo a `EMAIL_TESORERIA` o tesoreria@gdcayquina.cl). Solo avisa: tesorería registra el pago en el panel
-- **Temporadas (oct-2026):** la abre la actividad marcada "Inicia temporada" (`eventos.inicia_temporada`); corta ranking, selector de temporadas y formaciones. 2026-2027 la abre la Misa a la Chilena del 26-09-2026. Cuotas de la temporada vigente: `PERIODOS_CUOTAS_TEMPORADA_VIGENTE` en `estatutoGdcRules.js` (oct-2026 a jul-2027)
+- **Depósitos en Portal del Socio (oct-2026):** Documentos → "Datos para depositar" (cuenta en `backend/config/cuentaDeposito.js`) y "Enviar comprobante de depósito" (tabla `comprobantes_deposito`, archivo en `uploads/comprobantes_deposito`, correo a `EMAIL_TESORERIA` o tesoreria@gdcayquina.cl). Tesorería los ve en Tablas → Depósitos y con "Registrar pago" (o 📎 en Tablas → Pagos) el pago usa ese mismo archivo como comprobante; `comprobantes_deposito.pago_id` marca el depósito como registrado (oct-2026)
+- **Temporadas (oct-2026):** la abre la actividad marcada "Inicia temporada" (`eventos.inicia_temporada`); corta ranking, selector de temporadas, formaciones, historial de puntaje del panel, Portal y reporte de cuotas (todo el puntaje se ve desde el inicio de la temporada; el puntaje de una cuota nunca queda antes del 1-oct de su temporada). 2026-2027 la abre la Misa a la Chilena del 26-09-2026. Cuotas de la temporada vigente: `periodosCuotasTemporadaVigente()` en `estatutoGdcRules.js`, calculada por fecha (hora Chile): desde octubre, oct de ese año a jul del siguiente
 - **Módulo de Gastos (jul-2026):** registro, categorías, responsable, comprobante adjunto y exportación
 - **Módulo de Ingresos de terceros (oct-2026):** tabla `ingresos` (sin `persona_id`) para donaciones, premios y proyectos adjudicados; Tablas → Ingresos y Formularios → Ingreso, comprobante adjunto, exportación Excel/PDF. No afecta deuda ni puntaje
-- **Balance general y Total en caja (oct-2026):** `/dashboard` entrega `balance` solo a admin/tesorero = (SUM pagos + SUM ingresos) − SUM gastos, calculado en vivo; tarjeta "Total en caja" + bloque "Balance general" en Dashboard; se refresca al guardar/eliminar pagos, gastos e ingresos
+- **Balance general y Total en caja (oct-2026):** `/dashboard` entrega `balance` solo a admin/tesorero = saldo año anterior + (SUM pagos + SUM ingresos) − SUM gastos, calculado en vivo; el saldo año anterior es un monto fijo editable en la tarjeta (tabla `configuracion`, clave `saldo_anio_anterior`, `PUT /dashboard/saldo-anio-anterior`); tarjeta "Total en caja" + bloque "Balance general" en Dashboard (los pagos `tipo_pago='integracion'` van en su propia línea "Pago Inscripción (Nuevo Integrante)", fuera de "Pagos de integrantes"); se refresca al guardar/eliminar pagos, gastos e ingresos
 - Sesión de 20 días y continuidad offline sin cierre forzado por falta de conexión
+- **Tipo de pago y comprobante (oct-2026):** `pagos.tipo_pago` (cuota/traje/chaqueta/otro) + `detalle`; solo `tipo_pago='cuota'` rebaja la deuda (vista_estado_financiero y Portal), los extras suman a caja. `pagos.comprobante_path` opcional (uploads/comprobantes), ver/adjuntar desde Tablas → Pagos
+- **Meses que se pagan (oct-2026):** en Formularios → Pago se marcan a mano las cuotas pendientes (cualquier temporada). 1 mes: abono parcial permitido. Varios meses con monto menor: se pagan los más antiguos y el último queda con abono. Sin meses marcados (tipo cuota): se aplica a las pendientes más antiguas; el sobrante queda a favor. El pago anual solo toma la temporada vigente. Cuotas con pagos parciales muestran la etiqueta "Abono $X" (formulario, Tablas → Cuotas con filtro "Con abono", Portal). La deuda del Portal se calcula por cuota (abonos a cuotas de la temporada + saldo a favor de pagos de cuota de la temporada), no por fecha de pago
+- **Registro de actividad (oct-2026):** tabla `auditoria`, escrita por `middleware/auditoriaMiddleware.js` (montado en server.js antes de las rutas) en cada POST/PUT/PATCH/DELETE exitoso con sesión (panel o Portal); sin claves/PIN en el detalle; GET no se registran. Botón "Actividad" en la barra → modal con pestañas por módulo, filtro usuario/fechas. Solo roles `admin` y `secretaria` exactos y cuenta de soporte (`GET /auditoria`)
+- **Integrantes y Retirados (oct-2026):** Tablas → Integrantes con filtro de estado (activo/receso); Tablas → Retirados = histórico de eliminados lógicos (`GET /personas/retirados`, fecha de retiro sacada de `auditoria`, sin fecha para retiros anteriores a la auditoría). Ambas tablas ordenadas por bloque y luego alfabético por nombre mostrado; en escritorio Nombre y RUT quedan fijos al desplazar (`.tabla-columnas-fijas`)
+- **Asistencia por Bloque del Dashboard (oct-2026):** asistieron (presente/atrasado/vestimenta distinta) / esperados = integrantes activos del bloque × actividades del período; "—" si no hubo actividades de ese tipo. Honorario en bloque de baile cuenta en su bloque; bloques Socios/Socios honorarios y honorarios sin bloque van en una fila "Socios" al final
+- **Carta de permiso para el colegio (oct-2026):** Portal → Documentos (cuenta del alumno; colegio, director/a, curso, desde/hasta, máx. 31 días; solo integrantes `activo`). Aviso a `EMAIL_SECRETARIA` (secretaria@) con copia a `EMAIL_PRESIDENCIA` (presidencia@). Tablas → Cartas colegio, solo roles `admin`/`secretaria` exactos y soporte: aprobar emite el PDF (pdfkit, tamaño carta, texto calcado de la carta 2023, estilo del mockup) y lo envía al correo del integrante; también se descarga en el Portal y el panel. Tabla `cartas_permiso` (años e integrantes se congelan al aprobar; el PDF se regenera al descargar). QR → `/verificar.html?c=<código>` → `GET /publico/cartas-permiso/:codigo`. La firma del presidente NO se versiona: va en `<UPLOADS_DIR>/firmas/firma_presidente.png` (sin ella no se emite el PDF). Fuentes y timbre en `backend/assets`. Spec: `documentacion/carta_permiso_colegio/ESPECIFICACION.md`
+- Dashboard: tarjetas "Deuda proyectada" y "Total disponible" (antes Deuda / Total en caja)
+- **Ficha Historial por integrante (oct-2026):** botón en Tablas → Finanzas; resumen, cuotas con abono/saldo y pagos (temporada vigente o todo), exportable a Excel/PDF. Endpoint `GET /finanzas/historial/:persona_id?alcance=temporada|todo` (reusa las consultas del Portal)
+- **Saldo a favor (oct-2026):** `services/saldoFavorService.js` aplica la parte no asignada de pagos de cuota a las cuotas pendientes más antiguas del integrante; automático al generar cuotas y con botón "Aplicar saldos a favor" en Cuotas (vista previa con `simular` antes de escribir). Puntaje según la fecha del pago original (`utils/puntajeCuotas.js`)
 
 ### Pendiente calamena
-- UI para asignar manualmente `vestimenta_distinta` y `retiro_sin_aviso` (justificado y licencia_medica ya entran por Justificaciones)
 - Cancionero (Spotify + letras)
+- Guía de uso general en dos versiones: Directiva (panel) e Integrantes (Portal). Ya existen guías puntuales del Portal en `documentacion/` (primer ingreso, pagos, recuperar contraseña) e instalación de la app
 
 ### En espera de definición del cliente
 - Justificaciones: si se aprueba antes del evento y el socio igual asiste; si la Junta de disciplina necesita rol propio; folio único o separado.
@@ -94,8 +109,17 @@ Ver `documentacion/roadmap_maestro_producto_adaptable.md`
 
 ## Hosting Hostinger — comandos clave
 ```bash
-# Ruta del proyecto
-cd ~/domains/dev.gdcayquina.cl/nodejs   # o app.gdcayquina.cl
+# SSH (cuenta del cliente): ssh -p 65002 u402516660@45.152.44.96
+# Ruta del proyecto (cada despliegue crea hbuilds/versions/<uuid>; solo queda la activa)
+cd ~/domains/dev.gdcayquina.cl/hbuilds/current/nodejs   # o app.gdcayquina.cl
+
+# Archivos subidos: FUERA de la app (el zip reemplaza la versión y borraría uploads).
+# Variable de entorno UPLOADS_DIR en hPanel → sitio → Variables de entorno:
+#   dev: /home/u402516660/uploads_gdc/dev   prod: /home/u402516660/uploads_gdc/app
+
+# IP real detrás de los proxies de Hostinger: server.js fija 'trust proxy' (por defecto
+# solo proxies locales, verificado en dev: req.ip = IP real; variable TRUST_PROXY para
+# ajustar, ej. 2, no hace falta hoy).
 
 # npm (no está en PATH, usar ruta completa)
 /opt/alt/alt-nodejs22/root/usr/bin/npm install

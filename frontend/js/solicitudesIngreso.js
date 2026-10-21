@@ -1,6 +1,6 @@
 // Panel admin "Solicitudes": postulaciones enviadas desde el botón "Súmate a la
 // promesa" del sitio web de la agrupación. Aceptar crea el integrante con los datos
-// básicos (el resto lo completa él en su primer ingreso al Portal del Socio);
+// básicos (el resto lo completa él en su primer ingreso al Portal del Integrante);
 // en ambos casos el backend avisa al postulante por correo.
 
 let cacheSolicitudes = [];
@@ -159,14 +159,14 @@ function abrirRevisionSolicitud(id) {
   bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_revisar_solicitud')).show();
 }
 
-function resolverSolicitudIngreso(accion) {
+async function resolverSolicitudIngreso(accion) {
   const s = solicitudEnRevision;
   if (!s) return;
 
   const confirmacion = accion === 'aprobar'
-    ? `¿Aceptar a ${nombreSolicitante(s)} como integrante activo?`
-    : `¿Rechazar la solicitud de ${nombreSolicitante(s)}? Se le enviará un aviso por correo.`;
-  if (!confirm(confirmacion)) return;
+    ? `¿Aceptar a ${escaparHtml(nombreSolicitante(s))} como integrante activo?`
+    : `¿Rechazar la solicitud de ${escaparHtml(nombreSolicitante(s))}? Se le enviará un aviso por correo.`;
+  if (!(await confirmarAccion(confirmacion))) return;
 
   const botones = ['btn_aprobar_solicitud', 'btn_rechazar_solicitud'];
   botones.forEach(id => { document.getElementById(id).disabled = true; });

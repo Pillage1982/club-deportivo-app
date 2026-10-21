@@ -3,8 +3,11 @@
 // email (usuarios.email vacío), ambos obligatorios antes de usar el panel.
 const usuarioModel = require('../models/usuarioModel');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { limpiarTexto, validarEmail } = require('../utils/validacionesPersona');
+const { ROLES, rolBase, puedeEliminar, esSoporte } = require('../config/roles');
+const { olvidarSesion } = require('../middleware/authMiddleware');
 
 const BCRYPT_ROUNDS = 10;
 const PASSWORD_MIN_LARGO = 8;
@@ -27,7 +30,8 @@ function firmarToken(user, { debeCambiarPassword, debeRegistrarEmail }) {
   const payload = {
     id: user.id,
     usuario: user.usuario,
-    rol: user.rol
+    rol: user.rol,
+    sv: Number(user.sesion_version) || 0
   };
   if (debeCambiarPassword) payload.cambiarPassword = true;
   if (debeRegistrarEmail) payload.registrarEmail = true;
@@ -39,11 +43,17 @@ function firmarToken(user, { debeCambiarPassword, debeRegistrarEmail }) {
   });
 }
 
+// rol_base y puede_eliminar: el panel decide qué pestañas y botones mostrar con el
+// rol base (admin/tesorero/entrenador); rol_nombre es el que se muestra arriba.
 function datosUsuario(user, { debeCambiarPassword, debeRegistrarEmail }) {
   return {
     id: user.id,
     usuario: user.usuario,
     rol: user.rol,
+    rol_base: rolBase(user.rol),
+    rol_nombre: ROLES[user.rol] ? ROLES[user.rol].nombre : user.rol,
+    puede_eliminar: puedeEliminar(user.rol),
+    es_soporte: esSoporte(user.usuario),
     debeCambiarPassword,
     debeRegistrarEmail
   };
@@ -77,6 +87,16 @@ exports.login = (req, res) => {
         console.warn('Password incorrecto para:', usuario);
         return res.status(401).json({
           mensaje: 'Contraseña incorrecta'
+        });
+      }
+
+      // Un rol que no está en config/roles.js (ej. vacío porque se creó el usuario
+      // antes de que la BD tuviera ese rol) no tiene permisos: se avisa en vez de
+      // dejarlo entrar a un panel que no carga nada.
+      if (!ROLES[user.rol]) {
+        console.warn('Usuario con rol no válido:', usuario, JSON.stringify(user.rol));
+        return res.status(403).json({
+          mensaje: 'Tu usuario no tiene un rol válido. Pide al administrador que lo revise.'
         });
       }
 
@@ -200,4 +220,67 @@ exports.registrarEmail = (req, res) => {
       });
     });
   });
+};
+
+// =====================================
+// SOPORTE: usuarios del panel y reinicio de acceso (solo cuentas de soporte)
+// =====================================
+// Clave temporal legible (sin 0/O ni 1/l/I) para dictarla o enviarla por WhatsApp.
+const ALFABETO_TEMPORAL = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function claveTemporal(largo = 10) {
+  return Array.from(crypto.randomBytes(largo), b => ALFABETO_TEMPORAL[b % ALFABETO_TEMPORAL.length]).join('');
+}
+
+exports.soloSoporte = (req, res, next) => {
+  if (!esSoporte(req.usuario && req.usuario.usuario)) {
+    return res.status(403).json({ mensaje: 'Solo la cuenta de soporte puede administrar usuarios' });
+  }
+  next();
+};
+
+exports.listarUsuarios = (req, res) => {
+  usuarioModel.listarUsuarios()
+    .then(rows => res.json(rows.map(u => ({
+      id: u.id,
+      usuario: u.usuario,
+      rol: u.rol,
+      rol_nombre: ROLES[u.rol] ? ROLES[u.rol].nombre : (u.rol || 'Sin rol'),
+      email: u.email || null,
+      debe_cambiar_password: !!u.debe_cambiar_password,
+      es_propio: u.id === req.usuario.id
+    }))))
+    .catch(err => {
+      console.error('Error listando usuarios del panel:', err);
+      res.status(500).json({ mensaje: 'Error al listar usuarios' });
+    });
+};
+
+// Para cuando una cuenta quedó en manos de quien no corresponde: nueva clave
+// temporal (se muestra una sola vez), email borrado y sesiones cerradas.
+exports.reiniciarAcceso = async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ mensaje: 'Usuario no válido' });
+  }
+  if (id === req.usuario.id) {
+    return res.status(400).json({ mensaje: 'No puedes reiniciar tu propia cuenta' });
+  }
+
+  try {
+    const clave = claveTemporal();
+    const hash = await bcrypt.hash(clave, BCRYPT_ROUNDS);
+    const ok = await usuarioModel.reiniciarAcceso(id, hash);
+    if (!ok) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+
+    olvidarSesion(id);
+    console.warn(`[Soporte] ${req.usuario.usuario} reinició el acceso del usuario id ${id}`);
+    res.json({
+      mensaje: 'Acceso reiniciado: se cerraron sus sesiones abiertas',
+      clave_temporal: clave
+    });
+  } catch (err) {
+    console.error('Error reiniciando acceso de usuario:', err);
+    res.status(500).json({ mensaje: 'Error al reiniciar el acceso' });
+  }
 };

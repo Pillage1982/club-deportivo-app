@@ -1,10 +1,11 @@
-// Adjuntos que envían los socios desde el Portal del Socio: respaldo de las cartas
+// Adjuntos que envían los socios desde el Portal del Integrante: respaldo de las cartas
 // de justificación (licencia médica, certificado...) y comprobantes de depósito.
 // Mismas reglas que los comprobantes de gastos (tipos, 5MB, extensión según
 // mimetype, firma binaria): se reutilizan de uploadComprobante para no mantener
 // dos listas que puedan desalinearse.
 const path = require('path');
 const fs = require('fs');
+const { DIRECTORIO_UPLOADS } = require('../config/uploads');
 const uploadComprobante = require('./uploadComprobante');
 
 let multer = null;
@@ -12,14 +13,14 @@ let multer = null;
 try {
   multer = require('multer');
 } catch (e) {
-  console.warn('[Portal del Socio] multer no disponible. Ejecute npm install en el servidor.');
+  console.warn('[Portal del Integrante] multer no disponible. Ejecute npm install en el servidor.');
 }
 
 const { extensionPorMime, verificarFirmaArchivo } = uploadComprobante;
 
-// carpeta: subcarpeta de backend/uploads (ej. 'justificativos').
+// carpeta: subcarpeta de la carpeta de uploads (ej. 'justificativos'), ver config/uploads.js.
 function crearUploadSocio(carpeta) {
-  const destino = path.join(__dirname, '..', 'uploads', carpeta);
+  const destino = path.join(DIRECTORIO_UPLOADS, carpeta);
   let upload;
 
   if (multer) {

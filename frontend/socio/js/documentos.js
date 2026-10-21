@@ -1,23 +1,38 @@
-// Portal del Socio → Documentos: cartas de justificación de inasistencia y de
+// Portal del Integrante → Documentos: cartas de justificación de inasistencia y de
 // postulación a bloques con el mismo formato que las cartas en papel de la
 // agrupación. Nombre, RUT, celular y email se autocompletan (el servidor los toma
 // de la BD, no del formulario); la vista previa muestra la carta tal como llega
 // por correo a la directiva/caporales. También muestra la cuenta para depositar,
-// envía comprobantes de depósito a tesorería y abre los Estatutos en PDF.
+// envía comprobantes de depósito a tesorería, pide la carta de permiso para el
+// colegio (Ayquina) y abre los Estatutos en PDF.
 
 let datosDocumentos = null;
 
+// Categorías de actividad de la agrupación ('salida' es el valor histórico de Presentación).
 const ETIQUETA_REFERENCIA = {
   ensayo: 'Ensayo',
+  misa: 'Misa',
   reunion: 'Reunión',
-  salida: 'Salida',
-  otro: 'Otro'
+  salida: 'Presentación',
+  otro: 'Otros'
 };
 
 const ETIQUETA_TIPO_JUST = {
   justificado: 'Justificación',
   licencia_medica: 'Licencia médica'
 };
+
+const ETIQUETA_MOTIVO_JUST = {
+  trabajo: 'Trabajo',
+  licencia_medica: 'Licencia médica',
+  estudio: 'Estudio',
+  otro: 'Otros'
+};
+
+// Cartas anteriores al motivo (oct-2026) solo tienen tipo_solicitado.
+function etiquetaMotivoJust(j) {
+  return ETIQUETA_MOTIVO_JUST[j.motivo_tipo] || ETIQUETA_TIPO_JUST[j.tipo_solicitado] || 'Justificación';
+}
 
 function cargarDocumentos() {
   return fetch(`${API_URL}/socio-auth/documentos`, { headers: getAuthHeadersSocio() })
@@ -30,8 +45,13 @@ function cargarDocumentos() {
       datosDocumentos = data;
       document.getElementById('txt_minutos_cierre').textContent = data.minutos_cierre;
       renderizarHistorialDocumentos();
+      renderizarAvisoIntegracion();
       prepararFormularioJustificacion();
       prepararFormularioPostulacion();
+      prepararFormularioCartaPermiso();
+      // Oculta hasta que la agrupación tenga su carta (backend/config/cartaPermiso.js).
+      document.getElementById('docs_opcion_carta_permiso')
+        ?.classList.toggle('d-none', !data.carta_permiso?.habilitada);
     })
     .catch(err => {
       console.error('Error cargando documentos:', err);
@@ -44,7 +64,7 @@ function cargarDocumentos() {
 // NAVEGACIÓN INTERNA (menú ↔ formularios)
 // =====================================
 function mostrarVistaDocumentos(id) {
-  ['docs_menu', 'docs_form_justificacion', 'docs_form_postulacion', 'docs_cuenta', 'docs_form_comprobante'].forEach(v => {
+  ['docs_menu', 'docs_form_justificacion', 'docs_form_postulacion', 'docs_cuenta', 'docs_form_comprobante', 'docs_form_carta_permiso'].forEach(v => {
     document.getElementById(v).classList.toggle('d-none', v !== id);
   });
   window.scrollTo(0, 0);
@@ -101,7 +121,8 @@ function renderizarHistorialDocumentos() {
   const items = [
     ...datosDocumentos.justificaciones.map(j => ({ tipo: 'j', fecha: j.creado_en, dato: j })),
     ...datosDocumentos.postulaciones.map(p => ({ tipo: 'p', fecha: p.creado_en, dato: p })),
-    ...(datosDocumentos.comprobantes || []).map(c => ({ tipo: 'c', fecha: c.creado_en, dato: c }))
+    ...(datosDocumentos.comprobantes || []).map(c => ({ tipo: 'c', fecha: c.creado_en, dato: c })),
+    ...(datosDocumentos.cartas_permiso || []).map(c => ({ tipo: 'cp', fecha: c.creado_en, dato: c }))
   ].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
 
   if (!items.length) {
@@ -110,6 +131,22 @@ function renderizarHistorialDocumentos() {
   }
 
   contenedor.innerHTML = items.map(({ tipo, dato }) => {
+    if (tipo === 'cp') {
+      return `
+        <div class="item socio-doc-item">
+          <div>
+            <div><strong>Carta de permiso colegio</strong> · Folio ${folioTexto(dato.id)}</div>
+            <small class="text-muted">${escaparHtml(dato.colegio)} · ${formatearFecha(dato.fecha_desde)} al ${formatearFecha(dato.fecha_hasta)}</small>
+            ${dato.observacion_directiva ? `<small class="d-block fst-italic">Directiva: ${escaparHtml(dato.observacion_directiva)}</small>` : ''}
+            ${dato.estado === 'aprobada' ? `
+            <button type="button" class="btn btn-link btn-sm px-0" onclick="descargarCartaPermiso(${Number(dato.id)}, this)">
+              <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+            </button>` : ''}
+          </div>
+          ${badgeEstadoCarta(dato.estado)}
+        </div>
+      `;
+    }
     if (tipo === 'c') {
       return `
         <div class="item socio-doc-item">
@@ -119,7 +156,9 @@ function renderizarHistorialDocumentos() {
               ${formatearMonto(dato.monto)} · depositado ${formatearFecha(dato.fecha_deposito)}${dato.concepto ? ` · ${escaparHtml(dato.concepto)}` : ''}
             </small>
           </div>
-          ${dato.email_enviado
+          ${dato.pago_id
+            ? '<span class="badge bg-success">Pago registrado</span>'
+            : dato.email_enviado
             ? '<span class="badge bg-secondary">Enviado a tesorería</span>'
             : '<span class="badge bg-warning text-dark">Correo no enviado</span>'}
         </div>
@@ -135,8 +174,11 @@ function renderizarHistorialDocumentos() {
               ${escaparHtml(dato.opcion_1)}${dato.opcion_2 ? ` / ${escaparHtml(dato.opcion_2)}` : ''}
               · enviada ${formatearFecha(dato.creado_en)}
             </small>
+            ${dato.observacion_directiva ? `<small class="d-block fst-italic">Directiva: ${escaparHtml(dato.observacion_directiva)}</small>` : ''}
           </div>
-          <span class="badge bg-secondary">Enviada</span>
+          ${dato.estado === 'aprobada'
+            ? `<span class="badge bg-success">Aceptada · ${escaparHtml(dato.bloque_asignado || '')}</span>`
+            : badgeEstadoCarta(dato.estado || 'pendiente')}
         </div>
       `;
     }
@@ -148,7 +190,7 @@ function renderizarHistorialDocumentos() {
     return `
       <div class="item socio-doc-item">
         <div>
-          <div><strong>${ETIQUETA_TIPO_JUST[dato.tipo_solicitado] || 'Justificación'}</strong> · Folio ${folioTexto(dato.id)}</div>
+          <div><strong>Justificación · ${etiquetaMotivoJust(dato)}</strong> · Folio ${folioTexto(dato.id)}</div>
           <small class="text-muted">${actividad}</small>
           ${dato.observacion_directiva ? `<small class="d-block fst-italic">Directiva: ${escaparHtml(dato.observacion_directiva)}</small>` : ''}
         </div>
@@ -218,7 +260,7 @@ function leerFormularioJustificacion() {
     referencia: evento ? evento.referencia : (esOtra ? valorRadio('just_referencia') : ''),
     referenciaOtro: document.getElementById('just_referencia_otro').value.trim(),
     fecha: document.getElementById('just_fecha').value,
-    tipo: valorRadio('just_tipo'),
+    motivoTipo: valorRadio('just_motivo_tipo'),
     condicion: valorRadio('just_condicion'),
     motivo: document.getElementById('just_motivo').value.trim(),
     quienEntrega: document.getElementById('just_quien_entrega').value.trim(),
@@ -265,7 +307,7 @@ function actualizarPreviewJustificacion() {
     actividad = `${textoOVacio(f.referenciaOtro, '(nombre de la actividad)')} — ${f.fecha ? formatearFecha(f.fecha) : '<span class="carta-vacio">(fecha)</span>'}`;
   }
 
-  document.getElementById('just_adjunto_ayuda').textContent = f.tipo === 'licencia_medica'
+  document.getElementById('just_adjunto_ayuda').textContent = f.motivoTipo === 'licencia_medica'
     ? 'Adjunta la licencia médica (foto o PDF, máximo 5 MB).'
     : 'Foto o PDF, máximo 5 MB.';
 
@@ -274,13 +316,14 @@ function actualizarPreviewJustificacion() {
     <p class="carta-referencia">
       <strong>Referencia justifica inasistencia a:</strong>
       Ensayo ${casillaCarta(f.referencia === 'ensayo')}
+      Misa ${casillaCarta(f.referencia === 'misa')}
       Reunión ${casillaCarta(f.referencia === 'reunion')}
-      Salida ${casillaCarta(f.referencia === 'salida')}
-      Otro ${casillaCarta(f.referencia === 'otro')}
+      Presentación ${casillaCarta(f.referencia === 'salida')}
+      Otros ${casillaCarta(f.referencia === 'otro')}
     </p>
     <p class="carta-nota">
       Actividad: <strong>${actividad}</strong><br>
-      Tipo: <strong>${ETIQUETA_TIPO_JUST[f.tipo] || 'Justificación'}</strong>${f.archivo ? ' · Se adjunta documento de respaldo' : ''}
+      Motivo: <strong>${ETIQUETA_MOTIVO_JUST[f.motivoTipo] || '—'}</strong>${f.archivo ? ' · Se adjunta documento de respaldo' : ''}
     </p>
     <p class="mb-1">Respetados Srs:</p>
     <p class="carta-cuerpo">${textoOVacio(f.motivo, '(aquí va el motivo que escribas)')}</p>
@@ -299,12 +342,12 @@ function actualizarPreviewJustificacion() {
 function validarJustificacion(f) {
   if (!f.seleccion) return 'Elige la actividad a la que no podrás asistir';
   if (f.esOtra) {
-    if (!f.referencia) return 'Indica el tipo de actividad (ensayo, reunión, salida u otro)';
+    if (!f.referencia) return 'Indica el tipo de actividad (ensayo, misa, reunión, presentación u otros)';
     if (!f.referenciaOtro) return 'Indica el nombre de la actividad';
     if (!f.fecha) return 'Indica la fecha de la actividad';
     if (f.fecha < hoyIso()) return 'La fecha debe ser hoy o posterior (Art. 8.7: solo hasta el cierre de asistencia)';
   }
-  if (!f.tipo) return 'Indica si es justificación o licencia médica';
+  if (!f.motivoTipo) return 'Indica el motivo: trabajo, licencia médica, estudio u otros';
   if (!f.condicion) return 'Indica tu condición (bailarín o socio)';
   if (f.motivo.length < 10) return 'Explica el motivo de tu inasistencia (mínimo 10 caracteres)';
   if (f.archivo && f.archivo.size > 5 * 1024 * 1024) return 'El archivo supera los 5 MB';
@@ -329,7 +372,7 @@ function enviarJustificacion() {
     datos.append('referencia_otro', f.referenciaOtro);
     datos.append('fecha_actividad', f.fecha);
   }
-  datos.append('tipo_solicitado', f.tipo);
+  datos.append('motivo_tipo', f.motivoTipo);
   datos.append('condicion', f.condicion);
   datos.append('motivo', f.motivo);
   if (f.quienEntrega) datos.append('quien_entrega', f.quienEntrega);
@@ -505,6 +548,22 @@ function abrirDatosCuenta() {
   mostrarVistaDocumentos('docs_cuenta');
 }
 
+// Cuota de integración: solo llega para quienes ingresaron por solicitud y
+// aún no tienen el pago registrado por tesorería.
+function renderizarAvisoIntegracion() {
+  const cuota = datosDocumentos.cuota_integracion;
+  const html = cuota ? `
+    <div class="alert alert-warning small mb-3">
+      <i class="bi bi-info-circle-fill me-1"></i>
+      <strong>Cuota de integración: ${formatearMonto(cuota.monto)}</strong> (pago único).
+      Todo nuevo integrante la paga una sola vez, además de las cuotas mensuales de la temporada.
+      Deposítala en la cuenta de la agrupación (en el comentario escribe
+      "cuota de integración") y envía el comprobante a tesorería.
+    </div>` : '';
+  document.getElementById('docs_aviso_integracion').innerHTML = html;
+  document.getElementById('cuenta_aviso_integracion').innerHTML = html;
+}
+
 // Sin clave copia todos los datos (para pegarlos en la app del banco).
 function copiarDatoCuenta(clave) {
   const cuenta = datosDocumentos.cuenta_deposito || {};
@@ -631,4 +690,176 @@ function abrirEstatutos() {
       document.getElementById('docs_respuesta').innerHTML = alertaDocumentos('danger', err.message);
     })
     .finally(() => { boton.disabled = false; });
+}
+
+// =====================================
+// CARTA DE PERMISO PARA EL COLEGIO
+// =====================================
+// El texto es el de la carta oficial de la agrupación (solo cambian los datos);
+// la vista previa imita el PDF que emite el servidor al aprobarla.
+const MESES_CARTA = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+  'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+let formularioCartaPermisoListo = false;
+
+function abrirFormularioCartaPermiso() {
+  if (!datosDocumentos) return;
+  document.getElementById('docs_respuesta').innerHTML = '';
+  document.getElementById('cp_respuesta').innerHTML = datosDocumentos.carta_permiso?.activo === false
+    ? alertaDocumentos('warning', 'La carta de permiso es solo para integrantes activos.')
+    : '';
+  mostrarVistaDocumentos('docs_form_carta_permiso');
+  actualizarPreviewCartaPermiso();
+}
+
+function prepararFormularioCartaPermiso() {
+  document.getElementById('cp_alumno').textContent = nombreCompletoSocio();
+  document.getElementById('cp_desde').min = hoyIso();
+  document.getElementById('cp_hasta').min = hoyIso();
+
+  if (formularioCartaPermisoListo) return;
+  formularioCartaPermisoListo = true;
+
+  const form = document.getElementById('form_carta_permiso');
+  form.addEventListener('input', actualizarPreviewCartaPermiso);
+  form.addEventListener('change', actualizarPreviewCartaPermiso);
+}
+
+function leerFormularioCartaPermiso() {
+  return {
+    colegio: document.getElementById('cp_colegio').value.trim(),
+    director: document.getElementById('cp_director').value.trim(),
+    curso: document.getElementById('cp_curso').value.trim(),
+    desde: document.getElementById('cp_desde').value,
+    hasta: document.getElementById('cp_hasta').value
+  };
+}
+
+// "02 al 10 de septiembre del 2027" (mismo formato que el PDF)
+function rangoFechasCarta(desde, hasta) {
+  const [a1, m1, d1] = desde.split('-').map(Number);
+  const [a2, m2, d2] = hasta.split('-').map(Number);
+  const dd = n => String(n).padStart(2, '0');
+  if (a1 !== a2) return `${dd(d1)} de ${MESES_CARTA[m1 - 1]} del ${a1} al ${dd(d2)} de ${MESES_CARTA[m2 - 1]} del ${a2}`;
+  if (m1 !== m2) return `${dd(d1)} de ${MESES_CARTA[m1 - 1]} al ${dd(d2)} de ${MESES_CARTA[m2 - 1]} del ${a2}`;
+  return `${dd(d1)} al ${dd(d2)} de ${MESES_CARTA[m2 - 1]} del ${a2}`;
+}
+
+function rutConPuntosCarta(rut) {
+  const limpio = String(rut || '').replace(/[^0-9kK]/g, '').toUpperCase();
+  if (limpio.length < 2) return String(rut || '');
+  return `${limpio.slice(0, -1).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}-${limpio.slice(-1)}`;
+}
+
+function actualizarPreviewCartaPermiso() {
+  if (!datosDocumentos) return;
+  const f = leerFormularioCartaPermiso();
+  const p = datosDocumentos.persona;
+  const cp = datosDocumentos.carta_permiso || {};
+  const hoy = new Date();
+  const fechas = f.desde && f.hasta && f.hasta >= f.desde
+    ? escaparHtml(rangoFechasCarta(f.desde, f.hasta))
+    : '<span class="carta-vacio">(fechas del permiso)</span>';
+
+  document.getElementById('preview_carta_permiso').innerHTML = `
+    <div class="cp-membrete">
+      <img src="../img/logo-morenada.png" alt="Unión Morenada Centralista">
+      <div><b>BAILE RELIGIOSO<br>UNIÓN MORENADA CENTRALISTA</b></div>
+    </div>
+    <p class="carta-derecha mb-0"><strong>Folio N°</strong> <span class="text-muted">(se asigna al enviar)</span></p>
+    <p class="carta-derecha">Calama, ${MESES_CARTA[hoy.getMonth()]} del ${hoy.getFullYear()}</p>
+    <p><strong>Señor(a):<br>${textoOVacio(f.director, '(nombre del director/a)')}<br>${textoOVacio(f.colegio, '(colegio)')}<br>Presente.</strong></p>
+    <p class="cp-referencia">Referencia: Solicita autorización a persona que Indica.</p>
+    <p>De nuestra consideración:</p>
+    <p class="cp-cuerpo">El baile religioso Unión Morenada Centralista, es devoto de la Virgen Guadalupe de Ayquina desde hace más de ${cp.anios ?? '…'} años y está integrado actualmente por ${cp.integrantes ?? '…'} personas; quienes participan todos los años en la celebración que se hace en este poblado en el mes de septiembre.</p>
+    <p class="cp-cuerpo">Es por esta razón, que solicitamos respetuosamente, autorizar un permiso entre los días ${fechas}, a <strong>${escaparHtml(nombreCompletoSocio())}</strong>, Rut: <strong>${escaparHtml(rutConPuntosCarta(p.rut))}</strong> del <strong>${textoOVacio(f.curso, '(curso)')}</strong>, integrante activo de nuestra Institución para que exprese su fe en la Fiesta de nuestra Señora Virgen de Guadalupe en el Santuario de Ayquina.</p>
+    <p>Esperando una buena acogida a la presente, nos despedimos cordialmente,</p>
+    <p class="cp-firma"><em class="text-muted fw-normal d-block">(timbre y firma al aprobarla)</em>Jorge Luis Montalbán Cofre<br>Presidente</p>
+  `;
+}
+
+function validarCartaPermiso(f) {
+  if (f.colegio.length < 3) return 'Indica el nombre del colegio';
+  if (f.director.length < 3) return 'Indica el nombre del director o directora';
+  if (!f.curso) return 'Indica el curso';
+  if (!f.desde || !f.hasta) return 'Indica las fechas del permiso';
+  if (f.hasta < f.desde) return 'La fecha "hasta" no puede ser anterior a "desde"';
+  return null;
+}
+
+function enviarCartaPermiso() {
+  const respuesta = document.getElementById('cp_respuesta');
+  const f = leerFormularioCartaPermiso();
+  const error = validarCartaPermiso(f);
+
+  if (error) {
+    respuesta.innerHTML = alertaDocumentos('warning', error);
+    return;
+  }
+
+  const boton = document.getElementById('btn_enviar_carta_permiso');
+  boton.disabled = true;
+  respuesta.innerHTML = '';
+
+  fetch(`${API_URL}/socio-auth/documentos/cartas-permiso`, {
+    method: 'POST',
+    headers: getAuthHeadersSocio(),
+    body: JSON.stringify({
+      colegio: f.colegio,
+      director: f.director,
+      curso: f.curso,
+      fecha_desde: f.desde,
+      fecha_hasta: f.hasta
+    })
+  })
+    .then(async res => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.mensaje || 'No se pudo enviar la solicitud');
+      return data;
+    })
+    .then(data => {
+      document.getElementById('form_carta_permiso').reset();
+      volverMenuDocumentos();
+      document.getElementById('docs_respuesta').innerHTML = alertaDocumentos('success', data.mensaje);
+      cargarDocumentos();
+    })
+    .catch(err => {
+      respuesta.innerHTML = alertaDocumentos('danger', err.message);
+    })
+    .finally(() => { boton.disabled = false; });
+}
+
+// Igual que los Estatutos: el PDF exige el token, se descarga con fetch y se abre
+// como blob (la pestaña se abre antes para que no la bloquee el navegador).
+function descargarCartaPermiso(id, boton) {
+  const pestana = window.open('', '_blank');
+  if (boton) boton.disabled = true;
+
+  fetch(`${API_URL}/socio-auth/documentos/cartas-permiso/${id}/pdf`, {
+    headers: { Authorization: `Bearer ${getSocioToken()}` }
+  })
+    .then(async res => {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.mensaje || 'No se pudo descargar la carta');
+      }
+      return res.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      if (pestana) {
+        pestana.location.href = url;
+      } else {
+        const enlace = document.createElement('a');
+        enlace.href = url;
+        enlace.download = `Carta_permiso_${folioTexto(id)}.pdf`;
+        enlace.click();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    })
+    .catch(err => {
+      if (pestana) pestana.close();
+      document.getElementById('docs_respuesta').innerHTML = alertaDocumentos('danger', err.message);
+    })
+    .finally(() => { if (boton) boton.disabled = false; });
 }

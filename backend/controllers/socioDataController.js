@@ -1,4 +1,4 @@
-// Controlador de datos propios del Portal del Socio: ficha, finanzas, asistencia y
+// Controlador de datos propios del Portal del Integrante: ficha, finanzas, asistencia y
 // puntaje del socio autenticado (req.socio.persona_id, ver authSocioMiddleware).
 // Ningún endpoint aquí acepta ni expone datos de otro persona_id.
 const socioDataModel = require('../models/socioDataModel');

@@ -204,7 +204,7 @@ function configurarFiltrosIngresos() {
 }
 
 function verComprobanteIngreso(id) {
-  fetch(`${API_URL}/ingresos/${id}/comprobante`, { headers: getAuthHeaders() })
+  fetch(`${API_URL}/ingresos/${id}/comprobante`, { headers: getAuthHeaders(), cache: 'no-store' })
     .then(async res => {
       if (!res.ok) {
         const data = await leerRespuestaJson(res);

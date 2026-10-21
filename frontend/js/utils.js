@@ -131,7 +131,7 @@ function mostrarConfirmacion(mensaje, onConfirmar) {
 
         <div class="modal-body">
           <p class="mb-0">
-            ${mensaje}
+            ${String(mensaje).replace(/\n/g, '<br>')}
           </p>
         </div>
 
@@ -176,8 +176,31 @@ function mostrarConfirmacion(mensaje, onConfirmar) {
     modal.remove();
   });
 
+  // Si se abre desde otro modal (ej. Usuarios del panel), queda por encima de él
+  // y de su fondo oscuro.
+  if (document.querySelector('.modal.show')) {
+    modal.style.zIndex = '1065';
+    modal.addEventListener('shown.bs.modal', () => {
+      const fondos = document.querySelectorAll('.modal-backdrop');
+      const ultimo = fondos[fondos.length - 1];
+      if (ultimo) ultimo.style.zIndex = '1060';
+    }, { once: true });
+  }
+
   modalBootstrap.show();
 
+}
+
+// Igual que mostrarConfirmacion, pero devuelve una promesa: true si confirma,
+// false si cancela o cierra. Reemplaza al confirm() nativo del navegador:
+//   if (!(await confirmarAccion('¿Eliminar?'))) return;
+function confirmarAccion(mensaje) {
+  return new Promise(resolve => {
+    let confirmado = false;
+    mostrarConfirmacion(mensaje, () => { confirmado = true; });
+    const modal = document.getElementById('modal_confirmacion_app');
+    modal.addEventListener('hidden.bs.modal', () => resolve(confirmado), { once: true });
+  });
 }
 
 // =====================================
@@ -343,7 +366,7 @@ function mostrarUsuario() {
     };
 
   const rolVisual =
-    rolesVisuales[usuario.rol] || usuario.rol;
+    usuario.rol_nombre || rolesVisuales[usuario.rol] || usuario.rol;
 
   const usuarioLogeado =
     document.getElementById('usuario_logeado');
@@ -354,6 +377,13 @@ function mostrarUsuario() {
       `${usuario.usuario} (${rolVisual})`;
 
   }
+
+  document.getElementById('btn_soporte_usuarios')
+    ?.classList.toggle('d-none', !usuario.es_soporte);
+
+  // Registro de actividad: solo los roles admin y secretaria (exactos) y la cuenta de soporte.
+  document.getElementById('btn_auditoria')
+    ?.classList.toggle('d-none', !(['admin', 'secretaria'].includes(usuario.rol) || usuario.es_soporte));
 
 }
 
@@ -412,20 +442,15 @@ function aplicarRolesFrontend() {
 
   if (!usuario) return;
 
-  const rol = usuario.rol;
+  const rol = obtenerRolActual();
 
   if (rol === 'admin') {
     return;
   }
 
   if (rol === 'tesorero') {
-  ocultarSelector('.nav-asistencias');
-  ocultarSelector('.nav-eventos');
-
-  ocultarElemento('modulo_asistencia');
+  // El tesorero toma asistencia: no se ocultan scanner, actividades ni asistencias
   ocultarElemento('modulo_personas');
-  ocultarElemento('eventos');
-  ocultarElemento('asistencias');
 
   document
     .querySelectorAll('#tabla_personas button')
@@ -493,8 +518,9 @@ function formatearFecha(fecha) {
 
   }
 
+  // Acepta 'YYYY-MM-DD', 'YYYY-MM-DDTHH:MM:SS' y 'YYYY-MM-DD HH:MM:SS' (DATETIME de MySQL)
   const fechaLimpia =
-    fecha.split('T')[0];
+    String(fecha).split(/[T ]/)[0];
 
   const partes =
     fechaLimpia.split('-');
@@ -623,7 +649,11 @@ function obtenerBadgeAsistencia(estado) {
   const badges = {
     presente: crearBadge('Presente', 'bg-success'),
     atrasado: crearBadge('Atrasado', 'bg-warning text-dark'),
-    ausente: crearBadge('Ausente', 'bg-danger')
+    ausente: crearBadge('Ausente', 'bg-danger'),
+    justificado: crearBadge('Justificado', 'bg-info text-dark'),
+    licencia_medica: crearBadge('Licencia médica', 'bg-info text-dark'),
+    vestimenta_distinta: crearBadge('Vestimenta distinta', 'badge-vestimenta'),
+    retiro_sin_aviso: crearBadge('Retiro sin aviso', 'bg-dark')
   };
 
   return badges[estado] || crearBadge('Sin estado', 'bg-secondary');
@@ -690,12 +720,24 @@ function restaurarBoton(estadoBoton, textoFinal) {
     textoFinal || estadoBoton.textoOriginal;
 }
 
+// Rol para decidir permisos en pantalla: el rol base (admin/tesorero/entrenador)
+// que hereda el rol del usuario (secretaria, director1-3...). Sesiones anteriores
+// a los roles nuevos no traen rol_base: se usa el rol tal cual. Sin rol no se
+// asume ninguno (antes se asumía 'admin' y mostraba pestañas sin permiso).
 function obtenerRolActual() {
   const usuario = JSON.parse(
     localStorage.getItem('usuario')
   );
 
-  return usuario?.rol || 'admin';
+  return usuario?.rol_base || usuario?.rol || '';
+}
+
+// Roles sin permiso de eliminar (director1-3): se ocultan los botones de borrar
+// (el servidor igual rechaza cualquier eliminación).
+function aplicarPermisoEliminar() {
+  const usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+  const puede = usuario?.puede_eliminar !== false;
+  document.body.classList.toggle('sin-eliminar', !puede);
 }
 
 function formatearFechaHora(fecha) {

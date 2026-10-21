@@ -26,6 +26,7 @@
   <title>Gestion de Agrupaciones</title>
 
   <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="img/icons/apple-touch-icon.png">
   <meta name="theme-color" content="#050505">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -51,6 +52,14 @@
       </span>
       <div class="d-flex align-items-center gap-2">
         <span class="text-white small d-none d-sm-inline" id="usuario_logeado"></span>
+        <button type="button" class="btn btn-outline-light btn-sm d-none" id="btn_auditoria" onclick="abrirAuditoria()" title="Registro de actividad">
+          <i class="bi bi-journal-text"></i>
+          <span class="d-none d-md-inline"> Actividad</span>
+        </button>
+        <button type="button" class="btn btn-outline-light btn-sm d-none" id="btn_soporte_usuarios" onclick="abrirUsuariosSoporte()" title="Usuarios del panel">
+          <i class="bi bi-person-gear"></i>
+          <span class="d-none d-md-inline"> Usuarios</span>
+        </button>
         <span id="badge_offline" class="badge bg-warning text-dark d-none" title="Asistencias pendientes de sincronizar" style="cursor:pointer" onclick="sincronizarManual()">
           <i class="bi bi-wifi-off"></i> <span>0</span>
         </span>
@@ -125,7 +134,7 @@
           <div id="card_dashboard_deuda" class="col-6 col-md-3">
             <div class="card text-bg-warning shadow-sm border-0">
               <div class="card-body shadow-sm border-0">
-                <h5 class="card-title"><i class="bi bi-wallet2"></i> Deuda</h5>
+                <h5 class="card-title"><i class="bi bi-wallet2"></i> Deuda proyectada</h5>
                 <h2 id="deuda_total">$0</h2>
               </div>
             </div>
@@ -134,7 +143,7 @@
           <div id="card_dashboard_caja" class="col-6 col-md-3 d-none">
             <div id="card_dashboard_caja_body" class="card text-bg-info shadow-sm border-0">
               <div class="card-body shadow-sm border-0">
-                <h5 class="card-title"><i class="bi bi-safe2"></i> Total en caja</h5>
+                <h5 class="card-title"><i class="bi bi-safe2"></i> Total disponible</h5>
                 <h2 id="saldo_caja">$0</h2>
               </div>
             </div>
@@ -148,8 +157,20 @@
               <table class="table table-sm mb-0">
                 <tbody>
                   <tr>
-                    <td>Pagos de socios <small class="text-muted">(cuotas y aportes)</small></td>
+                    <td>Saldo año anterior <small class="text-muted">(heredado de la directiva anterior)</small></td>
+                    <td class="text-end text-nowrap" id="balance_saldo_anterior_celda">
+                      <span id="balance_saldo_anterior">$0</span>
+                      <button type="button" class="btn btn-sm btn-link p-0 ms-2 align-baseline" title="Editar saldo año anterior"
+                        aria-label="Editar saldo año anterior" onclick="editarSaldoAnioAnterior()"><i class="bi bi-pencil"></i></button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Pagos de integrantes <small class="text-muted">(cuotas y aportes)</small></td>
                     <td class="text-end" id="balance_pagos_socios">$0</td>
+                  </tr>
+                  <tr>
+                    <td>Pago Inscripción <small class="text-muted">(Nuevo Integrante)</small></td>
+                    <td class="text-end" id="balance_pagos_integracion">$0</td>
                   </tr>
                   <tr>
                     <td>Ingresos de terceros <small class="text-muted">(donaciones, premios, proyectos)</small></td>
@@ -227,6 +248,18 @@
           </button>
         </div>
 
+        <!-- Asistentes de la actividad contra el total de integrantes activos -->
+        <div id="indicador_asistentes" class="indicador-asistentes mb-3 d-none">
+          <div class="d-flex align-items-baseline justify-content-between">
+            <span class="indicador-asistentes-titulo"><i class="bi bi-people-fill me-1"></i> Asistentes</span>
+            <span><strong id="indicador_asistentes_valor">0/0</strong>
+              <small id="indicador_asistentes_pct" class="ms-1">0%</small></span>
+          </div>
+          <div class="progress indicador-asistentes-barra" role="progressbar" aria-label="Asistentes de la actividad">
+            <div id="indicador_asistentes_progreso" class="progress-bar" style="width: 0%"></div>
+          </div>
+        </div>
+
         <!-- Panel scanner -->
         <div class="scanner-panel">
 
@@ -269,10 +302,12 @@
           </div>
 
           <div id="ultimos_registros_wrapper" class="ultimos-registros-wrapper d-none">
-            <p class="ultimos-registros-titulo"><i class="bi bi-clock-history"></i> Últimos registros</p>
-            <table class="ultimos-registros-tabla">
-              <tbody id="ultimos_registros_body"></tbody>
-            </table>
+            <p class="ultimos-registros-titulo"><i class="bi bi-people"></i> Asistentes registrados (<span id="ultimos_registros_total">0</span>)</p>
+            <div class="ultimos-registros-scroll">
+              <table class="ultimos-registros-tabla">
+                <tbody id="ultimos_registros_body"></tbody>
+              </table>
+            </div>
           </div>
 
           <div class="scanner-logo-bg">
@@ -312,6 +347,11 @@
             <i class="bi bi-people"></i> Integrantes
           </a>
         </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_retirados">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_retirados" role="tab">
+            <i class="bi bi-person-x"></i> Retirados
+          </a>
+        </li>
         <li class="nav-item" role="presentation" id="nav_subtab_eventos">
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_eventos" role="tab">
             <i class="bi bi-calendar-event"></i> Actividades
@@ -334,6 +374,12 @@
             <span id="badge_justificaciones" class="badge bg-warning text-dark ms-1 d-none">0</span>
           </a>
         </li>
+        <li class="nav-item d-none" role="presentation" id="nav_subtab_cartas_permiso">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_cartas_permiso" role="tab">
+            <i class="bi bi-mortarboard"></i> Cartas colegio
+            <span id="badge_cartas_permiso" class="badge bg-warning text-dark ms-1 d-none">0</span>
+          </a>
+        </li>
         <li class="nav-item" role="presentation" id="nav_subtab_solicitudes">
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_solicitudes" role="tab">
             <i class="bi bi-person-plus"></i> Solicitudes
@@ -343,6 +389,12 @@
         <li class="nav-item" role="presentation" id="nav_subtab_pagos">
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_pagos" role="tab">
             <i class="bi bi-cash"></i> Pagos
+          </a>
+        </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_depositos">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_depositos" role="tab">
+            <i class="bi bi-receipt"></i> Depósitos
+            <span id="badge_depositos" class="badge bg-warning text-dark ms-1 d-none">0</span>
           </a>
         </li>
         <li class="nav-item" role="presentation" id="nav_subtab_multas">
@@ -377,7 +429,7 @@
         </li>
         <li class="nav-item" role="presentation" id="nav_subtab_acceso_socios">
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_acceso_socios" role="tab">
-            <i class="bi bi-shield-lock"></i> Acceso Socios
+            <i class="bi bi-shield-lock"></i> Acceso Integrantes
           </a>
         </li>
       </ul>
@@ -391,6 +443,14 @@
               <label for="buscar_personas" class="form-label">Buscar Integrante</label>
               <input type="search" id="buscar_personas" class="form-control" placeholder="Buscar por nombre, RUT, bloque, email o teléfono">
             </div>
+            <div class="col-md-2">
+              <label for="filtro_estado_personas" class="form-label">Estado</label>
+              <select id="filtro_estado_personas" class="form-select">
+                <option value="">Todos</option>
+                <option value="activo">Activo</option>
+                <option value="receso">Receso</option>
+              </select>
+            </div>
             <div class="col-md-1 d-flex align-items-end">
               <div class="dropdown w-100">
                 <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Exportar">
@@ -403,12 +463,12 @@
               </div>
             </div>
           </div>
-          <div id="tabla_personas_wrapper" class="table-responsive tabla-scroll">
+          <div id="tabla_personas_wrapper" class="table-responsive tabla-scroll tabla-columnas-fijas">
             <table class="table table-bordered table-striped table-hover align-middle mb-0">
               <thead class="table-dark">
                 <tr>
-                  <th>Nombre Completo</th>
-                  <th>RUT</th>
+                  <th class="col-fija">Nombre Completo</th>
+                  <th class="col-fija-2">RUT</th>
                   <th>Bloque</th>
                   <th>Sexo</th>
                   <th>Email</th>
@@ -427,6 +487,39 @@
           </div>
         </div>
 
+        <!-- Integrantes retirados (histórico) -->
+        <div class="tab-pane fade" id="subtab_retirados" role="tabpanel">
+          <div class="row g-2 mb-3">
+            <div class="col-md-5">
+              <label for="buscar_retirados" class="form-label">Buscar Retirado</label>
+              <input type="search" id="buscar_retirados" class="form-control" placeholder="Buscar por nombre, RUT, bloque, email o teléfono">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+              <span id="total_retirados" class="text-muted small"></span>
+            </div>
+          </div>
+          <div id="tabla_retirados_wrapper" class="table-responsive tabla-scroll tabla-columnas-fijas">
+            <table class="table table-bordered table-striped table-hover align-middle mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th class="col-fija">Nombre Completo</th>
+                  <th class="col-fija-2">RUT</th>
+                  <th>Bloque</th>
+                  <th>Sexo</th>
+                  <th>Email</th>
+                  <th>Teléfono</th>
+                  <th>F. Nacimiento</th>
+                  <th>F. Ingreso</th>
+                  <th>F. Retiro</th>
+                  <th>Observación</th>
+                  <th id="th_retirados_historial">Historial</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_retirados"></tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Actividades -->
         <div class="tab-pane fade" id="subtab_eventos" role="tabpanel">
           <div id="filtros_eventos_wrapper" class="row g-2 mb-3">
@@ -439,8 +532,10 @@
               <select id="filtro_evento_tipo" class="form-select">
                 <option value="">Todos</option>
                 <option value="entrenamiento">Ensayo</option>
-                <option value="partido">Presentación</option>
+                <option value="misa">Misa</option>
                 <option value="reunion">Reunión</option>
+                <option value="partido">Presentación</option>
+                <option value="otro">Otros</option>
               </select>
             </div>
             <div class="col-md-3">
@@ -483,6 +578,10 @@
                 <option value="presente">Presente</option>
                 <option value="atrasado">Atrasado</option>
                 <option value="ausente">Ausente</option>
+                <option value="vestimenta_distinta">Vestimenta distinta</option>
+                <option value="retiro_sin_aviso">Retiro sin aviso</option>
+                <option value="justificado">Justificado</option>
+                <option value="licencia_medica">Licencia médica</option>
               </select>
             </div>
             <div class="col-md-3">
@@ -514,6 +613,7 @@
                   <th>Actividad</th>
                   <th>Estado</th>
                   <th>Minutos</th>
+                  <th class="text-center">Vestimenta / Retiro</th>
                 </tr>
               </thead>
               <tbody id="tabla_asistencias"></tbody>
@@ -522,14 +622,21 @@
         </div>
 
         <!-- Sin asignar (asistencias offline sin evento) -->
-        <!-- Justificaciones: cartas enviadas desde el Portal del Socio (Documentos) -->
+        <!-- Justificaciones: cartas enviadas desde el Portal del Integrante (Documentos) -->
         <div class="tab-pane fade" id="subtab_justificaciones" role="tabpanel">
           <div class="alert alert-info small">
-            Cartas de justificación enviadas por los integrantes desde el Portal del Socio
+            Cartas de justificación enviadas por los integrantes desde el Portal del Integrante
             (solo se reciben hasta el cierre de asistencia, Art. 8.7). Al <strong>aprobar</strong>,
             la asistencia de esa actividad queda como justificada o licencia médica y se recalcula el puntaje. El integrante recibe un aviso por correo.
+            Las cartas que llegan por otra vía (p. ej. el correo antiguo de la agrupación) se ingresan con
+            <strong>Registrar manual</strong>: quedan aprobadas al tiro (solo temporada en curso y hasta un mes atrás).
           </div>
           <div class="row g-2 mb-3 align-items-end">
+            <div class="col-md-4 order-md-last text-md-end">
+              <button type="button" class="btn btn-primary" onclick="abrirJustificacionManual()">
+                <i class="bi bi-plus-circle me-1"></i>Registrar manual
+              </button>
+            </div>
             <div class="col-md-3">
               <label for="filtro_justificaciones_estado" class="form-label">Estado</label>
               <select id="filtro_justificaciones_estado" class="form-select">
@@ -552,8 +659,8 @@
                   <th>Recibida</th>
                   <th>Integrante</th>
                   <th>Actividad</th>
-                  <th>Tipo</th>
                   <th>Motivo</th>
+                  <th>Detalle</th>
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
@@ -574,9 +681,51 @@
                   <th>1ª opción</th>
                   <th>2ª opción</th>
                   <th>Contacto</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="tabla_postulaciones"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Cartas de permiso para el colegio (solo admin y secretaria) -->
+        <div class="tab-pane fade" id="subtab_cartas_permiso" role="tabpanel">
+          <div class="alert alert-info small">
+            Cartas de permiso para el colegio (Fiesta de Ayquina) pedidas desde el Portal del Integrante.
+            Al <strong>aprobar</strong> se emite el PDF con la firma del presidente y el timbre, y se
+            envía al correo del integrante. Al rechazar, se le informa el motivo.
+          </div>
+          <div class="row g-2 mb-3 align-items-end">
+            <div class="col-md-3">
+              <label for="filtro_cartas_permiso_estado" class="form-label">Estado</label>
+              <select id="filtro_cartas_permiso_estado" class="form-select">
+                <option value="pendiente">Pendientes</option>
+                <option value="aprobada">Aprobadas</option>
+                <option value="rechazada">Rechazadas</option>
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label for="buscar_cartas_permiso" class="form-label">Buscar</label>
+              <input type="search" id="buscar_cartas_permiso" class="form-control" placeholder="Nombre, RUT, colegio o folio">
+            </div>
+          </div>
+          <div class="table-responsive tabla-scroll mb-4">
+            <table class="table table-bordered table-striped align-middle mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Folio</th>
+                  <th>Recibida</th>
+                  <th>Alumno</th>
+                  <th>Colegio / Curso</th>
+                  <th>Permiso</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_cartas_permiso"></tbody>
             </table>
           </div>
         </div>
@@ -613,6 +762,17 @@
               <label for="buscar_pagos" class="form-label">Buscar Integrante</label>
               <input type="search" id="buscar_pagos" class="form-control" placeholder="Buscar por nombre">
             </div>
+            <div class="col-md-2">
+              <label for="filtro_pago_tipo" class="form-label">Tipo</label>
+              <select id="filtro_pago_tipo" class="form-select">
+                <option value="">Todos</option>
+                <option value="cuota">Cuota mensual</option>
+                <option value="integracion">Cuota de integración</option>
+                <option value="traje">Traje</option>
+                <option value="chaqueta">Chaqueta institucional</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
             <div class="col-md-3">
               <label for="filtro_pago_metodo" class="form-label">Método</label>
               <select id="filtro_pago_metodo" class="form-select">
@@ -631,6 +791,7 @@
               <thead class="table-dark">
                 <tr>
                   <th>Integrante</th>
+                  <th>Tipo</th>
                   <th>Monto</th>
                   <th>Método</th>
                   <th>Fecha</th>
@@ -638,6 +799,46 @@
                 </tr>
               </thead>
               <tbody id="tabla_pagos"></tbody>
+            </table>
+          </div>
+          <!-- Selector oculto para adjuntar comprobante a un pago ya registrado -->
+          <input type="file" id="pago_comprobante_adjuntar" class="d-none" accept="image/jpeg,image/png,image/webp,application/pdf">
+        </div>
+
+        <!-- Depósitos: comprobantes que los socios envían desde el Portal -->
+        <div class="tab-pane fade" id="subtab_depositos" role="tabpanel">
+          <p class="text-muted small mb-2">
+            Comprobantes que los integrantes envían desde el Portal del Integrante. Revisa la cartola y usa <strong>Registrar pago</strong>:
+            el comprobante queda adjunto al pago y el depósito pasa a <em>Registrado</em>.
+          </p>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label for="buscar_depositos" class="form-label">Buscar Integrante</label>
+              <input type="search" id="buscar_depositos" class="form-control" placeholder="Buscar por nombre">
+            </div>
+            <div class="col-md-3">
+              <label for="filtro_deposito_estado" class="form-label">Estado</label>
+              <select id="filtro_deposito_estado" class="form-select">
+                <option value="pendiente">Pendientes</option>
+                <option value="registrado">Registrados</option>
+                <option value="">Todos</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive tabla-scroll">
+            <table class="table table-bordered table-striped mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Folio</th>
+                  <th>Integrante</th>
+                  <th>Monto</th>
+                  <th>Depositado</th>
+                  <th>Concepto</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_depositos"></tbody>
             </table>
           </div>
         </div>
@@ -748,6 +949,10 @@
               <button type="button" id="btn_generar_temporada" class="btn btn-outline-success" onclick="generarCuotasTemporada()">
                 Generar cuotas de toda la temporada
               </button>
+              <button type="button" id="btn_aplicar_saldos" class="btn btn-outline-primary" onclick="aplicarSaldosAFavor()"
+                title="Aplica la parte de pagos de cuota que quedó a favor del integrante a sus cuotas pendientes más antiguas">
+                Aplicar saldos a favor
+              </button>
             </div>
 
             <div class="row g-2 mb-3">
@@ -762,6 +967,7 @@
                   <option value="pendiente">Pendiente</option>
                   <option value="pagado">Pagado</option>
                   <option value="vencido">Vencido</option>
+                  <option value="abono">Con abono</option>
                 </select>
               </div>
               <div class="col-md-2">
@@ -846,6 +1052,7 @@
                     <th>Total Cuotas</th>
                     <th>Total Pagado</th>
                     <th>Deuda Actual</th>
+                    <th>Historial</th>
                   </tr>
                 </thead>
                 <tbody id="tabla_finanzas"></tbody>
@@ -903,7 +1110,7 @@
           <div class="alert alert-info small">
             Dinero que entra a la agrupación <strong>sin venir de la cuota de un integrante</strong>:
             donaciones, premios ganados y fondos de proyectos adjudicados.
-            No afecta la deuda ni el puntaje de ningún socio.
+            No afecta la deuda ni el puntaje de ningún integrante.
           </div>
           <div class="row g-2 mb-3">
             <div class="col-md-4">
@@ -963,7 +1170,7 @@
           <div class="alert alert-info small">
             Solicitudes de ingreso enviadas desde el botón <strong>"Súmate a la promesa"</strong> del sitio
             web de la agrupación (también llegan por correo a presidencia, secretaría y caporales).
-            Al <strong>aceptar</strong>, la persona queda como integrante activo: entra al Portal del Socio con su RUT
+            Al <strong>aceptar</strong>, la persona queda como integrante activo: entra al Portal del Integrante con su RUT
             como clave, crea su contraseña y completa el resto de sus datos. Recibe un aviso por correo.
           </div>
           <div class="row g-2 mb-3 align-items-end">
@@ -1006,7 +1213,7 @@
           <div class="alert alert-info d-flex align-items-start gap-2">
             <i class="bi bi-info-circle-fill fs-4"></i>
             <div>
-              <strong>Portal del Socio.</strong> Cada integrante activo entra desde su celular con su
+              <strong>Portal del Integrante.</strong> Cada integrante activo entra desde su celular con su
               <strong>RUT como usuario y como clave</strong> (la clave sin puntos ni guion, ej. 12345678K).
               En ese primer ingreso el portal le pide crear su contraseña personal
               (mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo).
@@ -1021,7 +1228,7 @@
               <div>
                 <h5 class="card-title mb-1">Actualización de datos</h5>
                 <p class="card-text text-muted mb-0">
-                  Vuelve a exigir a todos los socios que revisen y actualicen sus datos en su próximo ingreso
+                  Vuelve a exigir a todos los integrantes que revisen y actualicen sus datos en su próximo ingreso
                   (por ejemplo, al comenzar una temporada).
                 </p>
               </div>
@@ -1223,21 +1430,37 @@
                   <label class="form-label">Tipo</label>
                   <select id="evento_tipo" class="form-select">
                     <option value="entrenamiento">Ensayo</option>
-                    <option value="partido">Presentación</option>
+                    <option value="misa">Misa</option>
                     <option value="reunion">Reunión</option>
+                    <option value="partido">Presentación</option>
+                    <option value="otro">Otros</option>
                   </select>
                 </div>
                 <div class="col-md-4 mb-3">
                   <label class="form-label">Fecha</label>
                   <input type="datetime-local" id="evento_fecha" class="form-control">
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                   <label class="form-label">Ubicación</label>
                   <input type="text" id="evento_ubicacion" class="form-control">
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                   <label class="form-label">Descripción</label>
                   <input type="text" id="evento_descripcion" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label for="evento_tolerancia" class="form-label">Tolerancia de atraso</label>
+                  <select id="evento_tolerancia" class="form-select">
+                    <option value="0">Sin tolerancia</option>
+                    <option value="5">5 minutos</option>
+                    <option value="10">10 minutos</option>
+                    <option value="15" selected>15 minutos</option>
+                    <option value="20">20 minutos</option>
+                    <option value="30">30 minutos</option>
+                    <option value="45">45 minutos</option>
+                    <option value="60">60 minutos</option>
+                  </select>
+                  <small class="text-muted">Pasado este margen desde la hora de la actividad, el escaneo QR queda como atraso</small>
                 </div>
                 <div class="col-12 mb-3">
                   <div class="form-check">
@@ -1261,20 +1484,31 @@
             <div class="card p-4 shadow-sm border-0">
               <div class="row">
                 <div class="col-md-3 mb-3">
-                  <label class="form-label">Integrante</label>
-                  <select id="pago_persona_id" class="form-select"></select>
-                </div>
-                <div class="col-md-3 mb-3">
-                  <label class="form-label">Cuota a pagar <small class="text-muted">(opcional)</small></label>
-                  <select id="pago_cuota_id" class="form-select">
-                    <option value="">Sin vincular a cuota</option>
+                  <label for="pago_tipo" class="form-label">Tipo de pago</label>
+                  <select id="pago_tipo" class="form-select" onchange="actualizarTipoPago()">
+                    <option value="cuota">Cuota mensual</option>
+                    <option value="integracion">Cuota de integración</option>
+                    <option value="traje">Traje</option>
+                    <option value="chaqueta">Chaqueta institucional</option>
+                    <option value="otro">Otro</option>
                   </select>
                 </div>
-                <div class="col-md-3 mb-3">
+                <div class="col-md-9 mb-3">
+                  <label for="pago_detalle" class="form-label">Detalle <small class="text-muted" id="pago_detalle_ayuda">(opcional)</small></label>
+                  <input type="text" id="pago_detalle" class="form-control" maxlength="200" placeholder="Ej: abono traje de caporal, talla M">
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label for="pago_persona_buscar" class="form-label">Integrante</label>
+                  <input type="search" id="pago_persona_buscar" class="form-control mb-2" placeholder="Buscar por nombre, apellido o RUT" autocomplete="off">
+                  <select id="pago_persona_id" class="form-select"></select>
+                </div>
+                <div class="col-md-4 mb-3">
                   <label class="form-label">Monto</label>
                   <input type="number" id="pago_monto" class="form-control">
                 </div>
-                <div class="col-md-3 mb-3">
+                <div class="col-md-4 mb-3">
                   <label class="form-label">Método Pago</label>
                   <select id="pago_metodo" class="form-select">
                     <option value="efectivo">Efectivo</option>
@@ -1283,7 +1517,31 @@
                   </select>
                 </div>
               </div>
-              <div class="form-check mb-3">
+              <div class="mb-3" id="pago_cuota_grupo">
+                <label class="form-label">Meses que se pagan
+                  <small class="text-muted">(marque las cuotas que cubre este pago; si no marca ninguna, se aplica a las cuotas pendientes más antiguas)</small>
+                </label>
+                <div id="pago_cuotas_lista" class="border rounded p-2" style="max-height: 240px; overflow-y: auto;">
+                  <span class="text-muted small">Seleccione un integrante</span>
+                </div>
+                <div id="pago_cuotas_resumen" class="form-text"></div>
+              </div>
+              <div class="mb-3">
+                <label for="pago_comprobante" class="form-label">Comprobante <small class="text-muted">(transferencia o boleta, opcional)</small></label>
+                <input type="file" id="pago_comprobante" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
+              </div>
+              <div class="mb-3 d-none" id="pago_deposito_grupo">
+                <label for="pago_deposito_id" class="form-label">O usar un comprobante enviado por el integrante desde el Portal</label>
+                <div class="input-group">
+                  <select id="pago_deposito_id" class="form-select" onchange="actualizarDepositoPago()">
+                    <option value="">No usar</option>
+                  </select>
+                  <button type="button" class="btn btn-outline-primary" title="Ver comprobante" aria-label="Ver comprobante" onclick="verDepositoSeleccionadoPago()">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="form-check mb-3" id="pago_anual_grupo">
                 <input class="form-check-input" type="checkbox" id="pago_anual_check" onchange="actualizarModoPagoAnual()">
                 <label class="form-check-label" for="pago_anual_check">
                   Pago anual (cubre todas las cuotas pendientes del integrante en un solo pago)
@@ -1339,7 +1597,7 @@
           <div id="modulo_ingresos">
             <div class="card p-4 shadow-sm border-0">
               <p class="small text-muted mb-3">
-                Para donaciones, premios o proyectos adjudicados. Los pagos de cuotas de socios se registran en <strong>Pago</strong>.
+                Para donaciones, premios o proyectos adjudicados. Los pagos de cuotas de integrantes se registran en <strong>Pago</strong>.
               </p>
               <div class="row">
                 <div class="col-md-6 mb-3">
@@ -1437,6 +1695,74 @@
     </div>
   </div>
 
+  <!-- Modal: Historial financiero de un integrante -->
+  <div class="modal fade" id="modal_historial_financiero" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title mb-0"><i class="bi bi-journal-text me-2"></i>Historial financiero — <span id="hf_nombre"></span></h5>
+            <small class="text-muted" id="hf_datos"></small>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+            <div>
+              <label for="hf_alcance" class="form-label mb-1">Mostrar</label>
+              <select id="hf_alcance" class="form-select" onchange="cargarHistorialFinanciero()">
+                <option value="temporada">Temporada vigente</option>
+                <option value="todo">Todo el historial</option>
+              </select>
+            </div>
+            <div class="btn-group ms-auto">
+              <button type="button" class="btn btn-outline-danger" onclick="exportarHistorialFinancieroPDF()"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+              <button type="button" class="btn btn-outline-success" onclick="exportarHistorialFinancieroExcel()"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+            </div>
+          </div>
+          <div class="row g-2 mb-3" id="hf_resumen"></div>
+          <h6 class="mt-2">Cuotas</h6>
+          <div class="table-responsive mb-3">
+            <table class="table table-sm table-bordered mb-0">
+              <thead class="table-dark">
+                <tr><th>Mes</th><th>Monto</th><th>Abonado</th><th>Saldo</th><th>Estado</th></tr>
+              </thead>
+              <tbody id="hf_cuotas"></tbody>
+            </table>
+          </div>
+          <h6>Pagos</h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0">
+              <thead class="table-dark">
+                <tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Tipo</th><th>Cubrió</th><th>Comprobante</th></tr>
+              </thead>
+              <tbody id="hf_pagos"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Adjuntar comprobante a un pago ya registrado -->
+  <div class="modal fade" id="modal_adjuntar_comprobante_pago" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-paperclip me-2"></i>Adjuntar comprobante</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-2">Comprobantes enviados por el integrante desde el Portal, aún sin registrar:</p>
+          <div id="lista_depositos_adjuntar" class="list-group mb-3"></div>
+          <button type="button" class="btn btn-outline-secondary w-100" onclick="subirArchivoComprobantePago()">
+            <i class="bi bi-upload me-1"></i> Subir otro archivo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Revisar justificación -->
   <div class="modal fade" id="modal_revisar_justificacion" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
@@ -1471,6 +1797,166 @@
           </button>
           <button type="button" class="btn btn-success" id="btn_aprobar_justificacion" onclick="resolverJustificacion('aprobar')">
             <i class="bi bi-check-circle me-1"></i>Aprobar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar justificación manual (cartas que llegan fuera del Portal) -->
+  <div class="modal fade" id="modal_justificacion_manual" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <!-- d-flex + overflow-hidden: el form queda dentro del alto del modal y modal-body hace scroll -->
+        <form id="form_justificacion_manual" class="d-flex flex-column overflow-hidden" onsubmit="registrarJustificacionManual(event)">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-envelope-plus me-2"></i>Registrar justificación manual</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-muted mb-3">
+              Para cartas recibidas fuera del Portal. Queda <strong>aprobada</strong> al guardar: la asistencia pasa a
+              justificada o licencia médica, se borra la multa pendiente, se recalcula el puntaje y se le avisa al integrante por correo.
+              Solo actividades desde el <strong id="just_manual_desde">—</strong> (temporada en curso, máximo un mes atrás).
+            </p>
+            <div class="row g-2">
+              <div class="col-12">
+                <label for="just_manual_buscar" class="form-label">Integrante</label>
+                <input type="search" id="just_manual_buscar" class="form-control mb-2" placeholder="Buscar por nombre, apellido o RUT" autocomplete="off">
+                <select id="just_manual_persona" class="form-select" required></select>
+              </div>
+              <div class="col-md-6">
+                <span class="form-label d-block">Condición</span>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="just_manual_condicion" id="just_manual_bailarin" value="bailarin" checked>
+                  <label class="form-check-label" for="just_manual_bailarin">Bailarín</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="just_manual_condicion" id="just_manual_socio" value="socio">
+                  <label class="form-check-label" for="just_manual_socio">Socio</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <label for="just_manual_evento" class="form-label">Actividad</label>
+                <select id="just_manual_evento" class="form-select" required></select>
+              </div>
+              <div id="just_manual_otro" class="col-12 d-none">
+                <div class="row g-2">
+                  <div class="col-md-4">
+                    <label for="just_manual_referencia" class="form-label">Tipo</label>
+                    <select id="just_manual_referencia" class="form-select">
+                      <option value="ensayo">Ensayo</option>
+                      <option value="misa">Misa</option>
+                      <option value="reunion">Reunión</option>
+                      <option value="salida">Presentación</option>
+                      <option value="otro">Otros</option>
+                    </select>
+                  </div>
+                  <div class="col-md-5">
+                    <label for="just_manual_referencia_otro" class="form-label">Nombre de la actividad</label>
+                    <input type="text" id="just_manual_referencia_otro" class="form-control" maxlength="150">
+                  </div>
+                  <div class="col-md-3">
+                    <label for="just_manual_fecha" class="form-label">Fecha</label>
+                    <input type="date" id="just_manual_fecha" class="form-control">
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="just_manual_motivo_tipo" class="form-label">Motivo</label>
+                <select id="just_manual_motivo_tipo" class="form-select">
+                  <option value="trabajo">Trabajo</option>
+                  <option value="licencia_medica">Licencia médica</option>
+                  <option value="estudio">Estudio</option>
+                  <option value="otro">Otros</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="just_manual_estado" class="form-label">Registrar asistencia como</label>
+                <select id="just_manual_estado" class="form-select">
+                  <option value="justificado">Justificado</option>
+                  <option value="licencia_medica">Licencia médica</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label for="just_manual_detalle" class="form-label">Detalle del motivo <span class="text-muted">(lo que dice la carta)</span></label>
+                <textarea id="just_manual_detalle" class="form-control" rows="3" maxlength="3000" required></textarea>
+              </div>
+              <div class="col-md-6">
+                <label for="just_manual_adjunto" class="form-label">Respaldo <span class="text-muted">(opcional: carta o certificado, imagen o PDF, máx. 5 MB)</span></label>
+                <input type="file" id="just_manual_adjunto" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
+              </div>
+              <div class="col-md-6">
+                <label for="just_manual_observacion" class="form-label">Observación <span class="text-muted">(opcional, se le informa al integrante)</span></label>
+                <input type="text" id="just_manual_observacion" class="form-control" maxlength="300" placeholder="Ej.: recibida en el correo antiguo el 20-10">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success" id="btn_guardar_just_manual">
+              <i class="bi bi-check-circle me-1"></i>Registrar y aprobar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Revisar postulación a bloques -->
+  <div class="modal fade" id="modal_revisar_postulacion" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-grid-3x3-gap me-2"></i>Postulación folio <span id="revisar_post_folio"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="revisar_post_detalle" class="mb-3"></div>
+          <div id="revisar_post_acciones">
+            <label for="revisar_post_opcion" class="form-label">Bloque que se asigna al aceptar</label>
+            <select id="revisar_post_opcion" class="form-select mb-2"></select>
+            <label for="revisar_post_observacion" class="form-label">Observación <span class="text-muted">(obligatoria si se rechaza)</span></label>
+            <input type="text" id="revisar_post_observacion" class="form-control" maxlength="300">
+          </div>
+        </div>
+        <div class="modal-footer" id="revisar_post_footer">
+          <button type="button" class="btn btn-outline-danger" id="btn_rechazar_postulacion" onclick="resolverPostulacion('rechazar')">
+            <i class="bi bi-x-circle me-1"></i>Rechazar
+          </button>
+          <button type="button" class="btn btn-success" id="btn_aceptar_postulacion" onclick="resolverPostulacion('aceptar')">
+            <i class="bi bi-check-circle me-1"></i>Aceptar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Revisar carta de permiso para el colegio -->
+  <div class="modal fade" id="modal_revisar_carta_permiso" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-mortarboard me-2"></i>Carta de permiso folio <span id="revisar_cp_folio"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="revisar_cp_detalle" class="mb-3"></div>
+          <div id="revisar_cp_acciones">
+            <label for="revisar_cp_observacion" class="form-label">Observación <span class="text-muted">(obligatoria si se rechaza)</span></label>
+            <input type="text" id="revisar_cp_observacion" class="form-control" maxlength="300">
+          </div>
+        </div>
+        <div class="modal-footer" id="revisar_cp_footer">
+          <button type="button" class="btn btn-outline-danger" id="btn_rechazar_carta_permiso" onclick="resolverCartaPermiso('rechazar')">
+            <i class="bi bi-x-circle me-1"></i>Rechazar
+          </button>
+          <button type="button" class="btn btn-success" id="btn_aprobar_carta_permiso" onclick="resolverCartaPermiso('aprobar')">
+            <i class="bi bi-check-circle me-1"></i>Aprobar y enviar
           </button>
         </div>
       </div>
@@ -1514,6 +2000,81 @@
     </div>
   </div>
 
+  <!-- Modal: Usuarios del panel (solo cuenta de soporte) -->
+  <div class="modal fade" id="modal_usuarios_soporte" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-person-gear me-2"></i>Usuarios del panel</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted">
+            <strong>Reiniciar acceso</strong> cierra todas las sesiones abiertas del usuario, borra su email
+            y le asigna una clave temporal que deberá cambiar al entrar. Úsalo cuando una cuenta quedó
+            en manos de quien no corresponde.
+          </p>
+          <div id="usuarios_soporte_clave"></div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr><th>Usuario</th><th>Rol</th><th>Email</th><th>Estado</th><th></th></tr>
+              </thead>
+              <tbody id="tabla_usuarios_soporte"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Registro de actividad (solo rol admin y cuenta de soporte) -->
+  <div class="modal fade" id="modal_auditoria" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-journal-text me-2"></i>Registro de actividad</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-2">
+            Quién hizo cada movimiento que modificó datos en la app, separado por módulo.
+            Las consultas no se registran. Las asistencias tomadas sin conexión quedan con la hora en que se sincronizaron.
+          </p>
+          <div id="auditoria_modulos" class="d-flex flex-wrap gap-1 mb-3"></div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-4">
+              <label for="auditoria_usuario" class="form-label small mb-1">Usuario</label>
+              <select id="auditoria_usuario" class="form-select form-select-sm" onchange="cargarAuditoria()">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-3">
+              <label for="auditoria_desde" class="form-label small mb-1">Desde</label>
+              <input type="date" id="auditoria_desde" class="form-control form-control-sm" onchange="cargarAuditoria()">
+            </div>
+            <div class="col-6 col-md-3">
+              <label for="auditoria_hasta" class="form-label small mb-1">Hasta</label>
+              <input type="date" id="auditoria_hasta" class="form-control form-control-sm" onchange="cargarAuditoria()">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="button" class="btn btn-sm btn-outline-secondary w-100" onclick="limpiarFiltrosAuditoria()">Limpiar</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr><th>Fecha</th><th>Quién</th><th>Acción</th><th>Detalle</th></tr>
+              </thead>
+              <tbody id="tabla_auditoria"></tbody>
+            </table>
+          </div>
+          <p class="small text-muted mb-0">Se muestran los últimos 1.000 movimientos del módulo.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="app-footer text-center py-3 mt-4">
     <small>Diseño de Mario Riquelme</small>
   </footer>
@@ -1530,6 +2091,9 @@
   <script src="js/accesoSocios.js"></script>
   <script src="js/justificaciones.js"></script>
   <script src="js/solicitudesIngreso.js"></script>
+  <script src="js/cartasPermiso.js"></script>
+  <script src="js/usuariosSoporte.js"></script>
+  <script src="js/auditoria.js"></script>
   <script src="js/multas.js"></script>
   <script src="js/puntaje.js"></script>
   <script src="js/formaciones.js?v=30"></script>

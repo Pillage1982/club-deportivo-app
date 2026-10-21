@@ -187,7 +187,7 @@ function configurarFiltrosGastos() {
 }
 
 function verComprobanteGasto(id) {
-  fetch(`${API_URL}/gastos/${id}/comprobante`, { headers: getAuthHeaders() })
+  fetch(`${API_URL}/gastos/${id}/comprobante`, { headers: getAuthHeaders(), cache: 'no-store' })
     .then(async res => {
       if (!res.ok) {
         const data = await leerRespuestaJson(res);

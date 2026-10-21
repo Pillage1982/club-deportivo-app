@@ -1,4 +1,4 @@
-// Portal del Socio: navegación entre las 5 pantallas y carga de datos propios
+// Portal del Integrante: navegación entre las 5 pantallas y carga de datos propios
 // (solo lectura) desde /socio-auth/mi-*; Documentos vive en documentos.js.
 // Cada pantalla se carga una sola vez (cache en memoria) y se refresca al
 // volver a entrar a index.html.
@@ -148,7 +148,10 @@ function cargarFinanzas() {
       mostrarTemporada(data.temporada_desde);
 
       const deudaEl = document.getElementById('finanzas_deuda');
-      deudaEl.textContent = formatearMonto(data.deuda_actual);
+      // Deuda negativa = pagó más que las cuotas generadas: se muestra como saldo a favor
+      deudaEl.textContent = data.deuda_actual < 0
+        ? `${formatearMonto(-data.deuda_actual)} a favor`
+        : formatearMonto(data.deuda_actual);
       deudaEl.style.color = data.deuda_actual > 0 ? '#c0392b' : '#2e7d32';
 
       const tablaCuotas = document.getElementById('tabla_finanzas_cuotas');
@@ -157,7 +160,9 @@ function cargarFinanzas() {
             <tr>
               <td>${nombreMes(c.mes)}/${c.anio}</td>
               <td>${formatearMonto(c.monto)}</td>
-              <td>${badgeEstadoCuota(c.estado)}</td>
+              <td>${badgeEstadoCuota(c.estado)}${c.estado !== 'pagado' && Number(c.monto_pagado) > 0
+                ? ` <span class="badge bg-info text-dark">Abono ${formatearMonto(c.monto_pagado)}</span>`
+                : ''}</td>
             </tr>
           `).join('')
         : '<tr><td colspan="3" class="text-center text-muted">Sin cuotas registradas en esta temporada</td></tr>';
@@ -168,12 +173,23 @@ function cargarFinanzas() {
             <tr>
               <td>${formatearFecha(p.fecha)}</td>
               <td>${formatearMonto(p.monto_total)}</td>
-              <td>${p.cuotas_cubiertas ? escaparHtml(p.cuotas_cubiertas) : '—'}</td>
+              <td>${escaparHtml(descripcionPagoSocio(p))}</td>
             </tr>
           `).join('')
         : '<tr><td colspan="3" class="text-center text-muted">Sin pagos registrados en esta temporada</td></tr>';
     })
     .catch(err => console.error('Error cargando finanzas:', err));
+}
+
+// Pagos extra (integración, traje, chaqueta, otro) se muestran con su tipo; los de cuota,
+// con los meses que cubrieron.
+function descripcionPagoSocio(p) {
+  const tipos = { integracion: 'Cuota de integración', traje: 'Traje', chaqueta: 'Chaqueta institucional', otro: 'Otro' };
+  if (p.tipo_pago && p.tipo_pago !== 'cuota') {
+    const tipo = tipos[p.tipo_pago] || 'Otro';
+    return p.detalle ? `${tipo} — ${p.detalle}` : tipo;
+  }
+  return p.cuotas_cubiertas || '—';
 }
 
 function badgeEstadoCuota(estado) {

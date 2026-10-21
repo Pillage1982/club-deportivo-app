@@ -1,5 +1,7 @@
 // Servicio de correo: crea el transporte y notifica ausencias sin bloquear el cierre de una actividad.
 const CLIENTE = require('../config/cliente');
+const cuotaIntegracion = require('../config/cuotaIntegracion');
+const cuentaDeposito = require('../config/cuentaDeposito');
 
 let nodemailer = null;
 
@@ -79,6 +81,7 @@ function formatearFechaTexto(fecha) {
 // Tipo de actividad como lo nombra la agrupación (eventos.tipo).
 const NOMBRE_TIPO_ACTIVIDAD = {
   entrenamiento: 'el ensayo',
+  misa: 'la misa',
   reunion: 'la reunión',
   partido: 'la presentación'
 };
@@ -161,7 +164,7 @@ function enviarEnlaceRecuperacion({ destinatario, nombre, enlace, esSocio, minut
     return Promise.resolve(false);
   }
 
-  const queCambia = esSocio ? 'tu contraseña del Portal del Socio' : 'tu contraseña del panel de la directiva';
+  const queCambia = esSocio ? 'tu contraseña del Portal del Integrante' : 'tu contraseña del panel de la directiva';
   const cuerpo = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">${CLIENTE.nombre}</h2>
@@ -237,7 +240,7 @@ function membreteCarta(folio, fecha) {
 }
 
 function constanciaEnvio(fecha) {
-  return `Enviada electrónicamente desde el Portal del Socio con la sesión del titular (${escaparHtml(fecha)}).`;
+  return `Enviada electrónicamente desde el Portal del Integrante con la sesión del titular (${escaparHtml(fecha)}).`;
 }
 
 function adjuntoLogo() {
@@ -249,8 +252,15 @@ const ETIQUETA_TIPO_JUSTIFICACION = {
   licencia_medica: 'Licencia médica'
 };
 
+const ETIQUETA_MOTIVO_JUSTIFICACION = {
+  trabajo: 'Trabajo',
+  licencia_medica: 'Licencia médica',
+  estudio: 'Estudio',
+  otro: 'Otros'
+};
+
 // datos: { folio, creadoEn, persona, referencia, referenciaOtro, evento, fechaActividad,
-//          tipoSolicitado, condicion, motivo, quienEntrega, adjunto: {path, filename} | null }
+//          tipoSolicitado, motivoTipo, condicion, motivo, quienEntrega, adjunto: {path, filename} | null }
 // Devuelve false si el correo no está configurado (la carta igual queda guardada).
 function enviarCartaJustificacion(datos) {
   if (!emailConfigurado()) {
@@ -274,13 +284,14 @@ function enviarCartaJustificacion(datos) {
       <p style="margin: 0; padding-bottom: 6px; border-bottom: 3px solid #222;">
         <strong>Referencia justifica inasistencia a:</strong>
         Ensayo ${casilla(ref === 'ensayo')}
+        Misa ${casilla(ref === 'misa')}
         Reunión ${casilla(ref === 'reunion')}
-        Salida ${casilla(ref === 'salida')}
-        Otro ${casilla(ref === 'otro')}
+        Presentación ${casilla(ref === 'salida')}
+        Otros ${casilla(ref === 'otro')}
       </p>
       <p style="margin: 8px 0 18px; font-size: 13px; color: #555;">
         Actividad: <strong>${actividad}</strong><br>
-        Tipo: <strong>${ETIQUETA_TIPO_JUSTIFICACION[datos.tipoSolicitado] || 'Justificación'}</strong>
+        Motivo: <strong>${ETIQUETA_MOTIVO_JUSTIFICACION[datos.motivoTipo] || ETIQUETA_TIPO_JUSTIFICACION[datos.tipoSolicitado] || 'Justificación'}</strong>
         ${datos.adjunto ? ' · Se adjunta documento de respaldo' : ''}
       </p>
       <p style="margin: 0 0 8px;">Respetados Srs:</p>
@@ -418,7 +429,8 @@ function enviarComprobanteDeposito(datos) {
 }
 
 // Aviso al socio cuando la directiva aprueba o rechaza su carta.
-function notificarResolucionJustificacion({ persona, folio, aprobada, estadoAplicado, observacion, actividad }) {
+// manual: la carta llegó fuera del Portal y la directiva la ingresó ya aprobada.
+function notificarResolucionJustificacion({ persona, folio, aprobada, estadoAplicado, observacion, actividad, manual }) {
   if (!emailConfigurado() || !persona.email) return Promise.resolve(false);
 
   const nombre = [persona.nombres, persona.apellido_paterno].join(' ').trim();
@@ -430,10 +442,13 @@ function notificarResolucionJustificacion({ persona, folio, aprobada, estadoApli
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">${CLIENTE.nombre}</h2>
       <p>Hola <strong>${escaparHtml(nombre)}</strong>,</p>
-      <p>Tu carta de justificación folio <strong>${formatearFolio(folio)}</strong>
-        (${escaparHtml(actividad)}) fue ${resultado}.</p>
+      ${manual
+        ? `<p>Tu carta de justificación enviada por correo (${escaparHtml(actividad)}) quedó registrada
+        con el folio <strong>${formatearFolio(folio)}</strong> y fue ${resultado}.</p>`
+        : `<p>Tu carta de justificación folio <strong>${formatearFolio(folio)}</strong>
+        (${escaparHtml(actividad)}) fue ${resultado}.</p>`}
       ${observacion ? `<p>Observación de la directiva: <em>${escaparHtml(observacion)}</em></p>` : ''}
-      <p>Puedes revisarla en el Portal del Socio → Documentos.</p>
+      <p>Puedes revisarla en el Portal del Integrante → Documentos.</p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
       <p style="color: #888; font-size: 12px;">Este es un mensaje automático. No respondas a este correo.</p>
     </div>
@@ -442,6 +457,36 @@ function notificarResolucionJustificacion({ persona, folio, aprobada, estadoApli
   return enviarCorreo({
     destinatario: persona.email,
     asunto: `Justificación folio ${formatearFolio(folio)}: ${aprobada ? 'aprobada' : 'rechazada'}`,
+    cuerpo
+  }).then(() => true);
+}
+
+// Aviso al integrante cuando la directiva acepta o rechaza su postulación a bloques.
+// Usa el email que puso en la carta y, si no, el de su ficha.
+function notificarResolucionPostulacion({ postulacion, aprobada, observacion }) {
+  const destinatario = postulacion.email || postulacion.email_persona;
+  if (!emailConfigurado() || !destinatario) return Promise.resolve(false);
+
+  const nombre = [postulacion.nombres, postulacion.apellido_paterno].join(' ').trim();
+  const resultado = aprobada
+    ? `<strong style="color: #2e7d32;">ACEPTADA</strong>: desde ahora tu bloque es <strong>${escaparHtml(postulacion.bloque_asignado)}</strong>`
+    : '<strong style="color: #c0392b;">RECHAZADA</strong>';
+
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">${CLIENTE.nombre}</h2>
+      <p>Hola <strong>${escaparHtml(nombre)}</strong>,</p>
+      <p>Tu postulación a bloques folio <strong>${formatearFolio(postulacion.id)}</strong> fue ${resultado}.</p>
+      ${observacion ? `<p>Observación de la directiva: <em>${escaparHtml(observacion)}</em></p>` : ''}
+      <p>Puedes revisarla en el Portal del Integrante → Documentos.</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="color: #888; font-size: 12px;">Este es un mensaje automático. No respondas a este correo.</p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    destinatario,
+    asunto: `Postulación a bloques folio ${formatearFolio(postulacion.id)}: ${aprobada ? 'aceptada' : 'rechazada'}`,
     cuerpo
   }).then(() => true);
 }
@@ -497,7 +542,7 @@ function enviarSolicitudIngreso(s) {
       <p style="color: #888; font-size: 12px; margin: 0;">
         Revisar y aceptar o rechazar en el panel de la directiva → Tablas → Solicitudes
         (folio ${formatearFolio(s.id)}). Al aceptarla, el postulante queda como integrante
-        y completa el resto de sus datos en su primer ingreso al Portal del Socio.
+        y completa el resto de sus datos en su primer ingreso al Portal del Integrante.
         Responder este correo le escribe directamente al postulante.
       </p>
     </div>
@@ -512,8 +557,31 @@ function enviarSolicitudIngreso(s) {
   }).then(() => true);
 }
 
+// Cuota de integración y cuenta para depositarla (correo de bienvenida).
+function bloqueCuotaIntegracion() {
+  const cuenta = cuentaDeposito;
+  const datosCuenta = cuenta.numero
+    ? `
+        <ul style="margin: 8px 0 0;">
+          ${[
+            ['Titular', cuenta.titular], ['RUT', cuenta.rut], ['Banco', cuenta.banco],
+            ['Tipo de cuenta', cuenta.tipo_cuenta], ['N° de cuenta', cuenta.numero], ['Correo', cuenta.email]
+          ].filter(([, v]) => v).map(([k, v]) => `<li><strong>${k}:</strong> ${escaparHtml(v)}</li>`).join('')}
+        </ul>
+        <p style="margin: 8px 0 0;">En el comentario de la transferencia escribe tu nombre, RUT y "cuota de integración".
+        Después envía el comprobante desde el Portal → Documentos → "Enviar comprobante de depósito".</p>`
+    : '<p style="margin: 8px 0 0;">Consulta con tesorería los datos para depositar.</p>';
+
+  return `
+      <div style="background: #fff8e1; border-left: 4px solid #f9a825; padding: 12px 16px; margin: 20px 0;">
+        <p style="margin: 0;"><strong>Cuota de integración: $${Number(cuotaIntegracion.monto).toLocaleString('es-CL')}</strong> (pago único)</p>
+        <p style="margin: 8px 0 0;">Todo nuevo integrante paga esta cuota una sola vez, además de las cuotas mensuales de la temporada.</p>
+        ${datosCuenta}
+      </div>`;
+}
+
 // Aviso al postulante cuando la directiva acepta o rechaza su solicitud. Si es
-// aceptada, le explica cómo entrar por primera vez al Portal del Socio.
+// aceptada, le explica cómo entrar por primera vez al Portal del Integrante.
 function notificarResolucionSolicitudIngreso({ solicitud, aprobada, observacion }) {
   if (!emailConfigurado() || !solicitud.email) return Promise.resolve(false);
 
@@ -523,15 +591,16 @@ function notificarResolucionSolicitudIngreso({ solicitud, aprobada, observacion 
   const detalle = aprobada
     ? `
       <p>¡Bienvenido/a a la promesa! Tu solicitud fue <strong style="color: #2e7d32;">aceptada</strong>.</p>
-      <p>Para terminar tu inscripción, entra al Portal del Socio:</p>
+      <p>Para terminar tu inscripción, entra al Portal del Integrante:</p>
       <ul>
         <li><strong>RUT:</strong> tu RUT</li>
         <li><strong>Clave:</strong> tu RUT sin puntos ni guion (ej. 12345678K)</li>
       </ul>
       <p>En ese primer ingreso crearás tu contraseña y completarás los datos que faltan.</p>
+      ${bloqueCuotaIntegracion()}
       <p style="margin: 24px 0;">
         <a href="${urlPortal}" style="background: #8b1a1a; color: #fff; padding: 12px 22px; text-decoration: none; border-radius: 4px; display: inline-block;">
-          Ir al Portal del Socio
+          Ir al Portal del Integrante
         </a>
       </p>`
     : `<p>Tu solicitud de ingreso folio <strong>${formatearFolio(solicitud.id)}</strong> no fue aceptada por ahora.</p>`;
@@ -564,6 +633,94 @@ function formatearFechaHoraTexto(fecha) {
   });
 }
 
+// =====================================
+// CARTA DE PERMISO PARA EL COLEGIO
+// =====================================
+// Aviso de solicitud nueva: a secretaría con copia a presidencia (las aprueban los
+// roles admin y secretaria en el panel).
+const DESTINO_CARTAS_PERMISO = () => process.env.EMAIL_SECRETARIA || process.env.EMAIL_USER;
+const COPIA_CARTAS_PERMISO = () => process.env.EMAIL_PRESIDENCIA || process.env.EMAIL_USER;
+
+function nombreCompletoCarta(c) {
+  return [c.nombres, c.apellido_paterno, c.apellido_materno || ''].join(' ').trim();
+}
+
+function rangoPermisoTexto(c) {
+  const fecha = f => formatearFechaTexto(`${String(f).substring(0, 10)}T12:00:00`);
+  return `${fecha(c.fecha_desde)} al ${fecha(c.fecha_hasta)}`;
+}
+
+// c: fila de cartaPermisoModel.obtener. Devuelve false si el correo no está
+// configurado (la solicitud igual queda guardada y se ve en el panel).
+function enviarSolicitudCartaPermiso(c) {
+  if (!emailConfigurado()) {
+    console.warn('[Email] No configurado. Solicitud de carta de permiso no enviada, folio:', c.id);
+    return Promise.resolve(false);
+  }
+
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; color: #222; font-size: 14px; line-height: 1.5;">
+      ${membreteCarta(c.id, c.creado_en)}
+      <p style="margin: 0 0 16px; padding-bottom: 6px; border-bottom: 3px solid #222;">
+        <strong>Referencia: Solicitud de carta de permiso para el colegio (Ayquina).</strong>
+      </p>
+      <table role="presentation" style="border-collapse: collapse; margin: 0 0 20px;">
+        ${filaDato('Alumno', nombreCompletoCarta(c))}
+        ${filaDato('Rut', c.rut)}
+        ${filaDato('Colegio', c.colegio)}
+        ${filaDato('Director/a', c.director)}
+        ${filaDato('Curso', c.curso)}
+        ${filaDato('Permiso', rangoPermisoTexto(c))}
+      </table>
+      <p style="color: #888; font-size: 12px; margin: 0;">
+        Aprobar o rechazar en el panel de la directiva → Tablas → Cartas colegio (folio ${formatearFolio(c.id)}).
+        Al aprobarla, la carta firmada le llega en PDF al correo del integrante${c.email ? '' : ' (no tiene email registrado)'}.
+      </p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    destinatario: DESTINO_CARTAS_PERMISO(),
+    cc: COPIA_CARTAS_PERMISO(),
+    replyTo: c.email || null,
+    asunto: `Carta de permiso colegio — Folio ${formatearFolio(c.id)} — ${nombreCompletoCarta(c)}`,
+    cuerpo,
+    adjuntos: [adjuntoLogo()]
+  }).then(() => true);
+}
+
+// Carta aprobada: va el PDF firmado adjunto. Rechazada: el motivo.
+function notificarResolucionCartaPermiso({ carta, aprobada, pdf }) {
+  if (!emailConfigurado() || !carta.email) return Promise.resolve(false);
+
+  const nombre = [carta.nombres, carta.apellido_paterno].join(' ').trim();
+  const resultado = aprobada
+    ? '<strong style="color: #2e7d32;">APROBADA</strong>. Te adjuntamos la carta firmada en PDF para que la presentes en el colegio'
+    : '<strong style="color: #c0392b;">RECHAZADA</strong>';
+
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">${CLIENTE.nombre}</h2>
+      <p>Hola <strong>${escaparHtml(nombre)}</strong>,</p>
+      <p>Tu solicitud de carta de permiso para el colegio folio <strong>${formatearFolio(carta.id)}</strong>
+        (${escaparHtml(carta.colegio)}, ${escaparHtml(rangoPermisoTexto(carta))}) fue ${resultado}.</p>
+      ${carta.observacion_directiva ? `<p>Observación de la directiva: <em>${escaparHtml(carta.observacion_directiva)}</em></p>` : ''}
+      <p>También puedes ${aprobada ? 'descargarla' : 'revisarla'} en el Portal del Integrante → Documentos.</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="color: #888; font-size: 12px;">Este es un mensaje automático. No respondas a este correo.</p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    destinatario: carta.email,
+    asunto: `Carta de permiso folio ${formatearFolio(carta.id)}: ${aprobada ? 'aprobada' : 'rechazada'}`,
+    cuerpo,
+    adjuntos: aprobada && pdf
+      ? [{ filename: `Carta_permiso_${formatearFolio(carta.id)}.pdf`, content: pdf, contentType: 'application/pdf' }]
+      : undefined
+  }).then(() => true);
+}
+
 module.exports = {
   notificarAusentesEvento,
   enviarEnlaceRecuperacion,
@@ -571,7 +728,10 @@ module.exports = {
   enviarPostulacionBloque,
   enviarComprobanteDeposito,
   notificarResolucionJustificacion,
+  notificarResolucionPostulacion,
   enviarSolicitudIngreso,
   notificarResolucionSolicitudIngreso,
+  enviarSolicitudCartaPermiso,
+  notificarResolucionCartaPermiso,
   formatearFolio
 };

@@ -11,6 +11,9 @@
   content="width=device-width, initial-scale=1.0">
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#050505">
+  <link rel="apple-touch-icon" href="img/icons/apple-touch-icon.png">
 
   <title>UMC.APP | Login</title>
 
@@ -69,14 +72,14 @@
 
     </p>
 
-    <!-- Selector de acceso: panel de la directiva / Portal del Socio -->
+    <!-- Selector de acceso: panel de la directiva / Portal del Integrante -->
 
     <nav class="login-selector" aria-label="Tipo de acceso">
       <a href="login.html" class="activo" aria-current="page">
         <i class="bi bi-briefcase-fill"></i> Directiva
       </a>
       <a href="socio/login.html">
-        <i class="bi bi-person-vcard-fill"></i> Socio
+        <i class="bi bi-person-vcard-fill"></i> Integrante
       </a>
     </nav>
 
@@ -143,5 +146,9 @@
   </p>
 
   <script src="js/login.js"></script>
+  <script>
+    // Registra el SW desde el login para que el navegador ofrezca "Instalar" antes de entrar.
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  </script>
 </body>
 </html>

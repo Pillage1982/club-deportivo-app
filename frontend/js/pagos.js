@@ -12,17 +12,62 @@ function normalizarTextoPago(valor) {
     .trim();
 }
 
+// Tipos de pago: solo 'cuota' rebaja la deuda; el resto son pagos extra
+// (integración, trajes, chaquetas, otros) que entran a caja sin abonar cuotas.
+const TIPOS_PAGO = {
+  cuota: 'Cuota mensual',
+  integracion: 'Cuota de integración',
+  traje: 'Traje',
+  chaqueta: 'Chaqueta institucional',
+  otro: 'Otro'
+};
+
+function etiquetaTipoPago(pago) {
+  const tipo = TIPOS_PAGO[pago.tipo_pago] || TIPOS_PAGO.cuota;
+  return pago.detalle ? `${tipo} — ${pago.detalle}` : tipo;
+}
+
+// Con un pago extra no aplica vincular cuota ni pago anual: se ocultan.
+function actualizarTipoPago() {
+  const tipo = document.getElementById('pago_tipo')?.value || 'cuota';
+  const esCuota = tipo === 'cuota';
+
+  document.getElementById('pago_cuota_grupo')?.classList.toggle('d-none', !esCuota);
+  document.getElementById('pago_anual_grupo')?.classList.toggle('d-none', !esCuota);
+
+  if (!esCuota) {
+    marcarCuotasPago(false);
+    const check = document.getElementById('pago_anual_check');
+    if (check?.checked) {
+      check.checked = false;
+      actualizarModoPagoAnual();
+    }
+  }
+
+  const ayuda = document.getElementById('pago_detalle_ayuda');
+  if (ayuda) ayuda.textContent = tipo === 'otro' ? '(obligatorio)' : '(opcional)';
+}
+
 function editarPago(pago) {
   pagoEditando = pago.id;
 
-  document.getElementById('pago_persona_id').value =
-    pago.persona_id || '';
+  document.getElementById('pago_tipo').value = pago.tipo_pago || 'cuota';
+  document.getElementById('pago_detalle').value = pago.detalle || '';
+  actualizarTipoPago();
+
+  seleccionarPersonaPago(pago.persona_id);
 
   document.getElementById('pago_monto').value =
     pago.monto_total || '';
 
   document.getElementById('pago_metodo').value =
     pago.metodo || '';
+
+  cargarDepositosPago(pago.persona_id);
+
+  // Editar no cambia los meses vinculados: solo pagos sin cuotas se pueden editar
+  document.getElementById('pago_cuota_grupo')?.classList.add('d-none');
+  document.getElementById('pago_anual_grupo')?.classList.add('d-none');
 
   document.getElementById('btn_guardar_pago').innerText =
     'Actualizar Pago';
@@ -32,24 +77,139 @@ function editarPago(pago) {
 
 const MESES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
+// Lista de casillas con TODAS las cuotas pendientes del integrante (cualquier
+// temporada): tesorería marca a mano los meses que cubre el pago.
 function cargarCuotasPendientesPago(persona_id) {
-  const select = document.getElementById('pago_cuota_id');
-  if (!select) return;
-  select.innerHTML = '<option value="">Sin vincular a cuota</option>';
+  const lista = document.getElementById('pago_cuotas_lista');
+  if (!lista) return;
+  lista.innerHTML = '<span class="text-muted small">Seleccione un integrante</span>';
+  actualizarSeleccionCuotasPago();
   if (!persona_id) return;
 
+  lista.innerHTML = '<span class="text-muted small">Cargando cuotas...</span>';
   fetch(`${API_URL}/cuotas/pendientes/${persona_id}`, { headers: getAuthHeaders() })
     .then(res => res.json())
     .then(cuotas => {
-      if (!Array.isArray(cuotas) || cuotas.length === 0) return;
-      cuotas.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = `${MESES[c.mes]} ${c.anio} — saldo ${formatearMonto(c.saldo)} (${c.estado})`;
-        select.appendChild(opt);
-      });
+      if (!Array.isArray(cuotas) || cuotas.length === 0) {
+        lista.innerHTML = '<span class="text-muted small">Este integrante no tiene cuotas pendientes</span>';
+        return;
+      }
+      lista.innerHTML = cuotas.map(c => `
+        <div class="form-check">
+          <input class="form-check-input pago-cuota-check" type="checkbox" id="pago_cuota_${Number(c.id)}"
+            value="${Number(c.id)}" data-saldo="${Number(c.saldo)}" data-mes="${Number(c.mes)}" data-anio="${Number(c.anio)}"
+            onchange="actualizarSeleccionCuotasPago()">
+          <label class="form-check-label" for="pago_cuota_${Number(c.id)}">
+            ${MESES[c.mes]} ${Number(c.anio)} — saldo ${formatearMonto(c.saldo)}
+            <span class="badge ${c.estado === 'vencido' ? 'bg-danger' : 'bg-secondary'} ms-1">${escaparHtml(c.estado)}</span>
+            ${Number(c.monto_pagado) > 0 ? `<span class="badge bg-info text-dark ms-1">Abono ${formatearMonto(c.monto_pagado)}</span>` : ''}
+          </label>
+        </div>
+      `).join('');
+      if (document.getElementById('pago_anual_check')?.checked) marcarCuotasPago(false, true);
     })
-    .catch(() => {});
+    .catch(() => {
+      lista.innerHTML = '<span class="text-danger small">No se pudieron cargar las cuotas</span>';
+    });
+}
+
+function cuotasMarcadasPago() {
+  return [...document.querySelectorAll('.pago-cuota-check:checked')];
+}
+
+function marcarCuotasPago(marcar, deshabilitar = null) {
+  document.querySelectorAll('.pago-cuota-check').forEach(check => {
+    check.checked = marcar;
+    if (deshabilitar !== null) check.disabled = deshabilitar;
+  });
+  actualizarSeleccionCuotasPago();
+}
+
+// Monto = suma de saldos marcados, editable: si se escribe uno menor, se pagan
+// primero los meses más antiguos y el último queda con abono parcial.
+function actualizarSeleccionCuotasPago() {
+  if (document.getElementById('pago_anual_check')?.checked) return;
+
+  const marcadas = cuotasMarcadasPago();
+  const monto = document.getElementById('pago_monto');
+  const resumen = document.getElementById('pago_cuotas_resumen');
+  const total = marcadas.reduce((suma, c) => suma + Number(c.dataset.saldo), 0);
+
+  if (monto) {
+    if (marcadas.length) monto.value = total;
+    monto.readOnly = false;
+  }
+
+  if (resumen) {
+    resumen.textContent = !marcadas.length
+      ? ''
+      : `${marcadas.length} mes(es): ${marcadas.map(c => `${MESES[c.dataset.mes]} ${c.dataset.anio}`).join(', ')} — total ${formatearMonto(total)}`
+        + (marcadas.length === 1
+          ? ' (puede ingresar un monto menor para un abono parcial)'
+          : ' (si el monto es menor, se pagan primero los más antiguos y el último queda con abono parcial)');
+  }
+}
+
+// =====================================
+// BUSCADOR DE INTEGRANTE EN EL FORMULARIO DE PAGO
+// =====================================
+// Filtra el selector por nombre, apellidos o RUT (palabras en cualquier orden,
+// sin importar tildes). Si queda un solo integrante, se selecciona solo.
+
+let personasPago = [];
+
+function cargarOpcionesPersonaPago(personas) {
+  personasPago = (Array.isArray(personas) ? personas : [])
+    .filter(p => (p.estado || 'activo') !== 'inactivo')
+    .map(p => {
+      const nombre = `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno || ''}`.trim();
+      return {
+        id: String(p.id),
+        etiqueta: p.es_honorario ? `${nombre} (honorario)` : nombre,
+        busqueda: normalizarTextoPago(`${nombre} ${p.rut || ''} ${String(p.rut || '').replace(/[.\-]/g, '')}`)
+      };
+    });
+  renderizarOpcionesPersonaPago();
+}
+
+function renderizarOpcionesPersonaPago() {
+  const select = document.getElementById('pago_persona_id');
+  if (!select) return;
+
+  const seleccionado = select.value;
+  const palabras = normalizarTextoPago(document.getElementById('pago_persona_buscar')?.value)
+    .split(/\s+/).filter(Boolean);
+  const visibles = personasPago.filter(p => palabras.every(palabra => p.busqueda.includes(palabra)));
+
+  select.innerHTML = `<option value="">${palabras.length
+    ? `${visibles.length} integrante(s) encontrado(s)`
+    : 'Seleccione un integrante'}</option>`;
+  visibles.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.etiqueta;
+    select.appendChild(opt);
+  });
+
+  const nuevoValor = palabras.length && visibles.length === 1
+    ? visibles[0].id
+    : (visibles.some(p => p.id === seleccionado) ? seleccionado : '');
+  select.value = nuevoValor;
+  if (nuevoValor !== seleccionado) select.dispatchEvent(new Event('change'));
+}
+
+// Selecciona un integrante desde código (editar pago, registrar depósito): limpia
+// el buscador para que la opción exista en la lista.
+function seleccionarPersonaPago(personaId) {
+  const buscar = document.getElementById('pago_persona_buscar');
+  if (buscar) buscar.value = '';
+  renderizarOpcionesPersonaPago();
+  const select = document.getElementById('pago_persona_id');
+  if (select) select.value = personaId ? String(personaId) : '';
+}
+
+function configurarBuscadorPersonaPago() {
+  document.getElementById('pago_persona_buscar')?.addEventListener('input', renderizarOpcionesPersonaPago);
 }
 
 function configurarSelectorCuotaPago() {
@@ -57,6 +217,7 @@ function configurarSelectorCuotaPago() {
   if (!sel) return;
   sel.addEventListener('change', () => {
     cargarCuotasPendientesPago(sel.value);
+    cargarDepositosPago(sel.value);
     if (document.getElementById('pago_anual_check')?.checked) cargarPagoAnual();
   });
 }
@@ -69,19 +230,21 @@ let cuotasPendientesParaAnual = [];
 
 function actualizarModoPagoAnual() {
   const activo       = Boolean(document.getElementById('pago_anual_check')?.checked);
-  const selectCuota  = document.getElementById('pago_cuota_id');
   const inputMonto   = document.getElementById('pago_monto');
 
-  if (selectCuota) selectCuota.disabled = activo;
-  if (inputMonto)  inputMonto.readOnly  = activo;
-
   if (activo) {
+    marcarCuotasPago(false, true);
+    if (inputMonto) inputMonto.readOnly = true;
     cargarPagoAnual();
   } else {
     cuotasPendientesParaAnual = [];
-    if (inputMonto) inputMonto.value = '';
+    if (inputMonto) {
+      inputMonto.value = '';
+      inputMonto.readOnly = false;
+    }
     const aviso = document.getElementById('pago_anual_aviso');
     if (aviso) aviso.textContent = '';
+    marcarCuotasPago(false, false);
   }
 }
 
@@ -95,7 +258,9 @@ function cargarPagoAnual() {
   if (aviso) aviso.textContent = '';
   if (!personaId) return;
 
-  fetch(`${API_URL}/cuotas/pendientes/${personaId}`, { headers: getAuthHeaders() })
+  // Solo cuotas de la temporada vigente: las atrasadas de temporadas anteriores
+  // se pagan aparte, vinculando el pago a esa cuota.
+  fetch(`${API_URL}/cuotas/pendientes/${personaId}?temporada=vigente`, { headers: getAuthHeaders() })
     .then(res => res.json())
     .then(cuotas => {
       if (!Array.isArray(cuotas)) return;
@@ -103,9 +268,10 @@ function cargarPagoAnual() {
       const total = cuotas.reduce((suma, c) => suma + Number(c.saldo), 0);
       if (inputMonto) inputMonto.value = total;
       if (aviso) {
+        const meses = cuotas.map(c => `${MESES[c.mes]} ${c.anio}`).join(', ');
         aviso.textContent = cuotas.length >= 2
-          ? `${cuotas.length} cuota(s) pendiente(s) por ${formatearMonto(total)}`
-          : 'Este integrante no tiene al menos dos cuotas pendientes para un pago anual.';
+          ? `${cuotas.length} cuota(s) de la temporada vigente por ${formatearMonto(total)}: ${meses}`
+          : 'Este integrante no tiene al menos dos cuotas pendientes de la temporada vigente (¿se generaron las cuotas de la temporada?).';
       }
     })
     .catch(() => {});
@@ -116,6 +282,8 @@ function crearPago() {
   const personaId  = document.getElementById('pago_persona_id').value;
   const montoTotal = Number(document.getElementById('pago_monto').value);
   const metodo     = document.getElementById('pago_metodo').value;
+  const tipoPago   = document.getElementById('pago_tipo')?.value || 'cuota';
+  const detalle    = (document.getElementById('pago_detalle')?.value || '').trim();
 
   const metodosPermitidos = [
     'efectivo',
@@ -138,7 +306,21 @@ function crearPago() {
     return;
   }
 
-  if (esAnual) {
+  if (tipoPago === 'otro' && !detalle) {
+    mostrarAlerta('Indique en el detalle qué se está pagando', 'warning');
+    return;
+  }
+
+  if (!esAnual && tipoPago === 'cuota') {
+    const marcadas = cuotasMarcadasPago();
+    const totalMarcado = marcadas.reduce((suma, c) => suma + Number(c.dataset.saldo), 0);
+    if (marcadas.length && montoTotal > totalMarcado) {
+      mostrarAlerta(`El monto supera la suma de los meses marcados (${formatearMonto(totalMarcado)}). Marque más meses.`, 'warning');
+      return;
+    }
+  }
+
+  if (esAnual && tipoPago === 'cuota') {
     if (cuotasPendientesParaAnual.length < 2) {
       mostrarAlerta('Se necesitan al menos dos cuotas pendientes para un pago anual.', 'warning');
       return;
@@ -147,12 +329,19 @@ function crearPago() {
     return;
   }
 
-  const data = {
-    persona_id: personaId,
-    monto_total: montoTotal,
-    metodo,
-    cuota_id: document.getElementById('pago_cuota_id')?.value || null
-  };
+  // FormData para poder adjuntar el comprobante (opcional)
+  const data = new FormData();
+  data.append('persona_id', personaId);
+  data.append('monto_total', montoTotal);
+  data.append('metodo', metodo);
+  data.append('tipo_pago', tipoPago);
+  if (detalle) data.append('detalle', detalle);
+  const cuotaIds = tipoPago === 'cuota' ? cuotasMarcadasPago().map(c => Number(c.value)) : [];
+  if (cuotaIds.length) data.append('cuota_ids', JSON.stringify(cuotaIds));
+  const archivo = document.getElementById('pago_comprobante')?.files[0];
+  if (archivo) data.append('comprobante', archivo);
+  const depositoId = document.getElementById('pago_deposito_id')?.value;
+  if (!archivo && depositoId) data.append('comprobante_deposito_id', depositoId);
 
   let url = `${API_URL}/pagos`;
   let method = 'POST';
@@ -172,8 +361,8 @@ function crearPago() {
 
   fetch(url, {
     method: method,
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data)
+    headers: getAuthHeadersMultipart(),
+    body: data
   })
     .then(async res => {
       const respuesta = await leerRespuestaJson(res);
@@ -194,12 +383,16 @@ function crearPago() {
       document.getElementById('btn_guardar_pago').innerText = 'Guardar Pago';
       document.getElementById('pago_monto').value   = '';
       document.getElementById('pago_metodo').value  = 'efectivo';
-      const selectCuota = document.getElementById('pago_cuota_id');
-      if (selectCuota) {
-        selectCuota.innerHTML = '<option value="">Sin vincular a cuota</option>';
-      }
+      document.getElementById('pago_tipo').value    = 'cuota';
+      document.getElementById('pago_detalle').value = '';
+      document.getElementById('pago_comprobante').value = '';
+      limpiarDepositosPago();
+      actualizarTipoPago();
+      document.getElementById('pago_monto').readOnly = false;
+      cargarCuotasPendientesPago(document.getElementById('pago_persona_id').value);
 
       cargarTablaPagos();
+      cargarTablaDepositos();
       cargarMultas();
       cargarFinanzas();
       cargarCuotas();
@@ -221,20 +414,23 @@ function crearPago() {
 }
 
 function guardarPagoAnual(personaId, montoTotal, metodo) {
-  const data = {
-    persona_id: personaId,
-    monto_total: montoTotal,
-    metodo,
-    cuota_ids: cuotasPendientesParaAnual.map(c => c.id)
-  };
+  const data = new FormData();
+  data.append('persona_id', personaId);
+  data.append('monto_total', montoTotal);
+  data.append('metodo', metodo);
+  data.append('cuota_ids', JSON.stringify(cuotasPendientesParaAnual.map(c => c.id)));
+  const archivo = document.getElementById('pago_comprobante')?.files[0];
+  if (archivo) data.append('comprobante', archivo);
+  const depositoId = document.getElementById('pago_deposito_id')?.value;
+  if (!archivo && depositoId) data.append('comprobante_deposito_id', depositoId);
 
   const estadoBoton = bloquearBoton('btn_guardar_pago', 'Guardando...');
   if (!estadoBoton) return;
 
   fetch(`${API_URL}/pagos/anual`, {
     method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data)
+    headers: getAuthHeadersMultipart(),
+    body: data
   })
     .then(async res => {
       const respuesta = await leerRespuestaJson(res);
@@ -248,6 +444,9 @@ function guardarPagoAnual(personaId, montoTotal, metodo) {
 
       document.getElementById('pago_monto').value  = '';
       document.getElementById('pago_metodo').value = 'efectivo';
+      document.getElementById('pago_detalle').value = '';
+      document.getElementById('pago_comprobante').value = '';
+      limpiarDepositosPago();
       const check = document.getElementById('pago_anual_check');
       if (check) {
         check.checked = false;
@@ -256,6 +455,7 @@ function guardarPagoAnual(personaId, montoTotal, metodo) {
       cuotasPendientesParaAnual = [];
 
       cargarTablaPagos();
+      cargarTablaDepositos();
       cargarMultas();
       cargarFinanzas();
       cargarCuotas();
@@ -299,6 +499,9 @@ function filtrarPagos(pagos) {
   const metodo =
     document.getElementById('filtro_pago_metodo')?.value || '';
 
+  const tipo =
+    document.getElementById('filtro_pago_tipo')?.value || '';
+
   return pagos.filter(pago => {
     const nombreCompleto = normalizarTextoPago([
       pago.nombres,
@@ -312,7 +515,10 @@ function filtrarPagos(pagos) {
     const coincideMetodo =
       !metodo || pago.metodo === metodo;
 
-    return coincideBusqueda && coincideMetodo;
+    const coincideTipo =
+      !tipo || (pago.tipo_pago || 'cuota') === tipo;
+
+    return coincideBusqueda && coincideMetodo && coincideTipo;
   });
 }
 
@@ -324,7 +530,7 @@ function renderizarTablaPagos(pagos) {
   if (!pagos.length) {
     tabla.innerHTML = `
       <tr>
-        <td colspan="5" class="text-center text-muted">
+        <td colspan="6" class="text-center text-muted">
           No hay pagos para los filtros seleccionados
         </td>
       </tr>
@@ -335,22 +541,299 @@ function renderizarTablaPagos(pagos) {
   tabla.innerHTML = pagos.map(pago => `
     <tr>
       <td>${pago.nombres} ${pago.apellido_paterno} ${pago.apellido_materno || ''}</td>
+      <td>${escaparHtml(etiquetaTipoPago(pago))}</td>
       <td>${formatearMonto(pago.monto_total)}</td>
       <td>${pago.metodo}</td>
       <td>${pago.fecha_precision === 'mensual'
         ? new Intl.DateTimeFormat('es-CL', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${String(pago.fecha).substring(0, 10)}T00:00:00Z`))
         : formatearFecha(pago.fecha)}</td>
       <td class="text-nowrap">
+        ${pago.comprobante_path
+          ? `<button type="button" class="btn btn-sm btn-outline-primary me-1" title="Ver comprobante" aria-label="Ver comprobante"
+               onclick="verComprobantePago(${Number(pago.id)})"><i class="bi bi-file-earmark-text"></i></button>`
+          : `<button type="button" class="btn btn-sm btn-outline-secondary me-1" title="Adjuntar comprobante" aria-label="Adjuntar comprobante"
+               onclick="elegirComprobantePago(${Number(pago.id)})"><i class="bi bi-paperclip"></i></button>`}
         ${pago.referencia_externa || Number(pago.tiene_detalle) ? '<span class="badge bg-secondary">Histórico vinculado</span>' : `
         <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
           <button type="button" class="btn btn-outline-warning" title="Editar" aria-label="Editar"
-            onclick='editarPago(${JSON.stringify(pago)})'>&#9998;</button>
+            onclick='editarPago(pagosCargados.find(p => p.id === ${Number(pago.id)}))'>&#9998;</button>
           <button type="button" class="btn btn-outline-danger" title="Eliminar" aria-label="Eliminar"
             onclick='eliminarPago(${pago.id})'>&times;</button>
         </div>`}
       </td>
     </tr>
   `).join('');
+}
+
+function verComprobantePago(id) {
+  abrirArchivoProtegido(`${API_URL}/pagos/${id}/comprobante`);
+}
+
+function verComprobanteDeposito(id) {
+  abrirArchivoProtegido(`${API_URL}/pagos/depositos/${id}/archivo`);
+}
+
+// Descarga con el token y abre el archivo en otra pestaña (mismo patrón que Ingresos).
+function abrirArchivoProtegido(url) {
+  fetch(url, { headers: getAuthHeaders(), cache: 'no-store' })
+    .then(async res => {
+      if (!res.ok) {
+        const data = await leerRespuestaJson(res);
+        throw new Error(data.mensaje || 'No se pudo obtener el comprobante');
+      }
+      return res.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    })
+    .catch(err => {
+      mostrarAlerta(obtenerMensajeError(err, 'No se pudo obtener el comprobante'), 'danger');
+    });
+}
+
+// Adjuntar comprobante a un pago ya registrado (sirve también para los vinculados
+// a cuotas, que no se pueden editar).
+let pagoComprobantePendiente = null;
+
+// Si el socio envió comprobantes desde el Portal que aún no se usan, se ofrecen en
+// un modal; si no hay ninguno, se abre directo el selector de archivo.
+function elegirComprobantePago(id) {
+  const pago = pagosCargados.find(p => p.id === id);
+  pagoComprobantePendiente = id;
+  if (!pago) return subirArchivoComprobantePago();
+
+  fetch(`${API_URL}/pagos/depositos/persona/${pago.persona_id}`, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(depositos => {
+      if (!Array.isArray(depositos) || !depositos.length) return subirArchivoComprobantePago();
+
+      document.getElementById('lista_depositos_adjuntar').innerHTML = depositos.map(d => `
+        <div class="list-group-item d-flex justify-content-between align-items-center gap-2">
+          <div>
+            <div><strong>${formatearMonto(d.monto)}</strong> · depositado ${formatearFecha(d.fecha_deposito)}</div>
+            <small class="text-muted">Folio ${Number(d.id)}${d.concepto ? ` · ${escaparHtml(d.concepto)}` : ''}</small>
+          </div>
+          <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-outline-primary" title="Ver" onclick="verComprobanteDeposito(${Number(d.id)})"><i class="bi bi-eye"></i></button>
+            <button type="button" class="btn btn-success" onclick="usarDepositoEnPago(${Number(d.id)})">Usar</button>
+          </div>
+        </div>
+      `).join('');
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_adjuntar_comprobante_pago')).show();
+    })
+    .catch(() => subirArchivoComprobantePago());
+}
+
+function subirArchivoComprobantePago() {
+  const modal = bootstrap.Modal.getInstance(document.getElementById('modal_adjuntar_comprobante_pago'));
+  if (modal) modal.hide();
+  const input = document.getElementById('pago_comprobante_adjuntar');
+  if (!input) return;
+  input.value = '';
+  input.click();
+}
+
+function usarDepositoEnPago(depositoId) {
+  const id = pagoComprobantePendiente;
+  pagoComprobantePendiente = null;
+  bootstrap.Modal.getInstance(document.getElementById('modal_adjuntar_comprobante_pago'))?.hide();
+  if (!id) return;
+
+  const data = new FormData();
+  data.append('comprobante_deposito_id', depositoId);
+  enviarComprobantePago(id, data);
+}
+
+function enviarComprobantePago(id, data) {
+  fetch(`${API_URL}/pagos/${id}/comprobante`, {
+    method: 'POST',
+    headers: getAuthHeadersMultipart(),
+    body: data
+  })
+    .then(async res => {
+      const respuesta = await leerRespuestaJson(res);
+      if (!res.ok) throw new Error(respuesta.mensaje || 'No se pudo guardar el comprobante');
+      return respuesta;
+    })
+    .then(respuesta => {
+      mostrarAlerta(respuesta.mensaje || 'Comprobante guardado', 'success');
+      cargarTablaPagos();
+      cargarTablaDepositos();
+    })
+    .catch(err => {
+      mostrarAlerta(obtenerMensajeError(err, 'No se pudo guardar el comprobante'), 'danger');
+    });
+}
+
+function configurarAdjuntarComprobantePago() {
+  const input = document.getElementById('pago_comprobante_adjuntar');
+  if (!input) return;
+  input.addEventListener('change', () => {
+    const archivo = input.files[0];
+    const id = pagoComprobantePendiente;
+    pagoComprobantePendiente = null;
+    if (!archivo || !id) return;
+
+    const data = new FormData();
+    data.append('comprobante', archivo);
+    enviarComprobantePago(id, data);
+  });
+}
+
+// =====================================
+// DEPÓSITOS: comprobantes que los socios envían desde el Portal
+// =====================================
+
+let depositosCargados = [];
+
+// Selector del formulario de pago: comprobantes pendientes del integrante elegido.
+function cargarDepositosPago(personaId, seleccionarId = null) {
+  const grupo = document.getElementById('pago_deposito_grupo');
+  const select = document.getElementById('pago_deposito_id');
+  if (!grupo || !select) return Promise.resolve();
+
+  limpiarDepositosPago();
+  if (!personaId) return Promise.resolve();
+
+  return fetch(`${API_URL}/pagos/depositos/persona/${personaId}`, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(depositos => {
+      if (!Array.isArray(depositos) || !depositos.length) return;
+      depositos.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.dataset.monto = d.monto;
+        opt.textContent = `Folio ${d.id} — ${formatearMonto(d.monto)}, depositado ${formatearFecha(d.fecha_deposito)}${d.concepto ? ` (${d.concepto})` : ''}`;
+        select.appendChild(opt);
+      });
+      grupo.classList.remove('d-none');
+      if (seleccionarId) {
+        select.value = String(seleccionarId);
+        actualizarDepositoPago();
+      }
+    })
+    .catch(() => {});
+}
+
+function limpiarDepositosPago() {
+  const select = document.getElementById('pago_deposito_id');
+  if (select) select.innerHTML = '<option value="">No usar</option>';
+  document.getElementById('pago_deposito_grupo')?.classList.add('d-none');
+  const archivo = document.getElementById('pago_comprobante');
+  if (archivo) archivo.disabled = false;
+}
+
+// Elegir un depósito reemplaza a subir archivo; si el monto está vacío, lo propone.
+function actualizarDepositoPago() {
+  const select = document.getElementById('pago_deposito_id');
+  const archivo = document.getElementById('pago_comprobante');
+  const opcion = select?.selectedOptions[0];
+  const usaDeposito = Boolean(select?.value);
+
+  if (archivo) {
+    archivo.disabled = usaDeposito;
+    if (usaDeposito) archivo.value = '';
+  }
+
+  const monto = document.getElementById('pago_monto');
+  if (usaDeposito && monto && !monto.value && !monto.readOnly && opcion?.dataset.monto) {
+    monto.value = opcion.dataset.monto;
+  }
+}
+
+function verDepositoSeleccionadoPago() {
+  const id = document.getElementById('pago_deposito_id')?.value;
+  if (!id) {
+    mostrarAlerta('Elija primero un comprobante de la lista', 'warning');
+    return;
+  }
+  verComprobanteDeposito(id);
+}
+
+// Desde Tablas → Depósitos: abre el formulario con el integrante, monto y comprobante.
+function registrarPagoDesdeDeposito(id) {
+  const deposito = depositosCargados.find(d => d.id === id);
+  if (!deposito) return;
+
+  pagoEditando = null;
+  document.getElementById('btn_guardar_pago').innerText = 'Guardar Pago';
+  seleccionarPersonaPago(deposito.persona_id);
+  document.getElementById('pago_monto').value = deposito.monto;
+  document.getElementById('pago_detalle').value = '';
+  cargarCuotasPendientesPago(deposito.persona_id);
+  cargarDepositosPago(deposito.persona_id, deposito.id);
+
+  irAFormulario('#subtab_form_pago');
+}
+
+function cargarTablaDepositos() {
+  fetch(`${API_URL}/pagos/depositos`, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (!Array.isArray(data)) return;
+      depositosCargados = data;
+
+      const pendientes = data.filter(d => !d.pago_id).length;
+      const badge = document.getElementById('badge_depositos');
+      if (badge) {
+        badge.textContent = pendientes;
+        badge.classList.toggle('d-none', pendientes === 0);
+      }
+
+      renderizarTablaDepositos(filtrarDepositos(data));
+    })
+    .catch(err => console.error(err));
+}
+
+function filtrarDepositos(depositos) {
+  const busqueda = normalizarTextoPago(document.getElementById('buscar_depositos')?.value);
+  const estado = document.getElementById('filtro_deposito_estado')?.value || '';
+
+  return depositos.filter(d => {
+    const nombre = normalizarTextoPago([d.nombres, d.apellido_paterno, d.apellido_materno].join(' '));
+    const coincideEstado = !estado || (estado === 'pendiente' ? !d.pago_id : Boolean(d.pago_id));
+    return (!busqueda || nombre.includes(busqueda)) && coincideEstado;
+  });
+}
+
+function renderizarTablaDepositos(depositos) {
+  const tabla = document.getElementById('tabla_depositos');
+  if (!tabla) return;
+
+  if (!depositos.length) {
+    tabla.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay comprobantes para los filtros seleccionados</td></tr>';
+    return;
+  }
+
+  tabla.innerHTML = depositos.map(d => `
+    <tr>
+      <td>${Number(d.id)}</td>
+      <td>${escaparHtml(`${d.nombres} ${d.apellido_paterno} ${d.apellido_materno || ''}`)}</td>
+      <td>${formatearMonto(d.monto)}</td>
+      <td>${formatearFecha(d.fecha_deposito)}</td>
+      <td>${d.concepto ? escaparHtml(d.concepto) : '—'}</td>
+      <td>${d.pago_id
+        ? '<span class="badge bg-success">Registrado</span>'
+        : '<span class="badge bg-warning text-dark">Pendiente</span>'}</td>
+      <td class="text-nowrap">
+        <button type="button" class="btn btn-sm btn-outline-primary" title="Ver comprobante" aria-label="Ver comprobante"
+          onclick="verComprobanteDeposito(${Number(d.id)})"><i class="bi bi-file-earmark-text"></i></button>
+        ${d.pago_id ? '' : `<button type="button" class="btn btn-sm btn-success ms-1" onclick="registrarPagoDesdeDeposito(${Number(d.id)})">
+          Registrar pago</button>`}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function configurarFiltrosDepositos() {
+  ['buscar_depositos', 'filtro_deposito_estado'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change',
+      () => renderizarTablaDepositos(filtrarDepositos(depositosCargados)));
+  });
 }
 
 function aplicarFiltrosPagos() {
@@ -364,8 +847,12 @@ function limpiarFiltrosPagos() {
   const metodo =
     document.getElementById('filtro_pago_metodo');
 
+  const tipo =
+    document.getElementById('filtro_pago_tipo');
+
   if (buscar) buscar.value = '';
   if (metodo) metodo.value = '';
+  if (tipo) tipo.value = '';
 
   aplicarFiltrosPagos();
 }
@@ -373,7 +860,8 @@ function limpiarFiltrosPagos() {
 function configurarFiltrosPagos() {
   [
     'buscar_pagos',
-    'filtro_pago_metodo'
+    'filtro_pago_metodo',
+    'filtro_pago_tipo'
   ].forEach(id => {
     const elemento =
       document.getElementById(id);

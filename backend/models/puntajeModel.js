@@ -74,20 +74,22 @@ exports.obtenerRankingPorTemporada = (inicio, fin) => {
 };
 
 // Total de puntos generados por pagos de cuotas (Fase 2, Art. 9.2/9.3), sin
-// mezclar con los puntos de asistencia o antigüedad.
-exports.obtenerPuntosCuotasPorPersona = () =>
+// mezclar con los puntos de asistencia o antigüedad. `desde` ('YYYY-MM-DD'):
+// solo desde el inicio de la temporada, como el ranking.
+exports.obtenerPuntosCuotasPorPersona = (desde = null) =>
   ejecutar(`
     SELECT persona_id, COALESCE(SUM(puntos),0) AS puntos_cuotas
     FROM puntajes
-    WHERE cuota_id IS NOT NULL
+    WHERE cuota_id IS NOT NULL${desde ? ' AND fecha >= ?' : ''}
     GROUP BY persona_id
-  `);
+  `, desde ? [desde] : []);
 
 // LEFT JOIN: los puntos por pago de cuota (insertarPuntajeCuota) no tienen
 // evento_id (es NULL), así que un INNER JOIN los descartaba silenciosamente
 // del historial aunque sí sumaran al puntaje_total del ranking.
-// `desde` opcional ('YYYY-MM-DD'): solo puntajes desde esa fecha (Portal del Socio).
-exports.obtenerHistorial = (persona_id, desde = null) =>
+// `desde` / `hasta` opcionales ('YYYY-MM-DD'): solo puntajes de ese rango [desde, hasta)
+// (temporada vigente en el Portal del Integrante, temporada elegida en el panel).
+exports.obtenerHistorial = (persona_id, desde = null, hasta = null) =>
   ejecutar(`
     SELECT
       pt.id,
@@ -98,10 +100,10 @@ exports.obtenerHistorial = (persona_id, desde = null) =>
       e.tipo AS tipo_evento
     FROM puntajes pt
     LEFT JOIN eventos e ON pt.evento_id = e.id
-    WHERE pt.persona_id = ?${desde ? ' AND pt.fecha >= ?' : ''}
+    WHERE pt.persona_id = ?${desde ? ' AND pt.fecha >= ?' : ''}${hasta ? ' AND pt.fecha < ?' : ''}
     ORDER BY pt.fecha DESC, pt.id DESC
     LIMIT 200
-  `, desde ? [persona_id, desde] : [persona_id]);
+  `, [persona_id, ...(desde ? [desde] : []), ...(hasta ? [hasta] : [])]);
 
 exports.verificarCuotaAlDia = (persona_id, mes, anio) =>
   ejecutar(`

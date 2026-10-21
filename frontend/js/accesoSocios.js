@@ -1,4 +1,4 @@
-// Panel admin "Acceso Socios": seguimiento del login del Portal del Socio.
+// Panel admin "Acceso Socios": seguimiento del login del Portal del Integrante.
 // No hay clave que generar: todo integrante activo entra la primera vez con su RUT
 // como usuario y como clave (sin puntos ni guion) y el portal le exige crear su
 // contraseña, y luego debe actualizar sus datos (obligatorio). Desde aquí
@@ -90,9 +90,9 @@ function renderizarTablaAccesoSocios(personas) {
 // =====================================
 // RESTABLECER ACCESO (olvidó su contraseña o quedó bloqueado)
 // =====================================
-function restablecerAccesoSocio(personaId) {
-  const confirmar = confirm(
-    'La contraseña actual del socio dejará de servir. Su clave volverá a ser su RUT sin puntos ni guion ' +
+async function restablecerAccesoSocio(personaId) {
+  const confirmar = await confirmarAccion(
+    'La contraseña actual del integrante dejará de servir. Su clave volverá a ser su RUT sin puntos ni guion ' +
     'y al entrar deberá crear una contraseña nueva.\n\n¿Continuar?'
   );
   if (!confirmar) return;
@@ -104,22 +104,22 @@ function restablecerAccesoSocio(personaId) {
     .then(async res => {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.mensaje || 'No se pudo restablecer el acceso');
-      alert(data.mensaje);
+      mostrarAlerta(data.mensaje, 'success');
       cargarEstadoAccesoSocios();
     })
     .catch(err => {
       console.error('Error restableciendo acceso:', err);
-      alert(err.message || 'Ocurrió un error restableciendo el acceso. Intenta nuevamente.');
+      mostrarAlerta(err.message || 'Ocurrió un error restableciendo el acceso. Intenta nuevamente.', 'danger');
     });
 }
 
 // =====================================
 // VOLVER A EXIGIR ACTUALIZACIÓN DE DATOS (individual, o a todos sin personaId)
 // =====================================
-function solicitarActualizacionDatos(personaId) {
-  const confirmar = confirm(personaId
-    ? 'En su próximo ingreso, el socio deberá revisar y actualizar sus datos antes de ver su página personal.\n\n¿Continuar?'
-    : 'Todos los socios que ya actualizaron sus datos deberán hacerlo de nuevo en su próximo ingreso.\n\n¿Continuar?');
+async function solicitarActualizacionDatos(personaId) {
+  const confirmar = await confirmarAccion(personaId
+    ? 'En su próximo ingreso, el integrante deberá revisar y actualizar sus datos antes de ver su página personal.\n\n¿Continuar?'
+    : 'Todos los integrantes que ya actualizaron sus datos deberán hacerlo de nuevo en su próximo ingreso.\n\n¿Continuar?');
   if (!confirmar) return;
 
   const url = personaId
@@ -130,12 +130,12 @@ function solicitarActualizacionDatos(personaId) {
     .then(async res => {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.mensaje || 'No se pudo solicitar la actualización');
-      alert(data.mensaje);
+      mostrarAlerta(data.mensaje, 'success');
       cargarEstadoAccesoSocios();
     })
     .catch(err => {
       console.error('Error solicitando actualización de datos:', err);
-      alert(err.message || 'Ocurrió un error. Intenta nuevamente.');
+      mostrarAlerta(err.message || 'Ocurrió un error. Intenta nuevamente.', 'danger');
     });
 }
 
@@ -152,7 +152,7 @@ function construirLinkWhatsapp(persona) {
   const nombre = `${persona.nombres || ''} ${persona.apellido_paterno || ''}`.trim();
   const rutLimpio = String(persona.rut || '').replace(/[.\-]/g, '').toUpperCase();
   const texto = encodeURIComponent(
-    `Hola ${nombre}, ya puedes entrar al Portal del Socio:\n` +
+    `Hola ${nombre}, ya puedes entrar al Portal del Integrante:\n` +
     `${window.location.origin}/socio/login.html\n\n` +
     `Usuario: tu RUT (${persona.rut})\n` +
     `Clave: tu RUT sin puntos ni guion (${rutLimpio})\n\n` +
