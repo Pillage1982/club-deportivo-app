@@ -119,7 +119,7 @@ cd ~/domains/dev.gdcayquina.cl/hbuilds/current/nodejs   # o app.gdcayquina.cl
 
 # IP real detrás de los proxies de Hostinger: server.js fija 'trust proxy' (por defecto
 # solo proxies locales; variable TRUST_PROXY para ajustar, ej. 2). Tras cada arranque,
-# las 3 primeras peticiones dejan "[proxy] x-forwarded-for=..." en los registros.
+# las 5 primeras cadenas X-Forwarded-For distintas dejan "[proxy] ..." en los registros.
 
 # npm (no está en PATH, usar ruta completa)
 /opt/alt/alt-nodejs22/root/usr/bin/npm install

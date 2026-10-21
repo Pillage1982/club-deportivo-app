@@ -27,14 +27,16 @@ const app = express();
 const TRUST_PROXY = process.env.TRUST_PROXY || 'loopback, linklocal, uniquelocal';
 app.set('trust proxy', /^\d+$/.test(TRUST_PROXY) ? Number(TRUST_PROXY) : TRUST_PROXY);
 
-// Diagnóstico: las primeras peticiones con X-Forwarded-For tras cada arranque dejan
-// en el registro la cadena de proxies y la IP que resultó, para confirmar el ajuste
-// de TRUST_PROXY en "Registros de tiempo de ejecución".
-let diagnosticosProxy = 3;
+// Diagnóstico: tras cada arranque se registran las primeras 5 cadenas
+// X-Forwarded-For distintas y la IP que resultó, para confirmar el ajuste de
+// TRUST_PROXY en "Registros de tiempo de ejecución". Distintas, porque las
+// comprobaciones de Hostinger al arrancar llegan varias veces con la misma cadena.
+const cadenasProxyVistas = new Set();
 app.use((req, res, next) => {
-  if (diagnosticosProxy > 0 && req.headers['x-forwarded-for']) {
-    diagnosticosProxy--;
-    console.log(`[proxy] x-forwarded-for="${req.headers['x-forwarded-for']}" remoto=${req.socket.remoteAddress} -> req.ip=${req.ip} (trust proxy: ${TRUST_PROXY})`);
+  const cadena = req.headers['x-forwarded-for'];
+  if (cadena && cadenasProxyVistas.size < 5 && !cadenasProxyVistas.has(cadena)) {
+    cadenasProxyVistas.add(cadena);
+    console.log(`[proxy] x-forwarded-for="${cadena}" remoto=${req.socket.remoteAddress} -> req.ip=${req.ip} (trust proxy: ${TRUST_PROXY})`);
   }
   next();
 });
