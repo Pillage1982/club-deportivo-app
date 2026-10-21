@@ -632,6 +632,52 @@ img[data-config-img="cliente.logo"] {
   padding: 8px 12px;
 }
 
+/* Columnas fijas (Integrantes y Retirados): Nombre y RUT quedan a la vista
+   al desplazar la tabla hacia el lado; solo el resto de los datos se mueve.
+   El ancho de .col-fija debe coincidir con el left de .col-fija-2. */
+@media (min-width: 768px) {
+  .tabla-columnas-fijas .col-fija,
+  .tabla-columnas-fijas .col-fija-2 {
+    position: sticky;
+    z-index: 1;
+  }
+
+  .tabla-columnas-fijas .col-fija {
+    left: 0;
+    width: 220px;
+    min-width: 220px;
+    max-width: 220px;
+  }
+
+  .tabla-columnas-fijas .col-fija-2 {
+    left: 220px;
+    white-space: nowrap;
+  }
+
+  /* Borde que marca dónde termina la parte fija */
+  .tabla-columnas-fijas .col-fija-2::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -1px;
+    bottom: 0;
+    width: 2px;
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  /* Encabezado: fijo arriba y a la izquierda, sobre el resto */
+  .tabla-columnas-fijas thead .col-fija,
+  .tabla-columnas-fijas thead .col-fija-2 {
+    z-index: 3;
+  }
+
+  .tabla-columnas-fijas .bloque-header-texto {
+    display: inline-block;
+    position: sticky;
+    left: 12px;
+  }
+}
+
 /* Integrantes en móvil: la tabla de 13 columnas pasa a tarjetas
    (Nombre como título, el resto en pares etiqueta:valor, Estado y
    Acciones sin etiqueta). Depende de los data-label que agrega

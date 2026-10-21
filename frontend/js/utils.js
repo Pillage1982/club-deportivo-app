@@ -381,9 +381,9 @@ function mostrarUsuario() {
   document.getElementById('btn_soporte_usuarios')
     ?.classList.toggle('d-none', !usuario.es_soporte);
 
-  // Registro de actividad: solo el rol admin (exacto) y la cuenta de soporte.
+  // Registro de actividad: solo los roles admin y secretaria (exactos) y la cuenta de soporte.
   document.getElementById('btn_auditoria')
-    ?.classList.toggle('d-none', !(usuario.rol === 'admin' || usuario.es_soporte));
+    ?.classList.toggle('d-none', !(['admin', 'secretaria'].includes(usuario.rol) || usuario.es_soporte));
 
 }
 

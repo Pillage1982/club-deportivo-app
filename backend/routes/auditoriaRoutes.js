@@ -1,5 +1,5 @@
-// Rutas /auditoria: registro de actividad interno. Solo lo ve el rol admin
-// (exacto, no los roles que heredan de admin) y la cuenta de soporte.
+// Rutas /auditoria: registro de actividad interno. Solo lo ven los roles admin y
+// secretaria (exactos, no los directores que heredan de admin) y la cuenta de soporte.
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
@@ -7,11 +7,12 @@ const auditoriaModel = require('../models/auditoriaModel');
 const { esSoporte } = require('../config/roles');
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
+const ROLES_REGISTRO_ACTIVIDAD = ['admin', 'secretaria'];
 
 function soloAdminOSoporte(req, res, next) {
   const u = req.usuario || {};
-  if (u.rol === 'admin' || esSoporte(u.usuario)) return next();
-  return res.status(403).json({ mensaje: 'Solo el administrador puede ver el registro de actividad' });
+  if (ROLES_REGISTRO_ACTIVIDAD.includes(u.rol) || esSoporte(u.usuario)) return next();
+  return res.status(403).json({ mensaje: 'Solo el administrador y la secretaria pueden ver el registro de actividad' });
 }
 
 router.get('/', authMiddleware, soloAdminOSoporte, async (req, res) => {
