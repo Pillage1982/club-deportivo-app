@@ -354,13 +354,14 @@ function nombreCompletoPersona(persona) {
     .filter(Boolean).join(' ');
 }
 
-// Los bloques mantienen el orden de siempre (comparación del texto en minúsculas);
-// dentro de cada bloque, los integrantes van en orden alfabético por el nombre tal
-// como se muestra en la tabla (nombres y apellidos).
+// Los bloques mantienen el orden de siempre (comparación del texto en minúsculas),
+// con "Sin bloque" al final; dentro de cada bloque, los integrantes van en orden
+// alfabético por el nombre tal como se muestra en la tabla (nombres y apellidos).
 function ordenarPorBloqueYNombre(personas) {
   return [...personas].sort((a, b) => {
     const bloqueA = (a.bloque || '').toLowerCase();
     const bloqueB = (b.bloque || '').toLowerCase();
+    if (!bloqueA !== !bloqueB) return bloqueA ? -1 : 1;
     if (bloqueA !== bloqueB) return bloqueA.localeCompare(bloqueB, 'es');
     return nombreCompletoPersona(a).localeCompare(nombreCompletoPersona(b), 'es', { sensitivity: 'base' });
   });
