@@ -3,7 +3,8 @@
 // agrupación. Nombre, RUT, celular y email se autocompletan (el servidor los toma
 // de la BD, no del formulario); la vista previa muestra la carta tal como llega
 // por correo a la directiva/caporales. También muestra la cuenta para depositar,
-// envía comprobantes de depósito a tesorería y abre los Estatutos en PDF.
+// envía comprobantes de depósito a tesorería, pide la carta de permiso para el
+// colegio (Ayquina) y abre los Estatutos en PDF.
 
 let datosDocumentos = null;
 
@@ -33,6 +34,7 @@ function cargarDocumentos() {
       renderizarAvisoIntegracion();
       prepararFormularioJustificacion();
       prepararFormularioPostulacion();
+      prepararFormularioCartaPermiso();
     })
     .catch(err => {
       console.error('Error cargando documentos:', err);
@@ -45,7 +47,7 @@ function cargarDocumentos() {
 // NAVEGACIÓN INTERNA (menú ↔ formularios)
 // =====================================
 function mostrarVistaDocumentos(id) {
-  ['docs_menu', 'docs_form_justificacion', 'docs_form_postulacion', 'docs_cuenta', 'docs_form_comprobante'].forEach(v => {
+  ['docs_menu', 'docs_form_justificacion', 'docs_form_postulacion', 'docs_cuenta', 'docs_form_comprobante', 'docs_form_carta_permiso'].forEach(v => {
     document.getElementById(v).classList.toggle('d-none', v !== id);
   });
   window.scrollTo(0, 0);
@@ -102,7 +104,8 @@ function renderizarHistorialDocumentos() {
   const items = [
     ...datosDocumentos.justificaciones.map(j => ({ tipo: 'j', fecha: j.creado_en, dato: j })),
     ...datosDocumentos.postulaciones.map(p => ({ tipo: 'p', fecha: p.creado_en, dato: p })),
-    ...(datosDocumentos.comprobantes || []).map(c => ({ tipo: 'c', fecha: c.creado_en, dato: c }))
+    ...(datosDocumentos.comprobantes || []).map(c => ({ tipo: 'c', fecha: c.creado_en, dato: c })),
+    ...(datosDocumentos.cartas_permiso || []).map(c => ({ tipo: 'cp', fecha: c.creado_en, dato: c }))
   ].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
 
   if (!items.length) {
@@ -111,6 +114,22 @@ function renderizarHistorialDocumentos() {
   }
 
   contenedor.innerHTML = items.map(({ tipo, dato }) => {
+    if (tipo === 'cp') {
+      return `
+        <div class="item socio-doc-item">
+          <div>
+            <div><strong>Carta de permiso colegio</strong> · Folio ${folioTexto(dato.id)}</div>
+            <small class="text-muted">${escaparHtml(dato.colegio)} · ${formatearFecha(dato.fecha_desde)} al ${formatearFecha(dato.fecha_hasta)}</small>
+            ${dato.observacion_directiva ? `<small class="d-block fst-italic">Directiva: ${escaparHtml(dato.observacion_directiva)}</small>` : ''}
+            ${dato.estado === 'aprobada' ? `
+            <button type="button" class="btn btn-link btn-sm px-0" onclick="descargarCartaPermiso(${Number(dato.id)}, this)">
+              <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+            </button>` : ''}
+          </div>
+          ${badgeEstadoCarta(dato.estado)}
+        </div>
+      `;
+    }
     if (tipo === 'c') {
       return `
         <div class="item socio-doc-item">
@@ -653,4 +672,176 @@ function abrirEstatutos() {
       document.getElementById('docs_respuesta').innerHTML = alertaDocumentos('danger', err.message);
     })
     .finally(() => { boton.disabled = false; });
+}
+
+// =====================================
+// CARTA DE PERMISO PARA EL COLEGIO
+// =====================================
+// El texto es el de la carta oficial de la agrupación (solo cambian los datos);
+// la vista previa imita el PDF que emite el servidor al aprobarla.
+const MESES_CARTA = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+  'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+let formularioCartaPermisoListo = false;
+
+function abrirFormularioCartaPermiso() {
+  if (!datosDocumentos) return;
+  document.getElementById('docs_respuesta').innerHTML = '';
+  document.getElementById('cp_respuesta').innerHTML = datosDocumentos.carta_permiso?.activo === false
+    ? alertaDocumentos('warning', 'La carta de permiso es solo para integrantes activos.')
+    : '';
+  mostrarVistaDocumentos('docs_form_carta_permiso');
+  actualizarPreviewCartaPermiso();
+}
+
+function prepararFormularioCartaPermiso() {
+  document.getElementById('cp_alumno').textContent = nombreCompletoSocio();
+  document.getElementById('cp_desde').min = hoyIso();
+  document.getElementById('cp_hasta').min = hoyIso();
+
+  if (formularioCartaPermisoListo) return;
+  formularioCartaPermisoListo = true;
+
+  const form = document.getElementById('form_carta_permiso');
+  form.addEventListener('input', actualizarPreviewCartaPermiso);
+  form.addEventListener('change', actualizarPreviewCartaPermiso);
+}
+
+function leerFormularioCartaPermiso() {
+  return {
+    colegio: document.getElementById('cp_colegio').value.trim(),
+    director: document.getElementById('cp_director').value.trim(),
+    curso: document.getElementById('cp_curso').value.trim(),
+    desde: document.getElementById('cp_desde').value,
+    hasta: document.getElementById('cp_hasta').value
+  };
+}
+
+// "02 al 10 de septiembre del 2027" (mismo formato que el PDF)
+function rangoFechasCarta(desde, hasta) {
+  const [a1, m1, d1] = desde.split('-').map(Number);
+  const [a2, m2, d2] = hasta.split('-').map(Number);
+  const dd = n => String(n).padStart(2, '0');
+  if (a1 !== a2) return `${dd(d1)} de ${MESES_CARTA[m1 - 1]} del ${a1} al ${dd(d2)} de ${MESES_CARTA[m2 - 1]} del ${a2}`;
+  if (m1 !== m2) return `${dd(d1)} de ${MESES_CARTA[m1 - 1]} al ${dd(d2)} de ${MESES_CARTA[m2 - 1]} del ${a2}`;
+  return `${dd(d1)} al ${dd(d2)} de ${MESES_CARTA[m2 - 1]} del ${a2}`;
+}
+
+function rutConPuntosCarta(rut) {
+  const limpio = String(rut || '').replace(/[^0-9kK]/g, '').toUpperCase();
+  if (limpio.length < 2) return String(rut || '');
+  return `${limpio.slice(0, -1).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}-${limpio.slice(-1)}`;
+}
+
+function actualizarPreviewCartaPermiso() {
+  if (!datosDocumentos) return;
+  const f = leerFormularioCartaPermiso();
+  const p = datosDocumentos.persona;
+  const cp = datosDocumentos.carta_permiso || {};
+  const hoy = new Date();
+  const fechas = f.desde && f.hasta && f.hasta >= f.desde
+    ? escaparHtml(rangoFechasCarta(f.desde, f.hasta))
+    : '<span class="carta-vacio">(fechas del permiso)</span>';
+
+  document.getElementById('preview_carta_permiso').innerHTML = `
+    <div class="cp-membrete">
+      <img src="../img/logo-calamena.jpeg" alt="GDC">
+      <div><b>BAILE RELIGIOSO<br>GRAN DIABLADA CALAMEÑA</b><small>www.grandiabladacalameña.cl</small></div>
+    </div>
+    <p class="carta-derecha mb-0"><strong>Folio N°</strong> <span class="text-muted">(se asigna al enviar)</span></p>
+    <p class="carta-derecha">Calama, ${MESES_CARTA[hoy.getMonth()]} del ${hoy.getFullYear()}</p>
+    <p><strong>Señor(a):<br>${textoOVacio(f.director, '(nombre del director/a)')}<br>${textoOVacio(f.colegio, '(colegio)')}<br>Presente.</strong></p>
+    <p class="cp-referencia">Referencia: Solicita autorización a persona que Indica.</p>
+    <p>De nuestra consideración:</p>
+    <p class="cp-cuerpo">El baile religioso Gran Diablada Calameña, es devoto de la Virgen Guadalupe de Ayquina desde hace más de ${cp.anios ?? '…'} años y está integrado actualmente por ${cp.integrantes ?? '…'} personas; quienes participan todos los años en la celebración que se hace en este poblado en el mes de septiembre.</p>
+    <p class="cp-cuerpo">Es por esta razón, que solicitamos respetuosamente, autorizar un permiso entre los días ${fechas}, a <strong>${escaparHtml(nombreCompletoSocio())}</strong>, Rut: <strong>${escaparHtml(rutConPuntosCarta(p.rut))}</strong> del <strong>${textoOVacio(f.curso, '(curso)')}</strong>, integrante activo de nuestra Institución para que exprese su fe en la Fiesta de nuestra Señora Virgen de Guadalupe en el Santuario de Ayquina.</p>
+    <p>Esperando una buena acogida a la presente, nos despedimos cordialmente,</p>
+    <p class="cp-firma"><em class="text-muted fw-normal d-block">(timbre y firma al aprobarla)</em>Jorge Luis Montalbán Cofre<br>Presidente</p>
+  `;
+}
+
+function validarCartaPermiso(f) {
+  if (f.colegio.length < 3) return 'Indica el nombre del colegio';
+  if (f.director.length < 3) return 'Indica el nombre del director o directora';
+  if (!f.curso) return 'Indica el curso';
+  if (!f.desde || !f.hasta) return 'Indica las fechas del permiso';
+  if (f.hasta < f.desde) return 'La fecha "hasta" no puede ser anterior a "desde"';
+  return null;
+}
+
+function enviarCartaPermiso() {
+  const respuesta = document.getElementById('cp_respuesta');
+  const f = leerFormularioCartaPermiso();
+  const error = validarCartaPermiso(f);
+
+  if (error) {
+    respuesta.innerHTML = alertaDocumentos('warning', error);
+    return;
+  }
+
+  const boton = document.getElementById('btn_enviar_carta_permiso');
+  boton.disabled = true;
+  respuesta.innerHTML = '';
+
+  fetch(`${API_URL}/socio-auth/documentos/cartas-permiso`, {
+    method: 'POST',
+    headers: getAuthHeadersSocio(),
+    body: JSON.stringify({
+      colegio: f.colegio,
+      director: f.director,
+      curso: f.curso,
+      fecha_desde: f.desde,
+      fecha_hasta: f.hasta
+    })
+  })
+    .then(async res => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.mensaje || 'No se pudo enviar la solicitud');
+      return data;
+    })
+    .then(data => {
+      document.getElementById('form_carta_permiso').reset();
+      volverMenuDocumentos();
+      document.getElementById('docs_respuesta').innerHTML = alertaDocumentos('success', data.mensaje);
+      cargarDocumentos();
+    })
+    .catch(err => {
+      respuesta.innerHTML = alertaDocumentos('danger', err.message);
+    })
+    .finally(() => { boton.disabled = false; });
+}
+
+// Igual que los Estatutos: el PDF exige el token, se descarga con fetch y se abre
+// como blob (la pestaña se abre antes para que no la bloquee el navegador).
+function descargarCartaPermiso(id, boton) {
+  const pestana = window.open('', '_blank');
+  if (boton) boton.disabled = true;
+
+  fetch(`${API_URL}/socio-auth/documentos/cartas-permiso/${id}/pdf`, {
+    headers: { Authorization: `Bearer ${getSocioToken()}` }
+  })
+    .then(async res => {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.mensaje || 'No se pudo descargar la carta');
+      }
+      return res.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      if (pestana) {
+        pestana.location.href = url;
+      } else {
+        const enlace = document.createElement('a');
+        enlace.href = url;
+        enlace.download = `Carta_permiso_${folioTexto(id)}.pdf`;
+        enlace.click();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    })
+    .catch(err => {
+      if (pestana) pestana.close();
+      document.getElementById('docs_respuesta').innerHTML = alertaDocumentos('danger', err.message);
+    })
+    .finally(() => { if (boton) boton.disabled = false; });
 }

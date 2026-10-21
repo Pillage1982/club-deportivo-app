@@ -9,6 +9,8 @@ const justificacionModel = require('../models/justificacionModel');
 const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
 const puntajeModel = require('../models/puntajeModel');
 const solicitudIngresoModel = require('../models/solicitudIngresoModel');
+const cartaPermisoModel = require('../models/cartaPermisoModel');
+const { aniosDesdeFundacion } = require('../services/cartaPermisoPdf');
 const cuentaDeposito = require('../config/cuentaDeposito');
 const cuotaIntegracion = require('../config/cuotaIntegracion');
 const uploadJustificativo = require('../middleware/uploadJustificativo');
@@ -49,14 +51,16 @@ exports.datosFormularios = async (req, res) => {
   try {
     // "Mis envíos" muestra solo la temporada vigente
     const desde = await puntajeModel.obtenerInicioTemporadaVigente();
-    const [persona, eventos, bloques, justificaciones, postulaciones, comprobantes, debeIntegracion] = await Promise.all([
+    const [persona, eventos, bloques, justificaciones, postulaciones, comprobantes, debeIntegracion, cartasPermiso, integrantesActivos] = await Promise.all([
       justificacionModel.obtenerDatosCarta(personaId),
       justificacionModel.listarEventosJustificables(personaId),
       justificacionModel.listarBloques(),
       justificacionModel.listarJustificacionesSocio(personaId, desde),
       justificacionModel.listarPostulacionesSocio(personaId, desde),
       comprobanteDepositoModel.listarSocio(personaId, desde),
-      solicitudIngresoModel.debeCuotaIntegracion(personaId)
+      solicitudIngresoModel.debeCuotaIntegracion(personaId),
+      cartaPermisoModel.listarSocio(personaId, desde),
+      cartaPermisoModel.contarIntegrantesActivos()
     ]);
 
     if (!persona) {
@@ -83,7 +87,14 @@ exports.datosFormularios = async (req, res) => {
       postulaciones,
       comprobantes,
       cuenta_deposito: cuentaDeposito,
-      cuota_integracion: debeIntegracion ? { monto: cuotaIntegracion.monto } : null
+      cuota_integracion: debeIntegracion ? { monto: cuotaIntegracion.monto } : null,
+      cartas_permiso: cartasPermiso,
+      // Para la vista previa: los valores definitivos se fijan al aprobar.
+      carta_permiso: {
+        anios: aniosDesdeFundacion(hoyChile()),
+        integrantes: integrantesActivos,
+        activo: persona.estado === 'activo'
+      }
     });
   } catch (err) {
     console.error('Error cargando documentos del socio:', err);

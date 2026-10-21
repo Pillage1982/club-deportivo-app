@@ -27,6 +27,7 @@ const MODULOS = {
   ingresos: 'ingresos',
   justificaciones: 'justificaciones',
   'solicitudes-ingreso': 'solicitudes',
+  'cartas-permiso': 'cartas',
   'socio-auth': 'portal'
 };
 

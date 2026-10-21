@@ -14,6 +14,7 @@ const MODULOS_AUDITORIA = [
   ['finanzas', 'Finanzas'],
   ['justificaciones', 'Justificaciones'],
   ['solicitudes', 'Solicitudes'],
+  ['cartas', 'Cartas colegio'],
   ['multas', 'Multas'],
   ['puntaje', 'Puntaje'],
   ['formaciones', 'Formaciones'],
