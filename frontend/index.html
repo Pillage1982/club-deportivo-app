@@ -1803,7 +1803,8 @@
   <div class="modal fade" id="modal_justificacion_manual" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
-        <form id="form_justificacion_manual" onsubmit="registrarJustificacionManual(event)">
+        <!-- d-flex + overflow-hidden: el form queda dentro del alto del modal y modal-body hace scroll -->
+        <form id="form_justificacion_manual" class="d-flex flex-column overflow-hidden" onsubmit="registrarJustificacionManual(event)">
           <div class="modal-header">
             <h5 class="modal-title"><i class="bi bi-envelope-plus me-2"></i>Registrar justificación manual</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
