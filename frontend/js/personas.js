@@ -354,13 +354,16 @@ function nombreCompletoPersona(persona) {
     .filter(Boolean).join(' ');
 }
 
-// Agrupa por bloque y, dentro de cada bloque, en orden alfabético por el nombre
-// tal como se muestra en la tabla (nombres y apellidos).
+// Los bloques mantienen el orden de siempre (comparación del texto en minúsculas);
+// dentro de cada bloque, los integrantes van en orden alfabético por el nombre tal
+// como se muestra en la tabla (nombres y apellidos).
 function ordenarPorBloqueYNombre(personas) {
-  return [...personas].sort((a, b) =>
-    (a.bloque || '').localeCompare(b.bloque || '', 'es', { sensitivity: 'base' }) ||
-    nombreCompletoPersona(a).localeCompare(nombreCompletoPersona(b), 'es', { sensitivity: 'base' })
-  );
+  return [...personas].sort((a, b) => {
+    const bloqueA = (a.bloque || '').toLowerCase();
+    const bloqueB = (b.bloque || '').toLowerCase();
+    if (bloqueA !== bloqueB) return bloqueA.localeCompare(bloqueB, 'es');
+    return nombreCompletoPersona(a).localeCompare(nombreCompletoPersona(b), 'es', { sensitivity: 'base' });
+  });
 }
 
 // Fila separadora de bloque. El texto va en un span fijo a la izquierda para que

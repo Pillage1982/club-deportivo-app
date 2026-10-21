@@ -636,6 +636,13 @@ img[data-config-img="cliente.logo"] {
    al desplazar la tabla hacia el lado; solo el resto de los datos se mueve.
    El ancho de .col-fija debe coincidir con el left de .col-fija-2. */
 @media (min-width: 768px) {
+  /* .table trae overflow: hidden (para redondear esquinas), y eso convierte a la
+     tabla en el contenedor de los elementos fijos: no se fijaba ni el Nombre/RUT
+     ni el encabezado. Las esquinas las redondea igual el contenedor con scroll. */
+  .tabla-columnas-fijas table {
+    overflow: visible;
+  }
+
   .tabla-columnas-fijas .col-fija,
   .tabla-columnas-fijas .col-fija-2 {
     position: sticky;
@@ -649,8 +656,10 @@ img[data-config-img="cliente.logo"] {
     max-width: 220px;
   }
 
+  /* Se monta 2px sobre .col-fija para que no quede una rendija (bordes de la
+     tabla) por donde se vea el texto de las columnas que se desplazan. */
   .tabla-columnas-fijas .col-fija-2 {
-    left: 220px;
+    left: 218px;
     white-space: nowrap;
   }
 
