@@ -128,7 +128,8 @@ function renderizarTablaJustificaciones() {
   tabla.innerHTML = filas.map(j => {
     const motivo = String(j.motivo || '');
     const motivoCorto = motivo.length > 80 ? `${motivo.substring(0, 80)}…` : motivo;
-    const correo = j.email_enviado
+    // Las manuales no generan correo a la directiva (la carta llegó por fuera).
+    const correo = j.email_enviado || j.origen === 'manual'
       ? ''
       : '<i class="bi bi-envelope-x text-warning ms-1" title="El correo a la directiva no se pudo enviar"></i>';
 
@@ -140,7 +141,7 @@ function renderizarTablaJustificaciones() {
         <td>${escaparHtml(actividadJustificacion(j))}</td>
         <td>${motivoJustificacion(j)}${j.tiene_adjunto ? ' <i class="bi bi-paperclip" title="Con documento adjunto"></i>' : ''}</td>
         <td class="small">${escaparHtml(motivoCorto)}</td>
-        <td>${badgeEstadoJustificacion(j)}</td>
+        <td>${badgeEstadoJustificacion(j)}${j.origen === 'manual' ? ` ${crearBadge('Manual', 'bg-secondary')}` : ''}</td>
         <td class="text-nowrap">
           <button type="button" class="btn btn-sm ${j.estado === 'pendiente' ? 'btn-primary' : 'btn-outline-secondary'}" onclick="abrirRevisionJustificacion(${j.id})">
             <i class="bi bi-${j.estado === 'pendiente' ? 'pencil-square' : 'eye'}"></i> ${j.estado === 'pendiente' ? 'Revisar' : 'Ver'}
@@ -170,7 +171,7 @@ function abrirRevisionJustificacion(id) {
       <dt class="col-sm-4">Motivo</dt>
       <dd class="col-sm-8">${motivoJustificacion(j)}</dd>
       <dt class="col-sm-4">Recibida</dt>
-      <dd class="col-sm-8">${formatearFechaHora(j.creado_en)}</dd>
+      <dd class="col-sm-8">${formatearFechaHora(j.creado_en)}${j.origen === 'manual' ? ' <span class="badge bg-secondary">Ingresada a mano por la directiva</span>' : ''}</dd>
       ${j.quien_entrega ? `
       <dt class="col-sm-4">Entregada por</dt>
       <dd class="col-sm-8">${escaparHtml(j.quien_entrega)} (no es el titular)</dd>` : ''}
@@ -238,6 +239,160 @@ function resolverJustificacion(accion) {
     })
     .finally(() => {
       botones.forEach(id => { document.getElementById(id).disabled = false; });
+    });
+}
+
+// =====================================
+// JUSTIFICACIÓN MANUAL
+// =====================================
+// Cartas que llegan fuera del Portal (correo antiguo de la agrupación). El backend
+// la deja aprobada al guardar; solo ofrece actividades de la temporada en curso y
+// de hasta un mes atrás.
+
+let integrantesJustManual = [];
+let justManualConfigurado = false;
+
+function normalizarTextoJust(valor) {
+  return String(valor || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+
+function configurarJustificacionManual() {
+  if (justManualConfigurado) return;
+  justManualConfigurado = true;
+
+  document.getElementById('just_manual_buscar')
+    ?.addEventListener('input', renderizarIntegrantesJustManual);
+  document.getElementById('just_manual_evento')?.addEventListener('change', e => {
+    document.getElementById('just_manual_otro').classList.toggle('d-none', e.target.value !== 'otro');
+  });
+  // Licencia médica como motivo propone registrarla así (igual que en el Portal).
+  document.getElementById('just_manual_motivo_tipo')?.addEventListener('change', e => {
+    document.getElementById('just_manual_estado').value =
+      e.target.value === 'licencia_medica' ? 'licencia_medica' : 'justificado';
+  });
+}
+
+// Filtra por nombre, apellidos o RUT (palabras en cualquier orden, sin tildes).
+function renderizarIntegrantesJustManual() {
+  const select = document.getElementById('just_manual_persona');
+  const seleccionado = select.value;
+  const palabras = normalizarTextoJust(document.getElementById('just_manual_buscar').value)
+    .split(/\s+/).filter(Boolean);
+  const visibles = integrantesJustManual.filter(p => palabras.every(palabra => p.busqueda.includes(palabra)));
+
+  select.innerHTML = `<option value="">${palabras.length
+    ? `${visibles.length} integrante(s) encontrado(s)`
+    : 'Seleccione un integrante'}</option>`;
+  visibles.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.etiqueta;
+    select.appendChild(opt);
+  });
+
+  select.value = palabras.length && visibles.length === 1
+    ? visibles[0].id
+    : (visibles.some(p => p.id === seleccionado) ? seleccionado : '');
+}
+
+function abrirJustificacionManual() {
+  configurarJustificacionManual();
+
+  fetch(`${API_URL}/justificaciones/manual/opciones`, { headers: getAuthHeaders() })
+    .then(async res => {
+      const data = await leerRespuestaJson(res);
+      if (!res.ok) throw new Error(data.mensaje || 'No se pudieron cargar integrantes y actividades');
+      return data;
+    })
+    .then(data => {
+      integrantesJustManual = (data.integrantes || []).map(p => {
+        const nombre = nombreIntegranteJust(p);
+        return {
+          id: String(p.id),
+          etiqueta: `${nombre} — ${p.rut}${p.estado === 'receso' ? ' (receso)' : ''}`,
+          busqueda: normalizarTextoJust(`${nombre} ${p.rut || ''} ${String(p.rut || '').replace(/[.\-]/g, '')}`)
+        };
+      });
+
+      const selectEvento = document.getElementById('just_manual_evento');
+      selectEvento.innerHTML = '<option value="">Seleccione la actividad</option>'
+        + (data.eventos || []).map(e => `
+          <option value="${e.id}">${escaparHtml(e.nombre)} (${formatearFechaHora(e.fecha)})${Number(e.finalizado) ? ' · finalizada' : ''}</option>
+        `).join('')
+        + '<option value="otro">Otra actividad (no registrada en el sistema)</option>';
+
+      document.getElementById('form_justificacion_manual').reset();
+      document.getElementById('just_manual_otro').classList.add('d-none');
+      document.getElementById('just_manual_desde').textContent = formatearFecha(data.desde);
+      document.getElementById('just_manual_fecha').min = data.desde;
+      renderizarIntegrantesJustManual();
+
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_justificacion_manual')).show();
+    })
+    .catch(err => {
+      mostrarAlerta(escaparHtml(obtenerMensajeError(err)), 'danger');
+    });
+}
+
+function registrarJustificacionManual(event) {
+  event.preventDefault();
+
+  const eventoId = document.getElementById('just_manual_evento').value;
+  const datos = new FormData();
+  datos.append('persona_id', document.getElementById('just_manual_persona').value);
+  datos.append('condicion', document.querySelector('input[name="just_manual_condicion"]:checked')?.value || '');
+  datos.append('motivo_tipo', document.getElementById('just_manual_motivo_tipo').value);
+  datos.append('estado_aplicado', document.getElementById('just_manual_estado').value);
+  datos.append('motivo', document.getElementById('just_manual_detalle').value.trim());
+  datos.append('observacion', document.getElementById('just_manual_observacion').value.trim());
+
+  if (eventoId === 'otro') {
+    const nombre = document.getElementById('just_manual_referencia_otro').value.trim();
+    const fecha = document.getElementById('just_manual_fecha').value;
+    if (!nombre || !fecha) {
+      mostrarAlerta('Indica el nombre y la fecha de la actividad.', 'warning');
+      return;
+    }
+    datos.append('referencia', document.getElementById('just_manual_referencia').value);
+    datos.append('referencia_otro', nombre);
+    datos.append('fecha_actividad', fecha);
+  } else {
+    datos.append('evento_id', eventoId);
+  }
+
+  const archivo = document.getElementById('just_manual_adjunto').files[0];
+  if (archivo) {
+    if (archivo.size > 5 * 1024 * 1024) {
+      mostrarAlerta('El archivo supera los 5 MB.', 'warning');
+      return;
+    }
+    datos.append('adjunto', archivo);
+  }
+
+  const boton = document.getElementById('btn_guardar_just_manual');
+  boton.disabled = true;
+
+  fetch(`${API_URL}/justificaciones/manual`, {
+    method: 'POST',
+    headers: getAuthHeadersMultipart(),
+    body: datos
+  })
+    .then(async res => {
+      const data = await leerRespuestaJson(res);
+      if (!res.ok) throw new Error(data.mensaje || 'No se pudo registrar la justificación');
+      return data;
+    })
+    .then(data => {
+      bootstrap.Modal.getInstance(document.getElementById('modal_justificacion_manual'))?.hide();
+      mostrarAlerta(escaparHtml(data.mensaje), 'success');
+      cargarJustificaciones();
+      if (typeof cargarAsistencias === 'function') cargarAsistencias();
+    })
+    .catch(err => {
+      mostrarAlerta(escaparHtml(obtenerMensajeError(err)), 'danger');
+    })
+    .finally(() => {
+      boton.disabled = false;
     });
 }
 
