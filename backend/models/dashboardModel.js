@@ -16,7 +16,8 @@ exports.obtenerResumen = (callback) => {
         WHERE MONTH(fecha) = MONTH(CURRENT_DATE())
           AND YEAR(fecha) = YEAR(CURRENT_DATE())
       ) AS pagos_mes,
-      (SELECT IFNULL(SUM(monto_total), 0) FROM pagos)    AS total_pagos_socios,
+      (SELECT IFNULL(SUM(monto_total), 0) FROM pagos WHERE tipo_pago <> 'integracion') AS total_pagos_socios,
+      (SELECT IFNULL(SUM(monto_total), 0) FROM pagos WHERE tipo_pago = 'integracion')  AS total_pagos_integracion,
       (SELECT IFNULL(SUM(monto), 0)       FROM ingresos) AS total_ingresos_terceros,
       (SELECT IFNULL(SUM(monto), 0)       FROM gastos)   AS total_gastos,
       IFNULL((
