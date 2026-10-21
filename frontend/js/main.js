@@ -42,6 +42,7 @@ window.onload = () => {
     });
 
   configurarBuscadorPersonas();
+  configurarTablaRetirados();
   configurarFiltrosEventos();
   configurarFiltrosPagos();
   configurarSelectorCuotaPago();

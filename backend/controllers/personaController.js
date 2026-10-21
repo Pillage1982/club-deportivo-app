@@ -118,6 +118,17 @@ exports.listar = (req, res) => {
   });
 };
 
+exports.listarRetirados = (req, res) => {
+  personaModel.obtenerRetirados((err, results) => {
+    if (err) {
+      console.error('Error listando integrantes retirados:', err);
+      return res.status(500).json({ mensaje: 'Error al cargar los integrantes retirados' });
+    }
+
+    res.json(results);
+  });
+};
+
 exports.crear = (req, res) => {
 
  const data = normalizarPersona(req.body);

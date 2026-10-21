@@ -8,17 +8,31 @@ let cacheJustificaciones = [];
 let justificacionEnRevision = null;
 let filtrosJustificacionesConfigurados = false;
 
+// Categorías de actividad de la agrupación ('salida' es el valor histórico de Presentación).
 const ETIQUETA_REFERENCIA_JUST = {
   ensayo: 'Ensayo',
+  misa: 'Misa',
   reunion: 'Reunión',
-  salida: 'Salida',
-  otro: 'Otro'
+  salida: 'Presentación',
+  otro: 'Otros'
 };
 
 const ETIQUETA_TIPO_JUST_ADMIN = {
   justificado: 'Justificación',
   licencia_medica: 'Licencia médica'
 };
+
+const ETIQUETA_MOTIVO_JUST_ADMIN = {
+  trabajo: 'Trabajo',
+  licencia_medica: 'Licencia médica',
+  estudio: 'Estudio',
+  otro: 'Otros'
+};
+
+// Cartas anteriores al motivo (oct-2026) solo tienen tipo_solicitado.
+function motivoJustificacion(j) {
+  return ETIQUETA_MOTIVO_JUST_ADMIN[j.motivo_tipo] || ETIQUETA_TIPO_JUST_ADMIN[j.tipo_solicitado] || '—';
+}
 
 function folioJustificacion(id) {
   return String(id).padStart(5, '0');
@@ -124,7 +138,7 @@ function renderizarTablaJustificaciones() {
         <td>${formatearFechaHora(j.creado_en)}</td>
         <td>${escaparHtml(nombreIntegranteJust(j))}<div class="small text-muted">${escaparHtml(j.rut)}${j.bloque ? ` · ${escaparHtml(j.bloque)}` : ''}</div></td>
         <td>${escaparHtml(actividadJustificacion(j))}</td>
-        <td>${ETIQUETA_TIPO_JUST_ADMIN[j.tipo_solicitado] || '—'}${j.tiene_adjunto ? ' <i class="bi bi-paperclip" title="Con documento adjunto"></i>' : ''}</td>
+        <td>${motivoJustificacion(j)}${j.tiene_adjunto ? ' <i class="bi bi-paperclip" title="Con documento adjunto"></i>' : ''}</td>
         <td class="small">${escaparHtml(motivoCorto)}</td>
         <td>${badgeEstadoJustificacion(j)}</td>
         <td class="text-nowrap">
@@ -153,8 +167,8 @@ function abrirRevisionJustificacion(id) {
       <dd class="col-sm-8">${j.condicion === 'socio' ? 'Socio' : 'Bailarín'}</dd>
       <dt class="col-sm-4">Actividad</dt>
       <dd class="col-sm-8">${escaparHtml(actividadJustificacion(j))}${j.evento_id ? '' : ' <span class="badge bg-secondary">No registrada en el sistema</span>'}</dd>
-      <dt class="col-sm-4">Solicita</dt>
-      <dd class="col-sm-8">${ETIQUETA_TIPO_JUST_ADMIN[j.tipo_solicitado] || '—'}</dd>
+      <dt class="col-sm-4">Motivo</dt>
+      <dd class="col-sm-8">${motivoJustificacion(j)}</dd>
       <dt class="col-sm-4">Recibida</dt>
       <dd class="col-sm-8">${formatearFechaHora(j.creado_en)}</dd>
       ${j.quien_entrega ? `

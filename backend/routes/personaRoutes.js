@@ -12,6 +12,14 @@ router.get(
   controller.listar
 );
 
+// Histórico de integrantes retirados (eliminados lógicamente)
+router.get(
+  '/retirados',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero', 'entrenador'),
+  controller.listarRetirados
+);
+
 router.post(
   '/',
   authMiddleware,

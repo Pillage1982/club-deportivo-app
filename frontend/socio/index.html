@@ -25,7 +25,7 @@
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-  <link rel="stylesheet" href="css/socio.css">
+  <link rel="stylesheet" href="css/socio.css?v=110">
 
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 </head>
@@ -184,6 +184,15 @@
           <i class="bi bi-chevron-right ms-auto"></i>
         </button>
 
+        <button type="button" class="socio-card socio-doc-opcion mb-2" onclick="abrirFormularioCartaPermiso()">
+          <i class="bi bi-mortarboard-fill"></i>
+          <span>
+            <strong>Carta de permiso para el colegio</strong>
+            <small>Para la Fiesta de la Virgen de Guadalupe de Ayquina</small>
+          </span>
+          <i class="bi bi-chevron-right ms-auto"></i>
+        </button>
+
         <button type="button" class="socio-card socio-doc-opcion mb-2" onclick="abrirDatosCuenta()">
           <i class="bi bi-bank2"></i>
           <span>
@@ -242,9 +251,10 @@
               <span class="form-label d-block">Tipo de actividad</span>
               <div class="socio-opciones">
                 <label><input type="radio" name="just_referencia" value="ensayo"> Ensayo</label>
+                <label><input type="radio" name="just_referencia" value="misa"> Misa</label>
                 <label><input type="radio" name="just_referencia" value="reunion"> Reunión</label>
-                <label><input type="radio" name="just_referencia" value="salida"> Salida</label>
-                <label><input type="radio" name="just_referencia" value="otro"> Otro</label>
+                <label><input type="radio" name="just_referencia" value="salida"> Presentación</label>
+                <label><input type="radio" name="just_referencia" value="otro"> Otros</label>
               </div>
             </div>
             <div class="mb-3">
@@ -258,10 +268,12 @@
           </div>
 
           <div class="mb-3">
-            <span class="form-label d-block">Tipo de justificación</span>
+            <span class="form-label d-block">Motivo</span>
             <div class="socio-opciones">
-              <label><input type="radio" name="just_tipo" value="justificado" checked> Justificación</label>
-              <label><input type="radio" name="just_tipo" value="licencia_medica"> Licencia médica</label>
+              <label><input type="radio" name="just_motivo_tipo" value="trabajo" checked> Trabajo</label>
+              <label><input type="radio" name="just_motivo_tipo" value="licencia_medica"> Licencia médica</label>
+              <label><input type="radio" name="just_motivo_tipo" value="estudio"> Estudio</label>
+              <label><input type="radio" name="just_motivo_tipo" value="otro"> Otros</label>
             </div>
           </div>
 
@@ -274,7 +286,7 @@
           </div>
 
           <div class="mb-3">
-            <label for="just_motivo" class="form-label">Motivo (cuerpo de la carta)</label>
+            <label for="just_motivo" class="form-label">Detalle del motivo (cuerpo de la carta)</label>
             <textarea id="just_motivo" class="form-control" rows="5" maxlength="3000"
               placeholder="Explica por qué no podrás asistir"></textarea>
           </div>
@@ -401,6 +413,56 @@
         </button>
       </div>
 
+      <!-- Formulario: carta de permiso para el colegio -->
+      <div id="docs_form_carta_permiso" class="d-none">
+        <button type="button" class="btn btn-link px-0 mb-2" onclick="volverMenuDocumentos()">
+          <i class="bi bi-arrow-left"></i> Volver
+        </button>
+        <h5 class="mb-1">Carta de permiso para el colegio</h5>
+        <p class="text-muted small mb-3">
+          Fiesta de Nuestra Señora Virgen de Guadalupe de Ayquina. La revisa la directiva y,
+          al aprobarla, te llega por correo firmada por el presidente y la puedes descargar aquí.
+          Una carta por alumno: si tienes más hijos en la agrupación, pídela desde la cuenta de cada uno.
+        </p>
+
+        <form id="form_carta_permiso" class="socio-card mb-3" novalidate>
+          <div class="mb-3">
+            <span class="form-label d-block">Alumno</span>
+            <div class="fw-semibold" id="cp_alumno">—</div>
+          </div>
+          <div class="mb-3">
+            <label for="cp_colegio" class="form-label">Colegio o establecimiento</label>
+            <input type="text" id="cp_colegio" class="form-control" maxlength="150" placeholder="Ej: Colegio Juan Pablo II">
+          </div>
+          <div class="mb-3">
+            <label for="cp_director" class="form-label">Nombre del director/a</label>
+            <input type="text" id="cp_director" class="form-control" maxlength="150">
+          </div>
+          <div class="mb-3">
+            <label for="cp_curso" class="form-label">Curso</label>
+            <input type="text" id="cp_curso" class="form-control" maxlength="60" placeholder="Ej: 5° básico B">
+          </div>
+          <div class="row g-2 mb-1">
+            <div class="col-6">
+              <label for="cp_desde" class="form-label">Desde</label>
+              <input type="date" id="cp_desde" class="form-control">
+            </div>
+            <div class="col-6">
+              <label for="cp_hasta" class="form-label">Hasta</label>
+              <input type="date" id="cp_hasta" class="form-control">
+            </div>
+          </div>
+        </form>
+
+        <h6 class="mb-2">Vista previa de la carta</h6>
+        <div id="preview_carta_permiso" class="carta-preview carta-permiso mb-3"></div>
+
+        <div id="cp_respuesta"></div>
+        <button type="button" id="btn_enviar_carta_permiso" class="btn btn-gdc w-100 mb-4" onclick="enviarCartaPermiso()">
+          <i class="bi bi-send-fill me-1"></i>Enviar solicitud a la directiva
+        </button>
+      </div>
+
     </section>
 
   </main>
@@ -428,9 +490,9 @@
     </button>
   </nav>
 
-  <script src="js/api.js"></script>
-  <script src="js/documentos.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/api.js?v=110"></script>
+  <script src="js/documentos.js?v=110"></script>
+  <script src="js/main.js?v=110"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

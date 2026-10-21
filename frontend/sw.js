@@ -3,8 +3,8 @@
 // SERVICE WORKER — NexoComunidad PWA
 // =====================================
 
-const CACHE_STATIC  = 'nexo-static-v102';
-const CACHE_API     = 'nexo-api-v102';
+const CACHE_STATIC  = 'nexo-static-v110';
+const CACHE_API     = 'nexo-api-v110';
 
 const LOCAL_ASSETS = [
   '/index.html',
@@ -30,6 +30,7 @@ const LOCAL_ASSETS = [
   '/js/accesoSocios.js',
   '/js/justificaciones.js',
   '/js/solicitudesIngreso.js',
+  '/js/cartasPermiso.js',
   '/js/usuariosSoporte.js',
   '/js/auditoria.js',
   '/img/logo-calamena.jpeg',
@@ -69,6 +70,8 @@ const API_PATHS = [
   '/ingresos',
   '/justificaciones',
   '/solicitudes-ingreso',
+  '/cartas-permiso',
+  '/publico',
   '/socio-auth'
 ];
 
@@ -123,6 +126,11 @@ self.addEventListener('fetch', event => {
     event.respondWith(networkFirstNav(request));
     return;
   }
+
+  // Archivos del Portal del Integrante (/socio/): siempre desde la red. Antes caían en
+  // cache-first y un integrante podía seguir viendo pantallas viejas tras un despliegue.
+  // La navegación sí pasa por networkFirstNav (respaldo sin conexión a socio/login.html).
+  if (url.pathname.startsWith('/socio/')) return;
 
   const esRutaApi = API_PATHS.some(path => coincideRuta(url.pathname, path));
 

@@ -294,6 +294,14 @@ document.getElementById('es_honorario').checked = false;
       filtrarPersonas(obtenerTerminoBusquedaPersonas())
     );
 
+    // Asistencia por bloque del dashboard compara contra los integrantes activos:
+    // si las asistencias llegaron antes, se recalcula con los integrantes ya cargados.
+    // Lo mismo con el indicador de asistentes del lector QR.
+    if (typeof asistenciasTabla !== 'undefined' && asistenciasTabla.length) {
+      actualizarVistaAsistenciaDashboard(asistenciasTabla);
+      cargarUltimosRegistros();
+    }
+
   })
 
   .catch(err => console.error(err));
@@ -315,27 +323,57 @@ function normalizarTextoBusqueda(valor) {
     .trim();
 }
 
+function coincideBusquedaPersona(persona, busqueda) {
+  const textoBusqueda = [
+    persona.nombres,
+    persona.apellido_paterno,
+    persona.apellido_materno,
+    persona.rut,
+    persona.email,
+    persona.telefono,
+    persona.bloque
+  ].map(normalizarTextoBusqueda).join(' ');
+
+  return textoBusqueda.includes(busqueda);
+}
+
 function filtrarPersonas(termino) {
   const busqueda =
     normalizarTextoBusqueda(termino);
+  const estado =
+    document.getElementById('filtro_estado_personas')?.value || '';
 
-  if (!busqueda) {
-    return personasTabla;
-  }
+  return personasTabla.filter(persona =>
+    (!estado || (persona.estado || 'activo') === estado) &&
+    (!busqueda || coincideBusquedaPersona(persona, busqueda))
+  );
+}
 
-  return personasTabla.filter(persona => {
-    const textoBusqueda = [
-      persona.nombres,
-      persona.apellido_paterno,
-      persona.apellido_materno,
-      persona.rut,
-      persona.email,
-      persona.telefono,
-      persona.bloque
-    ].map(normalizarTextoBusqueda).join(' ');
+function nombreCompletoPersona(persona) {
+  return [persona.nombres, persona.apellido_paterno, persona.apellido_materno]
+    .filter(Boolean).join(' ');
+}
 
-    return textoBusqueda.includes(busqueda);
+// Los bloques mantienen el orden de siempre (comparación del texto en minúsculas),
+// con "Sin bloque" al final; dentro de cada bloque, los integrantes van en orden
+// alfabético por el nombre tal como se muestra en la tabla (nombres y apellidos).
+function ordenarPorBloqueYNombre(personas) {
+  return [...personas].sort((a, b) => {
+    const bloqueA = (a.bloque || '').toLowerCase();
+    const bloqueB = (b.bloque || '').toLowerCase();
+    if (!bloqueA !== !bloqueB) return bloqueA ? -1 : 1;
+    if (bloqueA !== bloqueB) return bloqueA.localeCompare(bloqueB, 'es');
+    return nombreCompletoPersona(a).localeCompare(nombreCompletoPersona(b), 'es', { sensitivity: 'base' });
   });
+}
+
+// Fila separadora de bloque. El texto va en un span fijo a la izquierda para que
+// no se pierda al desplazar la tabla horizontalmente.
+function filaSeparadorBloque(bloque, columnas) {
+  return `
+    <tr class="tabla-bloque-header">
+      <td colspan="${columnas}"><span class="bloque-header-texto"><i class="bi bi-people-fill me-2"></i>${escaparHtml(bloque || 'Sin bloque')}</span></td>
+    </tr>`;
 }
 
 function renderizarTablaPersonas(personas) {
@@ -355,32 +393,20 @@ function renderizarTablaPersonas(personas) {
     return;
   }
 
-  const sorted = [...personas].sort((a, b) => {
-    const bloqueA = (a.bloque || '').toLowerCase();
-    const bloqueB = (b.bloque || '').toLowerCase();
-    if (bloqueA !== bloqueB) return bloqueA.localeCompare(bloqueB, 'es');
-    const apA = (a.apellido_paterno || '').toLowerCase();
-    const apB = (b.apellido_paterno || '').toLowerCase();
-    return apA.localeCompare(apB, 'es');
-  });
-
   let bloqueActual = null;
   const filas = [];
 
-  sorted.forEach(persona => {
+  ordenarPorBloqueYNombre(personas).forEach(persona => {
     const bloquePersona = persona.bloque || '';
     if (bloquePersona !== bloqueActual) {
       bloqueActual = bloquePersona;
-      filas.push(`
-        <tr class="tabla-bloque-header">
-          <td colspan="13"><i class="bi bi-people-fill me-2"></i>${bloquePersona || 'Sin bloque'}</td>
-        </tr>`);
+      filas.push(filaSeparadorBloque(bloquePersona, 13));
     }
     const dir = persona.direccion || '';
     filas.push(`
       <tr>
-        <td class="td-nombre" data-label="Nombre Completo">${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}</td>
-        <td data-label="RUT">${persona.rut || ''}</td>
+        <td class="td-nombre col-fija" data-label="Nombre Completo">${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}</td>
+        <td class="col-fija-2" data-label="RUT">${persona.rut || ''}</td>
         <td data-label="Bloque">${persona.bloque || ''}</td>
         <td data-label="Sexo">${persona.sexo || ''}</td>
         <td data-label="Email">${escaparHtml(persona.email || '')}</td>
@@ -417,11 +443,106 @@ function configurarBuscadorPersonas() {
     return;
   }
 
-  input.addEventListener('input', () => {
+  const aplicarFiltros = () =>
     renderizarTablaPersonas(
       filtrarPersonas(input.value)
     );
+
+  input.addEventListener('input', aplicarFiltros);
+  document.getElementById('filtro_estado_personas')
+    ?.addEventListener('change', aplicarFiltros);
+}
+
+// =====================================
+// INTEGRANTES RETIRADOS (HISTÓRICO)
+// =====================================
+
+let retiradosTabla = [];
+
+function cargarTablaRetirados() {
+  const tabla = document.getElementById('tabla_retirados');
+  if (!tabla) return;
+
+  tabla.innerHTML = '<tr><td colspan="11" class="text-center text-muted">Cargando...</td></tr>';
+
+  fetch(`${API_URL}/personas/retirados`, { headers: getAuthHeaders() })
+    .then(async res => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !Array.isArray(data)) {
+        throw new Error(data.mensaje || 'No se pudo cargar el histórico de retirados');
+      }
+      return data;
+    })
+    .then(data => {
+      retiradosTabla = data;
+      renderizarTablaRetirados();
+    })
+    .catch(err => {
+      console.error(err);
+      tabla.innerHTML = `<tr><td colspan="11" class="text-center text-danger">${escaparHtml(err.message)}</td></tr>`;
+    });
+}
+
+function renderizarTablaRetirados() {
+  const tabla = document.getElementById('tabla_retirados');
+  const busqueda = normalizarTextoBusqueda(document.getElementById('buscar_retirados')?.value);
+  const retirados = busqueda
+    ? retiradosTabla.filter(persona => coincideBusquedaPersona(persona, busqueda))
+    : retiradosTabla;
+
+  // La ficha de historial financiero solo la ven admin y tesorero.
+  const verHistorial = ['admin', 'tesorero'].includes(obtenerRolActual());
+  document.getElementById('th_retirados_historial')?.classList.toggle('d-none', !verHistorial);
+  const columnas = verHistorial ? 11 : 10;
+
+  const total = document.getElementById('total_retirados');
+  if (total) {
+    total.textContent = `${retirados.length} integrante(s) retirado(s)`;
+  }
+
+  if (retirados.length === 0) {
+    tabla.innerHTML = `<tr><td colspan="${columnas}" class="text-center text-muted">No hay integrantes retirados</td></tr>`;
+    return;
+  }
+
+  let bloqueActual = null;
+  const filas = [];
+
+  ordenarPorBloqueYNombre(retirados).forEach(persona => {
+    const bloquePersona = persona.bloque || '';
+    if (bloquePersona !== bloqueActual) {
+      bloqueActual = bloquePersona;
+      filas.push(filaSeparadorBloque(bloquePersona, columnas));
+    }
+    filas.push(`
+      <tr>
+        <td class="col-fija">${escaparHtml(nombreCompletoPersona(persona))}
+          ${persona.es_honorario ? '<span class="badge bg-info text-dark ms-1">Honorario</span>' : ''}</td>
+        <td class="col-fija-2">${escaparHtml(persona.rut || '')}</td>
+        <td>${escaparHtml(persona.bloque || '')}</td>
+        <td>${escaparHtml(persona.sexo || '')}</td>
+        <td>${escaparHtml(persona.email || '')}</td>
+        <td>${escaparHtml(persona.telefono || '')}</td>
+        <td>${persona.fecha_nacimiento ? formatearFecha(persona.fecha_nacimiento) : ''}</td>
+        <td>${persona.fecha_ingreso ? formatearFecha(persona.fecha_ingreso) : ''}</td>
+        <td>${persona.fecha_retiro ? formatearFechaHora(persona.fecha_retiro) : '<span class="text-muted">—</span>'}</td>
+        <td>${escaparHtml(persona.observacion || '')}</td>
+        ${verHistorial ? `
+        <td class="text-center">
+          <button type="button" class="btn btn-sm btn-outline-primary" title="Ver historial" aria-label="Ver historial"
+            onclick="verHistorialFinanciero(${Number(persona.id)})"><i class="bi bi-journal-text"></i></button>
+        </td>` : ''}
+      </tr>`);
   });
+
+  tabla.innerHTML = filas.join('');
+}
+
+function configurarTablaRetirados() {
+  document.querySelector('[href="#subtab_retirados"]')
+    ?.addEventListener('shown.bs.tab', cargarTablaRetirados);
+  document.getElementById('buscar_retirados')
+    ?.addEventListener('input', renderizarTablaRetirados);
 }
 
 // =====================================

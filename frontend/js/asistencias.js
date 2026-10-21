@@ -1574,17 +1574,50 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// ── Indicador X/Y: asistentes de la actividad contra integrantes activos ──
+// Mismo criterio que "Asistencia por Bloque" del dashboard: cuentan presente,
+// atrasado y vestimenta distinta; el total son los integrantes activos (sin receso).
+function actualizarIndicadorAsistentes(eventoId, registros) {
+  const indicador = document.getElementById('indicador_asistentes');
+  if (!indicador) return;
+
+  if (!eventoId) {
+    indicador.classList.add('d-none');
+    return;
+  }
+
+  const personas = Array.isArray(personasTabla) && personasTabla.length
+    ? personasTabla
+    : (obtenerCacheApi('personas') || []);
+  const total = personas.filter(p => (p.estado || 'activo') === 'activo').length;
+  const asistentes = new Set(
+    registros
+      .filter(a => ESTADOS_ASISTIO_DASHBOARD.includes(a.estado))
+      .map(a => String(a.persona_id))
+  ).size;
+  const pct = total > 0 ? Math.min(100, Math.round((asistentes / total) * 100)) : 0;
+
+  document.getElementById('indicador_asistentes_valor').textContent = `${asistentes}/${total}`;
+  document.getElementById('indicador_asistentes_pct').textContent = `${pct}%`;
+  document.getElementById('indicador_asistentes_progreso').style.width = `${pct}%`;
+  indicador.classList.remove('d-none');
+}
+
 // ── Asistentes registrados en la actividad en curso ──
 function cargarUltimosRegistros() {
   const eventoId = document.getElementById('evento_id')?.value;
   const wrapper  = document.getElementById('ultimos_registros_wrapper');
   const tbody    = document.getElementById('ultimos_registros_body');
-  if (!eventoId || !wrapper || !tbody) return;
+  if (!wrapper || !tbody) return;
 
   // Todos los registros de la actividad (el más reciente arriba); la lista tiene
   // scroll propio para no alargar la pantalla del lector.
-  const filtrados = asistenciasTabla
-    .filter(a => String(a.evento_id) === String(eventoId));
+  const filtrados = eventoId
+    ? asistenciasTabla.filter(a => String(a.evento_id) === String(eventoId))
+    : [];
+
+  actualizarIndicadorAsistentes(eventoId, filtrados);
+  if (!eventoId) return;
 
   if (filtrados.length === 0) {
     wrapper.classList.add('d-none');

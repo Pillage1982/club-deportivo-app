@@ -251,8 +251,15 @@ const ETIQUETA_TIPO_JUSTIFICACION = {
   licencia_medica: 'Licencia médica'
 };
 
+const ETIQUETA_MOTIVO_JUSTIFICACION = {
+  trabajo: 'Trabajo',
+  licencia_medica: 'Licencia médica',
+  estudio: 'Estudio',
+  otro: 'Otros'
+};
+
 // datos: { folio, creadoEn, persona, referencia, referenciaOtro, evento, fechaActividad,
-//          tipoSolicitado, condicion, motivo, quienEntrega, adjunto: {path, filename} | null }
+//          tipoSolicitado, motivoTipo, condicion, motivo, quienEntrega, adjunto: {path, filename} | null }
 // Devuelve false si el correo no está configurado (la carta igual queda guardada).
 function enviarCartaJustificacion(datos) {
   if (!emailConfigurado()) {
@@ -276,13 +283,14 @@ function enviarCartaJustificacion(datos) {
       <p style="margin: 0; padding-bottom: 6px; border-bottom: 3px solid #222;">
         <strong>Referencia justifica inasistencia a:</strong>
         Ensayo ${casilla(ref === 'ensayo')}
+        Misa ${casilla(ref === 'misa')}
         Reunión ${casilla(ref === 'reunion')}
-        Salida ${casilla(ref === 'salida')}
-        Otro ${casilla(ref === 'otro')}
+        Presentación ${casilla(ref === 'salida')}
+        Otros ${casilla(ref === 'otro')}
       </p>
       <p style="margin: 8px 0 18px; font-size: 13px; color: #555;">
         Actividad: <strong>${actividad}</strong><br>
-        Tipo: <strong>${ETIQUETA_TIPO_JUSTIFICACION[datos.tipoSolicitado] || 'Justificación'}</strong>
+        Motivo: <strong>${ETIQUETA_MOTIVO_JUSTIFICACION[datos.motivoTipo] || ETIQUETA_TIPO_JUSTIFICACION[datos.tipoSolicitado] || 'Justificación'}</strong>
         ${datos.adjunto ? ' · Se adjunta documento de respaldo' : ''}
       </p>
       <p style="margin: 0 0 8px;">Respetados Srs:</p>
@@ -620,6 +628,94 @@ function formatearFechaHoraTexto(fecha) {
   });
 }
 
+// =====================================
+// CARTA DE PERMISO PARA EL COLEGIO
+// =====================================
+// Aviso de solicitud nueva: a secretaría con copia a presidencia (las aprueban los
+// roles admin y secretaria en el panel).
+const DESTINO_CARTAS_PERMISO = () => process.env.EMAIL_SECRETARIA || 'secretaria@gdcayquina.cl';
+const COPIA_CARTAS_PERMISO = () => process.env.EMAIL_PRESIDENCIA || 'presidencia@gdcayquina.cl';
+
+function nombreCompletoCarta(c) {
+  return [c.nombres, c.apellido_paterno, c.apellido_materno || ''].join(' ').trim();
+}
+
+function rangoPermisoTexto(c) {
+  const fecha = f => formatearFechaTexto(`${String(f).substring(0, 10)}T12:00:00`);
+  return `${fecha(c.fecha_desde)} al ${fecha(c.fecha_hasta)}`;
+}
+
+// c: fila de cartaPermisoModel.obtener. Devuelve false si el correo no está
+// configurado (la solicitud igual queda guardada y se ve en el panel).
+function enviarSolicitudCartaPermiso(c) {
+  if (!emailConfigurado()) {
+    console.warn('[Email] No configurado. Solicitud de carta de permiso no enviada, folio:', c.id);
+    return Promise.resolve(false);
+  }
+
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; color: #222; font-size: 14px; line-height: 1.5;">
+      ${membreteCarta(c.id, c.creado_en)}
+      <p style="margin: 0 0 16px; padding-bottom: 6px; border-bottom: 3px solid #222;">
+        <strong>Referencia: Solicitud de carta de permiso para el colegio (Ayquina).</strong>
+      </p>
+      <table role="presentation" style="border-collapse: collapse; margin: 0 0 20px;">
+        ${filaDato('Alumno', nombreCompletoCarta(c))}
+        ${filaDato('Rut', c.rut)}
+        ${filaDato('Colegio', c.colegio)}
+        ${filaDato('Director/a', c.director)}
+        ${filaDato('Curso', c.curso)}
+        ${filaDato('Permiso', rangoPermisoTexto(c))}
+      </table>
+      <p style="color: #888; font-size: 12px; margin: 0;">
+        Aprobar o rechazar en el panel de la directiva → Tablas → Cartas colegio (folio ${formatearFolio(c.id)}).
+        Al aprobarla, la carta firmada le llega en PDF al correo del integrante${c.email ? '' : ' (no tiene email registrado)'}.
+      </p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    destinatario: DESTINO_CARTAS_PERMISO(),
+    cc: COPIA_CARTAS_PERMISO(),
+    replyTo: c.email || null,
+    asunto: `Carta de permiso colegio — Folio ${formatearFolio(c.id)} — ${nombreCompletoCarta(c)}`,
+    cuerpo,
+    adjuntos: [adjuntoLogo()]
+  }).then(() => true);
+}
+
+// Carta aprobada: va el PDF firmado adjunto. Rechazada: el motivo.
+function notificarResolucionCartaPermiso({ carta, aprobada, pdf }) {
+  if (!emailConfigurado() || !carta.email) return Promise.resolve(false);
+
+  const nombre = [carta.nombres, carta.apellido_paterno].join(' ').trim();
+  const resultado = aprobada
+    ? '<strong style="color: #2e7d32;">APROBADA</strong>. Te adjuntamos la carta firmada en PDF para que la presentes en el colegio'
+    : '<strong style="color: #c0392b;">RECHAZADA</strong>';
+
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">Gran Diablada Calameña</h2>
+      <p>Hola <strong>${escaparHtml(nombre)}</strong>,</p>
+      <p>Tu solicitud de carta de permiso para el colegio folio <strong>${formatearFolio(carta.id)}</strong>
+        (${escaparHtml(carta.colegio)}, ${escaparHtml(rangoPermisoTexto(carta))}) fue ${resultado}.</p>
+      ${carta.observacion_directiva ? `<p>Observación de la directiva: <em>${escaparHtml(carta.observacion_directiva)}</em></p>` : ''}
+      <p>También puedes ${aprobada ? 'descargarla' : 'revisarla'} en el Portal del Integrante → Documentos.</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="color: #888; font-size: 12px;">Este es un mensaje automático. No respondas a este correo.</p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    destinatario: carta.email,
+    asunto: `Carta de permiso folio ${formatearFolio(carta.id)}: ${aprobada ? 'aprobada' : 'rechazada'}`,
+    cuerpo,
+    adjuntos: aprobada && pdf
+      ? [{ filename: `Carta_permiso_${formatearFolio(carta.id)}.pdf`, content: pdf, contentType: 'application/pdf' }]
+      : undefined
+  }).then(() => true);
+}
+
 module.exports = {
   notificarAusentesEvento,
   enviarEnlaceRecuperacion,
@@ -630,5 +726,7 @@ module.exports = {
   notificarResolucionPostulacion,
   enviarSolicitudIngreso,
   notificarResolucionSolicitudIngreso,
+  enviarSolicitudCartaPermiso,
+  notificarResolucionCartaPermiso,
   formatearFolio
 };

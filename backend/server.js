@@ -28,7 +28,7 @@ const RUTAS_API = [
   '/asistencia', '/personas', '/eventos', '/multas', '/usuarios', '/dashboard',
   '/finanzas', '/pagos', '/cuotas', '/puntaje', '/formaciones', '/gastos',
   '/ingresos', '/justificaciones', '/solicitudes-ingreso', '/socio-auth', '/publico',
-  '/auditoria'
+  '/auditoria', '/cartas-permiso'
 ];
 app.use(RUTAS_API, (req, res, next) => {
   res.set('Cache-Control', 'no-store, private');
@@ -68,6 +68,7 @@ app.use('/gastos', require('./routes/gastoRoutes'));
 app.use('/ingresos', require('./routes/ingresoRoutes'));
 app.use('/justificaciones', require('./routes/justificacionRoutes'));
 app.use('/solicitudes-ingreso', require('./routes/solicitudIngresoRoutes'));
+app.use('/cartas-permiso', require('./routes/cartaPermisoRoutes'));
 // Ambos bajo /socio-auth (no /socio): el frontend del socio vive en la carpeta
 // /socio/ servida como estático (ver abajo) — si la API usara el prefijo /socio
 // colisionaría con esa ruta y el Service Worker cachearía mal el HTML/JS estático

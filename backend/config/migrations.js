@@ -646,6 +646,70 @@ async function asegurarTablaAuditoria() {
   `);
 }
 
+// Valores sueltos que se editan desde el panel (clave → valor). Por ahora solo
+// el saldo del año anterior del Balance general (dinero heredado que no está
+// registrado como pagos ni ingresos en la app).
+async function asegurarTablaConfiguracion() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS configuracion (
+      clave           VARCHAR(60) PRIMARY KEY,
+      valor           VARCHAR(255) NULL,
+      actualizado_por VARCHAR(100) NULL,
+      actualizado_en  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+// Cartas de permiso para el colegio (Portal → Documentos). Años e integrantes se
+// congelan al aprobar, así el PDF se puede regenerar idéntico cuando se descargue.
+// codigo_verificacion va en el QR de la carta (página pública /verificar.html).
+async function asegurarTablaCartasPermiso() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS cartas_permiso (
+      id                    BIGINT AUTO_INCREMENT PRIMARY KEY,
+      persona_id            BIGINT NOT NULL,
+      colegio               VARCHAR(150) NOT NULL,
+      director              VARCHAR(150) NOT NULL,
+      curso                 VARCHAR(60) NOT NULL,
+      fecha_desde           DATE NOT NULL,
+      fecha_hasta           DATE NOT NULL,
+      estado                ENUM('pendiente', 'aprobada', 'rechazada') NOT NULL DEFAULT 'pendiente',
+      observacion_directiva VARCHAR(300) NULL,
+      codigo_verificacion   CHAR(8) NULL,
+      anios                 INT NULL,
+      integrantes           INT NULL,
+      emitida_en            DATE NULL,
+      revisado_por          INT NULL,
+      revisado_en           DATETIME NULL,
+      email_enviado         TINYINT(1) NOT NULL DEFAULT 0,
+      email_carta_enviado   TINYINT(1) NOT NULL DEFAULT 0,
+      creado_en             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_carta_permiso_codigo (codigo_verificacion),
+      KEY idx_carta_permiso_persona (persona_id),
+      KEY idx_carta_permiso_estado (estado),
+      CONSTRAINT fk_carta_permiso_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
+    )
+  `);
+}
+
+// Justificaciones (oct-2026): tipos de actividad de la agrupación (se suma Misa; el
+// valor 'salida' se conserva y se muestra como "Presentación") y motivo de la
+// inasistencia (trabajo, licencia médica, estudio u otro). tipo_solicitado sigue
+// siendo el estado que se propone aplicar (licencia_medica o justificado).
+async function asegurarMotivosJustificacion() {
+  const cols = await columnasExistentes('justificaciones');
+  await ejecutar(`
+    ALTER TABLE justificaciones
+    MODIFY COLUMN referencia ENUM('ensayo', 'misa', 'reunion', 'salida', 'otro') NOT NULL
+  `);
+  if (!cols.has('motivo_tipo')) {
+    await ejecutar(`
+      ALTER TABLE justificaciones
+      ADD COLUMN motivo_tipo ENUM('trabajo', 'licencia_medica', 'estudio', 'otro') NULL AFTER tipo_solicitado
+    `);
+  }
+}
+
 async function ejecutarMigraciones() {
   const [colsPersonas, colsEventos, colsAsistencias] = await Promise.all([
     columnasExistentes('personas'),
@@ -673,6 +737,9 @@ async function ejecutarMigraciones() {
   await asegurarRevisionPostulaciones();
   await asegurarTablaSolicitudesIngreso();
   await asegurarTablaAuditoria();
+  await asegurarTablaConfiguracion();
+  await asegurarTablaCartasPermiso();
+  await asegurarMotivosJustificacion();
   await consolidarTiposCuota();
   await reconstruirVistaRankingPuntaje();
   await reconstruirVistaEstadoFinanciero();

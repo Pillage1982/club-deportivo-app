@@ -11,6 +11,7 @@ const router = express.Router();
 const controller = require('../controllers/socioDataController');
 const perfilController = require('../controllers/socioPerfilController');
 const documentosController = require('../controllers/socioDocumentosController');
+const cartaPermisoController = require('../controllers/cartaPermisoController');
 const uploadJustificativo = require('../middleware/uploadJustificativo');
 const authSocioMiddleware = require('../middleware/authSocioMiddleware');
 const exigirPerfilSocio = require('../middleware/perfilSocioMiddleware');
@@ -65,5 +66,9 @@ router.post(
   documentosController.enviarComprobante
 );
 router.get('/documentos/estatutos', exigirPerfilSocio(), documentosController.descargarEstatutos);
+
+// Carta de permiso para el colegio: solicitud y descarga del PDF ya aprobado.
+router.post('/documentos/cartas-permiso', exigirPerfilSocio(), cartaPermisoController.crearSolicitud);
+router.get('/documentos/cartas-permiso/:id/pdf', exigirPerfilSocio(), cartaPermisoController.descargarPdfSocio);
 
 module.exports = router;

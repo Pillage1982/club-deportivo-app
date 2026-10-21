@@ -8,6 +8,7 @@ let chartDeuda  = null;
 
 // Mismos bloques que excluye Formaciones (backend/utils/formacionRules.js):
 // socios y socios honorarios no bailan, no deben mezclarse en el desglose por bloque.
+// En "Asistencia por Bloque" se agrupan en una sola fila "Socios" (ver más abajo).
 const BLOQUES_EXCLUIDOS_DASHBOARD = [
   'socios', 'socio', 'socios honorario', 'socios honorarios',
   'socio honorario', 'socio honorarios'
@@ -69,7 +70,10 @@ function renderizarBalanceDashboard(balance) {
     if (el) el.innerText = formatearMonto(val ?? 0);
   };
 
+  saldoAnioAnteriorActual = Number(balance.saldo_anio_anterior || 0);
+
   set('saldo_caja',                balance.saldo_caja);
+  set('balance_saldo_anterior',    balance.saldo_anio_anterior);
   set('balance_pagos_socios',      balance.pagos_socios);
   set('balance_ingresos_terceros', balance.ingresos_terceros);
   set('balance_total_ingresos',    balance.total_ingresos);
@@ -84,6 +88,67 @@ function renderizarBalanceDashboard(balance) {
 
   tarjeta?.classList.remove('d-none');
   bloque?.classList.remove('d-none');
+}
+
+// Saldo del año anterior: monto fijo que ingresa tesorería (dinero heredado que
+// no está registrado como pagos ni ingresos). Se edita en la misma fila.
+let saldoAnioAnteriorActual = 0;
+
+function editarSaldoAnioAnterior() {
+  const celda = document.getElementById('balance_saldo_anterior_celda');
+  if (!celda || document.getElementById('input_saldo_anterior')) return;
+
+  celda.dataset.original = celda.innerHTML;
+  celda.innerHTML = `
+    <div class="input-group input-group-sm ms-auto" style="max-width: 240px;">
+      <span class="input-group-text">$</span>
+      <input type="number" id="input_saldo_anterior" class="form-control text-end" step="1"
+        value="${saldoAnioAnteriorActual}">
+      <button type="button" class="btn btn-success" title="Guardar" aria-label="Guardar"
+        onclick="guardarSaldoAnioAnterior()"><i class="bi bi-check-lg"></i></button>
+      <button type="button" class="btn btn-outline-secondary" title="Cancelar" aria-label="Cancelar"
+        onclick="cancelarSaldoAnioAnterior()"><i class="bi bi-x-lg"></i></button>
+    </div>`;
+
+  const input = document.getElementById('input_saldo_anterior');
+  input.focus();
+  input.select();
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') guardarSaldoAnioAnterior();
+    if (e.key === 'Escape') cancelarSaldoAnioAnterior();
+  });
+}
+
+function cancelarSaldoAnioAnterior() {
+  const celda = document.getElementById('balance_saldo_anterior_celda');
+  if (celda?.dataset.original) celda.innerHTML = celda.dataset.original;
+}
+
+function guardarSaldoAnioAnterior() {
+  const input = document.getElementById('input_saldo_anterior');
+  const monto = Number(input?.value);
+
+  if (!input || input.value.trim() === '' || !Number.isFinite(monto)) {
+    mostrarAlerta('Ingrese un monto válido', 'warning');
+    return;
+  }
+
+  fetch(`${API_URL}/dashboard/saldo-anio-anterior`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ monto: Math.round(monto) })
+  })
+    .then(async res => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.mensaje || 'No se pudo guardar el saldo del año anterior');
+      return data;
+    })
+    .then(data => {
+      mostrarAlerta(data.mensaje || 'Saldo del año anterior actualizado', 'success');
+      cancelarSaldoAnioAnterior();
+      cargarDashboard();
+    })
+    .catch(err => mostrarAlerta(err.message, 'danger'));
 }
 
 // =====================================
@@ -280,21 +345,90 @@ function configurarFiltrosDashboardAsistencia() {
 // ESTADISTICAS ASISTENCIA POR BLOQUE
 // =====================================
 
-// Vista simplificada para cuando el dashboard está filtrado por una actividad puntual:
-// Presente/Ausente por bloque (Presente incluye a los atrasados, mismo criterio que
-// usa el desglose por tipo de evento).
+// La asistencia de cada bloque se compara contra sus integrantes activos (los en
+// receso no asisten), no contra los registros: estos casi siempre son solo los
+// que escanearon, y así todo salía 100%. Con varias actividades en el período,
+// el total esperado es integrantes × actividades.
+const ESTADOS_ASISTIO_DASHBOARD = ['presente', 'atrasado', 'vestimenta_distinta'];
+
+//
+// Los que no bailan van todos a una fila "Socios": los bloques Socios y Socios
+// honorarios, y los honorarios sin bloque. Un honorario que pertenece a un
+// bloque de baile se cuenta en ese bloque.
+const FILA_SOCIOS_DASHBOARD = 'Socios';
+
+function personasDashboard() {
+  return Array.isArray(personasTabla) && personasTabla.length
+    ? personasTabla
+    : (obtenerCacheApi('personas') || []);
+}
+
+function bloqueAsistenciaDashboard(bloque, esHonorario) {
+  if (esBloqueExcluidoDashboard(bloque)) return FILA_SOCIOS_DASHBOARD;
+  if (!bloque && Number(esHonorario) === 1) return FILA_SOCIOS_DASHBOARD;
+  return bloque || 'Sin Bloque';
+}
+
+// Fila de cada integrante (por id), para ubicar sus registros de asistencia.
+function filaPorPersonaDashboard() {
+  return new Map(personasDashboard().map(p => [String(p.id), bloqueAsistenciaDashboard(p.bloque, p.es_honorario)]));
+}
+
+function filaAsistenciaDashboard(a, filaPorPersona) {
+  return filaPorPersona.get(String(a.persona_id)) || bloqueAsistenciaDashboard(a.bloque, false);
+}
+
+function integrantesActivosPorBloqueDashboard() {
+  const conteo = {};
+  personasDashboard().forEach(p => {
+    if ((p.estado || 'activo') !== 'activo') return;
+    const bloque = bloqueAsistenciaDashboard(p.bloque, p.es_honorario);
+    conteo[bloque] = (conteo[bloque] || 0) + 1;
+  });
+  return conteo;
+}
+
+// Bloques de baile en orden alfabético; la fila Socios al final.
+function ordenarBloquesDashboard(bloques) {
+  return Array.from(new Set(bloques)).sort((a, b) =>
+    (a === FILA_SOCIOS_DASHBOARD) - (b === FILA_SOCIOS_DASHBOARD) ||
+    a.localeCompare(b, 'es', { sensitivity: 'base' })
+  );
+}
+
+function claseBadgeAsistencia(pct) {
+  return pct >= 70 ? 'bg-success' : pct >= 40 ? 'bg-warning text-dark' : 'bg-danger';
+}
+
+// Celda "% asistieron/esperados". Sin actividades de ese tipo en el período no
+// hay nada que medir: se muestra un guion en vez de un 0% en rojo. Si asistieron
+// más de los esperados (integrante que pasó a receso o cambió de bloque), el
+// porcentaje se limita a 100%.
+function celdaAsistenciaBloque(asistieron, integrantes, actividades) {
+  if (!actividades) return '<td class="text-center text-muted">—</td>';
+  const esperados = integrantes * actividades;
+  const pct = esperados > 0 ? Math.min(100, Math.round((asistieron / esperados) * 100)) : 0;
+  return `
+        <td class="text-center">
+          <span class="badge ${claseBadgeAsistencia(pct)}">${pct}%</span>
+          <small class="text-muted ms-1">${asistieron}/${esperados}</small>
+        </td>`;
+}
+
+// Vista para cuando el dashboard está filtrado por una actividad puntual:
+// cuántos integrantes de cada bloque asistieron y cuántos no.
 function renderizarAsistenciaPorBloquePresenteAusente(asistencias, contenedor) {
-  const porBloque = {};
+  const integrantes = integrantesActivosPorBloqueDashboard();
+  const filaPorPersona = filaPorPersonaDashboard();
+  const asistieron = {};
 
   asistencias.forEach(a => {
-    if (esBloqueExcluidoDashboard(a.bloque)) return;
-    const bloque = a.bloque || 'Sin Bloque';
-    if (!porBloque[bloque]) porBloque[bloque] = { presentes: 0, total: 0 };
-    porBloque[bloque].total++;
-    if (['presente', 'atrasado'].includes(a.estado)) porBloque[bloque].presentes++;
+    const bloque = filaAsistenciaDashboard(a, filaPorPersona);
+    if (!asistieron[bloque]) asistieron[bloque] = 0;
+    if (ESTADOS_ASISTIO_DASHBOARD.includes(a.estado)) asistieron[bloque]++;
   });
 
-  const bloques = Object.keys(porBloque).sort();
+  const bloques = ordenarBloquesDashboard([...Object.keys(integrantes), ...Object.keys(asistieron)]);
 
   if (bloques.length === 0) {
     contenedor.innerHTML = '<p class="text-muted small">Sin registros de asistencia aún.</p>';
@@ -302,18 +436,13 @@ function renderizarAsistenciaPorBloquePresenteAusente(asistencias, contenedor) {
   }
 
   const filas = bloques.map(bloque => {
-    const { presentes, total } = porBloque[bloque];
-    const ausentes = total - presentes;
-    const pct = total > 0 ? Math.round((presentes / total) * 100) : 0;
-    const cls = pct >= 70 ? 'bg-success' : pct >= 40 ? 'bg-warning text-dark' : 'bg-danger';
+    const total = integrantes[bloque] || 0;
+    const presentes = asistieron[bloque] || 0;
     return `
       <tr>
-        <td><strong>${bloque}</strong></td>
-        <td class="text-center">
-          <span class="badge ${cls}">${pct}%</span>
-          <small class="text-muted ms-1">${presentes}/${total}</small>
-        </td>
-        <td class="text-center">${ausentes}</td>
+        <td><strong>${escaparHtml(bloque)}</strong> <small class="text-muted">(${total})</small></td>
+        ${celdaAsistenciaBloque(presentes, total, 1)}
+        <td class="text-center">${Math.max(total - presentes, 0)}</td>
       </tr>`;
   }).join('');
 
@@ -322,14 +451,20 @@ function renderizarAsistenciaPorBloquePresenteAusente(asistencias, contenedor) {
       <table class="table table-sm table-bordered align-middle mb-0">
         <thead class="table-dark">
           <tr>
-            <th>Bloque</th>
-            <th class="text-center">Presente</th>
-            <th class="text-center">Ausente</th>
+            <th>Bloque <small class="fw-normal">(integrantes)</small></th>
+            <th class="text-center">Asistieron</th>
+            <th class="text-center">No asistieron</th>
           </tr>
         </thead>
         <tbody>${filas}</tbody>
       </table>
     </div>`;
+}
+
+function tipoAsistenciaDashboard(tipoEvento) {
+  if (tipoEvento === 'entrenamiento') return 'ensayos';
+  if (tipoEvento === 'partido') return 'presentaciones';
+  return 'otras';
 }
 
 function actualizarEstadisticasAsistenciaDashboard(asistencias, filtradoPorEvento = false) {
@@ -343,81 +478,63 @@ function actualizarEstadisticasAsistenciaDashboard(asistencias, filtradoPorEvent
 
   // Con una actividad puntual seleccionada, ensayos/presentaciones/otras es
   // siempre la misma columna repetida (todas las filas comparten tipo_evento):
-  // se muestra en cambio Presente/Ausente, que sí aporta información.
+  // se muestra en cambio Asistieron/No asistieron, que sí aporta información.
   if (filtradoPorEvento) {
     renderizarAsistenciaPorBloquePresenteAusente(asistencias, contenedor);
     return;
   }
 
-  const porBloque = {};
+  const integrantes = integrantesActivosPorBloqueDashboard();
+  const filaPorPersona = filaPorPersonaDashboard();
+  const actividades = { ensayos: new Set(), presentaciones: new Set(), otras: new Set() };
+  const asistieron = {};
 
   asistencias.forEach(a => {
-    if (esBloqueExcluidoDashboard(a.bloque)) return;
-    const bloque = a.bloque || 'Sin Bloque';
-    if (!porBloque[bloque]) {
-      porBloque[bloque] = {
-        ensayos:        { presentes: 0, total: 0 },
-        presentaciones: { presentes: 0, total: 0 },
-        otras:          { presentes: 0, total: 0 }
-      };
-    }
-    const presente = ['presente', 'atrasado'].includes(a.estado);
-    if (a.tipo_evento === 'entrenamiento') {
-      porBloque[bloque].ensayos.total++;
-      if (presente) porBloque[bloque].ensayos.presentes++;
-    } else if (a.tipo_evento === 'partido') {
-      porBloque[bloque].presentaciones.total++;
-      if (presente) porBloque[bloque].presentaciones.presentes++;
-    } else {
-      porBloque[bloque].otras.total++;
-      if (presente) porBloque[bloque].otras.presentes++;
-    }
+    const tipo = tipoAsistenciaDashboard(a.tipo_evento);
+    actividades[tipo].add(String(a.evento_id));
+    const bloque = filaAsistenciaDashboard(a, filaPorPersona);
+    if (!asistieron[bloque]) asistieron[bloque] = { ensayos: 0, presentaciones: 0, otras: 0 };
+    if (ESTADOS_ASISTIO_DASHBOARD.includes(a.estado)) asistieron[bloque][tipo]++;
   });
 
-  const bloques = Object.keys(porBloque).sort();
+  const nE = actividades.ensayos.size;
+  const nP = actividades.presentaciones.size;
+  const nO = actividades.otras.size;
+  const bloques = ordenarBloquesDashboard([...Object.keys(integrantes), ...Object.keys(asistieron)]);
 
   const filas = bloques.map(bloque => {
-    const e    = porBloque[bloque].ensayos;
-    const p    = porBloque[bloque].presentaciones;
-    const o    = porBloque[bloque].otras;
-    const pctE = e.total > 0 ? Math.round((e.presentes / e.total) * 100) : 0;
-    const pctP = p.total > 0 ? Math.round((p.presentes / p.total) * 100) : 0;
-    const pctO = o.total > 0 ? Math.round((o.presentes / o.total) * 100) : 0;
-    const clsE = pctE >= 70 ? 'bg-success' : pctE >= 40 ? 'bg-warning text-dark' : 'bg-danger';
-    const clsP = pctP >= 70 ? 'bg-success' : pctP >= 40 ? 'bg-warning text-dark' : 'bg-danger';
-    const clsO = pctO >= 70 ? 'bg-success' : pctO >= 40 ? 'bg-warning text-dark' : 'bg-danger';
+    const total = integrantes[bloque] || 0;
+    const a = asistieron[bloque] || { ensayos: 0, presentaciones: 0, otras: 0 };
     return `
       <tr>
-        <td><strong>${bloque}</strong></td>
-        <td class="text-center">
-          <span class="badge ${clsE}">${pctE}%</span>
-          <small class="text-muted ms-1">${e.presentes}/${e.total}</small>
-        </td>
-        <td class="text-center">
-          <span class="badge ${clsP}">${pctP}%</span>
-          <small class="text-muted ms-1">${p.presentes}/${p.total}</small>
-        </td>
-        <td class="text-center">
-          <span class="badge ${clsO}">${pctO}%</span>
-          <small class="text-muted ms-1">${o.presentes}/${o.total}</small>
-        </td>
+        <td><strong>${escaparHtml(bloque)}</strong> <small class="text-muted">(${total})</small></td>
+        ${celdaAsistenciaBloque(a.ensayos, total, nE)}
+        ${celdaAsistenciaBloque(a.presentaciones, total, nP)}
+        ${celdaAsistenciaBloque(a.otras, total, nO)}
       </tr>`;
   }).join('');
+
+  const encabezado = (titulo, n) =>
+    `<th class="text-center">${titulo} <small class="fw-normal">(${n} ${n === 1 ? 'actividad' : 'actividades'})</small></th>`;
 
   contenedor.innerHTML = `
     <div class="table-responsive">
       <table class="table table-sm table-bordered align-middle mb-0">
         <thead class="table-dark">
           <tr>
-            <th>Bloque</th>
-            <th class="text-center">Ensayos</th>
-            <th class="text-center">Presentaciones</th>
-            <th class="text-center">Otras actividades</th>
+            <th>Bloque <small class="fw-normal">(integrantes)</small></th>
+            ${encabezado('Ensayos', nE)}
+            ${encabezado('Presentaciones', nP)}
+            ${encabezado('Otras actividades', nO)}
           </tr>
         </thead>
         <tbody>${filas}</tbody>
       </table>
-    </div>`;
+    </div>
+    <p class="text-muted small mt-2 mb-0">
+      Asistieron / esperados (integrantes activos del bloque × actividades del período).
+      Cuentan como asistencia: presente, atrasado y vestimenta distinta.
+    </p>`;
 }
 
 // =====================================

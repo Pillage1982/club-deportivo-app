@@ -157,6 +157,14 @@
               <table class="table table-sm mb-0">
                 <tbody>
                   <tr>
+                    <td>Saldo año anterior <small class="text-muted">(heredado de la directiva anterior)</small></td>
+                    <td class="text-end text-nowrap" id="balance_saldo_anterior_celda">
+                      <span id="balance_saldo_anterior">$0</span>
+                      <button type="button" class="btn btn-sm btn-link p-0 ms-2 align-baseline" title="Editar saldo año anterior"
+                        aria-label="Editar saldo año anterior" onclick="editarSaldoAnioAnterior()"><i class="bi bi-pencil"></i></button>
+                    </td>
+                  </tr>
+                  <tr>
                     <td>Pagos de integrantes <small class="text-muted">(cuotas y aportes)</small></td>
                     <td class="text-end" id="balance_pagos_socios">$0</td>
                   </tr>
@@ -234,6 +242,18 @@
             <span id="label_evento_mobile">Seleccionar Actividad</span>
             <i class="bi bi-chevron-down ms-auto"></i>
           </button>
+        </div>
+
+        <!-- Asistentes de la actividad contra el total de integrantes activos -->
+        <div id="indicador_asistentes" class="indicador-asistentes mb-3 d-none">
+          <div class="d-flex align-items-baseline justify-content-between">
+            <span class="indicador-asistentes-titulo"><i class="bi bi-people-fill me-1"></i> Asistentes</span>
+            <span><strong id="indicador_asistentes_valor">0/0</strong>
+              <small id="indicador_asistentes_pct" class="ms-1">0%</small></span>
+          </div>
+          <div class="progress indicador-asistentes-barra" role="progressbar" aria-label="Asistentes de la actividad">
+            <div id="indicador_asistentes_progreso" class="progress-bar" style="width: 0%"></div>
+          </div>
         </div>
 
         <!-- Panel scanner -->
@@ -323,6 +343,11 @@
             <i class="bi bi-people"></i> Integrantes
           </a>
         </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_retirados">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_retirados" role="tab">
+            <i class="bi bi-person-x"></i> Retirados
+          </a>
+        </li>
         <li class="nav-item" role="presentation" id="nav_subtab_eventos">
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_eventos" role="tab">
             <i class="bi bi-calendar-event"></i> Actividades
@@ -343,6 +368,12 @@
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_justificaciones" role="tab">
             <i class="bi bi-envelope-paper"></i> Justificaciones
             <span id="badge_justificaciones" class="badge bg-warning text-dark ms-1 d-none">0</span>
+          </a>
+        </li>
+        <li class="nav-item d-none" role="presentation" id="nav_subtab_cartas_permiso">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_cartas_permiso" role="tab">
+            <i class="bi bi-mortarboard"></i> Cartas colegio
+            <span id="badge_cartas_permiso" class="badge bg-warning text-dark ms-1 d-none">0</span>
           </a>
         </li>
         <li class="nav-item" role="presentation" id="nav_subtab_solicitudes">
@@ -408,6 +439,14 @@
               <label for="buscar_personas" class="form-label">Buscar Integrante</label>
               <input type="search" id="buscar_personas" class="form-control" placeholder="Buscar por nombre, RUT, bloque, email o teléfono">
             </div>
+            <div class="col-md-2">
+              <label for="filtro_estado_personas" class="form-label">Estado</label>
+              <select id="filtro_estado_personas" class="form-select">
+                <option value="">Todos</option>
+                <option value="activo">Activo</option>
+                <option value="receso">Receso</option>
+              </select>
+            </div>
             <div class="col-md-1 d-flex align-items-end">
               <div class="dropdown w-100">
                 <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Exportar">
@@ -420,12 +459,12 @@
               </div>
             </div>
           </div>
-          <div id="tabla_personas_wrapper" class="table-responsive tabla-scroll">
+          <div id="tabla_personas_wrapper" class="table-responsive tabla-scroll tabla-columnas-fijas">
             <table class="table table-bordered table-striped table-hover align-middle mb-0">
               <thead class="table-dark">
                 <tr>
-                  <th>Nombre Completo</th>
-                  <th>RUT</th>
+                  <th class="col-fija">Nombre Completo</th>
+                  <th class="col-fija-2">RUT</th>
                   <th>Bloque</th>
                   <th>Sexo</th>
                   <th>Email</th>
@@ -440,6 +479,39 @@
                 </tr>
               </thead>
               <tbody id="tabla_personas"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Integrantes retirados (histórico) -->
+        <div class="tab-pane fade" id="subtab_retirados" role="tabpanel">
+          <div class="row g-2 mb-3">
+            <div class="col-md-5">
+              <label for="buscar_retirados" class="form-label">Buscar Retirado</label>
+              <input type="search" id="buscar_retirados" class="form-control" placeholder="Buscar por nombre, RUT, bloque, email o teléfono">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+              <span id="total_retirados" class="text-muted small"></span>
+            </div>
+          </div>
+          <div id="tabla_retirados_wrapper" class="table-responsive tabla-scroll tabla-columnas-fijas">
+            <table class="table table-bordered table-striped table-hover align-middle mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th class="col-fija">Nombre Completo</th>
+                  <th class="col-fija-2">RUT</th>
+                  <th>Bloque</th>
+                  <th>Sexo</th>
+                  <th>Email</th>
+                  <th>Teléfono</th>
+                  <th>F. Nacimiento</th>
+                  <th>F. Ingreso</th>
+                  <th>F. Retiro</th>
+                  <th>Observación</th>
+                  <th id="th_retirados_historial">Historial</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_retirados"></tbody>
             </table>
           </div>
         </div>
@@ -576,8 +648,8 @@
                   <th>Recibida</th>
                   <th>Integrante</th>
                   <th>Actividad</th>
-                  <th>Tipo</th>
                   <th>Motivo</th>
+                  <th>Detalle</th>
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
@@ -603,6 +675,46 @@
                 </tr>
               </thead>
               <tbody id="tabla_postulaciones"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Cartas de permiso para el colegio (solo admin y secretaria) -->
+        <div class="tab-pane fade" id="subtab_cartas_permiso" role="tabpanel">
+          <div class="alert alert-info small">
+            Cartas de permiso para el colegio (Fiesta de Ayquina) pedidas desde el Portal del Integrante.
+            Al <strong>aprobar</strong> se emite el PDF con la firma del presidente y el timbre, y se
+            envía al correo del integrante. Al rechazar, se le informa el motivo.
+          </div>
+          <div class="row g-2 mb-3 align-items-end">
+            <div class="col-md-3">
+              <label for="filtro_cartas_permiso_estado" class="form-label">Estado</label>
+              <select id="filtro_cartas_permiso_estado" class="form-select">
+                <option value="pendiente">Pendientes</option>
+                <option value="aprobada">Aprobadas</option>
+                <option value="rechazada">Rechazadas</option>
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label for="buscar_cartas_permiso" class="form-label">Buscar</label>
+              <input type="search" id="buscar_cartas_permiso" class="form-control" placeholder="Nombre, RUT, colegio o folio">
+            </div>
+          </div>
+          <div class="table-responsive tabla-scroll mb-4">
+            <table class="table table-bordered table-striped align-middle mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Folio</th>
+                  <th>Recibida</th>
+                  <th>Alumno</th>
+                  <th>Colegio / Curso</th>
+                  <th>Permiso</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_cartas_permiso"></tbody>
             </table>
           </div>
         </div>
@@ -1711,6 +1823,35 @@
     </div>
   </div>
 
+  <!-- Modal: Revisar carta de permiso para el colegio -->
+  <div class="modal fade" id="modal_revisar_carta_permiso" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-mortarboard me-2"></i>Carta de permiso folio <span id="revisar_cp_folio"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="revisar_cp_detalle" class="mb-3"></div>
+          <div id="revisar_cp_acciones">
+            <label for="revisar_cp_observacion" class="form-label">Observación <span class="text-muted">(obligatoria si se rechaza)</span></label>
+            <input type="text" id="revisar_cp_observacion" class="form-control" maxlength="300">
+          </div>
+        </div>
+        <div class="modal-footer" id="revisar_cp_footer">
+          <button type="button" class="btn btn-outline-danger" id="btn_rechazar_carta_permiso" onclick="resolverCartaPermiso('rechazar')">
+            <i class="bi bi-x-circle me-1"></i>Rechazar
+          </button>
+          <button type="button" class="btn btn-success" id="btn_aprobar_carta_permiso" onclick="resolverCartaPermiso('aprobar')">
+            <i class="bi bi-check-circle me-1"></i>Aprobar y enviar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Revisar solicitud de ingreso -->
   <div class="modal fade" id="modal_revisar_solicitud" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
@@ -1839,6 +1980,7 @@
   <script src="js/accesoSocios.js"></script>
   <script src="js/justificaciones.js"></script>
   <script src="js/solicitudesIngreso.js"></script>
+  <script src="js/cartasPermiso.js"></script>
   <script src="js/usuariosSoporte.js"></script>
   <script src="js/auditoria.js"></script>
   <script src="js/multas.js"></script>
