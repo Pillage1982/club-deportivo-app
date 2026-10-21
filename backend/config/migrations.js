@@ -692,6 +692,24 @@ async function asegurarTablaCartasPermiso() {
   `);
 }
 
+// Justificaciones (oct-2026): tipos de actividad de la agrupación (se suma Misa; el
+// valor 'salida' se conserva y se muestra como "Presentación") y motivo de la
+// inasistencia (trabajo, licencia médica, estudio u otro). tipo_solicitado sigue
+// siendo el estado que se propone aplicar (licencia_medica o justificado).
+async function asegurarMotivosJustificacion() {
+  const cols = await columnasExistentes('justificaciones');
+  await ejecutar(`
+    ALTER TABLE justificaciones
+    MODIFY COLUMN referencia ENUM('ensayo', 'misa', 'reunion', 'salida', 'otro') NOT NULL
+  `);
+  if (!cols.has('motivo_tipo')) {
+    await ejecutar(`
+      ALTER TABLE justificaciones
+      ADD COLUMN motivo_tipo ENUM('trabajo', 'licencia_medica', 'estudio', 'otro') NULL AFTER tipo_solicitado
+    `);
+  }
+}
+
 async function ejecutarMigraciones() {
   const [colsPersonas, colsEventos, colsAsistencias] = await Promise.all([
     columnasExistentes('personas'),
@@ -721,6 +739,7 @@ async function ejecutarMigraciones() {
   await asegurarTablaAuditoria();
   await asegurarTablaConfiguracion();
   await asegurarTablaCartasPermiso();
+  await asegurarMotivosJustificacion();
   await consolidarTiposCuota();
   await reconstruirVistaRankingPuntaje();
   await reconstruirVistaEstadoFinanciero();

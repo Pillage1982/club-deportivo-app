@@ -16,14 +16,19 @@ const cuotaIntegracion = require('../config/cuotaIntegracion');
 const uploadJustificativo = require('../middleware/uploadJustificativo');
 const emailService = require('../services/emailService');
 
+// Categorías de actividad de la agrupación: Ensayo, Misa, Reunión, Presentación y
+// Otros. 'salida' es el valor histórico de Presentación (se muestra así).
 const REFERENCIA_POR_TIPO_EVENTO = {
   entrenamiento: 'ensayo',
+  misa: 'misa',
   reunion: 'reunion',
   partido: 'salida'
 };
 
-const REFERENCIAS = ['ensayo', 'reunion', 'salida', 'otro'];
-const TIPOS_SOLICITADOS = ['justificado', 'licencia_medica'];
+const REFERENCIAS = ['ensayo', 'misa', 'reunion', 'salida', 'otro'];
+// Motivo de la inasistencia. Solo la licencia médica propone ese estado; el resto
+// se propone como justificado (la directiva decide al aprobar).
+const MOTIVOS = ['trabajo', 'licencia_medica', 'estudio', 'otro'];
 const CONDICIONES = ['bailarin', 'socio'];
 
 const RUTA_ESTATUTOS = path.join(__dirname, '..', 'documentos', 'Estatutos_BaileGDC.pdf');
@@ -110,14 +115,15 @@ exports.enviarJustificacion = async (req, res) => {
   const body = req.body || {};
 
   const eventoId = body.evento_id ? Number(body.evento_id) : null;
-  const tipoSolicitado = body.tipo_solicitado;
+  const motivoTipo = body.motivo_tipo;
+  const tipoSolicitado = motivoTipo === 'licencia_medica' ? 'licencia_medica' : 'justificado';
   const condicion = body.condicion;
   const motivo = textoLimpio(body.motivo, 3000);
   const quienEntrega = textoLimpio(body.quien_entrega, 150) || null;
 
-  if (!TIPOS_SOLICITADOS.includes(tipoSolicitado)) {
+  if (!MOTIVOS.includes(motivoTipo)) {
     descartarArchivo(req);
-    return res.status(400).json({ mensaje: 'Indica si es justificación o licencia médica' });
+    return res.status(400).json({ mensaje: 'Indica el motivo: trabajo, licencia médica, estudio u otros' });
   }
   if (!CONDICIONES.includes(condicion)) {
     descartarArchivo(req);
@@ -162,7 +168,7 @@ exports.enviarJustificacion = async (req, res) => {
 
       if (!REFERENCIAS.includes(referencia)) {
         descartarArchivo(req);
-        return res.status(400).json({ mensaje: 'Indica el tipo de actividad (ensayo, reunión, salida u otro)' });
+        return res.status(400).json({ mensaje: 'Indica el tipo de actividad (ensayo, misa, reunión, presentación u otros)' });
       }
       if (!referenciaOtro) {
         descartarArchivo(req);
@@ -189,6 +195,7 @@ exports.enviarJustificacion = async (req, res) => {
       referencia_otro: referenciaOtro,
       fecha_actividad: fechaActividad,
       tipo_solicitado: tipoSolicitado,
+      motivo_tipo: motivoTipo,
       condicion,
       motivo,
       quien_entrega: quienEntrega,
@@ -208,6 +215,7 @@ exports.enviarJustificacion = async (req, res) => {
         evento,
         fechaActividad,
         tipoSolicitado,
+        motivoTipo,
         condicion,
         motivo,
         quienEntrega,

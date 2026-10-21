@@ -8,17 +8,31 @@
 
 let datosDocumentos = null;
 
+// Categorías de actividad de la agrupación ('salida' es el valor histórico de Presentación).
 const ETIQUETA_REFERENCIA = {
   ensayo: 'Ensayo',
+  misa: 'Misa',
   reunion: 'Reunión',
-  salida: 'Salida',
-  otro: 'Otro'
+  salida: 'Presentación',
+  otro: 'Otros'
 };
 
 const ETIQUETA_TIPO_JUST = {
   justificado: 'Justificación',
   licencia_medica: 'Licencia médica'
 };
+
+const ETIQUETA_MOTIVO_JUST = {
+  trabajo: 'Trabajo',
+  licencia_medica: 'Licencia médica',
+  estudio: 'Estudio',
+  otro: 'Otros'
+};
+
+// Cartas anteriores al motivo (oct-2026) solo tienen tipo_solicitado.
+function etiquetaMotivoJust(j) {
+  return ETIQUETA_MOTIVO_JUST[j.motivo_tipo] || ETIQUETA_TIPO_JUST[j.tipo_solicitado] || 'Justificación';
+}
 
 function cargarDocumentos() {
   return fetch(`${API_URL}/socio-auth/documentos`, { headers: getAuthHeadersSocio() })
@@ -173,7 +187,7 @@ function renderizarHistorialDocumentos() {
     return `
       <div class="item socio-doc-item">
         <div>
-          <div><strong>${ETIQUETA_TIPO_JUST[dato.tipo_solicitado] || 'Justificación'}</strong> · Folio ${folioTexto(dato.id)}</div>
+          <div><strong>Justificación · ${etiquetaMotivoJust(dato)}</strong> · Folio ${folioTexto(dato.id)}</div>
           <small class="text-muted">${actividad}</small>
           ${dato.observacion_directiva ? `<small class="d-block fst-italic">Directiva: ${escaparHtml(dato.observacion_directiva)}</small>` : ''}
         </div>
@@ -243,7 +257,7 @@ function leerFormularioJustificacion() {
     referencia: evento ? evento.referencia : (esOtra ? valorRadio('just_referencia') : ''),
     referenciaOtro: document.getElementById('just_referencia_otro').value.trim(),
     fecha: document.getElementById('just_fecha').value,
-    tipo: valorRadio('just_tipo'),
+    motivoTipo: valorRadio('just_motivo_tipo'),
     condicion: valorRadio('just_condicion'),
     motivo: document.getElementById('just_motivo').value.trim(),
     quienEntrega: document.getElementById('just_quien_entrega').value.trim(),
@@ -290,7 +304,7 @@ function actualizarPreviewJustificacion() {
     actividad = `${textoOVacio(f.referenciaOtro, '(nombre de la actividad)')} — ${f.fecha ? formatearFecha(f.fecha) : '<span class="carta-vacio">(fecha)</span>'}`;
   }
 
-  document.getElementById('just_adjunto_ayuda').textContent = f.tipo === 'licencia_medica'
+  document.getElementById('just_adjunto_ayuda').textContent = f.motivoTipo === 'licencia_medica'
     ? 'Adjunta la licencia médica (foto o PDF, máximo 5 MB).'
     : 'Foto o PDF, máximo 5 MB.';
 
@@ -299,13 +313,14 @@ function actualizarPreviewJustificacion() {
     <p class="carta-referencia">
       <strong>Referencia justifica inasistencia a:</strong>
       Ensayo ${casillaCarta(f.referencia === 'ensayo')}
+      Misa ${casillaCarta(f.referencia === 'misa')}
       Reunión ${casillaCarta(f.referencia === 'reunion')}
-      Salida ${casillaCarta(f.referencia === 'salida')}
-      Otro ${casillaCarta(f.referencia === 'otro')}
+      Presentación ${casillaCarta(f.referencia === 'salida')}
+      Otros ${casillaCarta(f.referencia === 'otro')}
     </p>
     <p class="carta-nota">
       Actividad: <strong>${actividad}</strong><br>
-      Tipo: <strong>${ETIQUETA_TIPO_JUST[f.tipo] || 'Justificación'}</strong>${f.archivo ? ' · Se adjunta documento de respaldo' : ''}
+      Motivo: <strong>${ETIQUETA_MOTIVO_JUST[f.motivoTipo] || '—'}</strong>${f.archivo ? ' · Se adjunta documento de respaldo' : ''}
     </p>
     <p class="mb-1">Respetados Srs:</p>
     <p class="carta-cuerpo">${textoOVacio(f.motivo, '(aquí va el motivo que escribas)')}</p>
@@ -324,12 +339,12 @@ function actualizarPreviewJustificacion() {
 function validarJustificacion(f) {
   if (!f.seleccion) return 'Elige la actividad a la que no podrás asistir';
   if (f.esOtra) {
-    if (!f.referencia) return 'Indica el tipo de actividad (ensayo, reunión, salida u otro)';
+    if (!f.referencia) return 'Indica el tipo de actividad (ensayo, misa, reunión, presentación u otros)';
     if (!f.referenciaOtro) return 'Indica el nombre de la actividad';
     if (!f.fecha) return 'Indica la fecha de la actividad';
     if (f.fecha < hoyIso()) return 'La fecha debe ser hoy o posterior (Art. 8.7: solo hasta el cierre de asistencia)';
   }
-  if (!f.tipo) return 'Indica si es justificación o licencia médica';
+  if (!f.motivoTipo) return 'Indica el motivo: trabajo, licencia médica, estudio u otros';
   if (!f.condicion) return 'Indica tu condición (bailarín o socio)';
   if (f.motivo.length < 10) return 'Explica el motivo de tu inasistencia (mínimo 10 caracteres)';
   if (f.archivo && f.archivo.size > 5 * 1024 * 1024) return 'El archivo supera los 5 MB';
@@ -354,7 +369,7 @@ function enviarJustificacion() {
     datos.append('referencia_otro', f.referenciaOtro);
     datos.append('fecha_actividad', f.fecha);
   }
-  datos.append('tipo_solicitado', f.tipo);
+  datos.append('motivo_tipo', f.motivoTipo);
   datos.append('condicion', f.condicion);
   datos.append('motivo', f.motivo);
   if (f.quienEntrega) datos.append('quien_entrega', f.quienEntrega);

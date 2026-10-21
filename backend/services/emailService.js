@@ -251,8 +251,15 @@ const ETIQUETA_TIPO_JUSTIFICACION = {
   licencia_medica: 'Licencia médica'
 };
 
+const ETIQUETA_MOTIVO_JUSTIFICACION = {
+  trabajo: 'Trabajo',
+  licencia_medica: 'Licencia médica',
+  estudio: 'Estudio',
+  otro: 'Otros'
+};
+
 // datos: { folio, creadoEn, persona, referencia, referenciaOtro, evento, fechaActividad,
-//          tipoSolicitado, condicion, motivo, quienEntrega, adjunto: {path, filename} | null }
+//          tipoSolicitado, motivoTipo, condicion, motivo, quienEntrega, adjunto: {path, filename} | null }
 // Devuelve false si el correo no está configurado (la carta igual queda guardada).
 function enviarCartaJustificacion(datos) {
   if (!emailConfigurado()) {
@@ -276,13 +283,14 @@ function enviarCartaJustificacion(datos) {
       <p style="margin: 0; padding-bottom: 6px; border-bottom: 3px solid #222;">
         <strong>Referencia justifica inasistencia a:</strong>
         Ensayo ${casilla(ref === 'ensayo')}
+        Misa ${casilla(ref === 'misa')}
         Reunión ${casilla(ref === 'reunion')}
-        Salida ${casilla(ref === 'salida')}
-        Otro ${casilla(ref === 'otro')}
+        Presentación ${casilla(ref === 'salida')}
+        Otros ${casilla(ref === 'otro')}
       </p>
       <p style="margin: 8px 0 18px; font-size: 13px; color: #555;">
         Actividad: <strong>${actividad}</strong><br>
-        Tipo: <strong>${ETIQUETA_TIPO_JUSTIFICACION[datos.tipoSolicitado] || 'Justificación'}</strong>
+        Motivo: <strong>${ETIQUETA_MOTIVO_JUSTIFICACION[datos.motivoTipo] || ETIQUETA_TIPO_JUSTIFICACION[datos.tipoSolicitado] || 'Justificación'}</strong>
         ${datos.adjunto ? ' · Se adjunta documento de respaldo' : ''}
       </p>
       <p style="margin: 0 0 8px;">Respetados Srs:</p>

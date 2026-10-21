@@ -71,11 +71,11 @@ exports.crearJustificacion = data =>
   ejecutar(`
     INSERT INTO justificaciones
       (persona_id, evento_id, referencia, referencia_otro, fecha_actividad,
-       tipo_solicitado, condicion, motivo, quien_entrega, adjunto_path)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       tipo_solicitado, motivo_tipo, condicion, motivo, quien_entrega, adjunto_path)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     data.persona_id, data.evento_id, data.referencia, data.referencia_otro,
-    data.fecha_actividad, data.tipo_solicitado, data.condicion, data.motivo,
+    data.fecha_actividad, data.tipo_solicitado, data.motivo_tipo, data.condicion, data.motivo,
     data.quien_entrega, data.adjunto_path
   ]).then(result => result.insertId);
 
@@ -90,7 +90,7 @@ exports.marcarEmailJustificacion = id =>
 exports.listarJustificacionesSocio = (personaId, desde) =>
   ejecutar(`
     SELECT j.id, j.referencia, j.referencia_otro, j.fecha_actividad,
-           j.tipo_solicitado, j.estado, j.estado_aplicado, j.observacion_directiva,
+           j.tipo_solicitado, j.motivo_tipo, j.estado, j.estado_aplicado, j.observacion_directiva,
            j.revisado_en, j.creado_en, (j.adjunto_path IS NOT NULL) AS tiene_adjunto,
            e.nombre AS evento, e.fecha AS fecha_evento
     FROM justificaciones j
@@ -145,7 +145,7 @@ exports.listarJustificaciones = estado => {
   const filtro = estado ? 'WHERE j.estado = ?' : '';
   return ejecutar(`
     SELECT j.id, j.persona_id, j.evento_id, j.referencia, j.referencia_otro,
-           j.fecha_actividad, j.tipo_solicitado, j.condicion, j.motivo,
+           j.fecha_actividad, j.tipo_solicitado, j.motivo_tipo, j.condicion, j.motivo,
            j.quien_entrega, (j.adjunto_path IS NOT NULL) AS tiene_adjunto,
            j.estado, j.estado_aplicado, j.observacion_directiva,
            j.revisado_en, j.email_enviado, j.creado_en,
