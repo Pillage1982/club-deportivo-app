@@ -18,6 +18,7 @@ const MODULOS = {
   multas: 'multas',
   usuarios: 'usuarios',
   finanzas: 'finanzas',
+  dashboard: 'finanzas',
   pagos: 'pagos',
   cuotas: 'cuotas',
   puntaje: 'puntaje',

@@ -646,6 +646,20 @@ async function asegurarTablaAuditoria() {
   `);
 }
 
+// Valores sueltos que se editan desde el panel (clave → valor). Por ahora solo
+// el saldo del año anterior del Balance general (dinero heredado que no está
+// registrado como pagos ni ingresos en la app).
+async function asegurarTablaConfiguracion() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS configuracion (
+      clave           VARCHAR(60) PRIMARY KEY,
+      valor           VARCHAR(255) NULL,
+      actualizado_por VARCHAR(100) NULL,
+      actualizado_en  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 async function ejecutarMigraciones() {
   const [colsPersonas, colsEventos, colsAsistencias] = await Promise.all([
     columnasExistentes('personas'),
@@ -673,6 +687,7 @@ async function ejecutarMigraciones() {
   await asegurarRevisionPostulaciones();
   await asegurarTablaSolicitudesIngreso();
   await asegurarTablaAuditoria();
+  await asegurarTablaConfiguracion();
   await consolidarTiposCuota();
   await reconstruirVistaRankingPuntaje();
   await reconstruirVistaEstadoFinanciero();

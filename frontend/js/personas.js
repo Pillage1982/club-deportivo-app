@@ -294,6 +294,12 @@ document.getElementById('es_honorario').checked = false;
       filtrarPersonas(obtenerTerminoBusquedaPersonas())
     );
 
+    // Asistencia por bloque del dashboard compara contra los integrantes activos:
+    // si las asistencias llegaron antes, se recalcula con los integrantes ya cargados.
+    if (typeof asistenciasTabla !== 'undefined' && asistenciasTabla.length) {
+      actualizarVistaAsistenciaDashboard(asistenciasTabla);
+    }
+
   })
 
   .catch(err => console.error(err));
