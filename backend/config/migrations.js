@@ -615,6 +615,28 @@ async function asegurarTablaSolicitudesIngreso() {
       CONSTRAINT fk_solicitud_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE SET NULL
     )
   `);
+
+  // Campos de la "Ficha de actualización de datos GDC" (oct-2026): con ellos se
+  // arma el PDF de la ficha que llega a la directiva y se ve en el panel.
+  const cols = await columnasExistentes('solicitudes_ingreso');
+  const columnas = [
+    { nombre: 'direccion',              sql: 'ADD COLUMN direccion VARCHAR(255) NULL' },
+    { nombre: 'ciudad',                 sql: 'ADD COLUMN ciudad VARCHAR(100) NULL' },
+    { nombre: 'estado_civil',           sql: 'ADD COLUMN estado_civil VARCHAR(30) NULL' },
+    { nombre: 'bautizo',                sql: 'ADD COLUMN bautizo TINYINT(1) NOT NULL DEFAULT 0' },
+    { nombre: 'comunion',               sql: 'ADD COLUMN comunion TINYINT(1) NOT NULL DEFAULT 0' },
+    { nombre: 'confirmacion',           sql: 'ADD COLUMN confirmacion TINYINT(1) NOT NULL DEFAULT 0' },
+    { nombre: 'condicion',              sql: "ADD COLUMN condicion ENUM('bailarin', 'socio') NULL" },
+    { nombre: 'baile_anterior',         sql: 'ADD COLUMN baile_anterior VARCHAR(150) NULL' },
+    { nombre: 'baile_anterior_entidad', sql: "ADD COLUMN baile_anterior_entidad ENUM('asociacion', 'federacion', 'central_caporales') NULL" },
+    // PNG de la firma dibujada en el sitio (unas decenas de KB)
+    { nombre: 'firma_png',              sql: 'ADD COLUMN firma_png MEDIUMBLOB NULL' }
+  ];
+  for (const col of columnas) {
+    if (!cols.has(col.nombre)) {
+      await ejecutar(`ALTER TABLE solicitudes_ingreso ${col.sql}`);
+    }
+  }
 }
 
 // Registro de actividad (auditoría interna, solo admin y soporte): quién hizo cada
