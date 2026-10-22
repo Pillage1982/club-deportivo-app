@@ -1,6 +1,7 @@
 // Acceso MySQL de las solicitudes "Súmate a la promesa" (formulario público del
-// sitio gdcayquina.cl). Aprobar crea el integrante (o reactiva uno dado de baja)
-// con los datos básicos; el resto lo completa él en su primer ingreso al Portal.
+// sitio gdcayquina.cl), con los datos de la "Ficha de actualización de datos GDC".
+// Aprobar crea el integrante (o reactiva uno dado de baja) con esos datos; el resto
+// lo completa él en su primer ingreso al Portal.
 const db = require('../config/db');
 
 function ejecutar(sql, params = []) {
@@ -34,8 +35,10 @@ exports.crearSolicitud = datos =>
   ejecutar(`
     INSERT INTO solicitudes_ingreso
       (rut, nombres, apellido_paterno, apellido_materno, fecha_nacimiento, telefono, email,
-       comparsa_interes, mensaje, nombre_apoderado, rut_apoderado, telefono_apoderado)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       comparsa_interes, mensaje, nombre_apoderado, rut_apoderado, telefono_apoderado,
+       direccion, ciudad, estado_civil, bautizo, comunion, confirmacion, condicion,
+       baile_anterior, baile_anterior_entidad, firma_png)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     datos.rut,
     datos.nombres,
@@ -48,15 +51,32 @@ exports.crearSolicitud = datos =>
     datos.mensaje || null,
     datos.nombre_apoderado || null,
     datos.rut_apoderado || null,
-    datos.telefono_apoderado || null
+    datos.telefono_apoderado || null,
+    datos.direccion,
+    datos.ciudad,
+    datos.estado_civil,
+    datos.bautizo ? 1 : 0,
+    datos.comunion ? 1 : 0,
+    datos.confirmacion ? 1 : 0,
+    datos.condicion,
+    datos.baile_anterior || null,
+    datos.baile_anterior_entidad || null,
+    datos.firma_png
   ]).then(result => result.insertId);
 
 exports.marcarEmailEnviado = id =>
   ejecutar('UPDATE solicitudes_ingreso SET email_enviado = 1 WHERE id = ?', [id]);
 
+// Sin la firma (BLOB): el panel la ve dentro del PDF de la ficha.
 exports.listarSolicitudes = estado =>
   ejecutar(`
-    SELECT s.*, u.usuario AS revisado_por_usuario
+    SELECT s.id, s.rut, s.nombres, s.apellido_paterno, s.apellido_materno, s.fecha_nacimiento,
+           s.telefono, s.email, s.comparsa_interes, s.mensaje, s.nombre_apoderado,
+           s.rut_apoderado, s.telefono_apoderado, s.direccion, s.ciudad, s.estado_civil,
+           s.bautizo, s.comunion, s.confirmacion, s.condicion, s.baile_anterior,
+           s.baile_anterior_entidad, s.firma_png IS NOT NULL AS tiene_firma,
+           s.estado, s.persona_id, s.observacion_directiva, s.revisado_por, s.revisado_en,
+           s.email_enviado, s.creado_en, u.usuario AS revisado_por_usuario
     FROM solicitudes_ingreso s
     LEFT JOIN usuarios u ON u.id = s.revisado_por
     ${estado ? 'WHERE s.estado = ?' : ''}
@@ -65,6 +85,16 @@ exports.listarSolicitudes = estado =>
 
 exports.obtenerSolicitud = id =>
   ejecutar('SELECT * FROM solicitudes_ingreso WHERE id = ?', [id]).then(rows => rows[0] || null);
+
+// Para el PDF de la ficha: la solicitud con firma y si el integrante creado ya
+// pagó la cuota de inscripción (pago tipo 'integracion'), casilla "Uso exclusivo GDC".
+exports.obtenerParaFicha = id =>
+  ejecutar(`
+    SELECT s.*,
+      EXISTS (SELECT 1 FROM pagos pg WHERE pg.persona_id = s.persona_id AND pg.tipo_pago = 'integracion') AS pago_integracion
+    FROM solicitudes_ingreso s
+    WHERE s.id = ?
+  `, [id]).then(rows => rows[0] || null);
 
 // Crea el integrante desde la solicitud. Si el RUT ya existía dado de baja, lo
 // reactiva con los datos nuevos y borra su acceso al Portal: la clave vuelve a
@@ -105,10 +135,13 @@ exports.aprobarSolicitud = ({ id, bloque, observacion, usuarioId }) =>
           return resolve({ resultado: 'ya_integrante' });
         }
 
+        // Domicilio y ciudad de la ficha van juntos en personas.direccion.
+        const direccion = [s.direccion, s.ciudad].filter(Boolean).join(', ') || null;
         const valores = [
           s.rut, s.nombres, s.apellido_paterno, s.apellido_materno,
           bloque || null, s.email, s.telefono, s.fecha_nacimiento,
-          s.nombre_apoderado, s.telefono_apoderado, s.rut_apoderado
+          s.nombre_apoderado, s.telefono_apoderado, s.rut_apoderado,
+          direccion, Number(s.bautizo) ? 1 : 0, Number(s.comunion) ? 1 : 0, Number(s.confirmacion) ? 1 : 0
         ];
         let personaId;
 
@@ -118,6 +151,7 @@ exports.aprobarSolicitud = ({ id, bloque, observacion, usuarioId }) =>
             SET rut = ?, nombres = ?, apellido_paterno = ?, apellido_materno = ?,
                 bloque = ?, email = ?, telefono = ?, fecha_nacimiento = ?,
                 nombre_apoderado = ?, telefono_apoderado = ?, rut_apoderado = ?,
+                direccion = ?, bautizo = ?, comunion = ?, confirmacion = ?,
                 fecha_ingreso = CURDATE(), estado = 'activo', activo = 1
             WHERE id = ?
           `, [...valores, existente.id]);
@@ -128,8 +162,9 @@ exports.aprobarSolicitud = ({ id, bloque, observacion, usuarioId }) =>
             INSERT INTO personas
               (rut, nombres, apellido_paterno, apellido_materno, bloque, email, telefono,
                fecha_nacimiento, nombre_apoderado, telefono_apoderado, rut_apoderado,
+               direccion, bautizo, comunion, confirmacion,
                fecha_ingreso, estado, es_honorario)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), 'activo', 0)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), 'activo', 0)
           `, valores);
           personaId = insert.insertId;
         }
