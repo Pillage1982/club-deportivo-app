@@ -140,6 +140,46 @@ exports.generarMensualidadMasiva = (data, callback) => {
   ], callback);
 };
 
+// Mensualidades de los periodos indicados para un solo integrante (reintegro).
+// Mismas reglas que la generación masiva (honorarios no pagan, rebaja infantil y
+// socios); no duplica los meses que ya tiene.
+exports.generarMensualidadesPersona = (data, callback) => {
+  const periodos = data.periodos.map(() => 'SELECT ? AS mes, ? AS anio, ? AS fecha_vencimiento').join(' UNION ALL ');
+  const query = `
+    INSERT INTO cuotas
+      (persona_id, tipo_cuota_id, monto, mes, anio, fecha_vencimiento, estado, origen)
+    SELECT p.id, ?,
+      CASE
+        WHEN (p.fecha_nacimiento IS NOT NULL AND TIMESTAMPDIFF(YEAR, p.fecha_nacimiento, t.fecha_vencimiento) < 12)
+          OR LOWER(TRIM(p.bloque)) IN (${marcadoresSocioReducido})
+        THEN ROUND(? / 2)
+        ELSE ?
+      END,
+      t.mes, t.anio, t.fecha_vencimiento, 'pendiente', 'interno'
+    FROM personas p
+    JOIN (${periodos}) t
+    WHERE p.id = ?
+      AND p.activo = 1
+      AND COALESCE(p.estado, 'activo') = 'activo'
+      AND COALESCE(p.es_honorario, 0) = 0
+      AND LOWER(TRIM(COALESCE(p.bloque, ''))) NOT IN (${marcadoresHonorarios})
+      AND NOT EXISTS (
+        SELECT 1 FROM cuotas c
+        WHERE c.persona_id = p.id AND c.tipo_cuota_id = ? AND c.mes = t.mes AND c.anio = t.anio
+      )
+  `;
+  db.query(query, [
+    data.tipo_cuota_id,
+    ...CATEGORIAS_SOCIO_REDUCIDO,
+    data.monto,
+    data.monto,
+    ...data.periodos.flatMap(p => [p.mes, p.anio, p.fecha_vencimiento]),
+    data.persona_id,
+    ...CATEGORIAS_HONORARIAS,
+    data.tipo_cuota_id
+  ], callback);
+};
+
 // =====================================
 // OBTENER CUOTAS PENDIENTES POR PERSONA
 // =====================================
