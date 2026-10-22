@@ -9,6 +9,14 @@ exports.obtenerResumen = (callback) => {
   const query = `
     SELECT
       (SELECT COUNT(*) FROM personas WHERE activo = 1)       AS total_personas,
+      -- Nuevos: ingreso entre septiembre y diciembre del último septiembre
+      -- (misma regla que esIntegranteNuevo en frontend/js/personas.js)
+      (
+        SELECT COUNT(*) FROM personas
+        WHERE activo = 1
+          AND MONTH(fecha_ingreso) >= 9
+          AND YEAR(fecha_ingreso) = YEAR(CURDATE()) - (MONTH(CURDATE()) < 9)
+      ) AS total_personas_nuevas,
       (SELECT COUNT(*) FROM eventos)                         AS total_eventos,
       (SELECT COUNT(*) FROM multas WHERE estado = 'pendiente') AS total_multas,
       (

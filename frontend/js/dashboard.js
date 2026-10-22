@@ -35,6 +35,9 @@ function cargarDashboard() {
       };
 
       set('total_personas', data.total_personas ?? 0);
+      const nuevos = Number(data.total_personas_nuevas ?? 0);
+      const antiguos = Number(data.total_personas ?? 0) - nuevos;
+      set('desglose_personas', `${antiguos}/${nuevos}`);
       set('total_multas',   data.total_multas   ?? 0);
       set('total_pagado',   formatearMonto(data.pagos_mes    ?? 0));
       set('deuda_total',    formatearMonto(data.deuda_total  ?? 0));
