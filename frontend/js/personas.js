@@ -405,7 +405,8 @@ function renderizarTablaPersonas(personas) {
     const dir = persona.direccion || '';
     filas.push(`
       <tr>
-        <td class="td-nombre col-fija" data-label="Nombre Completo">${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}</td>
+        <td class="td-nombre col-fija" data-label="Nombre Completo">${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}
+          ${esIntegranteNuevo(persona.fecha_ingreso) ? '<span class="badge bg-success ms-1">Nuevo</span>' : ''}</td>
         <td class="col-fija-2" data-label="RUT">${persona.rut || ''}</td>
         <td data-label="Bloque">${persona.bloque || ''}</td>
         <td data-label="Sexo">${persona.sexo || ''}</td>
@@ -789,6 +790,18 @@ function calcularCategoria(fechaNacimiento) {
 
   return 'Senior';
 
+}
+
+// "Nuevo" hasta el día antes de cumplir un año desde su fecha de ingreso.
+function esIntegranteNuevo(fechaIngreso) {
+  if (!fechaIngreso) return false;
+
+  const [anio, mes, dia] =
+    String(fechaIngreso).split('T')[0].split('-').map(Number);
+  if (!anio || !mes || !dia) return false;
+
+  const aniversario = new Date(anio + 1, mes - 1, dia);
+  return new Date() < aniversario;
 }
 
 function obtenerBadgeEstadoPersona(estado) {
