@@ -797,16 +797,19 @@ function calcularCategoria(fechaNacimiento) {
 
 }
 
-// "Nuevo" hasta el día antes de cumplir un año desde su fecha de ingreso.
+// "Nuevo": ingresó entre septiembre y diciembre del último septiembre; sigue
+// siéndolo hasta fines de agosto (misma regla que /dashboard).
 function esIntegranteNuevo(fechaIngreso) {
   if (!fechaIngreso) return false;
 
-  const [anio, mes, dia] =
+  const [anio, mes] =
     String(fechaIngreso).split('T')[0].split('-').map(Number);
-  if (!anio || !mes || !dia) return false;
+  if (!anio || !mes) return false;
 
-  const aniversario = new Date(anio + 1, mes - 1, dia);
-  return new Date() < aniversario;
+  const hoy = new Date();
+  const anioIngresos =
+    hoy.getMonth() >= 8 ? hoy.getFullYear() : hoy.getFullYear() - 1;
+  return anio === anioIngresos && mes >= 9;
 }
 
 function obtenerBadgeEstadoPersona(estado) {
