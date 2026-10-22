@@ -1,5 +1,8 @@
 // Controlador HTTP de integrantes: normaliza y valida RUT/datos antes de usar personaModel.
 const personaModel = require('../models/personaModel');
+const cuotaModel = require('../models/cuotaModel');
+const saldoFavorService = require('../services/saldoFavorService');
+const { periodosCuotasTemporadaVigente } = require('../utils/estatutoGdcRules');
 
 const {
   limpiarTexto,
@@ -230,6 +233,69 @@ exports.eliminar = (req, res) => {
 
   );
 
+};
+
+// Reintegra a un retirado: vuelve a activo con su ficha e historial intactos
+// (incluida la deuda que tenía al retirarse) y se le generan solo las cuotas de
+// la temporada vigente que le falten. Luego se aplica su saldo a favor, si tiene.
+exports.reintegrar = (req, res) => {
+  const personaId = Number(req.params.id);
+
+  personaModel.reintegrarPersona(personaId, (err, result) => {
+    if (err) {
+      console.error('Error reintegrando integrante:', err);
+      return res.status(500).json({ mensaje: 'Error al reintegrar integrante' });
+    }
+    if (!result.affectedRows) {
+      return res.status(404).json({ mensaje: 'El integrante no está en Retirados' });
+    }
+
+    cuotaModel.obtenerTipoMensualidad((errTipo, tipos) => {
+      if (errTipo || !tipos.length) {
+        if (errTipo) console.error('Error buscando tipo Mensualidad:', errTipo);
+        return res.json({
+          mensaje: 'Integrante reintegrado, pero no se pudieron generar sus cuotas de la temporada; genérelas desde Cuotas'
+        });
+      }
+
+      const periodos = periodosCuotasTemporadaVigente().map(p => ({
+        ...p,
+        fecha_vencimiento: `${p.anio}-${String(p.mes).padStart(2, '0')}-10`
+      }));
+
+      cuotaModel.generarMensualidadesPersona(
+        {
+          persona_id: personaId,
+          tipo_cuota_id: tipos[0].id,
+          monto: tipos[0].monto_base,
+          periodos
+        },
+        (errCuotas, resultCuotas) => {
+          if (errCuotas) {
+            console.error('Error generando cuotas del reintegro:', errCuotas);
+            return res.json({
+              mensaje: 'Integrante reintegrado, pero no se pudieron generar sus cuotas de la temporada; genérelas desde Cuotas'
+            });
+          }
+
+          const creadas = resultCuotas.affectedRows || 0;
+          const mensaje = `Integrante reintegrado. Cuotas de la temporada generadas: ${creadas}`;
+          if (!creadas) return res.json({ mensaje, cuotas_creadas: 0 });
+
+          saldoFavorService.aplicarSaldosAFavor({ personaId })
+            .then(({ aplicaciones }) => {
+              if (!aplicaciones.length) return mensaje;
+              return `${mensaje}. Saldo a favor aplicado: $${saldoFavorService.resumir(aplicaciones).monto}`;
+            })
+            .catch(errSaldo => {
+              console.error('Error aplicando saldo a favor del reintegro:', errSaldo);
+              return `${mensaje}. No se pudo aplicar su saldo a favor; use "Aplicar saldos a favor" en Cuotas`;
+            })
+            .then(texto => res.json({ mensaje: texto, cuotas_creadas: creadas }));
+        }
+      );
+    });
+  });
 };
 
 exports.actualizar = (req, res) => {

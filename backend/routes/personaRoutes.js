@@ -34,6 +34,14 @@ router.put(
   controller.actualizar
 );
 
+// Reintegro de un retirado (Tablas → Retirados)
+router.patch(
+  '/:id/reintegrar',
+  authMiddleware,
+  roleMiddleware('admin'),
+  controller.reintegrar
+);
+
 router.delete(
   '/:id',
   authMiddleware,

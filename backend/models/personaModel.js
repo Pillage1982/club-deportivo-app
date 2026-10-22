@@ -342,6 +342,18 @@ exports.actualizarPersona = (
 
 };
 
+// Reintegro de un retirado: solo vuelve a activo; el resto de la ficha (datos,
+// cuotas, pagos, asistencias, puntaje) queda tal como estaba al retirarse.
+exports.reintegrarPersona = (id, callback) => {
+  db.query(
+    `UPDATE personas
+     SET activo = 1, estado = 'activo'
+     WHERE id = ? AND (activo = 0 OR estado = 'inactivo')`,
+    [id],
+    callback
+  );
+};
+
 exports.eliminarPersona = (
   id,
   callback
