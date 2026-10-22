@@ -342,9 +342,12 @@ function filtrarPersonas(termino) {
     normalizarTextoBusqueda(termino);
   const estado =
     document.getElementById('filtro_estado_personas')?.value || '';
+  const soloNuevos =
+    document.getElementById('filtro_antiguedad_personas')?.value === 'nuevo';
 
   return personasTabla.filter(persona =>
     (!estado || (persona.estado || 'activo') === estado) &&
+    (!soloNuevos || esIntegranteNuevo(persona.fecha_ingreso)) &&
     (!busqueda || coincideBusquedaPersona(persona, busqueda))
   );
 }
@@ -451,6 +454,8 @@ function configurarBuscadorPersonas() {
 
   input.addEventListener('input', aplicarFiltros);
   document.getElementById('filtro_estado_personas')
+    ?.addEventListener('change', aplicarFiltros);
+  document.getElementById('filtro_antiguedad_personas')
     ?.addEventListener('change', aplicarFiltros);
 }
 
