@@ -109,6 +109,77 @@ exports.actualizarEstadoManual = (id, estadoNuevo) =>
   `, [estadoNuevo, id, exports.ESTADOS_MARCABLES]);
 
 // =====================================
+// ASISTENCIA MANUAL EN ACTIVIDADES PASADAS (admin / secretaria)
+// =====================================
+
+// Actividades ya ocurridas desde `desde` (inicio de la temporada vigente),
+// incluidas las finalizadas.
+exports.listarEventosAsistenciaManual = desde =>
+  ejecutar(`
+    SELECT id, nombre, tipo, fecha, COALESCE(finalizado, 0) AS finalizado
+    FROM eventos
+    WHERE DATE(fecha) >= ? AND fecha <= NOW()
+    ORDER BY fecha DESC
+  `, [desde]);
+
+exports.obtenerEventoAsistenciaManual = (eventoId, desde) =>
+  ejecutar(`
+    SELECT * FROM eventos
+    WHERE id = ? AND DATE(fecha) >= ? AND fecha <= NOW()
+  `, [eventoId, desde]).then(rows => rows[0] || null);
+
+// Integrantes activos o en receso con su estado actual en la actividad
+// (NULL = sin registro).
+exports.listarIntegrantesAsistenciaManual = eventoId =>
+  ejecutar(`
+    SELECT p.id, p.rut, p.nombres, p.apellido_paterno, p.apellido_materno, p.bloque,
+           COALESCE(p.estado, 'activo') AS estado_persona,
+           a.estado AS estado_asistencia
+    FROM personas p
+    LEFT JOIN asistencias a ON a.persona_id = p.id AND a.evento_id = ?
+    WHERE p.activo = 1 AND COALESCE(p.estado, 'activo') IN ('activo', 'receso')
+    ORDER BY p.nombres, p.apellido_paterno
+  `, [eventoId]);
+
+// Registra la asistencia de un integrante: la crea si no tiene registro o
+// reemplaza su "ausente" (y borra la multa pendiente de ese ausente). Cualquier
+// otro estado se respeta. Devuelve { resultado, asistenciaId, estadoPrevio }:
+// 'creada' | 'reemplazada' | 'existente' | 'no_encontrado'.
+exports.registrarAsistenciaManual = async ({ evento_id, persona_id, estado, minutos }) => {
+  const [persona] = await ejecutar(`
+    SELECT id FROM personas
+    WHERE id = ? AND activo = 1 AND COALESCE(estado, 'activo') IN ('activo', 'receso')
+  `, [persona_id]);
+  if (!persona) return { resultado: 'no_encontrado' };
+
+  const [previa] = await ejecutar(
+    'SELECT id, estado FROM asistencias WHERE evento_id = ? AND persona_id = ?',
+    [evento_id, persona_id]
+  );
+
+  if (!previa) {
+    const ins = await ejecutar(`
+      INSERT INTO asistencias (evento_id, persona_id, estado, minutos_atraso)
+      VALUES (?, ?, ?, ?)
+    `, [evento_id, persona_id, estado, minutos]);
+    return { resultado: 'creada', asistenciaId: ins.insertId };
+  }
+
+  if (previa.estado !== 'ausente') {
+    return { resultado: 'existente', estadoPrevio: previa.estado };
+  }
+
+  const upd = await ejecutar(`
+    UPDATE asistencias SET estado = ?, minutos_atraso = ?
+    WHERE id = ? AND estado = 'ausente'
+  `, [estado, minutos, previa.id]);
+  if (!upd.affectedRows) return { resultado: 'existente', estadoPrevio: 'modificada' };
+
+  await ejecutar("DELETE FROM multas WHERE asistencia_id = ? AND estado = 'pendiente'", [previa.id]);
+  return { resultado: 'reemplazada', asistenciaId: previa.id };
+};
+
+// =====================================
 // REGISTRAR AUSENTES AL CERRAR EVENTO
 // =====================================
 

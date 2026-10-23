@@ -9,6 +9,7 @@ const multasConfig    = require('../config/multas');
 const eventoModel     = require('../models/eventoModel');
 const puntajeModel    = require('../models/puntajeModel');
 const { calcularPuntosAsistencia, esEventoProvisional } = require('../utils/estatutoGdcRules');
+const { esSoporte }   = require('../config/roles');
 
 // Mismas opciones que el selector de estado del formulario de asistencia.
 const ESTADOS_REGISTRABLES = [
@@ -311,6 +312,122 @@ exports.marcarEstadoManual = estadoMarca => async (req, res) => {
   } catch (err) {
     console.error(`Error actualizando ${nombre}:`, err);
     res.status(500).json({ mensaje: 'Error al actualizar la asistencia' });
+  }
+};
+
+// =====================================
+// ASISTENCIA MANUAL EN ACTIVIDADES PASADAS
+// =====================================
+// Para quienes asistieron y no quedaron registrados (p. ej. escaneo perdido sin
+// señal): solo roles admin y secretaria exactos (no los directores que heredan de
+// admin) y la cuenta de soporte. Actividades ya ocurridas de la temporada vigente,
+// incluidas las finalizadas. Solo completa "sin registro" o reemplaza "ausente";
+// nunca pisa otro estado (una justificación aprobada bloquea la actividad).
+
+const ROLES_ASISTENCIA_MANUAL = ['admin', 'secretaria'];
+const ESTADOS_ASISTENCIA_MANUAL = ['presente', 'atrasado', 'vestimenta_distinta', 'retiro_sin_aviso'];
+const MAX_INTEGRANTES_MANUAL = 300;
+
+exports.soloAdminSecretaria = (req, res, next) => {
+  const u = req.usuario || {};
+  if (ROLES_ASISTENCIA_MANUAL.includes(u.rol) || esSoporte(u.usuario)) return next();
+  return res.status(403).json({ mensaje: 'Solo el administrador y la secretaria pueden registrar asistencia manual' });
+};
+
+exports.opcionesManual = async (req, res) => {
+  try {
+    const desde = await puntajeModel.obtenerInicioTemporadaVigente();
+    const eventos = await asistenciaModel.listarEventosAsistenciaManual(desde);
+    res.json({ desde, eventos });
+  } catch (err) {
+    console.error('Error cargando actividades para asistencia manual:', err);
+    res.status(500).json({ mensaje: 'Error al cargar las actividades' });
+  }
+};
+
+exports.integrantesManual = async (req, res) => {
+  try {
+    const desde = await puntajeModel.obtenerInicioTemporadaVigente();
+    const evento = await asistenciaModel.obtenerEventoAsistenciaManual(req.params.evento_id, desde);
+    if (!evento) {
+      return res.status(404).json({ mensaje: 'Actividad no encontrada o fuera de la temporada vigente' });
+    }
+    res.json(await asistenciaModel.listarIntegrantesAsistenciaManual(evento.id));
+  } catch (err) {
+    console.error('Error cargando integrantes para asistencia manual:', err);
+    res.status(500).json({ mensaje: 'Error al cargar los integrantes' });
+  }
+};
+
+exports.registrarManual = async (req, res) => {
+  const body = req.body || {};
+  const estado = body.estado;
+  const minutos = estado === 'atrasado' ? Number(body.minutos) : 0;
+  const motivo = String(body.motivo || '').trim();
+  const personaIds = [...new Set((Array.isArray(body.persona_ids) ? body.persona_ids : [])
+    .map(Number).filter(id => Number.isInteger(id) && id > 0))];
+
+  if (!ESTADOS_ASISTENCIA_MANUAL.includes(estado)) {
+    return res.status(400).json({ mensaje: 'Seleccione presente, atrasado, vestimenta distinta o retiro sin aviso' });
+  }
+  if (estado === 'atrasado' && (!Number.isInteger(minutos) || minutos < 1 || minutos > 600)) {
+    return res.status(400).json({ mensaje: 'Ingrese los minutos de atraso (1 a 600)' });
+  }
+  if (!personaIds.length || personaIds.length > MAX_INTEGRANTES_MANUAL) {
+    return res.status(400).json({ mensaje: 'Seleccione al menos un integrante' });
+  }
+  if (motivo.length < 5 || motivo.length > 300) {
+    return res.status(400).json({ mensaje: 'Indique el motivo del registro manual (5 a 300 caracteres)' });
+  }
+
+  try {
+    const desde = await puntajeModel.obtenerInicioTemporadaVigente();
+    const evento = await asistenciaModel.obtenerEventoAsistenciaManual(body.evento_id, desde);
+    if (!evento) {
+      return res.status(404).json({ mensaje: 'Solo actividades ya realizadas de la temporada vigente' });
+    }
+
+    const registrados = [];
+    const omitidos = [];
+
+    for (const personaId of personaIds) {
+      const r = await asistenciaModel.registrarAsistenciaManual({
+        evento_id: evento.id, persona_id: personaId, estado, minutos
+      });
+
+      if (r.resultado === 'creada' || r.resultado === 'reemplazada') {
+        registrados.push(personaId);
+        const multa = calcularMultaAsistencia(estado, minutos);
+        if (multa) {
+          multaModel.crearMultaAsistencia({
+            persona_id: personaId, asistencia_id: r.asistenciaId, monto: multa.monto, motivo: multa.motivo
+          }, multaErr => { if (multaErr) console.error('Error creando multa:', multaErr); });
+        }
+      } else {
+        omitidos.push({
+          persona_id: personaId,
+          motivo: r.resultado === 'no_encontrado'
+            ? 'integrante no encontrado o retirado'
+            : ESTADOS_JUSTIFICACION.includes(r.estadoPrevio)
+              ? 'tiene una justificación aprobada para esta actividad'
+              : `ya figura como ${String(r.estadoPrevio).replace(/_/g, ' ')}`
+        });
+      }
+    }
+
+    // Se espera el recálculo para que la tabla y el ranking ya lo muestren.
+    await Promise.all(registrados.map(id =>
+      puntajeModel.recalcularPuntajesAsistencia(id)
+        .catch(err => console.error('Error recalculando puntaje tras asistencia manual:', err))
+    ));
+
+    let mensaje = `Asistencia manual registrada para ${registrados.length} integrante(s) en "${evento.nombre}".`;
+    if (omitidos.length) mensaje += ` ${omitidos.length} no se registraron.`;
+
+    res.json({ mensaje, registrados: registrados.length, omitidos });
+  } catch (err) {
+    console.error('Error registrando asistencia manual:', err);
+    res.status(500).json({ mensaje: 'Error al registrar la asistencia manual' });
   }
 };
 
