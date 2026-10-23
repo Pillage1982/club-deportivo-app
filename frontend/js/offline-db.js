@@ -123,6 +123,8 @@ async function sincronizarAsistenciasOffline() {
 
   let sincronizados = 0;
   let descartados = 0;
+  let sinSesion = false;
+  let bloqueadosJustificacion = 0;
 
   for (const registro of pendientes) {
     const { id, timestamp, estadoSync, creadoOffline, ...data } = registro;
@@ -130,18 +132,34 @@ async function sincronizarAsistenciasOffline() {
       const res = await fetch(`${API_URL}/asistencia`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body:    JSON.stringify(data)
+        // escaneado_en: hora real del escaneo. Queda como hora de registro y
+        // permite subirlo aunque la actividad se haya finalizado mientras tanto.
+        body:    JSON.stringify({ ...data, escaneado_en: timestamp })
       });
 
-      if (res.ok || res.status === 409) {
+      const respuesta = res.ok ? null : await res.clone().json().catch(() => ({}));
+
+      if (res.status === 401 || (res.status === 403 && respuesta && respuesta.codigo)) {
+        // Sesión vencida o trámite pendiente (cambio de clave / email): no es un
+        // rechazo del registro. Se conservan todos para subirlos al volver a entrar.
+        sinSesion = true;
+        break;
+      }
+
+      if (res.status === 409 && respuesta && respuesta.codigo === 'JUSTIFICACION_APROBADA') {
+        // Tiene justificación aprobada para esa actividad: queda bloqueado para
+        // ella y no se registra su asistencia (definición del cliente).
+        await eliminarAsistenciaOffline(id);
+        bloqueadosJustificacion++;
+      } else if (res.ok || res.status === 409) {
         // 409 = el servidor ya tiene esta asistencia (duplicado); no es un
         // error real, solo evita que el registro quede reintentando para
         // siempre cuando la respuesta original se perdió por corte de red.
         await eliminarAsistenciaOffline(id);
         sincronizados++;
       } else if (res.status >= 400 && res.status < 500) {
-        // Cualquier otro 4xx (evento finalizado, actividad no encontrada,
-        // integrante inactivo) es un rechazo definitivo del servidor:
+        // Cualquier otro 4xx (actividad finalizada y escaneo fuera de su horario,
+        // actividad no encontrada, integrante inactivo) es un rechazo definitivo:
         // reintentar no lo va a resolver, así que se descarta en vez de
         // quedar "pendiente" reintentando para siempre.
         await eliminarAsistenciaOffline(id);
@@ -157,9 +175,15 @@ async function sincronizarAsistenciasOffline() {
     mostrarAlerta(`${sincronizados} asistencia(s) sincronizada(s) al recuperar conexión`, 'success');
   }
   if (descartados > 0) {
-    mostrarAlerta(`${descartados} asistencia(s) offline no se pudieron sincronizar (evento finalizado o no encontrado) y fueron descartadas`, 'warning');
+    mostrarAlerta(`${descartados} asistencia(s) offline no se pudieron sincronizar (actividad finalizada o no encontrada) y fueron descartadas`, 'warning');
   }
-  if (sincronizados > 0 || descartados > 0) {
+  if (bloqueadosJustificacion > 0) {
+    mostrarAlerta(`${bloqueadosJustificacion} escaneo(s) no se registraron: el integrante tiene una justificación aprobada para esa actividad`, 'warning');
+  }
+  if (sinSesion) {
+    mostrarAlerta('Hay asistencias sin conexión guardadas en este equipo: vuelve a iniciar sesión para subirlas. No se perdieron.', 'warning');
+  }
+  if (sincronizados > 0 || descartados > 0 || bloqueadosJustificacion > 0) {
     actualizarBadgeOffline();
     cargarAsistencias();
     cargarDashboard();

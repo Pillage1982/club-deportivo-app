@@ -13,20 +13,23 @@ const db = require('../config/db');
 exports.crearAsistencia = (data, callback) => {
 
   // Registra asistencia evento
-  // incluyendo estado y atraso
+  // incluyendo estado y atraso.
+  // fecha_registro: hora del escaneo si vino de la cola offline, si no ahora.
   const query = `
     INSERT INTO asistencias (
       evento_id,
       persona_id,
       estado,
-      minutos_atraso
+      minutos_atraso,
+      fecha_registro
     )
 
     SELECT
       ?,
       p.id,
       ?,
-      ?
+      ?,
+      COALESCE(?, NOW())
 
     FROM personas p
 
@@ -47,11 +50,33 @@ exports.crearAsistencia = (data, callback) => {
       // Minutos solo aplican
       // cuando estado es atrasado
       data.minutos,
+      data.fecha_registro || null,
       data.persona_id
     ],
     callback
   );
 
+};
+
+// Escaneo offline que llega después de cerrar la actividad: al cerrar, el
+// integrante quedó como ausente. Se reemplaza ese ausente por lo escaneado (y se
+// borra su multa pendiente). Nunca pisa otro estado (justificado, presente...).
+// Devuelve la asistencia actualizada o null si no había un ausente que reemplazar.
+exports.reemplazarAusentePorEscaneo = async ({ evento_id, persona_id, estado, minutos, fecha_registro }) => {
+  const result = await ejecutar(`
+    UPDATE asistencias
+    SET estado = ?, minutos_atraso = ?, fecha_registro = COALESCE(?, fecha_registro)
+    WHERE evento_id = ? AND persona_id = ? AND estado = 'ausente'
+  `, [estado, minutos, fecha_registro || null, evento_id, persona_id]);
+
+  if (!result.affectedRows) return null;
+
+  const [asistencia] = await ejecutar(
+    'SELECT id FROM asistencias WHERE evento_id = ? AND persona_id = ?',
+    [evento_id, persona_id]
+  );
+  await ejecutar("DELETE FROM multas WHERE asistencia_id = ? AND estado = 'pendiente'", [asistencia.id]);
+  return asistencia;
 };
 
 // =====================================
@@ -63,6 +88,10 @@ function ejecutar(sql, params = []) {
     db.query(sql, params, (err, result) => (err ? reject(err) : resolve(result)));
   });
 }
+
+exports.obtenerEstadoAsistencia = (evento_id, persona_id) =>
+  ejecutar('SELECT estado FROM asistencias WHERE evento_id = ? AND persona_id = ?', [evento_id, persona_id])
+    .then(rows => (rows[0] ? rows[0].estado : null));
 
 exports.obtenerAsistenciaPorId = id =>
   ejecutar('SELECT id, persona_id, evento_id, estado, minutos_atraso FROM asistencias WHERE id = ?', [id])

@@ -21,6 +21,20 @@ function calcularPuntosAsistencia(estado, cuotaAlDia) {
   return null;
 }
 
+// Meses sin cuota en la temporada (las 10 cuotas van de octubre a julio): en una
+// actividad de agosto o septiembre "cuota al dia" es no deber cuotas anteriores
+// (ver condicionCuotaAlDia en backend/models/puntajeModel.js).
+const MESES_SIN_CUOTA = Object.freeze([8, 9]);
+
+// Actividades provisionales de la importacion 2025-2026 ("Actividad AAAA-MM-DD"):
+// no se sabe su categoria, asi que no puntuan. Solo ese patron exacto: una
+// actividad creada a mano como "Actividad solidaria" si puntua.
+const EVENTO_PROVISIONAL_SQL = '^Actividad [0-9]{4}-[0-9]{2}-[0-9]{2}';
+
+function esEventoProvisional(nombre) {
+  return /^Actividad \d{4}-\d{2}-\d{2}/.test(String(nombre || ''));
+}
+
 // Estatuto GDC 2016, articulo 9.1.3: seis impares ascendentes en sector A
 // y seis pares descendentes en sector B por cada fila de 12 bailarines.
 function ordenarFormacionEstatutaria(ranking) {
@@ -176,6 +190,9 @@ const PONDERACION_BLOQUES = Object.freeze({
 
 module.exports = {
   calcularPuntosAsistencia,
+  MESES_SIN_CUOTA,
+  EVENTO_PROVISIONAL_SQL,
+  esEventoProvisional,
   ordenarFormacionEstatutaria,
   esBailarinNuevo,
   primerSabadoDeJunio,
