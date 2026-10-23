@@ -631,6 +631,11 @@ img[data-config-img="cliente.logo"] {
   background: #fff5f5;
 }
 
+/* Asistencia manual: lista de integrantes con scroll propio */
+.asistencia-manual-lista {
+  max-height: 45vh;
+}
+
 /* Fila separadora de bloque */
 .tabla-bloque-header td {
   background: linear-gradient(135deg, var(--primary), var(--secondary));

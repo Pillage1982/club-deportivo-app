@@ -19,6 +19,29 @@ router.post(
   controller.registrar
 );
 
+// Asistencia manual en actividades ya realizadas de la temporada (solo admin y
+// secretaria exactos y soporte, ver controller.soloAdminSecretaria).
+router.get(
+  '/manual/opciones',
+  authMiddleware,
+  controller.soloAdminSecretaria,
+  controller.opcionesManual
+);
+
+router.get(
+  '/manual/:evento_id/integrantes',
+  authMiddleware,
+  controller.soloAdminSecretaria,
+  controller.integrantesManual
+);
+
+router.post(
+  '/manual',
+  authMiddleware,
+  controller.soloAdminSecretaria,
+  controller.registrarManual
+);
+
 // Marca o quita "vestimenta distinta" / "retiro sin aviso" (Art. 8.4) en una
 // asistencia presente/atrasada. Body: { activo: true|false }.
 router.patch(

@@ -575,6 +575,12 @@
 
         <!-- Asistencias historial -->
         <div class="tab-pane fade" id="subtab_asistencias" role="tabpanel">
+          <!-- Solo admin y secretaria (exactos) y soporte: se muestra en asistencias.js -->
+          <div id="asistencia_manual_barra" class="d-none text-end mb-2">
+            <button type="button" class="btn btn-primary" onclick="abrirAsistenciaManual()">
+              <i class="bi bi-person-plus me-1"></i>Registrar asistencia manual
+            </button>
+          </div>
           <div class="row g-2 mb-3">
             <div class="col-md-4">
               <label for="buscar_asistencias" class="form-label">Buscar Integrante / Actividad</label>
@@ -1815,6 +1821,82 @@
   </div>
 
   <!-- Modal: Registrar justificación manual (cartas que llegan fuera del Portal) -->
+  <!-- Modal: asistencia manual en actividades pasadas (admin / secretaria) -->
+  <div class="modal fade" id="modal_asistencia_manual" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <form id="form_asistencia_manual" class="d-flex flex-column overflow-hidden" onsubmit="registrarAsistenciaManual(event)">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Registrar asistencia manual</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-muted mb-3">
+              Para integrantes que asistieron y no quedaron registrados (p. ej. escaneo perdido sin señal).
+              Solo actividades ya realizadas de la temporada vigente, aunque estén finalizadas. Se registra a quienes
+              figuran <strong>ausente</strong> o <strong>sin registro</strong>; el puntaje se recalcula al guardar.
+              Quien tiene una justificación aprobada para la actividad no se puede registrar.
+            </p>
+            <div class="row g-2">
+              <div class="col-12">
+                <label for="asis_manual_evento" class="form-label">Actividad</label>
+                <select id="asis_manual_evento" class="form-select" required onchange="cargarIntegrantesAsistenciaManual()"></select>
+              </div>
+              <div class="col-md-5">
+                <label for="asis_manual_estado" class="form-label">Registrar como</label>
+                <select id="asis_manual_estado" class="form-select" onchange="actualizarMinutosAsistenciaManual()">
+                  <option value="presente">Presente</option>
+                  <option value="atrasado">Atrasado</option>
+                  <option value="vestimenta_distinta">Vestimenta distinta</option>
+                  <option value="retiro_sin_aviso">Retiro sin aviso</option>
+                </select>
+              </div>
+              <div id="asis_manual_minutos_col" class="col-md-3 d-none">
+                <label for="asis_manual_minutos" class="form-label">Minutos de atraso</label>
+                <input type="number" id="asis_manual_minutos" class="form-control" min="1" max="600">
+              </div>
+              <div class="col-12">
+                <label for="asis_manual_motivo" class="form-label">Motivo del registro manual</label>
+                <input type="text" id="asis_manual_motivo" class="form-control" maxlength="300" minlength="5" required
+                  placeholder="Ej.: escaneo no quedó registrado por falta de señal">
+              </div>
+              <div class="col-12">
+                <div class="d-flex flex-wrap gap-2 align-items-end mb-2">
+                  <div class="flex-grow-1">
+                    <label for="asis_manual_buscar" class="form-label">Integrantes</label>
+                    <input type="search" id="asis_manual_buscar" class="form-control" placeholder="Buscar por nombre, RUT o bloque" autocomplete="off" oninput="renderizarIntegrantesAsistenciaManual()">
+                  </div>
+                  <button type="button" class="btn btn-outline-secondary" onclick="marcarVisiblesAsistenciaManual(true)">Marcar visibles</button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="marcarVisiblesAsistenciaManual(false)">Desmarcar</button>
+                </div>
+                <div class="table-responsive tabla-scroll asistencia-manual-lista">
+                  <table class="table table-sm mb-0">
+                    <thead class="table-dark">
+                      <tr>
+                        <th style="width:2.5rem"></th>
+                        <th>Integrante</th>
+                        <th>Bloque</th>
+                        <th>Estado actual</th>
+                      </tr>
+                    </thead>
+                    <tbody id="asis_manual_integrantes">
+                      <tr><td colspan="4" class="text-center text-muted py-3">Seleccione una actividad</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div id="asis_manual_contador" class="small text-muted mt-1"></div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" id="btn_asis_manual_guardar" class="btn btn-primary">Registrar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <div class="modal fade" id="modal_justificacion_manual" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">

@@ -1936,3 +1936,216 @@ async function descartarRegistroSinEvento(id) {
   actualizarBadgeOffline();
   cargarPanelSinEvento();
 }
+
+// =====================================
+// ASISTENCIA MANUAL EN ACTIVIDADES PASADAS
+// =====================================
+// Solo roles admin y secretaria (exactos) y la cuenta de soporte; el backend lo
+// valida igual (asistenciaController.soloAdminSecretaria). Registra a quienes
+// figuran ausente o sin registro en una actividad ya realizada de la temporada.
+
+let integrantesAsistenciaManual = [];
+const seleccionAsistenciaManual = new Set();
+
+const ETIQUETA_ESTADO_ASIS_MANUAL = {
+  presente: 'Presente', atrasado: 'Atrasado', ausente: 'Ausente',
+  justificado: 'Justificado', licencia_medica: 'Licencia médica',
+  vestimenta_distinta: 'Vestimenta distinta', retiro_sin_aviso: 'Retiro sin aviso'
+};
+
+function puedeRegistrarAsistenciaManual() {
+  try {
+    const usuario = JSON.parse(localStorage.getItem('usuario')) || {};
+    return ['admin', 'secretaria'].includes(usuario.rol) || Boolean(usuario.es_soporte);
+  } catch {
+    return false;
+  }
+}
+
+// Solo se puede registrar a quien está ausente o sin registro.
+function asistenciaManualSeleccionable(p) {
+  return !p.estado_asistencia || p.estado_asistencia === 'ausente';
+}
+
+function textoSeleccionAsistenciaManual() {
+  return `${seleccionAsistenciaManual.size} integrante(s) seleccionado(s)`;
+}
+
+function abrirAsistenciaManual() {
+  fetch(`${API_URL}/asistencia/manual/opciones`, { headers: getAuthHeaders() })
+    .then(async res => {
+      const data = await leerRespuestaJson(res);
+      if (!res.ok) throw new Error(data.mensaje || 'No se pudieron cargar las actividades');
+      return data;
+    })
+    .then(data => {
+      document.getElementById('form_asistencia_manual').reset();
+      integrantesAsistenciaManual = [];
+      seleccionAsistenciaManual.clear();
+      actualizarMinutosAsistenciaManual();
+
+      const select = document.getElementById('asis_manual_evento');
+      select.innerHTML = '<option value="">Seleccione la actividad</option>'
+        + (data.eventos || []).map(e => `
+          <option value="${e.id}">${escaparHtml(e.nombre)} (${formatearFechaHora(e.fecha)})${Number(e.finalizado) ? ' · finalizada' : ''}</option>
+        `).join('');
+
+      renderizarIntegrantesAsistenciaManual();
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_asistencia_manual')).show();
+    })
+    .catch(err => mostrarAlerta(escaparHtml(obtenerMensajeError(err)), 'danger'));
+}
+
+function actualizarMinutosAsistenciaManual() {
+  const atrasado = document.getElementById('asis_manual_estado').value === 'atrasado';
+  document.getElementById('asis_manual_minutos_col').classList.toggle('d-none', !atrasado);
+  document.getElementById('asis_manual_minutos').required = atrasado;
+}
+
+function cargarIntegrantesAsistenciaManual() {
+  const eventoId = document.getElementById('asis_manual_evento').value;
+  const tbody = document.getElementById('asis_manual_integrantes');
+  integrantesAsistenciaManual = [];
+  seleccionAsistenciaManual.clear();
+
+  if (!eventoId) {
+    renderizarIntegrantesAsistenciaManual();
+    return;
+  }
+
+  tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3">Cargando...</td></tr>';
+
+  fetch(`${API_URL}/asistencia/manual/${encodeURIComponent(eventoId)}/integrantes`, { headers: getAuthHeaders() })
+    .then(async res => {
+      const data = await leerRespuestaJson(res);
+      if (!res.ok || !Array.isArray(data)) throw new Error(data.mensaje || 'No se pudieron cargar los integrantes');
+      return data;
+    })
+    .then(data => {
+      integrantesAsistenciaManual = data.map(p => {
+        const nombre = `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno || ''}`.trim();
+        return {
+          ...p,
+          id: Number(p.id),
+          nombre,
+          busqueda: normalizarTextoAsistencia(`${nombre} ${p.rut || ''} ${String(p.rut || '').replace(/[.\-]/g, '')} ${p.bloque || ''}`)
+        };
+      });
+      renderizarIntegrantesAsistenciaManual();
+    })
+    .catch(err => {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">${escaparHtml(obtenerMensajeError(err))}</td></tr>`;
+    });
+}
+
+function integrantesVisiblesAsistenciaManual() {
+  const q = normalizarTextoAsistencia(document.getElementById('asis_manual_buscar').value);
+  return integrantesAsistenciaManual.filter(p => !q || p.busqueda.includes(q));
+}
+
+function renderizarIntegrantesAsistenciaManual() {
+  const tbody = document.getElementById('asis_manual_integrantes');
+  const contador = document.getElementById('asis_manual_contador');
+
+  if (!document.getElementById('asis_manual_evento').value) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Seleccione una actividad</td></tr>';
+    contador.textContent = '';
+    return;
+  }
+
+  const visibles = integrantesVisiblesAsistenciaManual();
+  tbody.innerHTML = visibles.length
+    ? visibles.map(p => {
+      const seleccionable = asistenciaManualSeleccionable(p);
+      const estado = p.estado_asistencia
+        ? ETIQUETA_ESTADO_ASIS_MANUAL[p.estado_asistencia] || p.estado_asistencia
+        : 'Sin registro';
+      const clase = !p.estado_asistencia ? 'text-muted' : p.estado_asistencia === 'ausente' ? 'text-danger' : 'text-success';
+      return `
+        <tr class="${seleccionable ? '' : 'table-light text-muted'}">
+          <td class="text-center">
+            <input type="checkbox" class="form-check-input" ${seleccionable ? '' : 'disabled'}
+              ${seleccionAsistenciaManual.has(p.id) ? 'checked' : ''}
+              onchange="alternarAsistenciaManual(${p.id}, this.checked)"
+              aria-label="Seleccionar ${escaparHtml(p.nombre)}">
+          </td>
+          <td>${escaparHtml(p.nombre)}${p.estado_persona === 'receso' ? ' <span class="badge bg-secondary">receso</span>' : ''}</td>
+          <td>${escaparHtml(p.bloque || '—')}</td>
+          <td class="${clase}">${escaparHtml(estado)}</td>
+        </tr>`;
+    }).join('')
+    : '<tr><td colspan="4" class="text-center text-muted py-3">Sin integrantes que coincidan</td></tr>';
+
+  contador.textContent = textoSeleccionAsistenciaManual();
+}
+
+function alternarAsistenciaManual(id, marcado) {
+  if (marcado) seleccionAsistenciaManual.add(id);
+  else seleccionAsistenciaManual.delete(id);
+  document.getElementById('asis_manual_contador').textContent = textoSeleccionAsistenciaManual();
+}
+
+function marcarVisiblesAsistenciaManual(marcar) {
+  integrantesVisiblesAsistenciaManual()
+    .filter(asistenciaManualSeleccionable)
+    .forEach(p => (marcar ? seleccionAsistenciaManual.add(p.id) : seleccionAsistenciaManual.delete(p.id)));
+  renderizarIntegrantesAsistenciaManual();
+}
+
+async function registrarAsistenciaManual(event) {
+  event.preventDefault();
+
+  if (!seleccionAsistenciaManual.size) {
+    mostrarAlerta('Seleccione al menos un integrante', 'warning');
+    return;
+  }
+
+  const select = document.getElementById('asis_manual_evento');
+  const datos = {
+    evento_id: select.value,
+    estado: document.getElementById('asis_manual_estado').value,
+    minutos: document.getElementById('asis_manual_minutos').value,
+    motivo: document.getElementById('asis_manual_motivo').value.trim(),
+    persona_ids: [...seleccionAsistenciaManual]
+  };
+  const nombreActividad = select.options[select.selectedIndex]?.text.trim() || 'la actividad';
+
+  if (!(await confirmarAccion(`¿Registrar asistencia manual de ${datos.persona_ids.length} integrante(s) en ${nombreActividad}?`))) return;
+
+  const estadoBoton = bloquearBoton('btn_asis_manual_guardar', 'Registrando...');
+  if (!estadoBoton) return;
+
+  try {
+    const res = await fetch(`${API_URL}/asistencia/manual`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(datos)
+    });
+    const data = await leerRespuestaJson(res);
+    if (!res.ok) throw new Error(data.mensaje || 'No se pudo registrar la asistencia manual');
+
+    const nombres = new Map(integrantesAsistenciaManual.map(p => [p.id, p.nombre]));
+    const omitidos = data.omitidos || [];
+    const detalleOmitidos = omitidos
+      .map(o => `${escaparHtml(nombres.get(Number(o.persona_id)) || `#${o.persona_id}`)}: ${escaparHtml(o.motivo)}`)
+      .join('<br>');
+
+    mostrarAlerta(
+      escaparHtml(data.mensaje) + (detalleOmitidos ? `<br>${detalleOmitidos}` : ''),
+      omitidos.length ? 'warning' : 'success'
+    );
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_asistencia_manual')).hide();
+    cargarAsistencias();
+    cargarDashboard();
+    if (typeof cargarRankingPuntaje === 'function') cargarRankingPuntaje();
+  } catch (err) {
+    mostrarAlerta(escaparHtml(obtenerMensajeError(err)), 'danger');
+  } finally {
+    restaurarBoton(estadoBoton, 'Registrar');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('asistencia_manual_barra')
+    ?.classList.toggle('d-none', !puedeRegistrarAsistenciaManual());
+});
