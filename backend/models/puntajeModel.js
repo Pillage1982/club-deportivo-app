@@ -4,6 +4,7 @@
 // =====================================
 
 const db = require('../config/db');
+const { MESES_SIN_CUOTA, EVENTO_PROVISIONAL_SQL } = require('../utils/estatutoGdcRules');
 
 function ejecutar(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -105,55 +106,79 @@ exports.obtenerHistorial = (persona_id, desde = null, hasta = null) =>
     LIMIT 200
   `, [persona_id, ...(desde ? [desde] : []), ...(hasta ? [hasta] : [])]);
 
+// "Cuota al día" para una actividad del mes `mes`/`anio` (expresiones SQL):
+// ninguna cuota de ese mes o anterior impaga y, en los meses con cuota, la de ese
+// mes pagada. En los meses sin cuota de la temporada (MESES_SIN_CUOTA, agosto y
+// septiembre) basta con no deber cuotas anteriores. Única definición: la usan el
+// registro en vivo (verificarCuotaAlDia) y el recálculo.
+function condicionCuotaAlDia(persona, anio, mes) {
+  return `(
+    (${mes} IN (${MESES_SIN_CUOTA.join(', ')}) OR EXISTS (
+      SELECT 1 FROM cuotas c
+      WHERE c.persona_id = ${persona} AND c.anio = ${anio} AND c.mes = ${mes} AND c.estado = 'pagado'
+    ))
+    AND NOT EXISTS (
+      SELECT 1 FROM cuotas c
+      WHERE c.persona_id = ${persona}
+        AND (c.anio < ${anio} OR (c.anio = ${anio} AND c.mes <= ${mes}))
+        AND c.estado <> 'pagado'
+    )
+  )`;
+}
+
 exports.verificarCuotaAlDia = (persona_id, mes, anio) =>
   ejecutar(`
-    SELECT EXISTS (
-      SELECT 1
-      FROM cuotas
-      WHERE persona_id = ? AND anio = ? AND mes = ? AND estado = 'pagado'
-    ) AND NOT EXISTS (
-      SELECT 1
-      FROM cuotas
-      WHERE persona_id = ?
-        AND (anio < ? OR (anio = ? AND mes <= ?))
-        AND estado <> 'pagado'
-    ) AS al_dia
-  `, [persona_id, anio, mes, anio, anio, mes]);
+    SELECT ${condicionCuotaAlDia('q.persona_id', 'q.anio', 'q.mes')} AS al_dia
+    FROM (SELECT ? AS persona_id, ? AS anio, ? AS mes) q
+  `, [persona_id, anio, mes]);
 
+// Mismos puntos que calcularPuntosAsistencia (estatutoGdcRules.js, Art. 8.4): si
+// se ajusta uno, ajustar el otro. Las actividades provisionales de la importación
+// ("Actividad AAAA-MM-DD") no puntúan.
 exports.recalcularPuntajesAsistencia = persona_id =>
   ejecutar(`
     INSERT INTO puntajes
       (persona_id, asistencia_id, evento_id, puntos, detalle, fecha)
     SELECT
-      a.persona_id,
-      a.id,
-      a.evento_id,
-      CASE a.estado
-        WHEN 'presente' THEN IF(EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') AND NOT EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND (c.anio<YEAR(e.fecha) OR (c.anio=YEAR(e.fecha) AND c.mes<=MONTH(e.fecha))) AND c.estado<>'pagado'), 10, 5)
-        WHEN 'atrasado' THEN IF(EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') AND NOT EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND (c.anio<YEAR(e.fecha) OR (c.anio=YEAR(e.fecha) AND c.mes<=MONTH(e.fecha))) AND c.estado<>'pagado'), 7, 3)
-        WHEN 'justificado' THEN IF(EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') AND NOT EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND (c.anio<YEAR(e.fecha) OR (c.anio=YEAR(e.fecha) AND c.mes<=MONTH(e.fecha))) AND c.estado<>'pagado'), 5, 1)
-        WHEN 'vestimenta_distinta' THEN IF(EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') AND NOT EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND (c.anio<YEAR(e.fecha) OR (c.anio=YEAR(e.fecha) AND c.mes<=MONTH(e.fecha))) AND c.estado<>'pagado'), 3, 1)
-        WHEN 'licencia_medica' THEN 6
-        WHEN 'retiro_sin_aviso' THEN -3
+      x.persona_id,
+      x.id,
+      x.evento_id,
+      CASE x.estado
+        WHEN 'presente'            THEN IF(x.al_dia, 10, 5)
+        WHEN 'atrasado'            THEN IF(x.al_dia, 7, 3)
+        WHEN 'justificado'         THEN IF(x.al_dia, 5, 1)
+        WHEN 'vestimenta_distinta' THEN IF(x.al_dia, 3, 1)
+        WHEN 'licencia_medica'     THEN 6
+        WHEN 'retiro_sin_aviso'    THEN -3
       END,
-      CASE a.estado
-        WHEN 'presente' THEN IF(EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') AND NOT EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND (c.anio<YEAR(e.fecha) OR (c.anio=YEAR(e.fecha) AND c.mes<=MONTH(e.fecha))) AND c.estado<>'pagado'), 'Presente + cuota al día', 'Presente sin cuota al día')
-        WHEN 'atrasado' THEN IF(EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') AND NOT EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND (c.anio<YEAR(e.fecha) OR (c.anio=YEAR(e.fecha) AND c.mes<=MONTH(e.fecha))) AND c.estado<>'pagado'), 'Atraso + cuota al día', 'Atraso sin cuota al día')
-        WHEN 'justificado' THEN IF(EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') AND NOT EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND (c.anio<YEAR(e.fecha) OR (c.anio=YEAR(e.fecha) AND c.mes<=MONTH(e.fecha))) AND c.estado<>'pagado'), 'Justificación + cuota al día', 'Justificación sin cuota al día')
-        WHEN 'vestimenta_distinta' THEN IF(EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND c.anio=YEAR(e.fecha) AND c.mes=MONTH(e.fecha) AND c.estado='pagado') AND NOT EXISTS (SELECT 1 FROM cuotas c WHERE c.persona_id=a.persona_id AND (c.anio<YEAR(e.fecha) OR (c.anio=YEAR(e.fecha) AND c.mes<=MONTH(e.fecha))) AND c.estado<>'pagado'), 'Vestimenta distinta + cuota al día', 'Vestimenta distinta sin cuota al día')
-        WHEN 'licencia_medica' THEN 'Licencia médica'
-        WHEN 'retiro_sin_aviso' THEN 'Retiro sin aviso'
+      CASE x.estado
+        WHEN 'presente'            THEN CONCAT('Presente ', IF(x.al_dia, '+ cuota al día', 'sin cuota al día'))
+        WHEN 'atrasado'            THEN CONCAT('Atraso ', IF(x.al_dia, '+ cuota al día', 'sin cuota al día'))
+        WHEN 'justificado'         THEN CONCAT('Justificación ', IF(x.al_dia, '+ cuota al día', 'sin cuota al día'))
+        WHEN 'vestimenta_distinta' THEN CONCAT('Vestimenta distinta ', IF(x.al_dia, '+ cuota al día', 'sin cuota al día'))
+        WHEN 'licencia_medica'     THEN 'Licencia médica'
+        WHEN 'retiro_sin_aviso'    THEN 'Retiro sin aviso'
       END,
-      DATE(e.fecha)
-    FROM asistencias a
-    JOIN eventos e ON e.id = a.evento_id
-    WHERE a.persona_id = ?
-      AND a.estado <> 'ausente'
-      AND e.nombre NOT LIKE 'Actividad %'
+      x.fecha
+    FROM (
+      SELECT
+        a.id, a.persona_id, a.evento_id, a.estado, DATE(e.fecha) AS fecha,
+        ${condicionCuotaAlDia('a.persona_id', 'YEAR(e.fecha)', 'MONTH(e.fecha)')} AS al_dia
+      FROM asistencias a
+      JOIN eventos e ON e.id = a.evento_id
+      WHERE a.persona_id = ?
+        AND a.estado <> 'ausente'
+        AND e.nombre NOT REGEXP '${EVENTO_PROVISIONAL_SQL}'
+    ) x
     ON DUPLICATE KEY UPDATE
       persona_id = VALUES(persona_id), evento_id = VALUES(evento_id),
       puntos = VALUES(puntos), detalle = VALUES(detalle), fecha = VALUES(fecha)
   `, [persona_id]);
+
+// Al eliminar una actividad sus asistencias se borran en cascada, pero `puntajes`
+// no tiene clave foránea: sin esto los puntos seguían sumando en el ranking.
+exports.eliminarPuntajesEvento = evento_id =>
+  ejecutar('DELETE FROM puntajes WHERE evento_id = ? AND asistencia_id IS NOT NULL', [evento_id]);
 
 exports.eliminarPuntajesAsistenciasAusentes = persona_id =>
   ejecutar(`

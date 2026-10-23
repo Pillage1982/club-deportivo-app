@@ -64,6 +64,7 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - Estados extendidos de asistencia: `justificado`, `licencia_medica`, `vestimenta_distinta`, `retiro_sin_aviso` (en BD y puntaje)
 - **Vestimenta distinta y retiro sin aviso (oct-2026):** dos botones por registro en Tablas → Asistencias y en la lista "Asistentes registrados" bajo el lector QR (lista completa con scroll; `PATCH /asistencia/:id/vestimenta` y `/:id/retiro`, body `{activo}`); solo sobre presente/atrasado, al quitarla vuelve a atrasado si tiene minutos y si no a presente; recalcula el puntaje
 - Matching por cercanía horaria cuando existen varias actividades el mismo día
+- **Revisión de asistencia (oct-2026):** al asignar un escaneo "sin actividad" se calcula presente/atrasado con la hora del escaneo y la tolerancia; la cola offline manda `escaneado_en` (queda como `fecha_registro`) y un escaneo hecho durante una actividad que se finalizó antes de sincronizar reemplaza el ausente (mismo día o hasta 12 h tras el inicio); un 401 o un 403 de trámite pendiente ya no descarta la cola. "Cuota al día" en agosto/septiembre (sin cuota) = no deber cuotas anteriores (`condicionCuotaAlDia` en `puntajeModel.js`, `MESES_SIN_CUOTA`). Eliminar una actividad borra sus puntajes. Solo las provisionales "Actividad AAAA-MM-DD" no puntúan. Datos: `database/CORRECCION_puntaje_asistencia_septiembre_20261023.sql`
 - Selector de toma de asistencia: solo actividades no finalizadas y hasta 12 h después de su inicio (`config.js` → `horasActividadSeleccionable`); el panel "Sin asignar" sigue viendo todas
 - Tolerancia de atraso por actividad (oct-2026): selector en el formulario de Actividades (`eventos.tolerancia_minutos`); por defecto 15 min (`config.js` → `toleranciaMinutosAtraso`), que también usan las actividades sin margen guardado
 - Categorías de actividad (oct-2026): Ensayo (`entrenamiento`), Misa (`misa`), Reunión (`reunion`), Presentación (`partido`), Otros (`otro`)
@@ -91,7 +92,9 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - Guía de uso general en dos versiones: Directiva (panel) e Integrantes (Portal). Ya existen guías puntuales del Portal en `documentacion/` (primer ingreso, pagos, recuperar contraseña) e instalación de la app
 
 ### En espera de definición del cliente
-- Justificaciones: si se aprueba antes del evento y el socio igual asiste; si la Junta de disciplina necesita rol propio; folio único o separado.
+- ~~Justificación aprobada antes del evento y el socio igual asiste~~ DEFINIDO oct-2026: queda bloqueado para esa actividad, no se registra su asistencia (409 `codigo: JUSTIFICACION_APROBADA`, aviso en el lector y en la sincronización offline)
+- ~~Socios y honorarios al cerrar actividades~~ DEFINIDO oct-2026: se mantienen; quedan "ausente" y reciben el aviso de inasistencia como todo integrante activo (la asistencia se considera para postular a cargos)
+- Justificaciones: si la Junta de disciplina necesita rol propio; folio único o separado.
 
 ### Pendiente offline (spec: prompt-asistencia-offline-sin-evento.md)
 - Background Sync API (SyncManager en SW) — el fallback manual ya existe

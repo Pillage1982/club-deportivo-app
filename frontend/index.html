@@ -2137,6 +2137,12 @@
     window.addEventListener('online', () => {
       sincronizarManual();
     });
+
+    // Al abrir el panel (p. ej. tras volver a iniciar sesión) se suben las
+    // asistencias que quedaron guardadas en este equipo.
+    if (navigator.onLine) {
+      sincronizarManual();
+    }
   </script>
 </body>
 </html>
