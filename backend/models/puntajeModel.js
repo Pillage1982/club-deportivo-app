@@ -126,6 +126,45 @@ function condicionCuotaAlDia(persona, anio, mes) {
   )`;
 }
 
+// Historial del panel (Puntaje → historial de un integrante): TODAS las
+// actividades ya ocurridas del rango [desde, hasta), aunque no haya sumado puntos
+// (ausente, sin registro), más los puntos por pago de cuota del rango. `estado`:
+// estado de la asistencia, 'sin_registro' o NULL en las filas de cuota.
+exports.obtenerHistorialTemporada = (persona_id, desde = null, hasta = null) => {
+  const rangoEvento = `${desde ? ' AND DATE(e.fecha) >= ?' : ''}${hasta ? ' AND DATE(e.fecha) < ?' : ''}`;
+  const rangoCuota  = `${desde ? ' AND pt.fecha >= ?' : ''}${hasta ? ' AND pt.fecha < ?' : ''}`;
+  const rango = [...(desde ? [desde] : []), ...(hasta ? [hasta] : [])];
+
+  return ejecutar(`
+    SELECT * FROM (
+      SELECT
+        DATE(e.fecha) AS fecha,
+        e.fecha AS orden,
+        e.nombre AS evento,
+        e.tipo AS tipo_evento,
+        COALESCE(a.estado, 'sin_registro') AS estado,
+        CASE
+          WHEN pt.id IS NOT NULL THEN pt.detalle
+          WHEN a.estado = 'ausente' THEN 'Ausente'
+          WHEN a.id IS NULL THEN 'Sin registro de asistencia'
+          ELSE CONCAT(REPLACE(a.estado, '_', ' '), ' (no puntúa)')
+        END AS detalle,
+        COALESCE(pt.puntos, 0) AS puntos
+      FROM eventos e
+      LEFT JOIN asistencias a ON a.evento_id = e.id AND a.persona_id = ?
+      LEFT JOIN puntajes pt ON pt.asistencia_id = a.id
+      WHERE e.fecha <= NOW()${rangoEvento}
+
+      UNION ALL
+
+      SELECT pt.fecha, pt.fecha, 'Pago de cuota', NULL, NULL, pt.detalle, pt.puntos
+      FROM puntajes pt
+      WHERE pt.persona_id = ? AND pt.cuota_id IS NOT NULL${rangoCuota}
+    ) h
+    ORDER BY h.orden DESC
+  `, [persona_id, ...rango, persona_id, ...rango]);
+};
+
 exports.verificarCuotaAlDia = (persona_id, mes, anio) =>
   ejecutar(`
     SELECT ${condicionCuotaAlDia('q.persona_id', 'q.anio', 'q.mes')} AS al_dia
