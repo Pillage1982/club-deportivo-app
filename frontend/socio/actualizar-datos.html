@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<!-- Actualizar datos del socio: paso obligatorio del primer ingreso (después de crear la contraseña) y cada vez que la directiva lo vuelva a exigir. Sin completarlo no se ve la página personal. -->
+<html lang="es">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+
+  <title>Actualizar datos | Portal del Socio</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="../css/login.css">
+
+  <style>
+    /* login.css centra una tarjeta corta en 100vh sin scroll; aquí puede crecer. */
+    body { height: auto; min-height: 100vh; padding: 24px 0; flex-direction: column; overflow-x: hidden; overflow-y: auto; }
+    /* En login.css el crédito es fixed (páginas cortas); aquí flotaría sobre el formulario al hacer scroll. */
+    .login-credit { position: static; margin-top: 16px; }
+    .login-card { max-width: 480px; }
+    .datos-seccion { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #129b4c; margin: 22px 0 10px; }
+    .datos-label { font-size: 0.85rem; margin-bottom: 4px; opacity: 0.85; }
+    .datos-fijos { font-size: 0.85rem; background: rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 12px 14px; }
+    .datos-fijos dt { font-weight: 400; opacity: 0.7; }
+    .datos-fijos dd { margin-bottom: 6px; }
+    .form-control { color-scheme: dark; }
+    .campo-faltante { border: 1px solid #ff6b6b !important; box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.25) !important; }
+  </style>
+
+  <script>
+    if (!localStorage.getItem('socio_token')) {
+      window.location.replace('login.html');
+    }
+  </script>
+
+</head>
+
+<body>
+
+  <div class="background-shape shape1"></div>
+  <div class="background-shape shape2"></div>
+
+  <div class="login-card">
+
+    <div class="logo">
+      <i class="bi bi-person-lines-fill" style="color:#129b4c;"></i>
+    </div>
+
+    <h2 class="text-center">Actualizar datos</h2>
+    <p class="text-center">
+      Antes de continuar, revisa y completa tus datos de contacto.
+    </p>
+
+    <div id="cargando" class="text-center my-4">
+      <span class="spinner-border spinner-border-sm" role="status"></span> Cargando tus datos...
+    </div>
+
+    <form id="form_datos" class="d-none" novalidate>
+      <p class="datos-seccion">Tus datos registrados</p>
+      <dl class="datos-fijos row mb-1" id="datos_fijos"></dl>
+      <p class="small mt-2" style="opacity: 0.7;">
+        Si alguno de estos datos está mal, avísale a la directiva.
+      </p>
+
+      <p class="datos-seccion">Contacto</p>
+      <label class="datos-label" for="telefono">Celular</label>
+      <div class="mb-3 login-input-group">
+        <i class="bi bi-phone-fill"></i>
+        <input type="tel" id="telefono" class="form-control" placeholder="+56912345678" autocomplete="tel">
+      </div>
+
+      <label class="datos-label" for="email">Email</label>
+      <div class="mb-3 login-input-group">
+        <i class="bi bi-envelope-fill"></i>
+        <input type="email" id="email" class="form-control" placeholder="tucorreo@ejemplo.cl" autocomplete="email">
+      </div>
+
+      <label class="datos-label" for="fecha_nacimiento">Fecha de nacimiento</label>
+      <div class="mb-3 login-input-group">
+        <i class="bi bi-calendar-event-fill"></i>
+        <input type="date" id="fecha_nacimiento" class="form-control">
+      </div>
+
+      <div id="respuesta"></div>
+
+      <button type="submit" id="btn_guardar_datos" class="btn-login mt-3">
+        Guardar y continuar
+      </button>
+    </form>
+
+    <div id="respuesta_carga"></div>
+
+    <p class="text-center mt-3 mb-0">
+      <a href="#" onclick="cerrarSesionSocio(); return false;" style="color:#129b4c; font-size:0.85rem;">
+        Cerrar sesión
+      </a>
+    </p>
+
+  </div>
+
+  <p class="login-credit">
+    Diseño de Mario Riquelme
+  </p>
+
+  <script src="js/api.js"></script>
+  <script src="js/actualizar-datos.js"></script>
+</body>
+</html>

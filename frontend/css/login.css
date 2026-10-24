@@ -151,6 +151,24 @@ body {
   transform: scale(0.98);
 }
 
+/* Requisitos de la contraseña (Portal del Socio): se marcan en verde al cumplirse */
+
+.requisitos-clave {
+  list-style: none;
+  padding: 0;
+  margin: -6px 0 18px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.requisitos-clave li {
+  margin-bottom: 2px;
+}
+
+.requisitos-clave li.ok {
+  color: #7ddc8f;
+}
+
 /* Mostrar/Ocultar password */
 
 .toggle-password {
