@@ -66,6 +66,39 @@ async function asegurarEstadoIntegrantes() {
   `);
 }
 
+// Pagos: tipo (solo 'cuota' rebaja la deuda de cuotas), detalle y comprobante
+// adjunto. pago_detalle vincula cada pago de cuota con las cuotas que cubre (con
+// abonos parciales); lo no asignado a ninguna cuota queda como saldo a favor.
+async function asegurarCamposPagos() {
+  if (!await columnaExiste('pagos', 'tipo_pago')) {
+    // DEFAULT 'cuota': todos los pagos existentes quedan como pago de cuota.
+    await ejecutar("ALTER TABLE pagos ADD COLUMN tipo_pago VARCHAR(30) NOT NULL DEFAULT 'cuota'");
+  }
+  if (!await columnaExiste('pagos', 'detalle')) {
+    await ejecutar('ALTER TABLE pagos ADD COLUMN detalle VARCHAR(200) NULL');
+  }
+  if (!await columnaExiste('pagos', 'comprobante_path')) {
+    await ejecutar('ALTER TABLE pagos ADD COLUMN comprobante_path VARCHAR(255) NULL');
+  }
+
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS pago_detalle (
+      id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+      pago_id       BIGINT NOT NULL,
+      tipo          ENUM('multa', 'cuota') NOT NULL,
+      referencia_id BIGINT NOT NULL,
+      monto_pagado  INT NOT NULL,
+      KEY idx_pago_detalle_pago (pago_id),
+      KEY idx_pago_detalle_referencia (tipo, referencia_id),
+      FOREIGN KEY (pago_id) REFERENCES pagos(id) ON DELETE CASCADE
+    )
+  `);
+}
+
+// Deuda = multas pendientes + todas las cuotas − pagos de tipo 'cuota'. Antes se
+// sumaban solo las cuotas pendientes/vencidas y se restaban todos los pagos: una
+// cuota pagada salía de las cuotas y además se restaba su pago (deuda negativa).
+// Los pagos de otro tipo (inscripción, extras) entran a caja pero no son abono a cuotas.
 async function reconstruirVistaEstadoFinanciero() {
   await ejecutar('DROP VIEW IF EXISTS vista_estado_financiero');
 
@@ -105,10 +138,6 @@ async function reconstruirVistaEstadoFinanciero() {
         persona_id,
         SUM(monto) AS total_cuotas
       FROM cuotas
-      WHERE estado IN (
-        'pendiente',
-        'vencido'
-      )
       GROUP BY persona_id
     ) c
     ON p.id = c.persona_id
@@ -118,6 +147,7 @@ async function reconstruirVistaEstadoFinanciero() {
         persona_id,
         SUM(monto_total) AS total_pagado
       FROM pagos
+      WHERE tipo_pago = 'cuota'
       GROUP BY persona_id
     ) pg
     ON p.id = pg.persona_id
@@ -292,6 +322,7 @@ async function ejecutarMigraciones() {
   await asegurarTablaSociosAuth();
   await asegurarDatosActualizadosSocios();
   await asegurarTablaAuditoria();
+  await asegurarCamposPagos();
   await reconstruirVistaEstadoFinanciero();
 }
 

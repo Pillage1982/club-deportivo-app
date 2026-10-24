@@ -485,7 +485,7 @@
             <div class="col-12 col-md-5">
               <input type="text" id="buscar_pagos" class="form-control" placeholder="Buscar pago...">
             </div>
-            <div class="col-6 col-md-3">
+            <div class="col-6 col-md-2">
               <select id="filtro_pago_metodo" class="form-select">
                 <option value="">Todos los métodos</option>
                 <option value="efectivo">Efectivo</option>
@@ -493,14 +493,25 @@
               </select>
             </div>
             <div class="col-6 col-md-2">
+              <select id="filtro_pago_tipo" class="form-select">
+                <option value="">Todos los tipos</option>
+                <option value="cuota">Cuota mensual</option>
+                <option value="inscripcion">Inscripción</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-2">
               <button id="btn_limpiar_filtros_pagos" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosPagos()">Limpiar</button>
             </div>
           </div>
+          <!-- Selector oculto para adjuntar comprobante a un pago ya registrado -->
+          <input type="file" id="pago_comprobante_adjuntar" class="d-none" accept="image/jpeg,image/png,image/webp,application/pdf">
           <div id="tabla_pagos_wrapper" class="table-responsive tabla-scroll">
             <table class="table table-striped table-bordered mb-0">
               <thead class="table-dark">
                 <tr>
                   <th>Integrante</th>
+                  <th>Tipo</th>
                   <th>Monto</th>
                   <th>Método</th>
                   <th>Fecha</th>
@@ -555,7 +566,9 @@
               <select id="filtro_cuota_estado" class="form-select">
                 <option value="">Todos</option>
                 <option value="pendiente">Pendiente</option>
+                <option value="vencido">Vencido</option>
                 <option value="pagado">Pagado</option>
+                <option value="con_abono">Con abono</option>
               </select>
             </div>
             <div class="col-6 col-md-2">
@@ -885,10 +898,30 @@
                 </select>
               </div>
               <div class="col-md-4">
-                <label class="form-label">Vincular a cuota (opcional)</label>
-                <select id="pago_cuota_id" class="form-select">
-                  <option value="">Sin vincular a cuota</option>
+                <label class="form-label" for="pago_tipo">Tipo de pago</label>
+                <select id="pago_tipo" class="form-select" onchange="actualizarTipoPago()">
+                  <option value="cuota">Cuota mensual</option>
+                  <option value="inscripcion">Inscripción</option>
+                  <option value="otro">Otro</option>
                 </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="pago_detalle">Detalle <small class="text-muted" id="pago_detalle_ayuda">(opcional)</small></label>
+                <input type="text" id="pago_detalle" class="form-control" maxlength="200" placeholder="Qué se está pagando">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="pago_comprobante">Comprobante <small class="text-muted">(imagen o PDF, opcional)</small></label>
+                <input type="file" id="pago_comprobante" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
+              </div>
+              <div class="col-12" id="pago_cuota_grupo">
+                <label class="form-label">Meses que se pagan</label>
+                <div id="pago_cuotas_lista" class="border rounded p-2" style="max-height: 220px; overflow-y: auto;">
+                  <span class="text-muted small">Seleccione un integrante</span>
+                </div>
+                <div id="pago_cuotas_resumen" class="small text-muted mt-1"></div>
+                <div class="small text-muted mt-1">
+                  Sin meses marcados, el pago se aplica a las cuotas pendientes más antiguas y lo que sobre queda a favor del integrante.
+                </div>
               </div>
             </div>
             <div class="mt-4">

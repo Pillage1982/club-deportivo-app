@@ -131,7 +131,10 @@ function cargarFinanzas() {
             <tr>
               <td>${nombreMes(c.mes)}/${c.anio}</td>
               <td>${formatearMonto(c.monto)}</td>
-              <td>${badgeEstadoCuota(c.estado)}</td>
+              <td>${badgeEstadoCuota(c.estado)}
+                ${c.estado !== 'pagado' && Number(c.monto_pagado) > 0
+                  ? `<span class="badge bg-info text-dark ms-1">Abono ${formatearMonto(c.monto_pagado)}</span>`
+                  : ''}</td>
             </tr>
           `).join('')
         : '<tr><td colspan="3" class="text-center text-muted">Sin cuotas registradas</td></tr>';
@@ -141,7 +144,10 @@ function cargarFinanzas() {
         ? data.pagos.map(p => `
             <tr>
               <td>${formatearFecha(p.fecha)}</td>
-              <td>${formatearMonto(p.monto_total)}</td>
+              <td>${formatearMonto(p.monto_total)}
+                ${p.tipo_pago && p.tipo_pago !== 'cuota'
+                  ? `<div class="small text-muted">${escaparHtml(p.tipo_pago === 'inscripcion' ? 'Inscripción' : (p.detalle || 'Otro'))}</div>`
+                  : ''}</td>
               <td>${escaparHtml(p.metodo || '—')}</td>
             </tr>
           `).join('')

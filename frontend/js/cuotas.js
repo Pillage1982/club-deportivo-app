@@ -150,11 +150,17 @@ function filtrarCuotas(cuotas) {
     const coincideBusqueda =
       !busqueda || nombreCompleto.includes(busqueda);
 
+    // "Con abono": cuota aún no pagada que ya tiene pagos parciales.
     const coincideEstado =
-      !estado || cuota.estado === estado;
+      !estado ||
+      (estado === 'con_abono'
+        ? cuota.estado !== 'pagado' && Number(cuota.monto_pagado) > 0
+        : cuota.estado === estado);
 
+    // filtro_cuota_mes es un <input type="month"> ('AAAA-MM'): fija mes y año.
+    const [anioMes, numeroMes] = String(mes).split('-');
     const coincideMes =
-      !mes || String(cuota.mes) === String(Number(mes));
+      !mes || (String(cuota.anio) === anioMes && Number(cuota.mes) === Number(numeroMes));
 
     const coincideAnio =
       !anio || String(cuota.anio) === anio;
@@ -220,6 +226,9 @@ function renderizarTablaCuotas(cuotas) {
 
         <td>
           ${obtenerBadgeCuota(cuota.estado)}
+          ${cuota.estado !== 'pagado' && Number(cuota.monto_pagado) > 0
+            ? `<span class="badge bg-info text-dark ms-1" title="Saldo ${formatearMonto(cuota.saldo)}">Abono ${formatearMonto(cuota.monto_pagado)}</span>`
+            : ''}
         </td>
 
       </tr>

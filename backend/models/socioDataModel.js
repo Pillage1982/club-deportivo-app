@@ -73,25 +73,29 @@ exports.obtenerFicha = (personaId, callback) => {
 // =====================================
 // FINANZAS: deuda actual, historial de cuotas, pagos y multas
 // =====================================
-// Misma fórmula que vista_estado_financiero (multas + cuotas - pagado), pero sin
-// su filtro "estado='activo'": un socio en receso también puede ver/pagar su deuda.
+// Misma fórmula que vista_estado_financiero (multas + cuotas − pagos de cuota), pero
+// sin su filtro "estado='activo'": un socio en receso también puede ver/pagar su deuda.
 exports.obtenerResumenDeuda = (personaId, callback) => {
   db.query(
     `SELECT
        (SELECT COALESCE(SUM(monto), 0) FROM multas WHERE persona_id = ? AND estado = 'pendiente') AS total_multas,
        (SELECT COALESCE(SUM(monto), 0) FROM cuotas WHERE persona_id = ?) AS total_cuotas,
-       (SELECT COALESCE(SUM(monto_total), 0) FROM pagos WHERE persona_id = ?) AS total_pagado`,
+       (SELECT COALESCE(SUM(monto_total), 0) FROM pagos WHERE persona_id = ? AND tipo_pago = 'cuota') AS total_pagado`,
     [personaId, personaId, personaId],
     (err, rows) => callback(err, rows ? rows[0] : null)
   );
 };
 
+// monto_pagado: lo abonado a cada cuota (pago_detalle).
 exports.obtenerHistorialCuotas = (personaId, callback) => {
   db.query(
-    `SELECT id, mes, anio, monto, estado, fecha_vencimiento
-     FROM cuotas
-     WHERE persona_id = ?
-     ORDER BY anio DESC, mes DESC`,
+    `SELECT c.id, c.mes, c.anio, c.monto, c.estado, c.fecha_vencimiento,
+            COALESCE(SUM(d.monto_pagado), 0) AS monto_pagado
+     FROM cuotas c
+     LEFT JOIN pago_detalle d ON d.tipo = 'cuota' AND d.referencia_id = c.id
+     WHERE c.persona_id = ?
+     GROUP BY c.id, c.mes, c.anio, c.monto, c.estado, c.fecha_vencimiento
+     ORDER BY c.anio DESC, c.mes DESC`,
     [personaId],
     callback
   );
@@ -99,7 +103,7 @@ exports.obtenerHistorialCuotas = (personaId, callback) => {
 
 exports.obtenerHistorialPagos = (personaId, callback) => {
   db.query(
-    `SELECT id, monto_total, metodo, fecha
+    `SELECT id, monto_total, metodo, fecha, tipo_pago, detalle
      FROM pagos
      WHERE persona_id = ?
      ORDER BY fecha DESC`,
