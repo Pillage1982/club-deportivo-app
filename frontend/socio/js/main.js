@@ -36,7 +36,10 @@ function mostrarPantalla(nombre) {
 function cargarPantalla(nombre) {
   if (nombre === 'inicio') return cargarInicio();
   if (nombre === 'ficha') return cargarFicha();
-  if (nombre === 'finanzas') return cargarFinanzas();
+  if (nombre === 'finanzas') {
+    cargarDepositosSocio();
+    return cargarFinanzas();
+  }
   if (nombre === 'asistencia') return cargarAsistencia();
 }
 
@@ -202,6 +205,95 @@ function cargarAsistencia() {
     })
     .catch(err => console.error('Error cargando asistencia:', err));
 }
+
+// =====================================
+// DEPÓSITOS (pestaña Finanzas): datos de la cuenta y comprobantes a tesorería
+// =====================================
+function cargarDepositosSocio() {
+  fetch(`${API_URL}/socio-auth/depositos`, { headers: getAuthHeadersSocio() })
+    .then(res => res.json())
+    .then(data => {
+      renderizarCuentaDeposito(data.cuenta_deposito || {});
+      const tabla = document.getElementById('tabla_depositos_socio');
+      const comprobantes = Array.isArray(data.comprobantes) ? data.comprobantes : [];
+      tabla.innerHTML = comprobantes.length
+        ? comprobantes.map(c => `
+            <tr>
+              <td>${Number(c.id)}</td>
+              <td>${formatearFecha(c.fecha_deposito)}</td>
+              <td>${formatearMonto(c.monto)}</td>
+              <td>${c.pago_id
+                ? '<span class="badge bg-success">Registrado</span>'
+                : '<span class="badge bg-warning text-dark">En revisión</span>'}</td>
+            </tr>
+          `).join('')
+        : '<tr><td colspan="4" class="text-center text-muted">Aún no envías comprobantes</td></tr>';
+    })
+    .catch(err => console.error('Error cargando depósitos:', err));
+}
+
+function renderizarCuentaDeposito(cuenta) {
+  const contenedor = document.getElementById('deposito_cuenta');
+  if (!cuenta.numero) {
+    contenedor.innerHTML = '<span class="text-muted">La directiva aún no registra los datos de la cuenta. Pídeselos a tesorería.</span>';
+    return;
+  }
+  const filas = [
+    ['Titular', cuenta.titular],
+    ['RUT', cuenta.rut],
+    ['Banco', cuenta.banco],
+    ['Tipo de cuenta', cuenta.tipo_cuenta],
+    ['Número', cuenta.numero],
+    ['Email', cuenta.email]
+  ].filter(([, valor]) => valor);
+  contenedor.innerHTML = `<dl class="mb-0">${filas.map(([etiqueta, valor]) => filaFicha(etiqueta, escaparHtml(valor))).join('')}</dl>`
+    + (cuenta.nota ? `<p class="small text-muted mt-2 mb-0">${escaparHtml(cuenta.nota)}</p>` : '');
+}
+
+function enviarComprobanteDeposito(evento) {
+  evento.preventDefault();
+  const respuesta = document.getElementById('deposito_respuesta');
+  const monto = document.getElementById('deposito_monto').value;
+  const fecha = document.getElementById('deposito_fecha').value;
+  const archivo = document.getElementById('deposito_archivo').files[0];
+
+  if (!monto || Number(monto) < 100 || !fecha || !archivo) {
+    respuesta.innerHTML = '<div class="alert alert-warning py-2 small mb-0">Completa monto, fecha y el archivo del comprobante.</div>';
+    return;
+  }
+
+  const datos = new FormData();
+  datos.append('monto', monto);
+  datos.append('fecha_deposito', fecha);
+  datos.append('concepto', document.getElementById('deposito_concepto').value.trim());
+  datos.append('comprobante', archivo);
+
+  const boton = document.getElementById('btn_enviar_deposito');
+  boton.disabled = true;
+
+  // Sin Content-Type: el navegador lo fija con el boundary del FormData.
+  fetch(`${API_URL}/socio-auth/depositos`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getSocioToken()}` },
+    body: datos
+  })
+    .then(async res => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.mensaje || 'No se pudo enviar el comprobante');
+      return data;
+    })
+    .then(data => {
+      respuesta.innerHTML = `<div class="alert alert-success py-2 small mb-0">${escaparHtml(data.mensaje)}</div>`;
+      document.getElementById('form_deposito').reset();
+      cargarDepositosSocio();
+    })
+    .catch(err => {
+      respuesta.innerHTML = `<div class="alert alert-danger py-2 small mb-0">${escaparHtml(err.message)}</div>`;
+    })
+    .finally(() => { boton.disabled = false; });
+}
+
+document.getElementById('form_deposito')?.addEventListener('submit', enviarComprobanteDeposito);
 
 function badgeEstadoAsistencia(estado) {
   const mapa = { presente: 'bg-success', atrasado: 'bg-warning text-dark', ausente: 'bg-danger' };

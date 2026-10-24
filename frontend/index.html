@@ -319,6 +319,12 @@
             <i class="bi bi-cash"></i> Pagos
           </a>
         </li>
+        <li class="nav-item" role="presentation" id="nav_subtab_depositos">
+          <a class="nav-link" data-bs-toggle="tab" href="#subtab_depositos" role="tab">
+            <i class="bi bi-receipt"></i> Depósitos
+            <span id="badge_depositos" class="badge bg-warning text-dark ms-1 d-none">0</span>
+          </a>
+        </li>
         <li class="nav-item" role="presentation" id="nav_subtab_multas">
           <a class="nav-link" data-bs-toggle="tab" href="#subtab_multas" role="tab">
             <i class="bi bi-exclamation-circle"></i> Multas
@@ -568,6 +574,44 @@
                 </tr>
               </thead>
               <tbody id="tabla_pagos"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Depósitos: comprobantes enviados desde el Portal del Socio -->
+        <div class="tab-pane fade" id="subtab_depositos" role="tabpanel">
+          <p class="text-muted small mb-2">
+            Comprobantes que los integrantes envían desde el Portal del Socio. Revisa la cartola y usa <strong>Registrar pago</strong>:
+            el comprobante queda adjunto al pago y el depósito pasa a <em>Registrado</em>.
+          </p>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label for="buscar_depositos" class="form-label">Buscar Integrante</label>
+              <input type="search" id="buscar_depositos" class="form-control" placeholder="Buscar por nombre">
+            </div>
+            <div class="col-md-3">
+              <label for="filtro_deposito_estado" class="form-label">Estado</label>
+              <select id="filtro_deposito_estado" class="form-select">
+                <option value="pendiente">Pendientes</option>
+                <option value="registrado">Registrados</option>
+                <option value="">Todos</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive tabla-scroll">
+            <table class="table table-bordered table-striped mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Folio</th>
+                  <th>Integrante</th>
+                  <th>Monto</th>
+                  <th>Depositado</th>
+                  <th>Concepto</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla_depositos"></tbody>
             </table>
           </div>
         </div>
@@ -967,6 +1011,17 @@
                 <label class="form-label" for="pago_comprobante">Comprobante <small class="text-muted">(imagen o PDF, opcional)</small></label>
                 <input type="file" id="pago_comprobante" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
               </div>
+              <div class="col-12 d-none" id="pago_deposito_grupo">
+                <label for="pago_deposito_id" class="form-label">O usar un comprobante enviado por el integrante desde el Portal</label>
+                <div class="input-group">
+                  <select id="pago_deposito_id" class="form-select" onchange="actualizarDepositoPago()">
+                    <option value="">No usar</option>
+                  </select>
+                  <button type="button" class="btn btn-outline-primary" title="Ver comprobante" aria-label="Ver comprobante" onclick="verDepositoSeleccionadoPago()">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
               <div class="col-12" id="pago_cuota_grupo">
                 <label class="form-label">Meses que se pagan</label>
                 <div id="pago_cuotas_lista" class="border rounded p-2" style="max-height: 220px; overflow-y: auto;">
@@ -1038,6 +1093,25 @@
         </div>
         <div class="modal-body">
           <div id="lista_eventos_modal" class="d-grid gap-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: adjuntar comprobante a un pago (ofrece los depósitos del integrante) -->
+  <div class="modal fade" id="modal_adjuntar_comprobante_pago" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-paperclip me-2"></i>Adjuntar comprobante</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-2">Comprobantes enviados por el integrante desde el Portal, aún sin registrar:</p>
+          <div id="lista_depositos_adjuntar" class="list-group mb-3"></div>
+          <button type="button" class="btn btn-outline-secondary w-100" onclick="subirArchivoComprobantePago()">
+            <i class="bi bi-upload me-1"></i> Subir otro archivo
+          </button>
         </div>
       </div>
     </div>

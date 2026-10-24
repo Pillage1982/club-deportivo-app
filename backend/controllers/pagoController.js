@@ -10,11 +10,50 @@ const { rutaUpload, enviarArchivoSubido } = require('../config/uploads');
 const pagoModel    = require('../models/pagoModel');
 const personaModel = require('../models/personaModel');
 const cuotaModel   = require('../models/cuotaModel');
+const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
 
-// Solo borra archivos subidos desde el panel (uploads/comprobantes).
+// Solo borra archivos subidos desde el panel (uploads/comprobantes). Si el pago usaba
+// un comprobante enviado por el socio (uploads/comprobantes_deposito), ese archivo
+// es del depósito y se conserva.
 function borrarComprobante(comprobantePath) {
   if (!comprobantePath || !comprobantePath.startsWith('comprobantes/')) return;
   fs.unlink(rutaUpload(comprobantePath), () => {});
+}
+
+function errorHttp(status, mensaje) {
+  const error = new Error(mensaje);
+  error.status = status;
+  return error;
+}
+
+function responderError(res, error, mensajePorDefecto) {
+  if (error.status) return res.status(error.status).json({ mensaje: error.message });
+  console.error(mensajePorDefecto, error);
+  res.status(500).json({ mensaje: mensajePorDefecto });
+}
+
+// Si no se subió un archivo y tesorería eligió un comprobante que el socio envió
+// desde el Portal, el pago usa ese mismo archivo (no se copia). Devuelve el id del
+// depósito para vincularlo al pago una vez guardado.
+async function resolverComprobanteDeposito(req, personaId) {
+  const depositoId = Number(req.body.comprobante_deposito_id);
+  if (req.file || !Number.isInteger(depositoId) || depositoId <= 0) return null;
+
+  const deposito = await comprobanteDepositoModel.obtenerPorId(depositoId);
+  if (!deposito) throw errorHttp(400, 'Comprobante del integrante no encontrado');
+  if (Number(deposito.persona_id) !== Number(personaId)) {
+    throw errorHttp(400, 'El comprobante elegido pertenece a otro integrante');
+  }
+  if (deposito.pago_id) throw errorHttp(409, 'Ese comprobante ya se usó en otro pago');
+
+  req.body.comprobante_path = deposito.adjunto_path;
+  return deposito.id;
+}
+
+function vincularDeposito(depositoId, pagoId) {
+  if (!depositoId || !pagoId) return;
+  comprobanteDepositoModel.vincularPago(depositoId, pagoId)
+    .catch(e => console.error('Error vinculando comprobante de depósito:', e));
 }
 
   const metodosPermitidos = [
@@ -123,17 +162,20 @@ function guardarPagoSimple(req, res, cuota) {
   const completa = cuota ? monto === Number(cuota.saldo) : false;
   const detalles = cuota ? [{ cuotaId: cuota.id, monto, marcarPagada: completa }] : [];
 
-  pagoModel.crearPagoConDetalles(req.body, detalles, err => {
-    if (err) {
-      console.error('Error registrando pago:', err);
-      return res.status(500).json({
-        mensaje: cuota ? 'No se pudo vincular el pago a la cuota' : 'No se pudo registrar el pago'
-      });
-    }
-    if (!cuota) return res.json({ mensaje: 'Pago registrado' });
-    if (!completa) return res.json({ mensaje: `Pago parcial registrado. Saldo pendiente: $${Number(cuota.saldo) - monto}` });
-    res.json({ mensaje: 'Pago registrado y cuota marcada como pagada' });
-  });
+  resolverComprobanteDeposito(req, req.body.persona_id).then(depositoId => {
+    pagoModel.crearPagoConDetalles(req.body, detalles, (err, resultado) => {
+      if (err) {
+        console.error('Error registrando pago:', err);
+        return res.status(500).json({
+          mensaje: cuota ? 'No se pudo vincular el pago a la cuota' : 'No se pudo registrar el pago'
+        });
+      }
+      vincularDeposito(depositoId, resultado.pagoId);
+      if (!cuota) return res.json({ mensaje: 'Pago registrado' });
+      if (!completa) return res.json({ mensaje: `Pago parcial registrado. Saldo pendiente: $${Number(cuota.saldo) - monto}` });
+      res.json({ mensaje: 'Pago registrado y cuota marcada como pagada' });
+    });
+  }).catch(error => responderError(res, error, 'No se pudo registrar el pago'));
 }
 
 const NOMBRES_MES = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -179,13 +221,16 @@ function mensajeReparto({ pagadas, abono, sobrante }) {
 function guardarPagoRepartido(req, res, cuotas) {
   const reparto = repartirMontoEnCuotas(cuotas, Number(req.body.monto_total));
 
-  pagoModel.crearPagoConDetalles(req.body, reparto.detalles, errPago => {
-    if (errPago) {
-      console.error('Error registrando pago repartido:', errPago);
-      return res.status(500).json({ mensaje: 'No se pudo registrar el pago' });
-    }
-    res.json({ mensaje: mensajeReparto(reparto) });
-  });
+  resolverComprobanteDeposito(req, req.body.persona_id).then(depositoId => {
+    pagoModel.crearPagoConDetalles(req.body, reparto.detalles, (errPago, resultado) => {
+      if (errPago) {
+        console.error('Error registrando pago repartido:', errPago);
+        return res.status(500).json({ mensaje: 'No se pudo registrar el pago' });
+      }
+      vincularDeposito(depositoId, resultado.pagoId);
+      res.json({ mensaje: mensajeReparto(reparto) });
+    });
+  }).catch(error => responderError(res, error, 'No se pudo registrar el pago'));
 }
 
 // Varios meses marcados a mano (p. ej. cuotas atrasadas). Si el monto no alcanza,
@@ -271,13 +316,20 @@ exports.actualizar = (req, res) => {
     pagoModel.obtenerComprobantePath(req.params.id, (errPath, comprobanteAnterior) => {
       if (errPath) return res.status(500).json({ mensaje: 'No se pudo verificar el pago' });
 
-      pagoModel.actualizarPago(req.params.id, req.body, err => {
-        if (err) {
-          return res.status(500).json(err);
-        }
-        if (req.body.comprobante_path) borrarComprobante(comprobanteAnterior);
-        res.json({ mensaje: 'Pago actualizado' });
-      });
+      resolverComprobanteDeposito(req, req.body.persona_id).then(depositoId => {
+        pagoModel.actualizarPago(req.params.id, req.body, err => {
+          if (err) {
+            return res.status(500).json(err);
+          }
+          if (req.body.comprobante_path) {
+            borrarComprobante(comprobanteAnterior);
+            comprobanteDepositoModel.desvincularPago(req.params.id)
+              .then(() => vincularDeposito(depositoId, Number(req.params.id)))
+              .catch(e => console.error('Error actualizando comprobante de depósito:', e));
+          }
+          res.json({ mensaje: 'Pago actualizado' });
+        });
+      }).catch(error => responderError(res, error, 'No se pudo actualizar el pago'));
     });
   });
 
@@ -300,6 +352,8 @@ exports.eliminar = (req, res) => {
           return res.status(500).json(err);
         }
         borrarComprobante(comprobante);
+        comprobanteDepositoModel.desvincularPago(req.params.id)
+          .catch(e => console.error('Error liberando comprobante de depósito:', e));
         res.json({ mensaje: 'Pago eliminado' });
       });
     });
@@ -314,16 +368,47 @@ exports.adjuntarComprobante = (req, res) => {
   pagoModel.obtenerPagoBasico(req.params.id, (errPago, pago) => {
     if (errPago) return res.status(500).json({ mensaje: 'No se pudo verificar el pago' });
     if (!pago) return res.status(404).json({ mensaje: 'Pago no encontrado' });
-    if (!req.body.comprobante_path) {
-      return res.status(400).json({ mensaje: 'Seleccione el archivo del comprobante' });
-    }
 
-    pagoModel.actualizarComprobante(pago.id, req.body.comprobante_path, err => {
-      if (err) return res.status(500).json({ mensaje: 'No se pudo guardar el comprobante' });
-      borrarComprobante(pago.comprobante_path);
-      res.json({ mensaje: 'Comprobante guardado' });
-    });
+    resolverComprobanteDeposito(req, pago.persona_id).then(depositoId => {
+      if (!req.body.comprobante_path) {
+        return res.status(400).json({ mensaje: 'Seleccione el archivo del comprobante' });
+      }
+
+      pagoModel.actualizarComprobante(pago.id, req.body.comprobante_path, err => {
+        if (err) return res.status(500).json({ mensaje: 'No se pudo guardar el comprobante' });
+        borrarComprobante(pago.comprobante_path);
+        comprobanteDepositoModel.desvincularPago(pago.id)
+          .then(() => vincularDeposito(depositoId, pago.id))
+          .catch(e => console.error('Error actualizando comprobante de depósito:', e));
+        res.json({ mensaje: 'Comprobante guardado' });
+      });
+    }).catch(error => responderError(res, error, 'No se pudo guardar el comprobante'));
   });
+};
+
+// =====================================
+// COMPROBANTES ENVIADOS POR LOS SOCIOS (Portal → tesorería)
+// =====================================
+
+exports.listarDepositos = (req, res) => {
+  comprobanteDepositoModel.listarPanel()
+    .then(filas => res.json(filas))
+    .catch(error => responderError(res, error, 'No se pudieron obtener los comprobantes de los integrantes'));
+};
+
+exports.listarDepositosPendientesPersona = (req, res) => {
+  comprobanteDepositoModel.listarPendientesPersona(Number(req.params.personaId))
+    .then(filas => res.json(filas))
+    .catch(error => responderError(res, error, 'No se pudieron obtener los comprobantes del integrante'));
+};
+
+exports.descargarDeposito = (req, res) => {
+  comprobanteDepositoModel.obtenerPorId(Number(req.params.id))
+    .then(deposito => {
+      if (!deposito) return res.status(404).json({ mensaje: 'Comprobante no encontrado' });
+      enviarArchivoSubido(res, deposito.adjunto_path, 'comprobante');
+    })
+    .catch(error => responderError(res, error, 'Error al buscar el comprobante'));
 };
 
 exports.descargarComprobante = (req, res) => {

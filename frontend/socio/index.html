@@ -88,6 +88,53 @@
         <div class="socio-stat-valor" id="finanzas_deuda">—</div>
       </div>
 
+      <!-- Depósitos: datos de la cuenta y envío del comprobante a tesorería -->
+      <div class="socio-card mb-3">
+        <h6 class="mb-2"><i class="bi bi-bank me-1"></i>Datos para depositar</h6>
+        <div id="deposito_cuenta" class="small">Cargando...</div>
+      </div>
+
+      <div class="socio-card mb-3">
+        <h6 class="mb-2"><i class="bi bi-receipt me-1"></i>Enviar comprobante de depósito</h6>
+        <p class="small text-muted mb-2">
+          Tesorería revisa el depósito y registra el pago; tu deuda se actualiza cuando lo registre.
+        </p>
+        <form id="form_deposito" novalidate>
+          <div class="row g-2">
+            <div class="col-6">
+              <label for="deposito_monto" class="form-label small mb-1">Monto</label>
+              <input type="number" id="deposito_monto" class="form-control form-control-sm" min="100" step="1" required>
+            </div>
+            <div class="col-6">
+              <label for="deposito_fecha" class="form-label small mb-1">Fecha del depósito</label>
+              <input type="date" id="deposito_fecha" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-12">
+              <label for="deposito_concepto" class="form-label small mb-1">Concepto <span class="text-muted">(opcional, ej. cuotas de marzo y abril)</span></label>
+              <input type="text" id="deposito_concepto" class="form-control form-control-sm" maxlength="200">
+            </div>
+            <div class="col-12">
+              <label for="deposito_archivo" class="form-label small mb-1">Comprobante (foto o PDF, máx. 5 MB)</label>
+              <input type="file" id="deposito_archivo" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp,application/pdf" required>
+            </div>
+          </div>
+          <button type="submit" id="btn_enviar_deposito" class="btn btn-primary btn-sm w-100 mt-3">Enviar a tesorería</button>
+        </form>
+        <div id="deposito_respuesta" class="mt-2"></div>
+      </div>
+
+      <h6 class="mb-2">Comprobantes enviados</h6>
+      <div class="table-responsive mb-4">
+        <table class="table table-sm table-striped socio-tabla">
+          <thead>
+            <tr><th>Folio</th><th>Depositado</th><th>Monto</th><th>Estado</th></tr>
+          </thead>
+          <tbody id="tabla_depositos_socio">
+            <tr><td colspan="4" class="text-center text-muted">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
       <h6 class="mb-2">Historial de cuotas</h6>
       <div class="table-responsive mb-4">
         <table class="table table-sm table-striped socio-tabla">

@@ -53,6 +53,28 @@ router.post(
   controller.crear
 );
 
+// Comprobantes que los socios envían desde el Portal (pendientes de registrar o ya usados)
+router.get(
+  '/depositos',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.listarDepositos
+);
+
+router.get(
+  '/depositos/persona/:personaId',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.listarDepositosPendientesPersona
+);
+
+router.get(
+  '/depositos/:id/archivo',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.descargarDeposito
+);
+
 router.get(
   '/:id/comprobante',
   authMiddleware,

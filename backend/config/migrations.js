@@ -286,6 +286,27 @@ async function asegurarDatosActualizadosSocios() {
   }
 }
 
+// Comprobantes de depósito que el socio envía a tesorería desde el Portal. Es solo
+// aviso: no crea el pago; tesorería lo registra en el panel al confirmarlo, y
+// pago_id marca en qué pago se usó (NULL = pendiente de registrar).
+async function asegurarTablaComprobantesDeposito() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS comprobantes_deposito (
+      id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+      persona_id      BIGINT NOT NULL,
+      monto           INT NOT NULL,
+      fecha_deposito  DATE NOT NULL,
+      concepto        VARCHAR(200) NULL,
+      adjunto_path    VARCHAR(255) NOT NULL,
+      email_enviado   TINYINT(1) NOT NULL DEFAULT 0,
+      creado_en       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      pago_id         BIGINT NULL,
+      KEY idx_comprobante_persona (persona_id),
+      CONSTRAINT fk_comprobante_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
+    )
+  `);
+}
+
 // Valores sueltos que se editan desde el panel (clave → valor). Por ahora solo
 // el saldo del año anterior del Balance general (dinero heredado que no está
 // registrado como pagos en la app).
@@ -338,6 +359,7 @@ async function ejecutarMigraciones() {
   await asegurarTablaAuditoria();
   await asegurarCamposPagos();
   await asegurarTablaConfiguracion();
+  await asegurarTablaComprobantesDeposito();
   await reconstruirVistaEstadoFinanciero();
 }
 

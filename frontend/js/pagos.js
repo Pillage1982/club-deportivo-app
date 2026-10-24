@@ -96,7 +96,10 @@ function actualizarSeleccionCuotasPago() {
 function configurarSelectorCuotaPago() {
   const sel = document.getElementById('pago_persona_id');
   if (!sel) return;
-  sel.addEventListener('change', () => cargarCuotasPendientesPago(sel.value));
+  sel.addEventListener('change', () => {
+    cargarCuotasPendientesPago(sel.value);
+    cargarDepositosPago(sel.value);
+  });
 }
 
 function cargarFinanzas() {
@@ -460,6 +463,8 @@ function editarPago(pago) {
   document.getElementById('pago_persona_id').value =
     pago.persona_id || '';
 
+  cargarDepositosPago(pago.persona_id);
+
   document.getElementById('pago_monto').value =
     pago.monto_total || '';
 
@@ -524,6 +529,8 @@ function crearPago() {
   if (cuotaIds.length) data.append('cuota_ids', JSON.stringify(cuotaIds));
   const archivo = document.getElementById('pago_comprobante')?.files[0];
   if (archivo) data.append('comprobante', archivo);
+  const depositoId = document.getElementById('pago_deposito_id')?.value;
+  if (!archivo && depositoId) data.append('comprobante_deposito_id', depositoId);
 
   let url = `${API_URL}/pagos`;
   let method = 'POST';
@@ -572,8 +579,10 @@ function crearPago() {
       document.getElementById('pago_comprobante').value = '';
       actualizarTipoPago();
       cargarCuotasPendientesPago(document.getElementById('pago_persona_id').value);
+      cargarDepositosPago(document.getElementById('pago_persona_id').value);
 
       cargarTablaPagos();
+      cargarTablaDepositos();
       cargarMultas();
       cargarFinanzas();
       if (typeof cargarCuotas === 'function') cargarCuotas();
@@ -702,6 +711,10 @@ function verComprobantePago(id) {
   abrirArchivoProtegido(`${API_URL}/pagos/${id}/comprobante`);
 }
 
+function verComprobanteDeposito(id) {
+  abrirArchivoProtegido(`${API_URL}/pagos/depositos/${id}/archivo`);
+}
+
 // Descarga con el token y abre el archivo en otra pestaña.
 function abrirArchivoProtegido(url) {
   fetch(url, { headers: getAuthHeaders(), cache: 'no-store' })
@@ -726,12 +739,53 @@ function abrirArchivoProtegido(url) {
 // a cuotas, que no se pueden editar).
 let pagoComprobantePendiente = null;
 
+// Si el socio envió comprobantes desde el Portal que aún no se usan, se ofrecen en
+// un modal; si no hay ninguno, se abre directo el selector de archivo.
 function elegirComprobantePago(id) {
+  const pago = pagosCargados.find(p => p.id === id);
   pagoComprobantePendiente = id;
+  if (!pago) return subirArchivoComprobantePago();
+
+  fetch(`${API_URL}/pagos/depositos/persona/${pago.persona_id}`, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(depositos => {
+      if (!Array.isArray(depositos) || !depositos.length) return subirArchivoComprobantePago();
+
+      document.getElementById('lista_depositos_adjuntar').innerHTML = depositos.map(d => `
+        <div class="list-group-item d-flex justify-content-between align-items-center gap-2">
+          <div>
+            <div><strong>${formatearMonto(d.monto)}</strong> · depositado ${formatearFecha(d.fecha_deposito)}</div>
+            <small class="text-muted">Folio ${Number(d.id)}${d.concepto ? ` · ${escaparHtml(d.concepto)}` : ''}</small>
+          </div>
+          <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-outline-primary" title="Ver" onclick="verComprobanteDeposito(${Number(d.id)})"><i class="bi bi-eye"></i></button>
+            <button type="button" class="btn btn-success" onclick="usarDepositoEnPago(${Number(d.id)})">Usar</button>
+          </div>
+        </div>
+      `).join('');
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_adjuntar_comprobante_pago')).show();
+    })
+    .catch(() => subirArchivoComprobantePago());
+}
+
+function subirArchivoComprobantePago() {
+  const modal = bootstrap.Modal.getInstance(document.getElementById('modal_adjuntar_comprobante_pago'));
+  if (modal) modal.hide();
   const input = document.getElementById('pago_comprobante_adjuntar');
   if (!input) return;
   input.value = '';
   input.click();
+}
+
+function usarDepositoEnPago(depositoId) {
+  const id = pagoComprobantePendiente;
+  pagoComprobantePendiente = null;
+  bootstrap.Modal.getInstance(document.getElementById('modal_adjuntar_comprobante_pago'))?.hide();
+  if (!id) return;
+
+  const data = new FormData();
+  data.append('comprobante_deposito_id', depositoId);
+  enviarComprobantePago(id, data);
 }
 
 function enviarComprobantePago(id, data) {
@@ -748,6 +802,7 @@ function enviarComprobantePago(id, data) {
     .then(respuesta => {
       mostrarAlerta(respuesta.mensaje || 'Comprobante guardado', 'success');
       cargarTablaPagos();
+      cargarTablaDepositos();
     })
     .catch(err => {
       mostrarAlerta(obtenerMensajeError(err, 'No se pudo guardar el comprobante'), 'danger');
@@ -766,6 +821,162 @@ function configurarAdjuntarComprobantePago() {
     const data = new FormData();
     data.append('comprobante', archivo);
     enviarComprobantePago(id, data);
+  });
+}
+
+// =====================================
+// DEPÓSITOS: comprobantes que los socios envían desde el Portal
+// =====================================
+
+let depositosCargados = [];
+
+// Selector del formulario de pago: comprobantes pendientes del integrante elegido.
+function cargarDepositosPago(personaId, seleccionarId = null) {
+  const grupo = document.getElementById('pago_deposito_grupo');
+  const select = document.getElementById('pago_deposito_id');
+  if (!grupo || !select) return Promise.resolve();
+
+  limpiarDepositosPago();
+  if (!personaId) return Promise.resolve();
+
+  return fetch(`${API_URL}/pagos/depositos/persona/${personaId}`, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(depositos => {
+      if (!Array.isArray(depositos) || !depositos.length) return;
+      depositos.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.dataset.monto = d.monto;
+        opt.textContent = `Folio ${d.id} — ${formatearMonto(d.monto)}, depositado ${formatearFecha(d.fecha_deposito)}${d.concepto ? ` (${d.concepto})` : ''}`;
+        select.appendChild(opt);
+      });
+      grupo.classList.remove('d-none');
+      if (seleccionarId) {
+        select.value = String(seleccionarId);
+        actualizarDepositoPago();
+      }
+    })
+    .catch(() => {});
+}
+
+function limpiarDepositosPago() {
+  const select = document.getElementById('pago_deposito_id');
+  if (select) select.innerHTML = '<option value="">No usar</option>';
+  document.getElementById('pago_deposito_grupo')?.classList.add('d-none');
+  const archivo = document.getElementById('pago_comprobante');
+  if (archivo) archivo.disabled = false;
+}
+
+// Elegir un depósito reemplaza a subir archivo; si el monto está vacío, lo propone.
+function actualizarDepositoPago() {
+  const select = document.getElementById('pago_deposito_id');
+  const archivo = document.getElementById('pago_comprobante');
+  const opcion = select?.selectedOptions[0];
+  const usaDeposito = Boolean(select?.value);
+
+  if (archivo) {
+    archivo.disabled = usaDeposito;
+    if (usaDeposito) archivo.value = '';
+  }
+
+  const monto = document.getElementById('pago_monto');
+  if (usaDeposito && monto && !monto.value && opcion?.dataset.monto) {
+    monto.value = opcion.dataset.monto;
+  }
+}
+
+function verDepositoSeleccionadoPago() {
+  const id = document.getElementById('pago_deposito_id')?.value;
+  if (!id) {
+    mostrarAlerta('Elija primero un comprobante de la lista', 'warning');
+    return;
+  }
+  verComprobanteDeposito(id);
+}
+
+// Desde Tablas → Depósitos: abre el formulario con el integrante, monto y comprobante.
+function registrarPagoDesdeDeposito(id) {
+  const deposito = depositosCargados.find(d => d.id === id);
+  if (!deposito) return;
+
+  pagoEditando = null;
+  document.getElementById('btn_guardar_pago').innerText = 'Guardar Pago';
+  document.getElementById('pago_persona_id').value = deposito.persona_id;
+  document.getElementById('pago_tipo').value = 'cuota';
+  document.getElementById('pago_detalle').value = '';
+  actualizarTipoPago();
+  document.getElementById('pago_monto').value = deposito.monto;
+  cargarCuotasPendientesPago(deposito.persona_id);
+  cargarDepositosPago(deposito.persona_id, deposito.id);
+
+  irAFormulario('#subtab_form_pago');
+}
+
+function cargarTablaDepositos() {
+  fetch(`${API_URL}/pagos/depositos`, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (!Array.isArray(data)) return;
+      depositosCargados = data;
+
+      const pendientes = data.filter(d => !d.pago_id).length;
+      const badge = document.getElementById('badge_depositos');
+      if (badge) {
+        badge.textContent = pendientes;
+        badge.classList.toggle('d-none', pendientes === 0);
+      }
+
+      renderizarTablaDepositos(filtrarDepositos(data));
+    })
+    .catch(err => console.error(err));
+}
+
+function filtrarDepositos(depositos) {
+  const busqueda = normalizarTextoPago(document.getElementById('buscar_depositos')?.value);
+  const estado = document.getElementById('filtro_deposito_estado')?.value || '';
+
+  return depositos.filter(d => {
+    const nombre = normalizarTextoPago([d.nombres, d.apellido_paterno, d.apellido_materno].join(' '));
+    const coincideEstado = !estado || (estado === 'pendiente' ? !d.pago_id : Boolean(d.pago_id));
+    return (!busqueda || nombre.includes(busqueda)) && coincideEstado;
+  });
+}
+
+function renderizarTablaDepositos(depositos) {
+  const tabla = document.getElementById('tabla_depositos');
+  if (!tabla) return;
+
+  if (!depositos.length) {
+    tabla.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay comprobantes para los filtros seleccionados</td></tr>';
+    return;
+  }
+
+  tabla.innerHTML = depositos.map(d => `
+    <tr>
+      <td>${Number(d.id)}</td>
+      <td>${escaparHtml(`${d.nombres} ${d.apellido_paterno} ${d.apellido_materno || ''}`)}</td>
+      <td>${formatearMonto(d.monto)}</td>
+      <td>${formatearFecha(d.fecha_deposito)}</td>
+      <td>${d.concepto ? escaparHtml(d.concepto) : '—'}</td>
+      <td>${d.pago_id
+        ? '<span class="badge bg-success">Registrado</span>'
+        : '<span class="badge bg-warning text-dark">Pendiente</span>'}</td>
+      <td class="text-nowrap">
+        <button type="button" class="btn btn-sm btn-outline-primary" title="Ver comprobante" aria-label="Ver comprobante"
+          onclick="verComprobanteDeposito(${Number(d.id)})"><i class="bi bi-file-earmark-text"></i></button>
+        ${d.pago_id ? '' : `<button type="button" class="btn btn-sm btn-success ms-1" onclick="registrarPagoDesdeDeposito(${Number(d.id)})">
+          Registrar pago</button>`}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function configurarFiltrosDepositos() {
+  ['buscar_depositos', 'filtro_deposito_estado'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change',
+      () => renderizarTablaDepositos(filtrarDepositos(depositosCargados)));
   });
 }
 
@@ -854,6 +1065,7 @@ function ejecutarEliminarPago(id) {
     );
 
     cargarTablaPagos();
+    cargarTablaDepositos();
     cargarDashboard();
     cargarFinanzas();
   })

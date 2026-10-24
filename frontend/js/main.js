@@ -34,6 +34,7 @@ window.onload = () => {
   configurarBuscadorPersonas();
   configurarFiltrosEventos();
   configurarFiltrosPagos();
+  configurarFiltrosDepositos();
   configurarSelectorCuotaPago();
   configurarFiltrosCuotas();
   configurarFiltrosFinanzas();
@@ -59,6 +60,7 @@ window.onload = () => {
     cargarFinanzas();
     cargarGraficos();
     cargarTablaPagos();
+    cargarTablaDepositos();
     cargarCuotas();
     cargarTablaGastos();
   }
@@ -100,6 +102,7 @@ function aplicarRolesTabs() {
 
   if (!puedeVerFinanzas) {
     document.getElementById('nav_subtab_pagos')?.classList.add('d-none');
+    document.getElementById('nav_subtab_depositos')?.classList.add('d-none');
     document.getElementById('nav_subtab_multas')?.classList.add('d-none');
     document.getElementById('nav_subtab_finanzas')?.classList.add('d-none');
     document.getElementById('nav_subtab_gastos')?.classList.add('d-none');

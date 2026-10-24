@@ -137,4 +137,57 @@ async function notificarAusentesEvento(ausentes, evento) {
   console.log(`[Email] ${enviados} enviados, ${fallidos} fallidos.`);
 }
 
-module.exports = { enviarCorreo, escaparHtml, notificarAusentesEvento };
+function formatearFolio(id) {
+  return String(id).padStart(5, '0');
+}
+
+// Destino del aviso de comprobantes de depósito: EMAIL_TESORERIA si está
+// configurado; si no, el buzón con que se envían los correos.
+function destinoTesoreria() {
+  return process.env.EMAIL_TESORERIA || process.env.EMAIL_USER;
+}
+
+// Aviso a tesorería de un comprobante de depósito enviado desde el Portal del
+// Socio, con el archivo adjunto. Responder el correo le escribe al socio.
+// Devuelve false si el correo no está configurado.
+function enviarComprobanteDeposito(datos) {
+  if (!emailConfigurado() || !destinoTesoreria()) {
+    console.warn('[Email] No configurado. Comprobante de depósito no enviado, folio:', datos.folio);
+    return Promise.resolve(false);
+  }
+
+  const p = datos.persona;
+  const nombre = [p.nombres, p.apellido_paterno, p.apellido_materno || ''].join(' ').trim();
+  const monto = `$${Number(datos.monto).toLocaleString('es-CL')}`;
+
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; color: #222; font-size: 14px; line-height: 1.5;">
+      <h2 style="color: #333;">${escaparHtml(nombreOrganizacion())}</h2>
+      <p><strong>Comprobante de depósito — Folio Nº ${formatearFolio(datos.folio)}</strong></p>
+      <table role="presentation" style="border-collapse: collapse; margin: 0 0 20px;">
+        <tr><td style="padding: 4px 16px 4px 0;"><strong>Integrante:</strong></td><td>${escaparHtml(nombre)}</td></tr>
+        <tr><td style="padding: 4px 16px 4px 0;"><strong>RUT:</strong></td><td>${escaparHtml(p.rut)}</td></tr>
+        <tr><td style="padding: 4px 16px 4px 0;"><strong>Monto:</strong></td><td>${escaparHtml(monto)}</td></tr>
+        <tr><td style="padding: 4px 16px 4px 0;"><strong>Fecha del depósito:</strong></td><td>${escaparHtml(formatearFechaTexto(`${datos.fechaDeposito}T12:00:00`))}</td></tr>
+        <tr><td style="padding: 4px 16px 4px 0;"><strong>Concepto:</strong></td><td>${escaparHtml(datos.concepto || '—')}</td></tr>
+      </table>
+      <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;">
+      <p style="color: #888; font-size: 12px; margin: 0;">
+        Tesorería: verificar el abono en la cartola y registrar el pago en el panel
+        → Tablas → Depósitos → "Registrar pago" (el comprobante no registra el pago por sí solo).
+        Responder este correo le escribe directamente al integrante${p.email ? '' : ' (no tiene email registrado)'}.
+      </p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    destinatario: destinoTesoreria(),
+    cc: p.email || null,
+    replyTo: p.email || null,
+    asunto: `Comprobante de depósito ${monto} — Folio ${formatearFolio(datos.folio)} — ${nombre}`,
+    cuerpo,
+    adjuntos: [datos.adjunto]
+  }).then(() => true);
+}
+
+module.exports = { enviarCorreo, escaparHtml, formatearFolio, notificarAusentesEvento, enviarComprobanteDeposito };
