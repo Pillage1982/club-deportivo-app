@@ -364,6 +364,10 @@ function mostrarUsuario() {
 
   }
 
+  // Registro de actividad: solo el rol admin.
+  document.getElementById('btn_auditoria')
+    ?.classList.toggle('d-none', usuario.rol !== 'admin');
+
 }
 
 /// =====================================

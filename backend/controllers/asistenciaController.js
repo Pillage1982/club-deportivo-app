@@ -29,10 +29,7 @@ const ESTADOS_REGISTRABLES = ['presente', 'atrasado', 'ausente'];
 // se hizo el mismo día de la actividad o hasta estas horas después de su inicio.
 const HORAS_ESCANEO_TRAS_INICIO = 12;
 
-// 'YYYY-MM-DD HH:mm:ss' en hora de Chile, para comparar con eventos.fecha (que se
-// guarda tal como se ingresa en el formulario). Solo decide si un escaneo tardío
-// se acepta: no se guarda como fecha_registro, porque esta rama no fija la zona
-// horaria de la sesión MySQL y NOW() queda en la hora del servidor.
+// 'YYYY-MM-DD HH:mm:ss' en hora de Chile (como guarda MySQL las fechas, db.js).
 function fechaHoraChile(fecha) {
   const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Santiago', hourCycle: 'h23',
@@ -72,7 +69,7 @@ exports.registrar = (req, res) => {
   }
 
   // Solo la cola offline manda escaneado_en (hora real del escaneo).
-  const horaEscaneo = horaEscaneoOffline(req.body.escaneado_en);
+  req.body.fecha_registro = horaEscaneoOffline(req.body.escaneado_en);
 
   eventoModel.obtenerEventoPorId(req.body.evento_id, (err, evento) => {
 
@@ -85,7 +82,7 @@ exports.registrar = (req, res) => {
     }
 
     if (evento.finalizado) {
-      if (escaneoDuranteActividad(horaEscaneo, evento)) {
+      if (escaneoDuranteActividad(req.body.fecha_registro, evento)) {
         return registrarEscaneoTrasCierre(req, res, evento);
       }
       return res.status(403).json({
@@ -108,7 +105,8 @@ function registrarEscaneoTrasCierre(req, res, evento) {
     evento_id: evento.id,
     persona_id: req.body.persona_id,
     estado: req.body.estado,
-    minutos: req.body.estado === 'atrasado' ? Number(req.body.minutos) || 0 : 0
+    minutos: req.body.estado === 'atrasado' ? Number(req.body.minutos) || 0 : 0,
+    fecha_registro: req.body.fecha_registro
   };
 
   asistenciaModel.reemplazarAusentePorEscaneo(data, (err, asistenciaId) => {

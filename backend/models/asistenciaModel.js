@@ -11,20 +11,23 @@ const db = require('../config/db');
 exports.crearAsistencia = (data, callback) => {
 
   // Registra asistencia evento
-  // incluyendo estado y atraso
+  // incluyendo estado y atraso.
+  // fecha_registro: hora del escaneo si vino de la cola offline, si no ahora.
   const query = `
     INSERT INTO asistencias (
       evento_id,
       persona_id,
       estado,
-      minutos_atraso
+      minutos_atraso,
+      fecha_registro
     )
 
     SELECT
       ?,
       p.id,
       ?,
-      ?
+      ?,
+      COALESCE(?, NOW())
 
     FROM personas p
 
@@ -45,6 +48,7 @@ exports.crearAsistencia = (data, callback) => {
       // Minutos solo aplican
       // cuando estado es atrasado
       data.minutos,
+      data.fecha_registro || null,
       data.persona_id
     ],
     callback
@@ -59,9 +63,9 @@ exports.crearAsistencia = (data, callback) => {
 exports.reemplazarAusentePorEscaneo = (data, callback) => {
   db.query(`
     UPDATE asistencias
-    SET estado = ?, minutos_atraso = ?
+    SET estado = ?, minutos_atraso = ?, fecha_registro = COALESCE(?, fecha_registro)
     WHERE evento_id = ? AND persona_id = ? AND estado = 'ausente'
-  `, [data.estado, data.minutos, data.evento_id, data.persona_id], (err, result) => {
+  `, [data.estado, data.minutos, data.fecha_registro || null, data.evento_id, data.persona_id], (err, result) => {
     if (err) return callback(err);
     if (!result.affectedRows) return callback(null, null);
 

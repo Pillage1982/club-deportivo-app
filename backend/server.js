@@ -19,6 +19,19 @@ const app = express();
 
 const allowedOrigin = process.env.FRONTEND_URL;
 
+// Las respuestas de la API nunca se guardan en caché. La CDN de Hostinger (hcdn)
+// puede guardar días respuestas de la API: un dato viejo seguía llegando aunque
+// ya hubiera cambiado y, peor, un archivo privado podía quedar servido por la CDN
+// sin pasar por la autenticación.
+const RUTAS_API = [
+  '/asistencia', '/personas', '/eventos', '/multas', '/usuarios', '/dashboard',
+  '/finanzas', '/pagos', '/cuotas', '/gastos', '/socio-auth', '/auditoria'
+];
+app.use(RUTAS_API, (req, res, next) => {
+  res.set('Cache-Control', 'no-store, private');
+  next();
+});
+
 // Antes se llamaba cors() sin opciones (abierto a cualquier origen) pese a
 // calcular allowedOrigin, que quedaba sin usar. Si no esta configurado el
 // origen, se deja abierto (mismo comportamiento que antes) en vez de romper
@@ -29,6 +42,10 @@ app.use(express.json());
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
+
+// Registro de actividad: anota quién hizo cada cambio (ver auditoriaMiddleware).
+app.use(require('./middleware/auditoriaMiddleware'));
+app.use('/auditoria', require('./routes/auditoriaRoutes'));
 
 app.use('/asistencia', require('./routes/asistenciaRoutes'));
 app.use('/personas', require('./routes/personaRoutes'));

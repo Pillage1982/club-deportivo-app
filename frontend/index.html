@@ -41,6 +41,10 @@
         <span id="badge_offline" class="badge bg-warning text-dark d-none" title="Asistencias pendientes de sincronizar" style="cursor:pointer" onclick="sincronizarManual()">
           <i class="bi bi-wifi-off"></i> <span>0</span>
         </span>
+        <button type="button" class="btn btn-outline-light btn-sm d-none" id="btn_auditoria" onclick="abrirAuditoria()" title="Registro de actividad">
+          <i class="bi bi-journal-text"></i>
+          <span class="d-none d-md-inline"> Actividad</span>
+        </button>
         <button type="button" class="btn btn-danger btn-sm" onclick="cerrarSesion()" data-config-text="etiquetas.botones.cerrarSesion">
           <i class="bi bi-box-arrow-right"></i>
           <span class="d-none d-md-inline"> Cerrar Sesión</span>
@@ -965,6 +969,53 @@
     </div>
   </div>
 
+  <!-- Modal: Registro de actividad (solo rol admin) -->
+  <div class="modal fade" id="modal_auditoria" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-journal-text me-2"></i>Registro de actividad</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-2">
+            Quién hizo cada movimiento que modificó datos en la app, separado por módulo.
+            Las consultas no se registran. Las asistencias tomadas sin conexión quedan con la hora en que se sincronizaron.
+          </p>
+          <div id="auditoria_modulos" class="d-flex flex-wrap gap-1 mb-3"></div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-4">
+              <label for="auditoria_usuario" class="form-label small mb-1">Usuario</label>
+              <select id="auditoria_usuario" class="form-select form-select-sm" onchange="cargarAuditoria()">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-3">
+              <label for="auditoria_desde" class="form-label small mb-1">Desde</label>
+              <input type="date" id="auditoria_desde" class="form-control form-control-sm" onchange="cargarAuditoria()">
+            </div>
+            <div class="col-6 col-md-3">
+              <label for="auditoria_hasta" class="form-label small mb-1">Hasta</label>
+              <input type="date" id="auditoria_hasta" class="form-control form-control-sm" onchange="cargarAuditoria()">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="button" class="btn btn-sm btn-outline-secondary w-100" onclick="limpiarFiltrosAuditoria()">Limpiar</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr><th>Fecha</th><th>Quién</th><th>Acción</th><th>Detalle</th></tr>
+              </thead>
+              <tbody id="tabla_auditoria"></tbody>
+            </table>
+          </div>
+          <p class="small text-muted mb-0">Se muestran los últimos 1.000 movimientos del módulo.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="app-footer text-center py-3 mt-4">
     <small>Diseño de Mario Riquelme</small>
   </footer>
@@ -980,6 +1031,7 @@
   <script src="js/asistencias.js"></script>
   <script src="js/cuotas.js"></script>
   <script src="js/dashboard.js"></script>
+  <script src="js/auditoria.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
