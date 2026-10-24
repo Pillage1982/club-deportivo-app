@@ -242,6 +242,18 @@ function mostrarInfoModal(titulo, contenidoHtml) {
 
 }
 
+// Versión con promesa de mostrarConfirmacion: true si el usuario confirma,
+// false si cancela o cierra. Reemplaza al confirm() nativo del navegador:
+//   if (!(await confirmarAccion('¿Eliminar?'))) return;
+function confirmarAccion(mensaje) {
+  return new Promise(resolve => {
+    let confirmado = false;
+    mostrarConfirmacion(mensaje, () => { confirmado = true; });
+    const modal = document.getElementById('modal_confirmacion_app');
+    modal.addEventListener('hidden.bs.modal', () => resolve(confirmado), { once: true });
+  });
+}
+
 // =====================================
 // HEADERS AUTENTICADOS JWT
 // =====================================

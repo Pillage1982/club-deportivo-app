@@ -10,6 +10,44 @@
 const db = require('../config/db');
 
 // =====================================
+// "ACTUALIZAR DATOS" (lo único que el socio puede editar)
+// =====================================
+exports.obtenerDatosEditables = (personaId, callback) => {
+  db.query(
+    `SELECT rut, nombres, apellido_paterno, apellido_materno,
+            COALESCE(estado, 'activo') AS estado,
+            telefono, email, fecha_nacimiento
+     FROM personas
+     WHERE id = ? AND activo = 1
+     LIMIT 1`,
+    [personaId],
+    (err, rows) => callback(err, rows ? rows[0] : null)
+  );
+};
+
+// Guarda solo las columnas que el socio puede editar (lista cerrada, nunca
+// nombres de columna desde el request) y marca la actualización como hecha en
+// la misma sentencia: o quedan los dos cambios o ninguno.
+const COLUMNAS_EDITABLES_SOCIO = ['telefono', 'email', 'fecha_nacimiento'];
+
+exports.guardarDatosSocio = (personaId, datos, callback) => {
+  const columnas = COLUMNAS_EDITABLES_SOCIO.filter(col => datos[col] !== undefined);
+  const asignaciones = columnas.map(col => `p.${col} = ?`);
+  const valores = columnas.map(col => datos[col]);
+
+  db.query(
+    `UPDATE personas p
+     INNER JOIN socios_auth sa ON sa.persona_id = p.id
+     SET ${asignaciones.join(', ')},
+         sa.datos_actualizados = 1,
+         sa.datos_actualizados_en = NOW()
+     WHERE p.id = ? AND p.activo = 1`,
+    [...valores, personaId],
+    callback
+  );
+};
+
+// =====================================
 // FICHA (solo lectura)
 // =====================================
 exports.obtenerFicha = (personaId, callback) => {
