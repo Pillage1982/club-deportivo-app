@@ -47,6 +47,36 @@ exports.obtenerPersonas = (callback) => {
 
 };
 
+// Histórico de integrantes retirados (eliminación lógica). La fecha de retiro sale
+// del registro de actividad: los retiros anteriores a la auditoría no la tienen.
+exports.obtenerRetirados = (callback) => {
+  const query = `
+    SELECT
+      p.id, p.rut, p.nombres, p.apellido_paterno, p.apellido_materno,
+      p.bloque, p.sexo, p.email, p.telefono, p.fecha_nacimiento, p.fecha_ingreso,
+      COALESCE(p.es_honorario, 0) AS es_honorario,
+      (
+        SELECT MAX(au.fecha)
+        FROM auditoria au
+        WHERE au.modulo = 'integrantes' AND au.metodo = 'DELETE' AND au.registro_id = p.id
+      ) AS fecha_retiro
+    FROM personas p
+    WHERE p.activo = 0 OR p.estado = 'inactivo'
+  `;
+
+  db.query(query, callback);
+};
+
+exports.reintegrarPersona = (id, callback) => {
+  db.query(
+    `UPDATE personas
+     SET activo = 1, estado = 'activo'
+     WHERE id = ? AND (activo = 0 OR estado = 'inactivo')`,
+    [id],
+    callback
+  );
+};
+
 exports.obtenerPersonaPorId = (id, callback) => {
   db.query(
     'SELECT id, COALESCE(es_honorario, 0) AS es_honorario FROM personas WHERE id = ? AND activo = 1 LIMIT 1',

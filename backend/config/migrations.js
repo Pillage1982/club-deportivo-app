@@ -244,6 +244,18 @@ async function asegurarTablaSociosAuth() {
   `);
 }
 
+// Portal del Socio: tras crear su contraseña, el socio debe completar "Actualizar
+// datos" (perfilSocioMiddleware). La directiva puede volver a exigirlo.
+async function asegurarDatosActualizadosSocios() {
+  // Secuencial: dos ALTER sobre la misma tabla no ganan nada en paralelo.
+  if (!await columnaExiste('socios_auth', 'datos_actualizados')) {
+    await ejecutar('ALTER TABLE socios_auth ADD COLUMN datos_actualizados TINYINT(1) NOT NULL DEFAULT 0');
+  }
+  if (!await columnaExiste('socios_auth', 'datos_actualizados_en')) {
+    await ejecutar('ALTER TABLE socios_auth ADD COLUMN datos_actualizados_en DATETIME NULL');
+  }
+}
+
 // Registro de actividad (auditoriaMiddleware): quién creó, editó o eliminó qué.
 async function asegurarTablaAuditoria() {
   await ejecutar(`
@@ -278,6 +290,7 @@ async function ejecutarMigraciones() {
   await asegurarFechaHoraEventos();
   await asegurarTablaGastos();
   await asegurarTablaSociosAuth();
+  await asegurarDatosActualizadosSocios();
   await asegurarTablaAuditoria();
   await reconstruirVistaEstadoFinanciero();
 }

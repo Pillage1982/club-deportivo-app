@@ -1,13 +1,16 @@
 // Acceso MySQL para la autenticación del Portal del Socio: PIN, intentos fallidos y bloqueo temporal.
 // Tabla separada de `personas` a propósito (ver migrations.js) para que el hash del PIN
 // nunca viaje junto con el resto de la ficha del integrante.
+// Sin fila en socios_auth = el socio aún no crea su PIN y su clave es el RUT
+// (ver socioAuthController.js); la fila se crea al guardar el primer PIN.
 const db = require('../config/db');
 
 const MAX_INTENTOS_FALLIDOS = 5;
 const MINUTOS_BLOQUEO = 15;
 
-// Trae lo necesario para intentar un login: hash, estado de bloqueo y si ya cambió
-// el PIN inicial. Solo integrantes activos (igual criterio que el resto del sistema).
+// Trae lo necesario para intentar un login: hash, estado de bloqueo y si ya creó
+// su PIN. LEFT JOIN: quien no tiene fila en socios_auth entra con su RUT.
+// Solo integrantes activos (igual criterio que el resto del sistema).
 exports.obtenerParaLogin = (rutLimpio, callback) => {
   const query = `
     SELECT
@@ -18,9 +21,10 @@ exports.obtenerParaLogin = (rutLimpio, callback) => {
       p.estado,
       sa.pin_hash,
       sa.pin_cambiado,
+      sa.datos_actualizados,
       sa.bloqueado_hasta
     FROM personas p
-    INNER JOIN socios_auth sa ON sa.persona_id = p.id
+    LEFT JOIN socios_auth sa ON sa.persona_id = p.id
     WHERE p.activo = 1
       AND REPLACE(REPLACE(UPPER(p.rut), '.', ''), '-', '') = ?
     LIMIT 1
@@ -30,20 +34,14 @@ exports.obtenerParaLogin = (rutLimpio, callback) => {
   });
 };
 
+// Incluye el RUT: mientras el socio no cree su PIN, la clave actual es el RUT.
 exports.obtenerPorPersonaId = (personaId, callback) => {
   db.query(
-    'SELECT persona_id, pin_hash, pin_cambiado FROM socios_auth WHERE persona_id = ? LIMIT 1',
-    [personaId],
-    (err, results) => callback(err, results ? results[0] : null)
-  );
-};
-
-// Datos básicos de la persona para entregar/mostrar un PIN recién generado
-// (nombre para el saludo, rut como usuario, telefono/email como canal de envío).
-exports.obtenerDatosPersonaBasico = (personaId, callback) => {
-  db.query(
-    `SELECT id AS persona_id, rut, nombres, apellido_paterno, apellido_materno, email, telefono
-     FROM personas WHERE id = ? AND activo = 1 LIMIT 1`,
+    `SELECT p.id AS persona_id, p.rut, sa.pin_hash, sa.pin_cambiado
+     FROM personas p
+     LEFT JOIN socios_auth sa ON sa.persona_id = p.id
+     WHERE p.id = ? AND p.activo = 1
+     LIMIT 1`,
     [personaId],
     (err, results) => callback(err, results ? results[0] : null)
   );
@@ -73,52 +71,55 @@ exports.registrarLoginExitoso = (personaId, callback) => {
   );
 };
 
-// Asigna (o regenera) el PIN de un socio: resetea intentos y bloqueo, y vuelve
-// a exigir el cambio obligatorio de primer ingreso. Sirve tanto para el alta
-// inicial como para "regenerar PIN" cuando el socio lo perdió.
-exports.asignarPin = (personaId, pinHash, callback) => {
+// El socio guarda su PIN propio (primer ingreso obligatorio, o voluntario
+// después). Crea la fila si no existía: es el paso que deja atrás la clave = RUT.
+exports.guardarPinPropio = (personaId, pinHash, callback) => {
   const query = `
-    INSERT INTO socios_auth (persona_id, pin_hash, pin_cambiado, intentos_fallidos, bloqueado_hasta)
-    VALUES (?, ?, 0, 0, NULL)
+    INSERT INTO socios_auth (persona_id, pin_hash, pin_cambiado, intentos_fallidos, bloqueado_hasta, ultimo_login)
+    VALUES (?, ?, 1, 0, NULL, NOW())
     ON DUPLICATE KEY UPDATE
       pin_hash = VALUES(pin_hash),
-      pin_cambiado = 0,
+      pin_cambiado = 1,
       intentos_fallidos = 0,
       bloqueado_hasta = NULL
   `;
   db.query(query, [personaId, pinHash], callback);
 };
 
-// El propio socio cambiando su PIN (primer ingreso obligatorio, o voluntario después).
-exports.actualizarPinPropio = (personaId, pinHash, callback) => {
+// Admin: "olvidé mi PIN" / desbloqueo. Borrar la fila devuelve al socio al
+// estado inicial (clave = RUT) y limpia intentos y bloqueo.
+exports.restablecerAcceso = (personaId, callback) => {
+  db.query('DELETE FROM socios_auth WHERE persona_id = ?', [personaId], callback);
+};
+
+// Estado del primer ingreso del socio autenticado: lo usa perfilSocioMiddleware
+// para no entregar datos personales hasta que cree su PIN y actualice sus datos.
+exports.obtenerEstadoPerfil = (personaId, callback) => {
   db.query(
-    'UPDATE socios_auth SET pin_hash = ?, pin_cambiado = 1 WHERE persona_id = ?',
-    [pinHash, personaId],
-    callback
+    'SELECT pin_cambiado, datos_actualizados FROM socios_auth WHERE persona_id = ? LIMIT 1',
+    [personaId],
+    (err, results) => callback(err, results ? results[0] : null)
   );
 };
 
-// Integrantes activos que todavía no tienen fila en socios_auth: la base del
-// enrolamiento masivo (idempotente, nunca repite a quien ya tiene acceso).
-exports.listarPersonasActivasSinAuth = (callback) => {
-  const query = `
-    SELECT p.id AS persona_id, p.rut, p.nombres, p.apellido_paterno, p.apellido_materno, p.email, p.telefono
-    FROM personas p
-    LEFT JOIN socios_auth sa ON sa.persona_id = p.id
-    WHERE p.activo = 1 AND sa.persona_id IS NULL
-    ORDER BY p.apellido_paterno, p.nombres
-  `;
-  db.query(query, callback);
+// Admin: vuelve a exigir la actualización de datos en el próximo ingreso. Con
+// personaId a uno solo; sin él, a todos los que ya la habían hecho.
+exports.solicitarActualizacionDatos = (personaId, callback) => {
+  if (personaId) {
+    return db.query('UPDATE socios_auth SET datos_actualizados = 0 WHERE persona_id = ?', [personaId], callback);
+  }
+  db.query('UPDATE socios_auth SET datos_actualizados = 0 WHERE datos_actualizados = 1', callback);
 };
 
-// Vista de seguimiento para el admin: quién tiene acceso, si ya hizo el primer
-// ingreso (cambió el PIN) y cuándo fue la última vez que entró.
+// Vista de seguimiento para el admin: quién ya creó su PIN propio (primer
+// ingreso completo), si está bloqueado y cuándo fue la última vez que entró.
 exports.listarEstadoAcceso = (callback) => {
   const query = `
     SELECT
       p.id AS persona_id, p.rut, p.nombres, p.apellido_paterno, p.apellido_materno,
-      sa.pin_cambiado, sa.ultimo_login, sa.bloqueado_hasta,
-      CASE WHEN sa.persona_id IS NULL THEN 0 ELSE 1 END AS tiene_acceso
+      p.telefono, sa.ultimo_login, sa.bloqueado_hasta, sa.datos_actualizados_en,
+      CASE WHEN sa.pin_cambiado = 1 THEN 1 ELSE 0 END AS pin_propio,
+      CASE WHEN sa.datos_actualizados = 1 THEN 1 ELSE 0 END AS datos_actualizados
     FROM personas p
     LEFT JOIN socios_auth sa ON sa.persona_id = p.id
     WHERE p.activo = 1

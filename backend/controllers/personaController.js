@@ -156,6 +156,33 @@ exports.listar = (req, res) => {
   });
 };
 
+exports.listarRetirados = (req, res) => {
+  personaModel.obtenerRetirados((err, results) => {
+    if (err) {
+      console.error('Error listando integrantes retirados:', err);
+      return res.status(500).json({ mensaje: 'Error al cargar los integrantes retirados' });
+    }
+
+    res.json(results);
+  });
+};
+
+// Reintegra a un retirado: vuelve a activo con su ficha e historial intactos
+// (incluida la deuda que tenía al retirarse). Sus cuotas nuevas salen con la
+// próxima generación de mensualidades (Cuotas).
+exports.reintegrar = (req, res) => {
+  personaModel.reintegrarPersona(Number(req.params.id), (err, result) => {
+    if (err) {
+      console.error('Error reintegrando integrante:', err);
+      return res.status(500).json({ mensaje: 'Error al reintegrar integrante' });
+    }
+    if (!result.affectedRows) {
+      return res.status(404).json({ mensaje: 'El integrante no está en Retirados' });
+    }
+    res.json({ mensaje: 'Integrante reintegrado: vuelve como activo con su historial. Sus cuotas nuevas se generan desde Cuotas.' });
+  });
+};
+
 exports.crear = (req, res) => {
 
  const data = normalizarPersona(req.body);

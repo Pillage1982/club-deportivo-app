@@ -317,30 +317,27 @@ function obtenerTerminoBusquedaPersonas() {
   return input ? input.value : '';
 }
 
+function coincideBusquedaPersona(persona, busqueda) {
+  const textoBusqueda = [
+    nombreMostradoPersona(persona),
+    persona.rut,
+    persona.email,
+    persona.telefono
+  ].map(normalizarTextoBusqueda).join(' ');
+
+  return textoBusqueda.includes(busqueda);
+}
+
 function filtrarPersonas(termino) {
   const busqueda =
     normalizarTextoBusqueda(termino);
+  const estado =
+    document.getElementById('filtro_estado_personas')?.value || '';
 
-  if (!busqueda) {
-    return personasTabla;
-  }
-
-  return personasTabla.filter(persona => {
-    const nombreCompleto = [
-      persona.nombres,
-      persona.apellido_paterno,
-      persona.apellido_materno
-    ].join(' ');
-
-    const textoBusqueda = [
-      nombreCompleto,
-      persona.rut,
-      persona.email,
-      persona.telefono
-    ].map(normalizarTextoBusqueda).join(' ');
-
-    return textoBusqueda.includes(busqueda);
-  });
+  return personasTabla.filter(persona =>
+    (!estado || (persona.estado || 'activo') === estado) &&
+    (!busqueda || coincideBusquedaPersona(persona, busqueda))
+  );
 }
 
 const ORDEN_CATEGORIA = ['Sub-8','Sub-10','Sub-12','Sub-15','Sub-18','Adulto','Senior','Fecha requerida'];
@@ -481,11 +478,123 @@ function configurarBuscadorPersonas() {
     return;
   }
 
-  input.addEventListener('input', () => {
+  const aplicarFiltros = () =>
     renderizarTablaPersonas(
       filtrarPersonas(input.value)
     );
-  });
+
+  input.addEventListener('input', aplicarFiltros);
+  document.getElementById('filtro_estado_personas')
+    ?.addEventListener('change', aplicarFiltros);
+
+  configurarTablaRetirados();
+}
+
+// =====================================
+// INTEGRANTES RETIRADOS (HISTÓRICO)
+// =====================================
+
+let retiradosTabla = [];
+
+function cargarTablaRetirados() {
+  const tabla = document.getElementById('tabla_retirados');
+  if (!tabla) return;
+
+  tabla.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Cargando...</td></tr>';
+
+  fetch(`${API_URL}/personas/retirados`, { headers: getAuthHeaders() })
+    .then(async res => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !Array.isArray(data)) {
+        throw new Error(data.mensaje || 'No se pudo cargar el histórico de retirados');
+      }
+      return data;
+    })
+    .then(data => {
+      retiradosTabla = data;
+      renderizarTablaRetirados();
+    })
+    .catch(err => {
+      console.error(err);
+      tabla.innerHTML = `<tr><td colspan="8" class="text-center text-danger">${escaparHtml(err.message)}</td></tr>`;
+    });
+}
+
+function renderizarTablaRetirados() {
+  const tabla = document.getElementById('tabla_retirados');
+  const busqueda = normalizarTextoBusqueda(document.getElementById('buscar_retirados')?.value);
+  const retirados = (busqueda
+    ? retiradosTabla.filter(persona => coincideBusquedaPersona(persona, busqueda))
+    : [...retiradosTabla]
+  ).sort(compararPorNombreMostrado);
+
+  // Reintegrar: mismo rol que crea integrantes.
+  const puedeReintegrar = obtenerRolActual() === 'admin';
+  document.getElementById('th_retirados_reintegrar')?.classList.toggle('d-none', !puedeReintegrar);
+  const columnas = puedeReintegrar ? 8 : 7;
+
+  const total = document.getElementById('total_retirados');
+  if (total) {
+    total.textContent = `${retirados.length} integrante(s) retirado(s)`;
+  }
+
+  if (retirados.length === 0) {
+    tabla.innerHTML = `<tr><td colspan="${columnas}" class="text-center text-muted">No hay integrantes retirados</td></tr>`;
+    return;
+  }
+
+  tabla.innerHTML = retirados.map(persona => `
+    <tr>
+      <td>${escaparHtml(nombreMostradoPersona(persona))}
+        ${persona.es_honorario ? '<span class="badge bg-info text-dark ms-1">Honorario</span>' : ''}</td>
+      <td>${escaparHtml(persona.rut || '')}</td>
+      <td>${escaparHtml(persona.email || '')}</td>
+      <td>${escaparHtml(persona.telefono || '')}</td>
+      <td>${persona.fecha_nacimiento ? formatearFecha(persona.fecha_nacimiento) : ''}</td>
+      <td>${persona.fecha_ingreso ? formatearFecha(persona.fecha_ingreso) : ''}</td>
+      <td>${persona.fecha_retiro ? formatearFechaHora(persona.fecha_retiro) : '<span class="text-muted">—</span>'}</td>
+      ${puedeReintegrar ? `
+      <td class="text-center">
+        <button type="button" class="btn btn-sm btn-outline-success" title="Reintegrar" aria-label="Reintegrar"
+          onclick="reintegrarPersona(${Number(persona.id)})"><i class="bi bi-person-check"></i></button>
+      </td>` : ''}
+    </tr>`).join('');
+}
+
+// Vuelve a activo con su ficha e historial (incluida la deuda que tenía).
+function reintegrarPersona(id) {
+  const persona = retiradosTabla.find(p => Number(p.id) === Number(id));
+  const nombre = persona ? nombreMostradoPersona(persona) : 'el integrante';
+
+  mostrarConfirmacion(
+    `¿Reintegrar a ${escaparHtml(nombre)}? Vuelve como activo con su historial completo.`,
+    () => {
+      fetch(`${API_URL}/personas/${Number(id)}/reintegrar`, {
+        method: 'PATCH',
+        headers: getAuthHeaders()
+      })
+        .then(async res => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.mensaje || 'No se pudo reintegrar al integrante');
+          return data;
+        })
+        .then(data => {
+          mostrarAlerta(data.mensaje, 'success');
+          invalidarCacheApi('personas');
+          cargarTablaRetirados();
+          cargarTablaPersonas();
+          cargarPersonas();
+        })
+        .catch(err => mostrarAlerta(err.message, 'danger'));
+    }
+  );
+}
+
+function configurarTablaRetirados() {
+  document.querySelector('[href="#subtab_retirados"]')
+    ?.addEventListener('shown.bs.tab', cargarTablaRetirados);
+  document.getElementById('buscar_retirados')
+    ?.addEventListener('input', renderizarTablaRetirados);
 }
 
 // =====================================

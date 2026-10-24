@@ -3,11 +3,54 @@
 // integrantes.
 //
 // Nota de esquema (NexoComunidad genérico, distinto de calamena): esta rama no
-// tiene `pago_detalle` (un pago no se vincula a cuotas específicas) ni columnas
-// de apoderado en `personas`, y `deuda_actual` SÍ incluye multas — igual que
-// vista_estado_financiero (ver migrations.js). Por eso las consultas de aquí son
-// más simples que las de cliente/calamena, no es un recorte accidental.
+// tiene `pago_detalle` (un pago no se vincula a cuotas específicas), y
+// `deuda_actual` SÍ incluye multas — igual que vista_estado_financiero (ver
+// migrations.js). Por eso las consultas de aquí son más simples que las de
+// cliente/calamena, no es un recorte accidental.
 const db = require('../config/db');
+
+// =====================================
+// "ACTUALIZAR DATOS" (lo único que el socio puede editar)
+// =====================================
+exports.obtenerDatosEditables = (personaId, callback) => {
+  db.query(
+    `SELECT
+       p.rut, p.nombres, p.apellido_paterno, p.apellido_materno,
+       p.bloque, COALESCE(p.estado, 'activo') AS estado, p.fecha_ingreso, p.es_honorario,
+       p.telefono, p.email, p.direccion, p.fecha_nacimiento, p.sexo,
+       p.nombre_apoderado, p.telefono_apoderado
+     FROM personas p
+     WHERE p.id = ? AND p.activo = 1
+     LIMIT 1`,
+    [personaId],
+    (err, rows) => callback(err, rows ? rows[0] : null)
+  );
+};
+
+// Guarda solo las columnas que el socio puede editar (lista cerrada, nunca
+// nombres de columna desde el request) y marca la actualización como hecha en
+// la misma sentencia: o quedan los dos cambios o ninguno.
+const COLUMNAS_EDITABLES_SOCIO = [
+  'telefono', 'email', 'direccion', 'fecha_nacimiento', 'fecha_ingreso', 'sexo',
+  'nombre_apoderado', 'telefono_apoderado'
+];
+
+exports.guardarDatosSocio = (personaId, datos, callback) => {
+  const columnas = COLUMNAS_EDITABLES_SOCIO.filter(col => datos[col] !== undefined);
+  const asignaciones = columnas.map(col => `p.${col} = ?`);
+  const valores = columnas.map(col => datos[col]);
+
+  db.query(
+    `UPDATE personas p
+     INNER JOIN socios_auth sa ON sa.persona_id = p.id
+     SET ${asignaciones.join(', ')},
+         sa.datos_actualizados = 1,
+         sa.datos_actualizados_en = NOW()
+     WHERE p.id = ? AND p.activo = 1`,
+    [...valores, personaId],
+    callback
+  );
+};
 
 // =====================================
 // FICHA (solo lectura)

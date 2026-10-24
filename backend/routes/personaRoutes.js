@@ -11,6 +11,14 @@ router.get(
   controller.listar
 );
 
+// Histórico de integrantes retirados (eliminados lógicamente)
+router.get(
+  '/retirados',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero', 'entrenador'),
+  controller.listarRetirados
+);
+
 router.post(
   '/',
   authMiddleware,
@@ -23,6 +31,14 @@ router.put(
   authMiddleware,
   roleMiddleware('admin'),
   controller.actualizar
+);
+
+// Reintegro de un retirado (Tablas → Retirados)
+router.patch(
+  '/:id/reintegrar',
+  authMiddleware,
+  roleMiddleware('admin'),
+  controller.reintegrar
 );
 
 router.delete(
