@@ -6,111 +6,212 @@ function _nombreOrg() {
   return (window.APP_CONFIG && window.APP_CONFIG.nombreOrganizacion) || 'NexoComunidad';
 }
 
+// Formato de fecha de todo descargable: DD/MM/AAAA.
+// (toLocaleDateString('es-CL') entrega DD-MM-AAAA, con guiones.)
 function _fechaHoy() {
-  return new Date().toLocaleDateString('es-CL');
+  const hoy = new Date();
+  const dia = String(hoy.getDate()).padStart(2, '0');
+  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+  return `${dia}/${mes}/${hoy.getFullYear()}`;
+}
+
+// 'AAAA-MM-DD' (o 'AAAA-MM-DD HH:MM:SS', la BD usa dateStrings) -> 'DD/MM/AAAA'.
+function _fechaDMA(fecha) {
+  const partes = String(fecha || '').substring(0, 10).split('-');
+  if (partes.length !== 3) return fecha ? String(fecha) : '';
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+// Para Excel se escribe una fecha real (no texto) para que ordenar y filtrar
+// por la columna funcione; _descargarExcel le aplica el formato DD/MM/AAAA.
+// Se construye en UTC porque ExcelJS convierte a número de serie en UTC.
+function _fechaExcel(fecha) {
+  const partes = String(fecha || '').substring(0, 10).split('-').map(Number);
+  if (partes.length !== 3 || partes.some(Number.isNaN)) return fecha ? String(fecha) : '';
+  return new Date(Date.UTC(partes[0], partes[1] - 1, partes[2]));
+}
+
+function _nombreCompleto(p) {
+  return [p.nombres, p.apellido_paterno, p.apellido_materno].filter(Boolean).join(' ');
+}
+
+// Alfabético por el nombre tal como se muestra, sin distinguir tildes ni mayúsculas.
+function _compararPorNombre(a, b) {
+  return _nombreCompleto(a).localeCompare(_nombreCompleto(b), 'es', { sensitivity: 'base' });
+}
+
+// Mismo orden que la tabla de Integrantes: categoría y luego nombre.
+function _integrantesOrdenados() {
+  return [...(personasTabla || [])].sort((a, b) => {
+    const idxA = ORDEN_CATEGORIA.indexOf(calcularCategoria(a.fecha_nacimiento));
+    const idxB = ORDEN_CATEGORIA.indexOf(calcularCategoria(b.fecha_nacimiento));
+    return idxA !== idxB ? idxA - idxB : _compararPorNombre(a, b);
+  });
 }
 
 // ── Excel helpers ─────────────────────────────────────────────────────────────
+// ExcelJS (no SheetJS): la versión gratuita de SheetJS no escribe colores de
+// celda ni bordes.
 
-function _xlsxDisponible() {
-  if (!window.XLSX) {
+const COLOR_ENCABEZADO_EXCEL = 'FFF47A22';
+
+function _excelDisponible() {
+  if (!window.ExcelJS) {
     mostrarAlerta('Librería Excel no disponible. Verifica tu conexión e intenta de nuevo.', 'danger');
     return false;
   }
   return true;
 }
 
-function _descargarExcel(rows, nombreHoja, nombreArchivo) {
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(rows);
-  XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
-  XLSX.writeFile(wb, `${nombreArchivo}_${_fechaHoy().replace(/\//g, '-')}.xlsx`);
+function _descargarBlob(buffer, nombreArchivo) {
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = nombreArchivo;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Encabezado con color, bordes en todas las celdas con datos, filtro
+// desplegable en la fila 1 (como Ctrl+Shift+L) y fechas en DD/MM/AAAA.
+async function _descargarExcel(rows, nombreHoja, nombreArchivo) {
+  const workbook = new ExcelJS.Workbook();
+  const sheet    = workbook.addWorksheet(nombreHoja);
+  const headers  = Object.keys(rows[0] || {});
+
+  sheet.addRow(headers);
+  rows.forEach(row => {
+    const fila = sheet.addRow(headers.map(h => row[h]));
+    fila.eachCell(cell => {
+      if (cell.value instanceof Date) cell.numFmt = 'dd/mm/yyyy';
+    });
+  });
+
+  sheet.getRow(1).eachCell(cell => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ENCABEZADO_EXCEL } };
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  });
+
+  const borde = { style: 'thin' };
+  for (let fila = 1; fila <= rows.length + 1; fila++) {
+    for (let columna = 1; columna <= headers.length; columna++) {
+      sheet.getCell(fila, columna).border = { top: borde, left: borde, bottom: borde, right: borde };
+    }
+  }
+  sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: rows.length + 1, column: headers.length } };
+
+  // Ancho de columna según el contenido más largo (con tope).
+  headers.forEach((h, i) => {
+    const largo = Math.max(h.length, ...rows.map(r => String(r[h] instanceof Date ? '00/00/0000' : r[h] ?? '').length));
+    sheet.getColumn(i + 1).width = Math.min(Math.max(largo + 2, 10), 50);
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  _descargarBlob(buffer, `${nombreArchivo}_${_fechaHoy().replace(/\//g, '-')}.xlsx`);
+}
+
+// Ejecuta una exportación Excel avisando si falla (ExcelJS es asíncrono).
+function _exportarExcel(rows, nombreHoja, nombreArchivo, mensajeOk) {
+  _descargarExcel(rows, nombreHoja, nombreArchivo)
+    .then(() => mostrarAlerta(mensajeOk, 'success'))
+    .catch(err => {
+      console.error('Error generando Excel:', err);
+      mostrarAlerta('No se pudo generar el Excel.', 'danger');
+    });
 }
 
 // ── Excel: Integrantes ────────────────────────────────────────────────────────
 
 function exportarIntegrantesExcel() {
-  if (!_xlsxDisponible()) return;
+  if (!_excelDisponible()) return;
   if (!personasTabla || personasTabla.length === 0) {
     mostrarAlerta('No hay integrantes para exportar.', 'warning');
     return;
   }
-  const rows = personasTabla.map(p => ({
-    'Nombre':         `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno || ''}`.trim(),
+  const rows = _integrantesOrdenados().map(p => ({
+    'Nombre':         _nombreCompleto(p),
     'RUT':            p.rut || '',
+    'Categoría':      calcularCategoria(p.fecha_nacimiento),
     'Bloque':         p.bloque || '',
     'Sexo':           p.sexo || '',
     'Email':          p.email || '',
     'Teléfono':       p.telefono || '',
     'Dirección':      p.direccion || '',
-    'F. Nacimiento':  p.fecha_nacimiento ? String(p.fecha_nacimiento).substring(0, 10) : '',
-    'F. Ingreso':     p.fecha_ingreso    ? String(p.fecha_ingreso).substring(0, 10)    : '',
+    'F. Nacimiento':  _fechaExcel(p.fecha_nacimiento),
+    'F. Ingreso':     _fechaExcel(p.fecha_ingreso),
+    'Apoderado':      p.nombre_apoderado || '',
+    'Tel. Apoderado': p.telefono_apoderado || '',
     'Estado':         p.estado || 'activo',
     'Honorario':      p.es_honorario ? 'Sí' : 'No'
   }));
-  _descargarExcel(rows, 'Integrantes', 'integrantes');
-  mostrarAlerta(`Excel generado: ${rows.length} integrante(s).`, 'success');
+  _exportarExcel(rows, 'Integrantes', 'integrantes', `Excel generado: ${rows.length} integrante(s).`);
 }
 
 // ── Excel: Asistencias ────────────────────────────────────────────────────────
 
 function exportarAsistenciasExcel() {
-  if (!_xlsxDisponible()) return;
+  if (!_excelDisponible()) return;
   if (!asistenciasTabla || asistenciasTabla.length === 0) {
     mostrarAlerta('No hay asistencias para exportar.', 'warning');
     return;
   }
   const rows = asistenciasTabla.map(a => ({
-    'Integrante':  `${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}`.trim(),
+    'Integrante':  _nombreCompleto(a),
     'Bloque':      a.bloque       || '',
     'Actividad':   a.evento       || '',
     'Tipo':        a.tipo_evento  || '',
-    'Fecha':       a.fecha_evento ? String(a.fecha_evento).substring(0, 10) : '',
+    'Fecha':       _fechaExcel(a.fecha_evento),
     'Estado':      a.estado       || '',
     'Min. Atraso': Number(a.minutos_atraso || 0)
   }));
-  _descargarExcel(rows, 'Asistencias', 'asistencias');
-  mostrarAlerta(`Excel generado: ${rows.length} registro(s).`, 'success');
+  _exportarExcel(rows, 'Asistencias', 'asistencias', `Excel generado: ${rows.length} registro(s).`);
 }
 
 // ── Excel: Deudores ───────────────────────────────────────────────────────────
 
+function _deudoresOrdenados() {
+  return (finanzasCargadas || [])
+    .filter(f => Number(f.deuda_actual) > 0)
+    .sort(_compararPorNombre);
+}
+
 function exportarDeudoresExcel() {
-  if (!_xlsxDisponible()) return;
-  const deudores = (finanzasCargadas || []).filter(f => Number(f.deuda_actual) > 0);
+  if (!_excelDisponible()) return;
+  const deudores = _deudoresOrdenados();
   if (deudores.length === 0) {
     mostrarAlerta('No hay integrantes con deuda para exportar.', 'warning');
     return;
   }
   const rows = deudores.map(f => ({
-    'Integrante':   `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`.trim(),
+    'Integrante':   _nombreCompleto(f),
     'Total Multas': Number(f.total_multas || 0),
     'Total Cuotas': Number(f.total_cuotas || 0),
     'Total Pagado': Number(f.total_pagado || 0),
     'Deuda Actual': Number(f.deuda_actual || 0)
   }));
-  _descargarExcel(rows, 'Deudores', 'deudores');
-  mostrarAlerta(`Excel generado: ${rows.length} deudor(es).`, 'success');
+  _exportarExcel(rows, 'Deudores', 'deudores', `Excel generado: ${rows.length} deudor(es).`);
 }
 
 // ── Excel: Gastos ─────────────────────────────────────────────────────────────
 
 function exportarGastosExcel() {
-  if (!_xlsxDisponible()) return;
+  if (!_excelDisponible()) return;
   if (!gastosCargados || gastosCargados.length === 0) {
     mostrarAlerta('No hay gastos para exportar.', 'warning');
     return;
   }
   const rows = gastosCargados.map(g => ({
-    'Fecha':       g.fecha ? String(g.fecha).substring(0, 10) : '',
+    'Fecha':       _fechaExcel(g.fecha),
     'Categoría':   g.categoria || '',
     'Descripción': g.descripcion || '',
     'Monto':       Number(g.monto || 0),
     'Responsable': g.responsable || '',
     'Comprobante': g.comprobante_path ? 'Sí' : 'No'
   }));
-  _descargarExcel(rows, 'Gastos', 'gastos');
-  mostrarAlerta(`Excel generado: ${rows.length} gasto(s).`, 'success');
+  _exportarExcel(rows, 'Gastos', 'gastos', `Excel generado: ${rows.length} gasto(s).`);
 }
 
 // ── PDF helpers ───────────────────────────────────────────────────────────────
@@ -146,26 +247,27 @@ function exportarIntegrantesPDF() {
     mostrarAlerta('No hay integrantes para exportar.', 'warning');
     return;
   }
+  const integrantes = _integrantesOrdenados();
   const doc = _crearDocPDF('Listado de Integrantes');
   doc.autoTable({
     startY: 30,
-    head: [['Nombre', 'RUT', 'Bloque', 'Sexo', 'Email', 'Estado']],
-    body: personasTabla.map(p => [
-      `${p.nombres} ${p.apellido_paterno} ${p.apellido_materno || ''}`.trim(),
+    head: [['Nombre', 'RUT', 'Categoría', 'Sexo', 'Email', 'Estado']],
+    body: integrantes.map(p => [
+      _nombreCompleto(p),
       p.rut || '',
-      p.bloque || '',
+      calcularCategoria(p.fecha_nacimiento),
       p.sexo || '',
       p.email || '',
       p.estado || 'activo'
     ]),
-    foot: [['', '', '', '', `Total: ${personasTabla.length} integrante(s)`, '']],
+    foot: [['', '', '', '', `Total: ${integrantes.length} integrante(s)`, '']],
     styles:             { fontSize: 8, cellPadding: 2 },
     headStyles:         { fillColor: [30, 30, 30], textColor: 255, fontStyle: 'bold' },
     footStyles:         { fillColor: [30, 30, 30], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [250, 250, 250] }
   });
   doc.save(`integrantes_${doc._fechaArchivo.replace(/\//g, '-')}.pdf`);
-  mostrarAlerta(`PDF generado: ${personasTabla.length} integrante(s).`, 'success');
+  mostrarAlerta(`PDF generado: ${integrantes.length} integrante(s).`, 'success');
 }
 
 // ── PDF: Asistencias ──────────────────────────────────────────────────────────
@@ -181,9 +283,9 @@ function exportarAsistenciasPDF() {
     startY: 30,
     head: [['Integrante', 'Actividad', 'Fecha', 'Estado', 'Min.']],
     body: asistenciasTabla.map(a => [
-      `${a.nombres} ${a.apellido_paterno} ${a.apellido_materno || ''}`.trim(),
+      _nombreCompleto(a),
       a.evento || '',
-      a.fecha_evento ? String(a.fecha_evento).substring(0, 10) : '',
+      _fechaDMA(a.fecha_evento),
       a.estado || '',
       a.minutos_atraso || 0
     ]),
@@ -212,7 +314,7 @@ function exportarGastosPDF() {
     startY: 30,
     head: [['Fecha', 'Categoría', 'Descripción', 'Monto', 'Responsable', 'Comprobante']],
     body: gastosCargados.map(g => [
-      g.fecha ? String(g.fecha).substring(0, 10) : '',
+      _fechaDMA(g.fecha),
       g.categoria || '',
       g.descripcion || '',
       formatearMonto(g.monto),
@@ -234,7 +336,7 @@ function exportarGastosPDF() {
 
 function exportarDeudoresPDF() {
   if (!_pdfDisponible()) return;
-  const deudores = (finanzasCargadas || []).filter(f => Number(f.deuda_actual) > 0);
+  const deudores = _deudoresOrdenados();
   if (deudores.length === 0) {
     mostrarAlerta('No hay integrantes con deuda para exportar.', 'warning');
     return;
@@ -246,7 +348,7 @@ function exportarDeudoresPDF() {
     head: [['N°', 'Integrante', 'Multas', 'Cuotas', 'Pagado', 'Deuda']],
     body: deudores.map((f, i) => [
       i + 1,
-      `${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`.trim(),
+      _nombreCompleto(f),
       formatearMonto(f.total_multas),
       formatearMonto(f.total_cuotas),
       formatearMonto(f.total_pagado),

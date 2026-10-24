@@ -30,6 +30,10 @@ exports.obtenerPersonas = (callback) => {
 
       fecha_ingreso,
 
+      nombre_apoderado,
+
+      telefono_apoderado,
+
       COALESCE(estado, 'activo') AS estado,
       COALESCE(es_honorario, 0) AS es_honorario
 
@@ -68,10 +72,12 @@ exports.crearPersona = (
       telefono,
       fecha_nacimiento,
       estado,
-      es_honorario
+      es_honorario,
+      nombre_apoderado,
+      telefono_apoderado
     )
 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
   `;
 
@@ -88,7 +94,9 @@ exports.crearPersona = (
       data.telefono,
       data.fecha_nacimiento || null,
       data.estado || 'activo',
-      data.es_honorario ? 1 : 0
+      data.es_honorario ? 1 : 0,
+      data.nombre_apoderado || null,
+      data.telefono_apoderado || null
     ],
 
     callback
@@ -162,6 +170,9 @@ exports.reactivarPersona = (
       telefono = ?,
       fecha_nacimiento = ?,
       estado = ?,
+      es_honorario = ?,
+      nombre_apoderado = ?,
+      telefono_apoderado = ?,
       activo = 1
 
     WHERE id = ?
@@ -179,6 +190,9 @@ exports.reactivarPersona = (
       data.telefono,
       data.fecha_nacimiento || null,
       data.estado || 'activo',
+      data.es_honorario ? 1 : 0,
+      data.nombre_apoderado || null,
+      data.telefono_apoderado || null,
       id
     ],
     callback
@@ -205,7 +219,9 @@ exports.actualizarPersona = (
       telefono = ?,
       fecha_nacimiento = ?,
       estado = ?,
-      es_honorario = ?
+      es_honorario = ?,
+      nombre_apoderado = ?,
+      telefono_apoderado = ?
 
     WHERE id = ?
 
@@ -226,6 +242,8 @@ exports.actualizarPersona = (
       data.fecha_nacimiento || null,
       data.estado || 'activo',
       data.es_honorario ? 1 : 0,
+      data.nombre_apoderado || null,
+      data.telefono_apoderado || null,
 
       id
 

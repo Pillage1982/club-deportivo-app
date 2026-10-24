@@ -107,6 +107,13 @@ function cargarPersonas() {
         'persona_es_honorario'
       ).checked,
 
+    // Solo se exigen y guardan para menores de 18 (el backend los limpia en mayores)
+    nombre_apoderado:
+      document.getElementById('nombre_apoderado').value,
+
+    telefono_apoderado:
+      document.getElementById('telefono_apoderado').value,
+
   };
 
   // =====================================
@@ -222,6 +229,10 @@ document.getElementById(
   'persona_es_honorario'
 ).checked = false;
 
+document.getElementById('nombre_apoderado').value = '';
+document.getElementById('telefono_apoderado').value = '';
+actualizarVisibilidadApoderado();
+
 // Refresca selectores y tabla personas
     invalidarCacheApi('personas');
     cargarPersonas();
@@ -334,6 +345,14 @@ function filtrarPersonas(termino) {
 
 const ORDEN_CATEGORIA = ['Sub-8','Sub-10','Sub-12','Sub-15','Sub-18','Adulto','Senior','Fecha requerida'];
 
+function nombreMostradoPersona(p) {
+  return [p.nombres, p.apellido_paterno, p.apellido_materno].filter(Boolean).join(' ');
+}
+
+function compararPorNombreMostrado(a, b) {
+  return nombreMostradoPersona(a).localeCompare(nombreMostradoPersona(b), 'es', { sensitivity: 'base' });
+}
+
 function renderizarTablaPersonas(personas) {
   const tabla =
     document.getElementById(
@@ -353,13 +372,15 @@ function renderizarTablaPersonas(personas) {
     return;
   }
 
+  // Por categoría y, dentro de cada una, alfabético por el nombre tal como se
+  // muestra (nombres + apellidos), sin distinguir tildes ni mayúsculas.
   const sorted = [...personas].sort((a, b) => {
     const catA = calcularCategoria(a.fecha_nacimiento);
     const catB = calcularCategoria(b.fecha_nacimiento);
     const idxA = ORDEN_CATEGORIA.indexOf(catA);
     const idxB = ORDEN_CATEGORIA.indexOf(catB);
     if (idxA !== idxB) return idxA - idxB;
-    return (a.apellido_paterno || '').localeCompare(b.apellido_paterno || '', 'es');
+    return compararPorNombreMostrado(a, b);
   });
 
   let categoriaActual = null;
@@ -512,6 +533,12 @@ function editarPersona(persona) {
   document.getElementById(
     'persona_es_honorario'
   ).checked = Boolean(persona.es_honorario);
+
+  document.getElementById('nombre_apoderado').value =
+    persona.nombre_apoderado || '';
+
+  document.getElementById('telefono_apoderado').value =
+    persona.telefono_apoderado || '';
 
   document.getElementById(
     'btn_guardar_persona'
@@ -763,6 +790,17 @@ function validarPersonaFrontend(data) {
 
   if (!['activo', 'receso'].includes(data.estado || 'activo')) {
     return 'Seleccione un estado de integrante valido';
+  }
+
+  const edad = calcularEdad(data.fecha_nacimiento);
+  if (typeof edad === 'number' && edad < 18) {
+    if (!validarNombreFrontend(data.nombre_apoderado)) {
+      return 'Ingrese el nombre del apoderado (integrante menor de 18 años)';
+    }
+
+    if (!validarTelefonoFrontend(data.telefono_apoderado)) {
+      return 'Ingrese un teléfono chileno válido para el apoderado';
+    }
   }
 
   return null;

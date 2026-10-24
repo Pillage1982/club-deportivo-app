@@ -150,10 +150,20 @@ async function asegurarCamposPersonas() {
     {
       nombre: 'es_honorario',
       sql: "ADD COLUMN es_honorario TINYINT(1) NOT NULL DEFAULT 0 AFTER estado"
+    },
+    // Apoderado: solo para menores de 18 años (personaController lo exige y lo
+    // deja en NULL para mayores).
+    {
+      nombre: 'nombre_apoderado',
+      sql: "ADD COLUMN nombre_apoderado VARCHAR(150) NULL AFTER fecha_ingreso"
+    },
+    {
+      nombre: 'telefono_apoderado',
+      sql: "ADD COLUMN telefono_apoderado VARCHAR(30) NULL AFTER nombre_apoderado"
     }
   ];
 
-  // Una sola consulta batcheada en vez de 5 round trips independientes
+  // Una sola consulta batcheada en vez de un round trip por columna
   // (una por columna) en cada arranque del servidor.
   const filasExistentes = await ejecutar(
     `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS

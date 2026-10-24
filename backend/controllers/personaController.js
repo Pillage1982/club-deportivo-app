@@ -64,7 +64,26 @@ function validarFechaNacimiento(fecha) {
   return nacimiento <= hoy;
 }
 
+const EDAD_MAYORIA = 18;
+
+// Edad cumplida a hoy; null si la fecha no es válida.
+function edadDesde(fecha) {
+  const nacimiento = new Date(fecha);
+  if (!fecha || Number.isNaN(nacimiento.getTime())) return null;
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mes = hoy.getMonth() - nacimiento.getMonth();
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) edad--;
+  return edad;
+}
+
+function esMenorDeEdad(fecha) {
+  const edad = edadDesde(fecha);
+  return edad !== null && edad < EDAD_MAYORIA;
+}
+
 function normalizarPersona(data) {
+  const menor = esMenorDeEdad(data.fecha_nacimiento);
   return {
     rut: limpiarTexto(data.rut),
     nombres: limpiarTexto(data.nombres),
@@ -73,7 +92,11 @@ function normalizarPersona(data) {
     email: limpiarTexto(data.email).toLowerCase(),
     telefono: limpiarTexto(data.telefono),
     fecha_nacimiento: data.fecha_nacimiento,
-    estado: limpiarTexto(data.estado || 'activo').toLowerCase()
+    estado: limpiarTexto(data.estado || 'activo').toLowerCase(),
+    es_honorario: data.es_honorario === true || data.es_honorario === 'true' || data.es_honorario === 1,
+    // Solo los menores de edad tienen apoderado; a los mayores se les limpia.
+    nombre_apoderado: menor ? limpiarTexto(data.nombre_apoderado) : null,
+    telefono_apoderado: menor ? limpiarTexto(data.telefono_apoderado) : null
   };
 }
 
@@ -108,6 +131,16 @@ function validarPersona(data) {
 
   if (!validarFechaNacimiento(data.fecha_nacimiento)) {
     return 'Ingrese una fecha de nacimiento válida';
+  }
+
+  if (esMenorDeEdad(data.fecha_nacimiento)) {
+    if (!validarNombre(data.nombre_apoderado)) {
+      return 'Ingrese el nombre del apoderado (integrante menor de 18 años)';
+    }
+
+    if (!validarTelefono(data.telefono_apoderado)) {
+      return 'Ingrese un teléfono chileno válido para el apoderado';
+    }
   }
 
   return null;

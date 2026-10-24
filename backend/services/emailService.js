@@ -12,30 +12,55 @@ function emailConfigurado() {
   return pass.length > 0 && pass !== 'REEMPLAZAR_CON_CLAVE_DE_APLICACION';
 }
 
+// Sin EMAIL_HOST se usa Gmail. Con EMAIL_HOST se usa ese SMTP, p. ej. los
+// buzones del dominio de la organización en Hostinger:
+// EMAIL_HOST=smtp.hostinger.com, EMAIL_PORT=465.
 function crearTransporter() {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
+  const auth = {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  };
+
+  if (process.env.EMAIL_HOST) {
+    const port = Number(process.env.EMAIL_PORT) || 465;
+    return nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port,
+      secure: port === 465,
+      auth
+    });
+  }
+
+  return nodemailer.createTransport({ service: 'gmail', auth });
 }
 
-function enviarCorreo({ destinatario, asunto, cuerpo }) {
+function nombreOrganizacion() {
+  return process.env.ORG_NOMBRE || 'NexoComunidad';
+}
+
+// cc, replyTo y adjuntos (formato attachments de nodemailer) son opcionales.
+function enviarCorreo({ destinatario, asunto, cuerpo, cc, replyTo, adjuntos }) {
   if (!emailConfigurado()) {
     console.warn('[Email] No configurado. Correo no enviado a:', destinatario);
     return Promise.resolve();
   }
 
-  const remitente = process.env.ORG_NOMBRE || 'NexoComunidad';
-
   return crearTransporter().sendMail({
-    from: `"${remitente}" <${process.env.EMAIL_USER}>`,
+    from: `"${nombreOrganizacion()}" <${process.env.EMAIL_USER}>`,
     to: destinatario,
+    cc: cc || undefined,
+    replyTo: replyTo || undefined,
     subject: asunto,
-    html: cuerpo
+    html: cuerpo,
+    attachments: adjuntos || undefined
   });
+}
+
+// Datos de la BD (nombres, actividades...) van dentro del HTML del correo.
+function escaparHtml(valor) {
+  return String(valor ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[c]);
 }
 
 function formatearFechaTexto(fecha) {
@@ -54,15 +79,13 @@ function notificarAusenteEvento(persona, evento) {
     persona.apellido_materno || ''
   ].join(' ').trim();
 
-  const orgNombre = process.env.ORG_NOMBRE || 'NexoComunidad';
-
   const cuerpo = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">${orgNombre}</h2>
-      <p>Estimado/a <strong>${nombre}</strong>,</p>
+      <h2 style="color: #333;">${escaparHtml(nombreOrganizacion())}</h2>
+      <p>Estimado/a <strong>${escaparHtml(nombre)}</strong>,</p>
       <p>
-        La actividad <strong>${evento.nombre}</strong>
-        del ${formatearFechaTexto(evento.fecha)}
+        La actividad <strong>${escaparHtml(evento.nombre)}</strong>
+        del ${escaparHtml(formatearFechaTexto(evento.fecha))}
         ha sido finalizada.
       </p>
       <p>
@@ -128,17 +151,15 @@ function enviarPinAcceso(persona, pin) {
     persona.apellido_materno || ''
   ].join(' ').trim();
 
-  const orgNombre = process.env.ORG_NOMBRE || 'NexoComunidad';
-
   const cuerpo = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">${orgNombre}</h2>
-      <p>Estimado/a <strong>${nombre}</strong>,</p>
+      <h2 style="color: #333;">${escaparHtml(nombreOrganizacion())}</h2>
+      <p>Estimado/a <strong>${escaparHtml(nombre)}</strong>,</p>
       <p>Ya puedes ingresar al Portal del Socio para ver tu información personal y tu estado financiero.</p>
       <p style="font-size: 14px;">Tu acceso es:</p>
       <ul style="font-size: 14px;">
-        <li><strong>RUT:</strong> ${persona.rut}</li>
-        <li><strong>PIN:</strong> <span style="font-size: 20px; letter-spacing: 3px;">${pin}</span></li>
+        <li><strong>RUT:</strong> ${escaparHtml(persona.rut)}</li>
+        <li><strong>PIN:</strong> <span style="font-size: 20px; letter-spacing: 3px;">${escaparHtml(pin)}</span></li>
       </ul>
       <p>
         Por seguridad, al ingresar por primera vez el sistema te pedirá cambiar
@@ -154,9 +175,9 @@ function enviarPinAcceso(persona, pin) {
 
   return enviarCorreo({
     destinatario: persona.email,
-    asunto: `Tu acceso al Portal del Socio — ${orgNombre}`,
+    asunto: `Tu acceso al Portal del Socio — ${nombreOrganizacion()}`,
     cuerpo
   });
 }
 
-module.exports = { notificarAusentesEvento, enviarPinAcceso };
+module.exports = { enviarCorreo, escaparHtml, notificarAusentesEvento, enviarPinAcceso };
