@@ -52,6 +52,27 @@ exports.crearAsistencia = (data, callback) => {
 
 };
 
+// Escaneo offline que llega después de cerrar la actividad: al cerrar, el
+// integrante quedó como ausente. Se reemplaza ese ausente por lo escaneado.
+// Nunca pisa otro estado. Devuelve el id de la asistencia o null si no había un
+// ausente que reemplazar (la multa la ajusta crearMultaSiCorresponde).
+exports.reemplazarAusentePorEscaneo = (data, callback) => {
+  db.query(`
+    UPDATE asistencias
+    SET estado = ?, minutos_atraso = ?
+    WHERE evento_id = ? AND persona_id = ? AND estado = 'ausente'
+  `, [data.estado, data.minutos, data.evento_id, data.persona_id], (err, result) => {
+    if (err) return callback(err);
+    if (!result.affectedRows) return callback(null, null);
+
+    db.query(
+      'SELECT id FROM asistencias WHERE evento_id = ? AND persona_id = ?',
+      [data.evento_id, data.persona_id],
+      (errSel, rows) => callback(errSel, rows && rows[0] ? rows[0].id : null)
+    );
+  });
+};
+
 function calcularMulta(data) {
   if (data.estado === 'ausente') {
     return {

@@ -707,15 +707,31 @@ async function seleccionarEventoAsistenciaPorFecha(fechaEscaneo) {
 }
 
 function aplicarAtrasoAsistencia(evento, fechaEscaneo) {
-  const fechaEvento =
-    evento.fechaAsistencia ||
-    parsearFechaEventoAsistencia(evento.fecha);
+  const resultado =
+    calcularEstadoPorHoraAsistencia(evento, fechaEscaneo);
 
   const estado =
     document.getElementById('estado');
 
   const minutos =
     document.getElementById('minutos');
+
+  if (estado) {
+    estado.value = resultado.estado;
+  }
+
+  if (minutos) {
+    minutos.value = resultado.minutos;
+  }
+}
+
+// Presente o atrasado (y minutos desde el inicio) según la hora del escaneo y la
+// tolerancia. Lo usan el lector QR y la asignación de escaneos guardados sin
+// actividad (que se calculan con la hora en que se escanearon).
+function calcularEstadoPorHoraAsistencia(evento, fechaEscaneo) {
+  const fechaEvento =
+    evento.fechaAsistencia ||
+    parsearFechaEventoAsistencia(evento.fecha);
 
   // Si el evento no es de hoy no se puede calcular atraso con precisión
   // (el evento sólo guarda fecha sin hora, comparar contra otro día daría minutos irreales)
@@ -737,16 +753,29 @@ function aplicarAtrasoAsistencia(evento, fechaEscaneo) {
   const toleranciaMinutos =
     Number((window.APP_CONFIG || {}).asistencia?.toleranciaMinutosAtraso) || 0;
 
-  if (estado) {
-    estado.value =
-      minutosAtraso > toleranciaMinutos
-        ? 'atrasado'
-        : 'presente';
+  return minutosAtraso > toleranciaMinutos
+    ? { estado: 'atrasado', minutos: minutosAtraso }
+    : { estado: 'presente', minutos: 0 };
+}
+
+// Asigna un escaneo guardado sin actividad a `evento` y lo deja listo para subir.
+// Al escanear sin actividad no había hora de inicio contra la cual medir el
+// atraso (quedaba siempre "presente"): se calcula ahora con la hora del escaneo.
+// Solo se recalculan presente/atrasado; otro estado elegido a mano se respeta.
+async function asignarEventoRegistroOffline(reg, evento) {
+  const cambios = {
+    evento_id:  Number(evento.id),
+    estadoSync: 'pendiente'
+  };
+
+  if (reg.estado === 'presente' || reg.estado === 'atrasado') {
+    const { estado, minutos } =
+      calcularEstadoPorHoraAsistencia(evento, new Date(reg.timestamp));
+    cambios.estado = estado;
+    cambios.minutos = minutos;
   }
 
-  if (minutos) {
-    minutos.value = minutosAtraso;
-  }
+  await actualizarRegistroOffline(reg.id, cambios);
 }
 function extraerDatosLecturaAsistencia(lectura) {
   const texto =
@@ -1188,10 +1217,7 @@ async function intentarMatchingSinEvento(eventoId, fechaEvento) {
     const evento = eventoMasCercano(reg.timestamp, eventosDelDia);
     if (!evento || String(evento.id) !== String(eventoId)) continue;
 
-    await actualizarRegistroOffline(reg.id, {
-      evento_id:  Number(eventoId),
-      estadoSync: 'pendiente'
-    });
+    await asignarEventoRegistroOffline(reg, evento);
     asignados++;
   }
 
@@ -1238,10 +1264,7 @@ async function autoMatchingSinEvento() {
     for (const reg of registros) {
       const evento = eventoMasCercano(reg.timestamp, eventosDelDia);
       if (!evento) continue;
-      await actualizarRegistroOffline(reg.id, {
-        evento_id:  Number(evento.id),
-        estadoSync: 'pendiente'
-      });
+      await asignarEventoRegistroOffline(reg, evento);
       totalAsignados++;
     }
   }
@@ -1328,8 +1351,13 @@ async function asignarRegistroSinEvento(id) {
     mostrarAlerta('Selecciona una actividad antes de asignar.', 'warning');
     return;
   }
-  const eventoId = Number(sel.value);
-  await actualizarRegistroOffline(id, { evento_id: eventoId, estadoSync: 'pendiente' });
+  const registro = (await obtenerAsistenciasSinEvento()).find(r => r.id === id);
+  const evento = (eventosCargados || []).find(ev => String(ev.id) === sel.value);
+  if (!registro || !evento) {
+    mostrarAlerta('No se encontró el registro o la actividad. Recarga el panel.', 'warning');
+    return;
+  }
+  await asignarEventoRegistroOffline(registro, evento);
   mostrarAlerta('Registro asignado. Se sincronizará cuando haya conexión.', 'success');
   actualizarBadgeOffline();
   sincronizarManual();
