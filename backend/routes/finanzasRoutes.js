@@ -11,4 +11,12 @@ router.get(
   controller.listar
 );
 
+// Ficha de historial financiero de un integrante (cuotas, abonos y pagos)
+router.get(
+  '/historial/:persona_id',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.historialPersona
+);
+
 module.exports = router;

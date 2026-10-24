@@ -75,8 +75,26 @@ function _descargarBlob(buffer, nombreArchivo) {
   URL.revokeObjectURL(url);
 }
 
-// Encabezado con color, bordes en todas las celdas con datos, filtro
-// desplegable en la fila 1 (como Ctrl+Shift+L) y fechas en DD/MM/AAAA.
+function _estilizarEncabezado(fila) {
+  fila.eachCell(cell => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ENCABEZADO_EXCEL } };
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  });
+}
+
+// Bordea todas las celdas con datos (encabezado + filas) y activa el filtro
+// desplegable en la fila 1, equivalente a seleccionar la tabla y usar Ctrl+Shift+L.
+function _aplicarBordesYFiltro(sheet, totalColumnas, totalFilas) {
+  const borde = { style: 'thin' };
+  for (let fila = 1; fila <= totalFilas; fila++) {
+    for (let columna = 1; columna <= totalColumnas; columna++) {
+      sheet.getCell(fila, columna).border = { top: borde, left: borde, bottom: borde, right: borde };
+    }
+  }
+  sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: totalFilas, column: totalColumnas } };
+}
+
+// Encabezado con color, bordes, filtro y fechas en DD/MM/AAAA.
 async function _descargarExcel(rows, nombreHoja, nombreArchivo) {
   const workbook = new ExcelJS.Workbook();
   const sheet    = workbook.addWorksheet(nombreHoja);
@@ -90,18 +108,8 @@ async function _descargarExcel(rows, nombreHoja, nombreArchivo) {
     });
   });
 
-  sheet.getRow(1).eachCell(cell => {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ENCABEZADO_EXCEL } };
-    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  });
-
-  const borde = { style: 'thin' };
-  for (let fila = 1; fila <= rows.length + 1; fila++) {
-    for (let columna = 1; columna <= headers.length; columna++) {
-      sheet.getCell(fila, columna).border = { top: borde, left: borde, bottom: borde, right: borde };
-    }
-  }
-  sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: rows.length + 1, column: headers.length } };
+  _estilizarEncabezado(sheet.getRow(1));
+  _aplicarBordesYFiltro(sheet, headers.length, rows.length + 1);
 
   // Ancho de columna según el contenido más largo (con tope).
   headers.forEach((h, i) => {
