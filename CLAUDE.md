@@ -95,7 +95,9 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 ### En espera de definición del cliente
 - ~~Justificación aprobada antes del evento y el socio igual asiste~~ DEFINIDO oct-2026: queda bloqueado para esa actividad, no se registra su asistencia (409 `codigo: JUSTIFICACION_APROBADA`, aviso en el lector y en la sincronización offline)
 - ~~Socios y honorarios al cerrar actividades~~ DEFINIDO oct-2026: se mantienen; quedan "ausente" y reciben el aviso de inasistencia como todo integrante activo (la asistencia se considera para postular a cargos)
-- Justificaciones: si la Junta de disciplina necesita rol propio; folio único o separado.
+- ~~Folio de justificaciones~~ DEFINIDO oct-2026: una sola numeración para todas las justificaciones (Portal y manual comparten `justificaciones.id`), como ya funciona; postulaciones y cartas colegio mantienen su propia numeración
+- Justificaciones: si la Junta de disciplina necesita rol propio.
+- Guías .pptx/.pdf de `documentacion/` fuera de git (`.gitignore`); se guardan en Google Drive → carpeta "Documentos GDC"
 
 ### Pendiente offline (spec: prompt-asistencia-offline-sin-evento.md)
 - Background Sync API (SyncManager en SW) — el fallback manual ya existe
@@ -103,11 +105,8 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - Panel "Eventos duplicados" en admin
 - Matching server-side (para escaneos de otros dispositivos)
 
-### Pendiente NexoComunidad v1.3-dev
-- Portar emailService genérico (sin montos hardcodeados de calamena)
-- Apoderado condicional por edad
-- Ordenar integrantes por bloque > alfabético
-- Exportación Excel/PDF (portar desde calamena)
+### NexoComunidad v1.3-dev
+- HECHO 2026-10-23 (commit 0d6392c, falta revisar en devnexo y pasar a main): emailService genérico (EMAIL_HOST/EMAIL_PORT, cc/replyTo/adjuntos, escape HTML), apoderado obligatorio para menores de 18 (antes no se guardaba) + fix es_honorario, integrantes por categoría > alfabético, exportación Excel con ExcelJS y fechas DD/MM/AAAA
 
 ## Roadmap general NexoComunidad
 Ver `documentacion/roadmap_maestro_producto_adaptable.md`

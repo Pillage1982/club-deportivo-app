@@ -23,6 +23,13 @@ respaldo-sitio-gdc/
 backend/uploads/
 
 # =========================
+# GUÍAS Y PRESENTACIONES (pesadas; se guardan en Google Drive → "Documentos GDC")
+# =========================
+
+documentacion/*.pptx
+documentacion/*.pdf
+
+# =========================
 # VARIABLES DE ENTORNO
 # =========================
 
