@@ -106,7 +106,8 @@ Dashboard, Integrantes, Asistencia QR (offline-first, sin evento), Eventos, Fina
 - Matching server-side (para escaneos de otros dispositivos)
 
 ### NexoComunidad v1.3-dev
-- HECHO 2026-10-23 (commit 0d6392c, falta revisar en devnexo y pasar a main): emailService genérico (EMAIL_HOST/EMAIL_PORT, cc/replyTo/adjuntos, escape HTML), apoderado obligatorio para menores de 18 (antes no se guardaba) + fix es_honorario, integrantes por categoría > alfabético, exportación Excel con ExcelJS y fechas DD/MM/AAAA
+- HECHO 2026-10-23/24 (commits 0d6392c→ffe8c01, falta revisar en devnexo y pasar a main): emailService genérico, apoderado <18 + fix es_honorario, orden integrantes, Excel con ExcelJS, cola offline, registro de actividad, hora de Chile en MySQL, Portal con contraseña (clave inicial = RUT) + Actualizar datos, Retirados/Reintegrar, pagos vinculados a cuotas (meses, abonos, saldo a favor), tipo de pago y comprobante, UPLOADS_DIR, Balance general, Ficha historial, depósitos desde el Portal. En NexoComunidad las multas siguen sumando a la deuda
+- Pendiente: llevar estas mejoras de v1.3-dev a cliente/jjvv y cliente/jjvv-test
 
 ## Roadmap general NexoComunidad
 Ver `documentacion/roadmap_maestro_producto_adaptable.md`
