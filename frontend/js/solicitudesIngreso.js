@@ -1,6 +1,7 @@
 // Panel admin "Solicitudes": postulaciones enviadas desde el botón "Súmate a la
-// promesa" del sitio web de la agrupación. Aceptar crea el integrante con los datos
-// básicos (el resto lo completa él en su primer ingreso al Portal del Integrante);
+// promesa" del sitio web de la agrupación, con los datos de la "Ficha de actualización
+// de datos" (el PDF firmado se abre con "Ver ficha"). Aceptar crea el integrante
+// con esos datos (el resto lo completa él en su primer ingreso al Portal del Integrante);
 // en ambos casos el backend avisa al postulante por correo.
 
 let cacheSolicitudes = [];
@@ -64,6 +65,29 @@ function edadSolicitante(fechaNacimiento) {
   return edad;
 }
 
+const ETIQUETA_CONDICION_SOLICITUD = { bailarin: 'Bailarín', socio: 'Socio' };
+const ETIQUETA_ESTADO_CIVIL_SOLICITUD = {
+  soltero: 'Soltero/a', casado: 'Casado/a', conviviente_civil: 'Conviviente civil',
+  separado: 'Separado/a', divorciado: 'Divorciado/a', viudo: 'Viudo/a'
+};
+const ETIQUETA_ENTIDAD_BAILE_SOLICITUD = {
+  asociacion: 'Asociación', federacion: 'Federación', central_caporales: 'Central de Caporales'
+};
+
+// "Bailarín · Diablos", "Socio" o, en solicitudes antiguas sin condición, la comparsa.
+function condicionSolicitud(s) {
+  if (!s.condicion) return s.comparsa_interes || '—';
+  const condicion = ETIQUETA_CONDICION_SOLICITUD[s.condicion];
+  return s.condicion === 'bailarin' && s.comparsa_interes ? `${condicion} · ${s.comparsa_interes}` : condicion;
+}
+
+function sacramentosSolicitud(s) {
+  return [['bautizo', 'Bautizo'], ['comunion', 'Comunión'], ['confirmacion', 'Confirmación']]
+    .filter(([campo]) => Number(s[campo]))
+    .map(([, etiqueta]) => etiqueta)
+    .join(', ') || 'Ninguno';
+}
+
 function badgeEstadoSolicitud(s) {
   if (s.estado === 'aprobada') return crearBadge('Aceptada', 'bg-success');
   if (s.estado === 'rechazada') return crearBadge('Rechazada', 'bg-danger');
@@ -75,7 +99,7 @@ function filtrarSolicitudes() {
   if (!texto) return cacheSolicitudes;
 
   return cacheSolicitudes.filter(s => [
-    nombreSolicitante(s), s.rut, s.comparsa_interes, folioJustificacion(s.id)
+    nombreSolicitante(s), s.rut, condicionSolicitud(s), folioJustificacion(s.id)
   ].some(v => String(v || '').toLowerCase().includes(texto)));
 }
 
@@ -102,12 +126,15 @@ function renderizarTablaSolicitudes() {
         <td>${formatearFechaHora(s.creado_en)}</td>
         <td>${escaparHtml(nombreSolicitante(s))}<div class="small text-muted">${escaparHtml(s.rut)}</div></td>
         <td>${edad ?? '—'}${s.nombre_apoderado ? ' ' + crearBadge('Menor', 'bg-info text-dark') : ''}</td>
-        <td>${escaparHtml(s.comparsa_interes || '—')}</td>
+        <td>${escaparHtml(condicionSolicitud(s))}</td>
         <td class="small">${escaparHtml(s.telefono)}<br>${escaparHtml(s.email)}</td>
         <td>${badgeEstadoSolicitud(s)}</td>
         <td class="text-nowrap">
           <button type="button" class="btn btn-sm ${pendiente ? 'btn-primary' : 'btn-outline-secondary'}" onclick="abrirRevisionSolicitud(${s.id})">
             <i class="bi bi-${pendiente ? 'pencil-square' : 'eye'}"></i> ${pendiente ? 'Revisar' : 'Ver'}
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" title="Ver ficha PDF" onclick="verFichaSolicitud(${s.id}, this)">
+            <i class="bi bi-file-earmark-pdf"></i>
           </button>
         </td>
       </tr>
@@ -132,8 +159,22 @@ function abrirRevisionSolicitud(id) {
       <dd class="col-sm-8">${formatearFecha(s.fecha_nacimiento)}${edad !== null ? ` (${edad} años)` : ''}</dd>
       <dt class="col-sm-4">Contacto</dt>
       <dd class="col-sm-8">${escaparHtml(s.telefono)} · ${escaparHtml(s.email)}</dd>
-      <dt class="col-sm-4">Comparsa de interés</dt>
-      <dd class="col-sm-8">${escaparHtml(s.comparsa_interes || '—')}</dd>
+      ${s.direccion ? `
+      <dt class="col-sm-4">Domicilio</dt>
+      <dd class="col-sm-8">${escaparHtml([s.direccion, s.ciudad].filter(Boolean).join(', '))}</dd>` : ''}
+      ${s.estado_civil ? `
+      <dt class="col-sm-4">Estado civil</dt>
+      <dd class="col-sm-8">${escaparHtml(ETIQUETA_ESTADO_CIVIL_SOLICITUD[s.estado_civil] || s.estado_civil)}</dd>` : ''}
+      ${s.condicion ? `
+      <dt class="col-sm-4">Sacramentos</dt>
+      <dd class="col-sm-8">${escaparHtml(sacramentosSolicitud(s))}</dd>` : ''}
+      <dt class="col-sm-4">${s.condicion ? 'Condición' : 'Comparsa de interés'}</dt>
+      <dd class="col-sm-8">${escaparHtml(condicionSolicitud(s))}</dd>
+      ${s.baile_anterior ? `
+      <dt class="col-sm-4">Baile anterior</dt>
+      <dd class="col-sm-8">${escaparHtml(s.baile_anterior)} (${escaparHtml(ETIQUETA_ENTIDAD_BAILE_SOLICITUD[s.baile_anterior_entidad] || '—')})</dd>` : ''}
+      <dt class="col-sm-4">Firma</dt>
+      <dd class="col-sm-8">${Number(s.tiene_firma) ? 'Firmada (ver ficha PDF)' : 'Sin firma (solicitud anterior a la ficha)'}</dd>
       ${s.mensaje ? `
       <dt class="col-sm-4">Mensaje</dt>
       <dd class="col-sm-8" style="white-space: pre-wrap;">${escaparHtml(s.mensaje)}</dd>` : ''}
@@ -157,6 +198,40 @@ function abrirRevisionSolicitud(id) {
   document.getElementById('revisar_sol_observacion').value = '';
 
   bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_revisar_solicitud')).show();
+}
+
+// El PDF exige el token: se descarga con fetch y se abre como blob en otra pestaña
+// (abierta antes del fetch para que el navegador no la bloquee).
+function verFichaSolicitud(id, boton) {
+  if (!id) return;
+  const pestana = window.open('', '_blank');
+  if (boton) boton.disabled = true;
+
+  fetch(`${API_URL}/solicitudes-ingreso/${id}/ficha`, { headers: getAuthHeaders() })
+    .then(async res => {
+      if (!res.ok) {
+        const data = await leerRespuestaJson(res);
+        throw new Error(data.mensaje || 'No se pudo generar la ficha');
+      }
+      return res.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      if (pestana) {
+        pestana.location.href = url;
+      } else {
+        const enlace = document.createElement('a');
+        enlace.href = url;
+        enlace.download = `Ficha_ingreso_${folioJustificacion(id)}.pdf`;
+        enlace.click();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    })
+    .catch(err => {
+      if (pestana) pestana.close();
+      mostrarAlerta(escaparHtml(obtenerMensajeError(err)), 'danger');
+    })
+    .finally(() => { if (boton) boton.disabled = false; });
 }
 
 async function resolverSolicitudIngreso(accion) {

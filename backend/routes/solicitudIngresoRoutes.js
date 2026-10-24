@@ -9,6 +9,7 @@ const roleMiddleware = require('../middleware/roleMiddleware');
 router.use(authMiddleware, roleMiddleware('admin'));
 
 router.get('/', controller.listar);
+router.get('/:id/ficha', controller.descargarFicha);
 router.post('/:id/aprobar', controller.aprobar);
 router.post('/:id/rechazar', controller.rechazar);
 

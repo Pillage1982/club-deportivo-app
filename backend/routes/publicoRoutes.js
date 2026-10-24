@@ -22,7 +22,8 @@ const verificacionRateLimiter = rateLimit({
 });
 
 router.use(cors({ origin: '*', methods: ['GET', 'POST'] }));
-router.use(express.json({ limit: '20kb' }));
+// La solicitud de ingreso trae la firma en PNG (data URL), por eso el margen.
+router.use(express.json({ limit: '200kb' }));
 
 // Solo lectura: nombre, tipo, fecha y lugar de las próximas actividades.
 router.get('/actividades', eventoController.listarProximosPublicos);

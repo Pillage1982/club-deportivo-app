@@ -2,6 +2,7 @@
 const CLIENTE = require('../config/cliente');
 const cuotaIntegracion = require('../config/cuotaIntegracion');
 const cuentaDeposito = require('../config/cuentaDeposito');
+const { ETIQUETA_ESTADO_CIVIL } = require('./fichaIngresoPdf');
 
 let nodemailer = null;
 
@@ -499,13 +500,28 @@ const DESTINO_SOLICITUDES_INGRESO = () => process.env.EMAIL_SOLICITUDES_INGRESO
 
 const URL_APP = () => process.env.FRONTEND_URL || '';
 
+const ETIQUETA_CONDICION = { bailarin: 'Bailarín', socio: 'Socio' };
+const ETIQUETA_ENTIDAD_BAILE = {
+  asociacion: 'Asociación',
+  federacion: 'Federación',
+  central_caporales: 'Central de Caporales'
+};
+
+function sacramentosTexto(s) {
+  return [['bautizo', 'Bautizo'], ['comunion', 'Comunión'], ['confirmacion', 'Confirmación']]
+    .filter(([campo]) => Number(s[campo]))
+    .map(([, etiqueta]) => etiqueta)
+    .join(', ') || 'Ninguno';
+}
+
 function filaDato(etiqueta, valor) {
   return `<tr><td style="padding: 4px 16px 4px 0; vertical-align: top;"><strong>${etiqueta}:</strong></td><td>${escaparHtml(valor || '—')}</td></tr>`;
 }
 
-// s: fila de solicitudes_ingreso. Devuelve false si el correo no está configurado
-// (la solicitud igual queda guardada y se ve en el panel).
-function enviarSolicitudIngreso(s) {
+// s: fila de solicitudes_ingreso; ficha: adjunto PDF de la ficha (null si no se
+// pudo generar). Devuelve false si el correo no está configurado (la solicitud
+// igual queda guardada y se ve en el panel).
+function enviarSolicitudIngreso(s, ficha) {
   if (!emailConfigurado()) {
     console.warn('[Email] No configurado. Solicitud de ingreso no enviada, folio:', s.id);
     return Promise.resolve(false);
@@ -525,10 +541,15 @@ function enviarSolicitudIngreso(s) {
       <table role="presentation" style="border-collapse: collapse; margin: 0 0 20px;">
         ${filaDato('Nombre', nombre)}
         ${filaDato('Rut', s.rut)}
+        ${filaDato('Domicilio', [s.direccion, s.ciudad].filter(Boolean).join(', '))}
         ${filaDato('Fecha de nacimiento', fechaNacimiento)}
+        ${filaDato('Estado civil', ETIQUETA_ESTADO_CIVIL[s.estado_civil] || s.estado_civil)}
         ${filaDato('Celular', s.telefono)}
         ${filaDato('E-mail', s.email)}
-        ${filaDato('Comparsa de interés', s.comparsa_interes)}
+        ${filaDato('Sacramentos', sacramentosTexto(s))}
+        ${filaDato('Condición', ETIQUETA_CONDICION[s.condicion])}
+        ${s.condicion === 'bailarin' ? filaDato('Bloque/fila de interés', s.comparsa_interes || 'Aún no lo sabe') : ''}
+        ${s.baile_anterior ? filaDato('Baile religioso anterior', `${s.baile_anterior} (${ETIQUETA_ENTIDAD_BAILE[s.baile_anterior_entidad] || '—'})`) : ''}
         ${s.mensaje ? filaDato('Mensaje', s.mensaje) : ''}
       </table>
       ${s.nombre_apoderado ? `
@@ -539,6 +560,9 @@ function enviarSolicitudIngreso(s) {
         ${filaDato('Celular', s.telefono_apoderado)}
       </table>` : ''}
       <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;">
+      <p style="margin: 0 0 16px;">${ficha
+        ? 'Se adjunta la <strong>Ficha de actualización de datos</strong> en PDF, firmada por el postulante.'
+        : 'La ficha en PDF se puede descargar desde el panel.'}</p>
       <p style="color: #888; font-size: 12px; margin: 0;">
         Revisar y aceptar o rechazar en el panel de la directiva → Tablas → Solicitudes
         (folio ${formatearFolio(s.id)}). Al aceptarla, el postulante queda como integrante
@@ -553,7 +577,32 @@ function enviarSolicitudIngreso(s) {
     replyTo: s.email,
     asunto: `Solicitud de ingreso — Folio ${formatearFolio(s.id)} — ${nombre}`,
     cuerpo,
-    adjuntos: [adjuntoLogo()]
+    adjuntos: ficha ? [adjuntoLogo(), ficha] : [adjuntoLogo()]
+  }).then(() => true);
+}
+
+// Acuse de recibo al postulante con la copia de su ficha en PDF.
+function enviarCopiaSolicitudIngreso(s, ficha) {
+  if (!emailConfigurado() || !s.email) return Promise.resolve(false);
+
+  const nombre = [s.nombres, s.apellido_paterno].join(' ').trim();
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">${CLIENTE.nombre}</h2>
+      <p>Hola <strong>${escaparHtml(nombre)}</strong>,</p>
+      <p>Recibimos tu solicitud de ingreso folio <strong>${formatearFolio(s.id)}</strong>.
+        La directiva la revisará y te avisaremos por este medio.</p>
+      ${ficha ? '<p>Te adjuntamos una copia de tu <strong>Ficha de actualización de datos</strong> en PDF.</p>' : ''}
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="color: #888; font-size: 12px;">Este es un mensaje automático. No respondas a este correo.</p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    destinatario: s.email,
+    asunto: `Recibimos tu solicitud de ingreso — Folio ${formatearFolio(s.id)}`,
+    cuerpo,
+    adjuntos: ficha ? [ficha] : undefined
   }).then(() => true);
 }
 
@@ -730,6 +779,7 @@ module.exports = {
   notificarResolucionJustificacion,
   notificarResolucionPostulacion,
   enviarSolicitudIngreso,
+  enviarCopiaSolicitudIngreso,
   notificarResolucionSolicitudIngreso,
   enviarSolicitudCartaPermiso,
   notificarResolucionCartaPermiso,

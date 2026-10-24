@@ -342,9 +342,12 @@ function filtrarPersonas(termino) {
     normalizarTextoBusqueda(termino);
   const estado =
     document.getElementById('filtro_estado_personas')?.value || '';
+  const soloNuevos =
+    document.getElementById('filtro_antiguedad_personas')?.value === 'nuevo';
 
   return personasTabla.filter(persona =>
     (!estado || (persona.estado || 'activo') === estado) &&
+    (!soloNuevos || esIntegranteNuevo(persona.fecha_ingreso)) &&
     (!busqueda || coincideBusquedaPersona(persona, busqueda))
   );
 }
@@ -405,7 +408,8 @@ function renderizarTablaPersonas(personas) {
     const dir = persona.direccion || '';
     filas.push(`
       <tr>
-        <td class="td-nombre col-fija" data-label="Nombre Completo">${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}</td>
+        <td class="td-nombre col-fija" data-label="Nombre Completo">${persona.nombres} ${persona.apellido_paterno} ${persona.apellido_materno || ''}
+          ${esIntegranteNuevo(persona.fecha_ingreso) ? '<span class="badge bg-success ms-1">Nuevo</span>' : ''}</td>
         <td class="col-fija-2" data-label="RUT">${persona.rut || ''}</td>
         <td data-label="Bloque">${persona.bloque || ''}</td>
         <td data-label="Sexo">${persona.sexo || ''}</td>
@@ -451,6 +455,8 @@ function configurarBuscadorPersonas() {
   input.addEventListener('input', aplicarFiltros);
   document.getElementById('filtro_estado_personas')
     ?.addEventListener('change', aplicarFiltros);
+  document.getElementById('filtro_antiguedad_personas')
+    ?.addEventListener('change', aplicarFiltros);
 }
 
 // =====================================
@@ -493,7 +499,10 @@ function renderizarTablaRetirados() {
   // La ficha de historial financiero solo la ven admin y tesorero.
   const verHistorial = ['admin', 'tesorero'].includes(obtenerRolActual());
   document.getElementById('th_retirados_historial')?.classList.toggle('d-none', !verHistorial);
-  const columnas = verHistorial ? 11 : 10;
+  // Reintegrar: mismos roles que crean integrantes (rol base admin).
+  const puedeReintegrar = obtenerRolActual() === 'admin';
+  document.getElementById('th_retirados_reintegrar')?.classList.toggle('d-none', !puedeReintegrar);
+  const columnas = 10 + (verHistorial ? 1 : 0) + (puedeReintegrar ? 1 : 0);
 
   const total = document.getElementById('total_retirados');
   if (total) {
@@ -532,10 +541,45 @@ function renderizarTablaRetirados() {
           <button type="button" class="btn btn-sm btn-outline-primary" title="Ver historial" aria-label="Ver historial"
             onclick="verHistorialFinanciero(${Number(persona.id)})"><i class="bi bi-journal-text"></i></button>
         </td>` : ''}
+        ${puedeReintegrar ? `
+        <td class="text-center">
+          <button type="button" class="btn btn-sm btn-outline-success" title="Reintegrar" aria-label="Reintegrar"
+            onclick="reintegrarPersona(${Number(persona.id)})"><i class="bi bi-person-check"></i></button>
+        </td>` : ''}
       </tr>`);
   });
 
   tabla.innerHTML = filas.join('');
+}
+
+// Vuelve a activo con su ficha e historial (incluida la deuda que tenía); el
+// servidor le genera las cuotas de la temporada vigente que le falten.
+function reintegrarPersona(id) {
+  const persona = retiradosTabla.find(p => Number(p.id) === Number(id));
+  const nombre = persona ? nombreCompletoPersona(persona) : 'el integrante';
+
+  mostrarConfirmacion(
+    `¿Reintegrar a ${nombre}? Vuelve como activo con su historial completo y se le generan las cuotas de la temporada vigente.`,
+    () => {
+      fetch(`${API_URL}/personas/${Number(id)}/reintegrar`, {
+        method: 'PATCH',
+        headers: getAuthHeaders()
+      })
+        .then(async res => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.mensaje || 'No se pudo reintegrar al integrante');
+          return data;
+        })
+        .then(data => {
+          mostrarAlerta(data.mensaje, 'success');
+          invalidarCacheApi('personas');
+          cargarTablaRetirados();
+          cargarTablaPersonas();
+          cargarPersonas();
+        })
+        .catch(err => mostrarAlerta(err.message, 'danger'));
+    }
+  );
 }
 
 function configurarTablaRetirados() {
@@ -751,6 +795,21 @@ function calcularCategoria(fechaNacimiento) {
 
   return 'Senior';
 
+}
+
+// "Nuevo": ingresó entre septiembre y diciembre del último septiembre; sigue
+// siéndolo hasta fines de agosto (misma regla que /dashboard).
+function esIntegranteNuevo(fechaIngreso) {
+  if (!fechaIngreso) return false;
+
+  const [anio, mes] =
+    String(fechaIngreso).split('T')[0].split('-').map(Number);
+  if (!anio || !mes) return false;
+
+  const hoy = new Date();
+  const anioIngresos =
+    hoy.getMonth() >= 8 ? hoy.getFullYear() : hoy.getFullYear() - 1;
+  return anio === anioIngresos && mes >= 9;
 }
 
 function obtenerBadgeEstadoPersona(estado) {

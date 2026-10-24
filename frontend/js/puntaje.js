@@ -85,7 +85,9 @@ function renderizarRanking(data) {
 function verHistorialPuntaje(persona_id, nombre) {
   document.getElementById('puntaje_historial_nombre').textContent = nombre;
   const tbody = document.getElementById('tabla_historial_puntaje');
+  const resumen = document.getElementById('puntaje_historial_resumen');
   tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3">Cargando...</td></tr>';
+  if (resumen) resumen.textContent = '';
 
   const modal = new bootstrap.Modal(document.getElementById('modal_historial_puntaje'));
   modal.show();
@@ -99,13 +101,23 @@ function verHistorialPuntaje(persona_id, nombre) {
         tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Sin registros</td></tr>';
         return;
       }
+      // Todas las actividades de la temporada (también ausente / sin registro,
+      // con 0 puntos) más los pagos de cuota.
+      const actividades = data.filter(h => h.estado);
+      const asistio = actividades.filter(h => !['ausente', 'sin_registro'].includes(h.estado)).length;
+      const total = data.reduce((suma, h) => suma + Number(h.puntos || 0), 0);
+      if (resumen) {
+        resumen.textContent = `${actividades.length} actividad(es) de la temporada · con registro de asistencia en ${asistio} · ${total} punto(s) en total (sin antigüedad)`;
+      }
+
       tbody.innerHTML = data.map(h => {
         const pts = Number(h.puntos);
-        const clsPts = pts > 0 ? 'text-success' : pts < 0 ? 'text-danger' : '';
+        const clsPts = pts > 0 ? 'text-success' : pts < 0 ? 'text-danger' : 'text-muted';
         const signo  = pts > 0 ? '+' : '';
         const fecha  = String(h.fecha || '').substring(0, 10);
+        const falta  = h.estado === 'ausente' || h.estado === 'sin_registro';
         return `
-        <tr>
+        <tr class="${falta ? 'historial-puntaje-falta' : ''}">
           <td>${fecha}</td>
           <td>${escaparHtml(h.evento)}</td>
           <td>${escaparHtml(h.detalle)}</td>

@@ -2,6 +2,7 @@
 const eventoModel = require('../models/eventoModel');
 const asistenciaModel = require('../models/asistenciaModel');
 const multaModel = require('../models/multaModel');
+const puntajeModel = require('../models/puntajeModel');
 const multasConfig = require('../config/multas');
 const { notificarAusentesEvento } = require('../services/emailService');
 
@@ -155,9 +156,14 @@ exports.eliminar = (req, res) => {
 
       }
 
-      res.json({
-        mensaje: 'Actividad eliminada'
-      });
+      // Las asistencias se borran en cascada, pero los puntos no (puntajes no
+      // tiene clave foránea) y seguían sumando en el ranking.
+      puntajeModel.eliminarPuntajesEvento(req.params.id)
+        .then(() => res.json({ mensaje: 'Actividad eliminada' }))
+        .catch(errPuntaje => {
+          console.error('Error eliminando puntajes de la actividad:', errPuntaje);
+          res.json({ mensaje: 'Actividad eliminada, pero no se pudieron quitar sus puntos del ranking' });
+        });
 
     }
 

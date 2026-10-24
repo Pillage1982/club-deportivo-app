@@ -67,7 +67,7 @@ exports.listarHistorial = async (req, res) => {
   try {
     // Mismo corte que el ranking: la temporada elegida (por defecto, la vigente)
     const temporada = await resolverTemporada(req.query.temporada);
-    const historial = await puntajeModel.obtenerHistorial(
+    const historial = await puntajeModel.obtenerHistorialTemporada(
       req.params.persona_id, temporada.fecha_inicio, temporada.fecha_fin
     );
     res.json(historial);

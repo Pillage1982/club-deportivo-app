@@ -33,6 +33,16 @@ tal cual hasta que la agrupación entregue sus estatutos y definiciones.
 | 17 | Bloques "Socios" / "Socios honorarios": no entran a formaciones y se agrupan en una fila aparte en Asistencia por Bloque; los honorarios no pagan cuota | `backend/utils/formacionRules.js`, `backend/models/cuotaModel.js` | Confirmar nombres de bloques |
 | 18 | Rebaja de cuota infantil 50% para menores de 12 años (Art. 2.1.B GDC) | `backend/models/cuotaModel.js` | Esperando estatutos |
 
+## Llegado con la actualización desde la versión base (merge 23-10-2026)
+
+| # | Pendiente | Dónde se cambia | Estado |
+|---|-----------|-----------------|--------|
+| 19 | **Ficha de ingreso en PDF** ("Súmate a la promesa"): calca la ficha en papel de GDC (estado civil, sacramentos, condición bailarín/socio, apoderado, baile anterior, firma, "Pago cuota inscripción"). Se quitó la marca GDC, pero el formato es el de GDC | `backend/services/fichaIngresoPdf.js`; campos en el formulario del sitio web y `backend/controllers/solicitudIngresoController.js` | Pedir la ficha propia de la agrupación |
+| 20 | Etiqueta "Nuevo" en Integrantes: ingreso entre septiembre y diciembre del último septiembre (según la temporada de GDC) | `frontend/js/personas.js` y Dashboard (`backend/models/dashboardModel.js`) | Confirmar cuándo se considera "nuevo" |
+| 21 | Puntaje "cuota al día": en **agosto y septiembre** (meses sin cuota en la temporada de GDC, oct-jul) basta con no deber cuotas anteriores | `MESES_SIN_CUOTA` en `backend/utils/estatutoGdcRules.js` | Ajustar junto con #8 (meses que se cobran) |
+| 22 | Justificación aprobada antes de la actividad: el integrante **queda bloqueado** para esa actividad (no se registra su asistencia aunque asista). Definición de GDC | `responderAsistenciaExistente` en `backend/controllers/asistenciaController.js` | Confirmar |
+| 23 | Registro manual de asistencia en actividades pasadas de la temporada: solo roles admin y secretaria (más soporte) | `ROLES_ASISTENCIA_MANUAL` en `backend/controllers/asistenciaController.js` | Confirmar quién puede hacerlo (ver #15) |
+
 ## También por recibir
 - Cuenta bancaria para depósitos: `backend/config/cuentaDeposito.js` (hoy vacía; el portal muestra "datos pendientes").
 - Estatutos en PDF: `backend/documentos/Estatutos.pdf` (sin archivo, el portal responde "Estatutos no disponibles").

@@ -621,6 +621,20 @@ img[data-config-img="cliente.logo"] {
   z-index: 2;
 }
 
+/* Historial de puntaje: todas las actividades de la temporada, con su propio scroll */
+.historial-puntaje-scroll {
+  max-height: 60vh;
+}
+
+.historial-puntaje-falta td {
+  background: #fff5f5;
+}
+
+/* Asistencia manual: lista de integrantes con scroll propio */
+.asistencia-manual-lista {
+  max-height: 45vh;
+}
+
 /* Fila separadora de bloque */
 .tabla-bloque-header td {
   background: linear-gradient(135deg, var(--primary), var(--secondary));

@@ -13,20 +13,23 @@ const db = require('../config/db');
 exports.crearAsistencia = (data, callback) => {
 
   // Registra asistencia evento
-  // incluyendo estado y atraso
+  // incluyendo estado y atraso.
+  // fecha_registro: hora del escaneo si vino de la cola offline, si no ahora.
   const query = `
     INSERT INTO asistencias (
       evento_id,
       persona_id,
       estado,
-      minutos_atraso
+      minutos_atraso,
+      fecha_registro
     )
 
     SELECT
       ?,
       p.id,
       ?,
-      ?
+      ?,
+      COALESCE(?, NOW())
 
     FROM personas p
 
@@ -47,11 +50,33 @@ exports.crearAsistencia = (data, callback) => {
       // Minutos solo aplican
       // cuando estado es atrasado
       data.minutos,
+      data.fecha_registro || null,
       data.persona_id
     ],
     callback
   );
 
+};
+
+// Escaneo offline que llega después de cerrar la actividad: al cerrar, el
+// integrante quedó como ausente. Se reemplaza ese ausente por lo escaneado (y se
+// borra su multa pendiente). Nunca pisa otro estado (justificado, presente...).
+// Devuelve la asistencia actualizada o null si no había un ausente que reemplazar.
+exports.reemplazarAusentePorEscaneo = async ({ evento_id, persona_id, estado, minutos, fecha_registro }) => {
+  const result = await ejecutar(`
+    UPDATE asistencias
+    SET estado = ?, minutos_atraso = ?, fecha_registro = COALESCE(?, fecha_registro)
+    WHERE evento_id = ? AND persona_id = ? AND estado = 'ausente'
+  `, [estado, minutos, fecha_registro || null, evento_id, persona_id]);
+
+  if (!result.affectedRows) return null;
+
+  const [asistencia] = await ejecutar(
+    'SELECT id FROM asistencias WHERE evento_id = ? AND persona_id = ?',
+    [evento_id, persona_id]
+  );
+  await ejecutar("DELETE FROM multas WHERE asistencia_id = ? AND estado = 'pendiente'", [asistencia.id]);
+  return asistencia;
 };
 
 // =====================================
@@ -63,6 +88,10 @@ function ejecutar(sql, params = []) {
     db.query(sql, params, (err, result) => (err ? reject(err) : resolve(result)));
   });
 }
+
+exports.obtenerEstadoAsistencia = (evento_id, persona_id) =>
+  ejecutar('SELECT estado FROM asistencias WHERE evento_id = ? AND persona_id = ?', [evento_id, persona_id])
+    .then(rows => (rows[0] ? rows[0].estado : null));
 
 exports.obtenerAsistenciaPorId = id =>
   ejecutar('SELECT id, persona_id, evento_id, estado, minutos_atraso FROM asistencias WHERE id = ?', [id])
@@ -78,6 +107,77 @@ exports.actualizarEstadoManual = (id, estadoNuevo) =>
     SET estado = ?
     WHERE id = ? AND estado IN (?)
   `, [estadoNuevo, id, exports.ESTADOS_MARCABLES]);
+
+// =====================================
+// ASISTENCIA MANUAL EN ACTIVIDADES PASADAS (admin / secretaria)
+// =====================================
+
+// Actividades ya ocurridas desde `desde` (inicio de la temporada vigente),
+// incluidas las finalizadas.
+exports.listarEventosAsistenciaManual = desde =>
+  ejecutar(`
+    SELECT id, nombre, tipo, fecha, COALESCE(finalizado, 0) AS finalizado
+    FROM eventos
+    WHERE DATE(fecha) >= ? AND fecha <= NOW()
+    ORDER BY fecha DESC
+  `, [desde]);
+
+exports.obtenerEventoAsistenciaManual = (eventoId, desde) =>
+  ejecutar(`
+    SELECT * FROM eventos
+    WHERE id = ? AND DATE(fecha) >= ? AND fecha <= NOW()
+  `, [eventoId, desde]).then(rows => rows[0] || null);
+
+// Integrantes activos o en receso con su estado actual en la actividad
+// (NULL = sin registro).
+exports.listarIntegrantesAsistenciaManual = eventoId =>
+  ejecutar(`
+    SELECT p.id, p.rut, p.nombres, p.apellido_paterno, p.apellido_materno, p.bloque,
+           COALESCE(p.estado, 'activo') AS estado_persona,
+           a.estado AS estado_asistencia
+    FROM personas p
+    LEFT JOIN asistencias a ON a.persona_id = p.id AND a.evento_id = ?
+    WHERE p.activo = 1 AND COALESCE(p.estado, 'activo') IN ('activo', 'receso')
+    ORDER BY p.nombres, p.apellido_paterno
+  `, [eventoId]);
+
+// Registra la asistencia de un integrante: la crea si no tiene registro o
+// reemplaza su "ausente" (y borra la multa pendiente de ese ausente). Cualquier
+// otro estado se respeta. Devuelve { resultado, asistenciaId, estadoPrevio }:
+// 'creada' | 'reemplazada' | 'existente' | 'no_encontrado'.
+exports.registrarAsistenciaManual = async ({ evento_id, persona_id, estado, minutos }) => {
+  const [persona] = await ejecutar(`
+    SELECT id FROM personas
+    WHERE id = ? AND activo = 1 AND COALESCE(estado, 'activo') IN ('activo', 'receso')
+  `, [persona_id]);
+  if (!persona) return { resultado: 'no_encontrado' };
+
+  const [previa] = await ejecutar(
+    'SELECT id, estado FROM asistencias WHERE evento_id = ? AND persona_id = ?',
+    [evento_id, persona_id]
+  );
+
+  if (!previa) {
+    const ins = await ejecutar(`
+      INSERT INTO asistencias (evento_id, persona_id, estado, minutos_atraso)
+      VALUES (?, ?, ?, ?)
+    `, [evento_id, persona_id, estado, minutos]);
+    return { resultado: 'creada', asistenciaId: ins.insertId };
+  }
+
+  if (previa.estado !== 'ausente') {
+    return { resultado: 'existente', estadoPrevio: previa.estado };
+  }
+
+  const upd = await ejecutar(`
+    UPDATE asistencias SET estado = ?, minutos_atraso = ?
+    WHERE id = ? AND estado = 'ausente'
+  `, [estado, minutos, previa.id]);
+  if (!upd.affectedRows) return { resultado: 'existente', estadoPrevio: 'modificada' };
+
+  await ejecutar("DELETE FROM multas WHERE asistencia_id = ? AND estado = 'pendiente'", [previa.id]);
+  return { resultado: 'reemplazada', asistenciaId: previa.id };
+};
 
 // =====================================
 // REGISTRAR AUSENTES AL CERRAR EVENTO
