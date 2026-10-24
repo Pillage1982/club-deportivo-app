@@ -16,7 +16,10 @@ function cargarDashboard() {
     if (!res.ok) throw new Error(data.mensaje || 'No se pudo cargar el dashboard');
     return data;
   })
-  .then(data => aplicarDashboardPorRol(prepararResumenDashboard(data)))
+  .then(data => {
+    aplicarDashboardPorRol(prepararResumenDashboard(data));
+    renderizarBalanceDashboard(data.balance);
+  })
   .catch(err => {
     console.error(err);
     mostrarAlerta(
@@ -27,6 +30,108 @@ function cargarDashboard() {
       'warning'
     );
   });
+}
+
+// =====================================
+// BALANCE GENERAL / TOTAL EN CAJA
+// =====================================
+
+// El backend solo envía `balance` a admin y tesorero; sin él, la tarjeta y el
+// bloque quedan ocultos (entrenador).
+function renderizarBalanceDashboard(balance) {
+  const tarjeta = document.getElementById('card_dashboard_caja');
+  const bloque  = document.getElementById('dashboard_balance');
+
+  if (!balance) {
+    tarjeta?.classList.add('d-none');
+    bloque?.classList.add('d-none');
+    return;
+  }
+
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = formatearMonto(val ?? 0);
+  };
+
+  saldoAnioAnteriorActual = Number(balance.saldo_anio_anterior || 0);
+
+  set('saldo_caja',                balance.saldo_caja);
+  set('balance_saldo_anterior',    balance.saldo_anio_anterior);
+  set('balance_pagos_socios',      balance.pagos_socios);
+  set('balance_pagos_inscripcion', balance.pagos_inscripcion);
+  set('balance_total_ingresos',    balance.total_ingresos);
+  set('balance_total_egresos',     balance.total_egresos);
+  set('balance_saldo_caja',        balance.saldo_caja);
+
+  const negativo = Number(balance.saldo_caja) < 0;
+  const cuerpo = document.getElementById('card_dashboard_caja_body');
+  cuerpo?.classList.toggle('text-bg-info', !negativo);
+  cuerpo?.classList.toggle('text-bg-danger', negativo);
+  document.getElementById('balance_saldo_caja')?.classList.toggle('text-danger', negativo);
+
+  tarjeta?.classList.remove('d-none');
+  bloque?.classList.remove('d-none');
+}
+
+// Saldo del año anterior: monto fijo que ingresa tesorería (dinero heredado que
+// no está registrado como pagos). Se edita en la misma fila.
+let saldoAnioAnteriorActual = 0;
+
+function editarSaldoAnioAnterior() {
+  const celda = document.getElementById('balance_saldo_anterior_celda');
+  if (!celda || document.getElementById('input_saldo_anterior')) return;
+
+  celda.dataset.original = celda.innerHTML;
+  celda.innerHTML = `
+    <div class="input-group input-group-sm ms-auto" style="max-width: 240px;">
+      <span class="input-group-text">$</span>
+      <input type="number" id="input_saldo_anterior" class="form-control text-end" step="1"
+        value="${saldoAnioAnteriorActual}">
+      <button type="button" class="btn btn-success" title="Guardar" aria-label="Guardar"
+        onclick="guardarSaldoAnioAnterior()"><i class="bi bi-check-lg"></i></button>
+      <button type="button" class="btn btn-outline-secondary" title="Cancelar" aria-label="Cancelar"
+        onclick="cancelarSaldoAnioAnterior()"><i class="bi bi-x-lg"></i></button>
+    </div>`;
+
+  const input = document.getElementById('input_saldo_anterior');
+  input.focus();
+  input.select();
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') guardarSaldoAnioAnterior();
+    if (e.key === 'Escape') cancelarSaldoAnioAnterior();
+  });
+}
+
+function cancelarSaldoAnioAnterior() {
+  const celda = document.getElementById('balance_saldo_anterior_celda');
+  if (celda?.dataset.original) celda.innerHTML = celda.dataset.original;
+}
+
+function guardarSaldoAnioAnterior() {
+  const input = document.getElementById('input_saldo_anterior');
+  const monto = Number(input?.value);
+
+  if (!input || input.value.trim() === '' || !Number.isFinite(monto)) {
+    mostrarAlerta('Ingrese un monto válido', 'warning');
+    return;
+  }
+
+  fetch(`${API_URL}/dashboard/saldo-anio-anterior`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ monto: Math.round(monto) })
+  })
+    .then(async res => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.mensaje || 'No se pudo guardar el saldo del año anterior');
+      return data;
+    })
+    .then(data => {
+      mostrarAlerta(data.mensaje || 'Saldo del año anterior actualizado', 'success');
+      cancelarSaldoAnioAnterior();
+      cargarDashboard();
+    })
+    .catch(err => mostrarAlerta(err.message, 'danger'));
 }
 
 function prepararResumenDashboard(data) {

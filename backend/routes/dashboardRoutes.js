@@ -11,4 +11,11 @@ router.get(
   controller.resumen
 );
 
+router.put(
+  '/saldo-anio-anterior',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.guardarSaldoAnioAnterior
+);
+
 module.exports = router;

@@ -119,6 +119,55 @@
             </div>
           </div>
         </div>
+        <!-- Solo admin/tesorero: el backend no envía el balance a otros roles -->
+        <div id="card_dashboard_caja" class="col-6 col-md-3 d-none">
+          <div id="card_dashboard_caja_body" class="card text-bg-info shadow-sm border-0">
+            <div class="card-body">
+              <h5 class="card-title"><i class="bi bi-safe2"></i> Total disponible</h5>
+              <h2 id="saldo_caja">$0</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="dashboard_balance" class="card shadow-sm border-0 mb-4 d-none">
+        <div class="card-body">
+          <h6 class="text-muted mb-3"><i class="bi bi-journal-text"></i> Balance general</h6>
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <tbody>
+                <tr>
+                  <td>Saldo año anterior <small class="text-muted">(heredado de la directiva anterior)</small></td>
+                  <td class="text-end text-nowrap" id="balance_saldo_anterior_celda">
+                    <span id="balance_saldo_anterior">$0</span>
+                    <button type="button" class="btn btn-sm btn-link p-0 ms-2 align-baseline" title="Editar saldo año anterior"
+                      aria-label="Editar saldo año anterior" onclick="editarSaldoAnioAnterior()"><i class="bi bi-pencil"></i></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Pagos de integrantes <small class="text-muted">(cuotas y otros pagos)</small></td>
+                  <td class="text-end" id="balance_pagos_socios">$0</td>
+                </tr>
+                <tr>
+                  <td>Pagos de inscripción <small class="text-muted">(nuevos integrantes)</small></td>
+                  <td class="text-end" id="balance_pagos_inscripcion">$0</td>
+                </tr>
+                <tr class="fw-semibold">
+                  <td>Total ingresos</td>
+                  <td class="text-end text-success" id="balance_total_ingresos">$0</td>
+                </tr>
+                <tr class="fw-semibold">
+                  <td>Total egresos <small class="text-muted fw-normal">(gastos)</small></td>
+                  <td class="text-end text-danger" id="balance_total_egresos">$0</td>
+                </tr>
+                <tr class="fw-bold border-top">
+                  <td>Saldo en caja</td>
+                  <td class="text-end" id="balance_saldo_caja">$0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div id="dashboard_asistencia_stats" class="card shadow-sm border-0 p-4 mb-4">

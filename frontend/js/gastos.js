@@ -69,6 +69,7 @@ function crearGasto() {
       document.getElementById('gasto_comprobante').value  = '';
 
       cargarTablaGastos();
+      cargarDashboard(); // Balance general / Total disponible
     })
     .catch(err => {
       mostrarAlerta(
@@ -217,6 +218,7 @@ function ejecutarEliminarGasto(id) {
     .then(data => {
       mostrarAlerta(data.mensaje || 'Gasto eliminado correctamente', 'warning');
       cargarTablaGastos();
+      cargarDashboard(); // Balance general / Total disponible
     })
     .catch(err => {
       mostrarAlerta(obtenerMensajeError(err, 'No se pudo eliminar el gasto'), 'danger');

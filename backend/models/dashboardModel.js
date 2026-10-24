@@ -8,6 +8,13 @@ exports.obtenerResumen = (callback) => {
       (SELECT COUNT(*) FROM eventos WHERE finalizado = 0 AND fecha >= NOW()) AS proximas_actividades,
       (SELECT COUNT(*) FROM multas WHERE estado = 'pendiente') AS total_multas,
       (SELECT IFNULL(SUM(monto_total), 0) FROM pagos) AS total_pagado,
+      (SELECT IFNULL(SUM(monto_total), 0) FROM pagos WHERE tipo_pago <> 'inscripcion') AS total_pagos_socios,
+      (SELECT IFNULL(SUM(monto_total), 0) FROM pagos WHERE tipo_pago = 'inscripcion')  AS total_pagos_inscripcion,
+      (SELECT IFNULL(SUM(monto), 0)       FROM gastos) AS total_gastos,
+      IFNULL((
+        SELECT CAST(valor AS DECIMAL(12,2)) FROM configuracion
+        WHERE clave = 'saldo_anio_anterior'
+      ), 0) AS saldo_anio_anterior,
       (SELECT COUNT(*) FROM cuotas WHERE estado IN ('pendiente', 'vencido')) AS cuotas_pendientes,
       vef.deuda_total,
       ast.total_asistencias,
@@ -34,4 +41,12 @@ exports.obtenerResumen = (callback) => {
   `;
 
   db.query(query, callback);
+};
+
+exports.guardarSaldoAnioAnterior = (monto, usuario, callback) => {
+  db.query(`
+    INSERT INTO configuracion (clave, valor, actualizado_por)
+    VALUES ('saldo_anio_anterior', ?, ?)
+    ON DUPLICATE KEY UPDATE valor = VALUES(valor), actualizado_por = VALUES(actualizado_por)
+  `, [String(monto), usuario || null], callback);
 };

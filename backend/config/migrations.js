@@ -286,6 +286,20 @@ async function asegurarDatosActualizadosSocios() {
   }
 }
 
+// Valores sueltos que se editan desde el panel (clave → valor). Por ahora solo
+// el saldo del año anterior del Balance general (dinero heredado que no está
+// registrado como pagos en la app).
+async function asegurarTablaConfiguracion() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS configuracion (
+      clave           VARCHAR(60) PRIMARY KEY,
+      valor           VARCHAR(255) NULL,
+      actualizado_por VARCHAR(100) NULL,
+      actualizado_en  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 // Registro de actividad (auditoriaMiddleware): quién creó, editó o eliminó qué.
 async function asegurarTablaAuditoria() {
   await ejecutar(`
@@ -323,6 +337,7 @@ async function ejecutarMigraciones() {
   await asegurarDatosActualizadosSocios();
   await asegurarTablaAuditoria();
   await asegurarCamposPagos();
+  await asegurarTablaConfiguracion();
   await reconstruirVistaEstadoFinanciero();
 }
 
