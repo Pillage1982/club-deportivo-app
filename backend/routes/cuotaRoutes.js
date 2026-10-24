@@ -25,4 +25,11 @@ router.post(
   controller.generarMensualidad
 );
 
+router.post(
+  '/aplicar-saldos-favor',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.aplicarSaldosAFavor
+);
+
 module.exports = router;

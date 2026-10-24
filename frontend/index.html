@@ -553,9 +553,13 @@
 
         <!-- Finanzas / Cuotas -->
         <div class="tab-pane fade" id="subtab_finanzas" role="tabpanel">
-          <div class="mb-3">
-            <button id="btn_generar_cuotas" class="btn btn-primary" onclick="generarCuotasMes()">
+          <div class="mb-3 d-flex flex-wrap gap-2">
+            <button id="btn_generar_cuotas" class="btn btn-primary" onclick="generarCuotasMensuales()">
               <i class="bi bi-plus-circle"></i> Generar cuotas del mes
+            </button>
+            <button type="button" id="btn_aplicar_saldos" class="btn btn-outline-primary" onclick="aplicarSaldosAFavor()"
+              title="Aplica la parte de pagos de cuota que quedó a favor del integrante a sus cuotas pendientes más antiguas">
+              Aplicar saldos a favor
             </button>
           </div>
           <div id="filtros_cuotas_wrapper" class="row g-2 mb-3">

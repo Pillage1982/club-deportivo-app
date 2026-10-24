@@ -1,5 +1,41 @@
 const cuotaModel =
   require('../models/cuotaModel');
+const saldoFavorService = require('../services/saldoFavorService');
+
+// Tras crear cuotas nuevas, los saldos a favor se aplican solos a ellas. Si falla,
+// las cuotas igual quedan creadas (se puede aplicar luego con el botón).
+function aplicarSaldosTrasGenerar(creadas) {
+  if (!creadas) return Promise.resolve('');
+  return saldoFavorService.aplicarSaldosAFavor()
+    .then(({ aplicaciones }) => {
+      if (!aplicaciones.length) return '';
+      const r = saldoFavorService.resumir(aplicaciones);
+      return `. Saldo a favor aplicado: $${r.monto} de ${r.integrantes} integrante(s) (${r.cuotas_pagadas} cuota(s) pagadas, ${r.cuotas_abonadas} con abono)`;
+    })
+    .catch(err => {
+      console.error('Error aplicando saldos a favor:', err);
+      return '. No se pudieron aplicar los saldos a favor; use "Aplicar saldos a favor"';
+    });
+}
+
+// =====================================
+// APLICAR SALDOS A FAVOR (manual, con vista previa)
+// =====================================
+// body.simular = true: solo calcula y devuelve el detalle, sin escribir.
+
+exports.aplicarSaldosAFavor = (req, res) => {
+  const simular = req.body?.simular === true || req.body?.simular === 'true';
+  saldoFavorService.aplicarSaldosAFavor({ simular })
+    .then(({ aplicaciones }) => res.json({
+      simulado: simular,
+      resumen: saldoFavorService.resumir(aplicaciones),
+      aplicaciones
+    }))
+    .catch(err => {
+      console.error('Error aplicando saldos a favor:', err);
+      res.status(500).json({ mensaje: 'No se pudieron aplicar los saldos a favor' });
+    });
+};
 
 // =====================================
 // CUOTAS PENDIENTES POR PERSONA
@@ -94,16 +130,18 @@ exports.generarMensualidad = (req, res) => {
 
                 if (procesados === socios.length) {
 
-                  return res.json({
-                    mensaje:
+                  const mensajeBase =
                     creadas > 0
                     ? 'Proceso de cuotas finalizado'
-                    : 'Las cuotas de este mes ya estaban generadas',
+                    : 'Las cuotas de este mes ya estaban generadas';
+
+                  return aplicarSaldosTrasGenerar(creadas).then(textoSaldo => res.json({
+                    mensaje: mensajeBase + textoSaldo,
                     mes,
                     anio,
                     socios_procesados: socios.length,
                     cuotas_creadas: creadas
-                  });
+                  }));
 
                 }
 
