@@ -25,6 +25,7 @@ router.put('/mis-datos', exigirPerfilSocio({ datos: false }), perfilController.a
 // Página personal: solo con PIN propio y datos actualizados (primer ingreso completo).
 router.get('/mi-ficha', exigirPerfilSocio(), controller.miFicha);
 router.get('/mi-finanzas', exigirPerfilSocio(), controller.miFinanzas);
+router.get('/mis-cuotas-vencidas', exigirPerfilSocio(), controller.misCuotasVencidas);
 router.get('/mi-asistencia', exigirPerfilSocio(), controller.miAsistencia);
 router.get('/mi-puntaje', exigirPerfilSocio(), controller.miPuntaje);
 

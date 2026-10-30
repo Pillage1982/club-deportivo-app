@@ -133,6 +133,30 @@ exports.obtenerHistorialCuotas = (personaId, desde, callback) => {
   );
 };
 
+// Aviso de pagos vencidos (al iniciar sesión y al reconectar): cuotas de la temporada
+// vigente (mismo corte que obtenerHistorialCuotas) con saldo y fecha de vencimiento ya
+// pasada. No se usa estado='vencido' porque nadie lo actualiza en el día a día; sin
+// fecha_vencimiento se toma el último día del mes de la cuota. CURDATE() va en hora
+// de Chile (zona fijada en config/db.js).
+exports.obtenerCuotasVencidas = (personaId, desde, callback) => {
+  db.query(
+    `SELECT
+       c.id, c.mes, c.anio, c.monto, c.fecha_vencimiento,
+       COALESCE(SUM(d.monto_pagado), 0) AS monto_pagado,
+       GREATEST(c.monto - COALESCE(SUM(d.monto_pagado), 0), 0) AS saldo
+     FROM cuotas c
+     LEFT JOIN pago_detalle d ON d.tipo = 'cuota' AND d.referencia_id = c.id
+     WHERE c.persona_id = ? AND c.anio * 100 + c.mes >= ?
+       AND c.estado <> 'pagado'
+       AND COALESCE(c.fecha_vencimiento, LAST_DAY(STR_TO_DATE(CONCAT(c.anio, '-', c.mes, '-01'), '%Y-%m-%d'))) < CURDATE()
+     GROUP BY c.id, c.mes, c.anio, c.monto, c.fecha_vencimiento
+     HAVING saldo > 0
+     ORDER BY c.anio ASC, c.mes ASC`,
+    [personaId, periodoDesde(desde)],
+    callback
+  );
+};
+
 // GROUP_CONCAT de las cuotas que cada pago cubrió (vía pago_detalle) — así el socio
 // ve "a qué mes(es) corresponde" cada pago sin tener que cruzar dos tablas a mano.
 exports.obtenerHistorialPagos = (personaId, desde, callback) => {

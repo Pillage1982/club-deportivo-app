@@ -14,6 +14,10 @@ window.onload = () => {
   if (nombre) document.getElementById('txt_nombre_socio').textContent = nombre;
 
   mostrarPantalla('inicio');
+
+  // Una vez por sesión del navegador (login o reabrir la app) y cada vez que vuelve la conexión
+  if (!sessionStorage.getItem('socio_aviso_vencidos')) revisarCuotasVencidas();
+  window.addEventListener('online', revisarCuotasVencidas);
 };
 
 function mostrarPantalla(nombre) {
@@ -86,6 +90,51 @@ function cargarInicio() {
       `).join('');
     })
     .catch(err => console.error('Error cargando Inicio:', err));
+}
+
+// =====================================
+// AVISO DE PAGOS VENCIDOS
+// =====================================
+// Si falla la consulta (sin conexión) no se marca como mostrado: se reintenta al
+// volver la conexión (evento 'online').
+function revisarCuotasVencidas() {
+  const modalEl = document.getElementById('modal_cuotas_vencidas');
+  if (modalEl.classList.contains('show')) return;
+
+  fetch(`${API_URL}/socio-auth/mis-cuotas-vencidas`, { headers: getAuthHeadersSocio() })
+    .then(res => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+    .then(data => {
+      sessionStorage.setItem('socio_aviso_vencidos', '1');
+      if (!data.cuotas.length) return;
+
+      document.getElementById('cuotas_vencidas_total').textContent = formatearMonto(data.total);
+      document.getElementById('tabla_cuotas_vencidas').innerHTML = data.cuotas.map(c => `
+        <tr>
+          <td>${nombreMes(c.mes)}/${c.anio}</td>
+          <td>${formatearFecha(c.fecha_vencimiento) || '—'}</td>
+          <td>${formatearMonto(c.saldo)}${Number(c.monto_pagado) > 0
+            ? ` <span class="badge bg-info text-dark">Abono ${formatearMonto(c.monto_pagado)}</span>`
+            : ''}</td>
+        </tr>
+      `).join('');
+
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    })
+    .catch(err => console.error('Error revisando cuotas vencidas:', err));
+}
+
+function irADepositarDesdeAviso() {
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_cuotas_vencidas')).hide();
+
+  if (datosDocumentos) {
+    mostrarPantalla('documentos');
+    abrirDatosCuenta();
+    return;
+  }
+  // Documentos aún no se cargó: se carga aquí para abrir la cuenta cuando llegue
+  cachePantallas.documentos = true;
+  mostrarPantalla('documentos');
+  cargarDocumentos().then(abrirDatosCuenta);
 }
 
 // =====================================
