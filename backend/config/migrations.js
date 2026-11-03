@@ -668,6 +668,21 @@ async function asegurarTablaAuditoria() {
   `);
 }
 
+// Saludo de cumpleaños por correo: deja constancia de a quién se le envió este
+// año para no repetir el envío si el cron diario se ejecuta más de una vez.
+async function asegurarTablaEnviosCumpleanos() {
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS envios_cumpleanos (
+      id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+      persona_id  BIGINT NOT NULL,
+      anio        INT NOT NULL,
+      enviado_en  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_cumple_persona_anio (persona_id, anio),
+      CONSTRAINT fk_cumple_persona FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
+    )
+  `);
+}
+
 // Valores sueltos que se editan desde el panel (clave → valor). Por ahora solo
 // el saldo del año anterior del Balance general (dinero heredado que no está
 // registrado como pagos ni ingresos en la app).
@@ -770,6 +785,7 @@ async function ejecutarMigraciones() {
   await asegurarRevisionPostulaciones();
   await asegurarTablaSolicitudesIngreso();
   await asegurarTablaAuditoria();
+  await asegurarTablaEnviosCumpleanos();
   await asegurarTablaConfiguracion();
   await asegurarTablaCartasPermiso();
   await asegurarMotivosJustificacion();
