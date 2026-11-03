@@ -804,17 +804,20 @@ function enviarSaludoCumpleanos(persona) {
           <td style="width: 90px; vertical-align: middle;">
             <img src="cid:logo-gdc" alt="GDC" width="72" style="display: block; border-radius: 50%;">
           </td>
-          <td style="vertical-align: middle; font-size: 26px;">🎂 🎉</td>
+          <td style="vertical-align: middle; font-size: 26px;">🎂 🌷</td>
         </tr>
       </table>
       <p style="font-size: 20px; font-weight: bold; color: #2b1608; margin: 0 0 12px;">
-        ¡Feliz cumpleaños, ${escaparHtml(primerNombre)}! 🎈
+        🎂 ¡Feliz cumpleaños, ${escaparHtml(primerNombre)} 🌷
       </p>
-      <p>En este día tan especial, toda la directiva de la <strong>Gran Diablada Calameña</strong>
-        quiere desearte un cumpleaños lleno de alegría, salud y bendiciones.</p>
-      <p>Gracias por ser parte de esta gran familia y de la promesa a la Virgen de Ayquina.
-        ¡Que lo pases increíble junto a tu familia y seres queridos! 🥳</p>
-      <p style="margin-top: 20px;">Con mucho cariño,<br><strong>Directiva Gran Diablada Calameña</strong></p>
+      <p>En este día tan especial, quienes formamos parte de la <strong>Directiva de la Gran Diablada
+        Calameña</strong> queremos hacerte llegar nuestros más sinceros deseos de felicidad, salud y
+        muchas bendiciones.</p>
+      <p>Que la <strong>Virgen de Ayquina</strong> te acompañe y guíe siempre tu camino, llenando tu vida
+        de alegrías y lindos momentos. Gracias por ser parte de esta gran familia y por compartir con
+        nosotros la fe y la hermosa promesa a nuestra madre de Ayquina.</p>
+      <p>Esperamos que disfrutes mucho tu día, rodeado del cariño de tu familia y de quienes te quieren.</p>
+      <p style="margin-top: 20px;">Con mucho cariño,<br><strong>Directiva</strong><br>Gran Diablada Calameña</p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
       <p style="color: #888; font-size: 12px;">Saludo enviado automáticamente por la agrupación.</p>
     </div>
