@@ -30,6 +30,7 @@ function cerrarSesionSocio() {
   localStorage.removeItem('socio_nombre');
   localStorage.removeItem('socio_pin_cambiado');
   localStorage.removeItem('socio_datos_actualizados');
+  sessionStorage.removeItem('socio_aviso_vencidos');
   window.location.href = 'login.html';
 }
 

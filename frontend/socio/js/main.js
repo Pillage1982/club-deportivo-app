@@ -5,6 +5,9 @@
 
 const cachePantallas = {};
 
+// El día del cumpleaños, el saludo tiene prioridad sobre el aviso de pagos vencidos.
+let cumpleEnPantalla = false;
+
 window.onload = () => {
   if (!requireSocioLogin()) return;
 
@@ -14,6 +17,10 @@ window.onload = () => {
   if (nombre) document.getElementById('txt_nombre_socio').textContent = nombre;
 
   mostrarPantalla('inicio');
+
+  // Una vez por sesión del navegador (login o reabrir la app) y cada vez que vuelve la conexión
+  if (!sessionStorage.getItem('socio_aviso_vencidos')) revisarCuotasVencidas();
+  window.addEventListener('online', revisarCuotasVencidas);
 };
 
 function mostrarPantalla(nombre) {
@@ -61,6 +68,8 @@ function cargarInicio() {
     .then(([finanzas, puntaje, asistencias, ficha]) => {
       document.getElementById('badge_estado_socio').innerHTML = badgeEstado(ficha.estado);
 
+      revisarCumpleanos(ficha);
+
       const deudaEl = document.getElementById('inicio_deuda');
       deudaEl.textContent = formatearMonto(finanzas.deuda_actual);
       deudaEl.style.color = finanzas.deuda_actual > 0 ? '#c0392b' : '#2e7d32';
@@ -86,6 +95,102 @@ function cargarInicio() {
       `).join('');
     })
     .catch(err => console.error('Error cargando Inicio:', err));
+}
+
+// =====================================
+// SALUDO DE CUMPLEAÑOS
+// =====================================
+// Se muestra una sola vez al día si la fecha de nacimiento del integrante coincide
+// (día y mes) con la fecha local del dispositivo. La marca en localStorage con la
+// fecha de hoy evita repetirlo al recargar el Portal durante el mismo día.
+function revisarCumpleanos(ficha) {
+  if (!ficha || !ficha.fecha_nacimiento) return;
+
+  const nacimiento = String(ficha.fecha_nacimiento).split(/[T ]/)[0].split('-');
+  if (nacimiento.length !== 3) return;
+  const mesNacimiento = Number(nacimiento[1]);
+  const diaNacimiento = Number(nacimiento[2]);
+
+  const hoy = new Date();
+  if (hoy.getMonth() + 1 !== mesNacimiento || hoy.getDate() !== diaNacimiento) return;
+
+  const claveHoy = `${hoy.getFullYear()}-${hoy.getMonth() + 1}-${hoy.getDate()}`;
+  if (localStorage.getItem('socio_cumple_saludado') === claveHoy) return;
+  localStorage.setItem('socio_cumple_saludado', claveHoy);
+
+  const primerNombre = String(ficha.nombres || '').trim().split(/\s+/)[0] || 'integrante';
+  document.getElementById('titulo_cumpleanos').textContent = `¡Feliz cumpleaños, ${primerNombre}! 🌷`;
+  document.getElementById('cumple_mensaje').innerHTML =
+    'Quienes formamos parte de la <strong>Directiva de la Gran Diablada Calameña</strong> ' +
+    'te deseamos un día lleno de felicidad, salud y bendiciones. ' +
+    'Que la <strong>Virgen de Ayquina</strong> guíe siempre tu camino.' +
+    '<br><br>¡Gracias por ser parte de esta gran familia! 🎉🎈';
+
+  // Tiene prioridad hoy: no mostramos el aviso de pagos vencidos sobre el saludo,
+  // y si alcanzó a abrirse (carrera entre ambas consultas), lo cerramos.
+  cumpleEnPantalla = true;
+  bootstrap.Modal.getInstance(document.getElementById('modal_cuotas_vencidas'))?.hide();
+
+  lanzarConfeti();
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_cumpleanos')).show();
+}
+
+function lanzarConfeti() {
+  const contenedor = document.getElementById('cumple_confeti');
+  if (!contenedor) return;
+  const colores = ['#f47a22', '#ffd54a', '#ffffff', '#e74c3c', '#2ecc71'];
+  contenedor.innerHTML = Array.from({ length: 36 }, () => {
+    const izquierda = (Math.random() * 100).toFixed(1);
+    const retraso = (Math.random() * 2.5).toFixed(2);
+    const duracion = (2 + Math.random() * 1.8).toFixed(2);
+    const color = colores[Math.floor(Math.random() * colores.length)];
+    return `<i style="left:${izquierda}%;background:${color};animation-delay:${retraso}s;animation-duration:${duracion}s"></i>`;
+  }).join('');
+}
+
+// =====================================
+// AVISO DE PAGOS VENCIDOS
+// =====================================
+// Si falla la consulta (sin conexión) no se marca como mostrado: se reintenta al
+// volver la conexión (evento 'online').
+function revisarCuotasVencidas() {
+  const modalEl = document.getElementById('modal_cuotas_vencidas');
+  if (modalEl.classList.contains('show')) return;
+
+  fetch(`${API_URL}/socio-auth/mis-cuotas-vencidas`, { headers: getAuthHeadersSocio() })
+    .then(res => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+    .then(data => {
+      sessionStorage.setItem('socio_aviso_vencidos', '1');
+      if (!data.cuotas.length || cumpleEnPantalla) return;
+
+      document.getElementById('cuotas_vencidas_total').textContent = formatearMonto(data.total);
+      document.getElementById('tabla_cuotas_vencidas').innerHTML = data.cuotas.map(c => `
+        <tr>
+          <td>${nombreMes(c.mes)}/${c.anio}</td>
+          <td>${formatearFecha(c.fecha_vencimiento) || '—'}</td>
+          <td>${formatearMonto(c.saldo)}${Number(c.monto_pagado) > 0
+            ? ` <span class="badge bg-info text-dark">Abono ${formatearMonto(c.monto_pagado)}</span>`
+            : ''}</td>
+        </tr>
+      `).join('');
+
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    })
+    .catch(err => console.error('Error revisando cuotas vencidas:', err));
+}
+
+function irADepositarDesdeAviso() {
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_cuotas_vencidas')).hide();
+
+  if (datosDocumentos) {
+    mostrarPantalla('documentos');
+    abrirDatosCuenta();
+    return;
+  }
+  // Documentos aún no se cargó: se carga aquí para abrir la cuenta cuando llegue
+  cachePantallas.documentos = true;
+  mostrarPantalla('documentos');
+  cargarDocumentos().then(abrirDatosCuenta);
 }
 
 // =====================================

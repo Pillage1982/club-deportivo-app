@@ -20,8 +20,10 @@ function emailConfigurado() {
 // Sin EMAIL_HOST se mantiene Gmail (comportamiento original). Con EMAIL_HOST se
 // usa ese SMTP, p. ej. los buzones @gdcayquina.cl de Hostinger:
 // EMAIL_HOST=smtp.hostinger.com, EMAIL_PORT=465.
-function crearTransporter() {
-  const auth = {
+// authOverride: credenciales { user, pass } de otro buzón (p. ej. presidencia@) para
+// que el correo salga realmente desde esa dirección; sin él usa EMAIL_USER/EMAIL_PASS.
+function crearTransporter(authOverride) {
+  const auth = authOverride || {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   };
@@ -39,14 +41,14 @@ function crearTransporter() {
   return nodemailer.createTransport({ service: 'gmail', auth });
 }
 
-function enviarCorreo({ destinatario, asunto, cuerpo, cc, replyTo, adjuntos }) {
+function enviarCorreo({ destinatario, asunto, cuerpo, cc, replyTo, adjuntos, remitente, auth }) {
   if (!emailConfigurado()) {
     console.warn('[Email] No configurado. Correo no enviado a:', destinatario);
     return Promise.resolve();
   }
 
-  return crearTransporter().sendMail({
-    from: `"Gran Diablada Calameña" <${process.env.EMAIL_USER}>`,
+  return crearTransporter(auth).sendMail({
+    from: remitente || `"Gran Diablada Calameña" <${process.env.EMAIL_USER}>`,
     to: destinatario,
     cc: cc || undefined,
     replyTo: replyTo || undefined,
@@ -769,8 +771,72 @@ function notificarResolucionCartaPermiso({ carta, aprobada, pdf }) {
   }).then(() => true);
 }
 
+// =====================================
+// SALUDO DE CUMPLEAÑOS
+// =====================================
+// El correo sale desde presidencia@ de verdad: se autentica con el buzón presidencia@
+// (su propia clave en EMAIL_PRESIDENCIA_PASS), porque el SMTP de Hostinger rechaza
+// enviar "como" una dirección que no sea la cuenta autenticada. Copia a secretaría y
+// tesorería: reciben un correo por cada cumpleañero del día.
+const DIRECCION_PRESIDENCIA = () => process.env.EMAIL_PRESIDENCIA || 'presidencia@gdcayquina.cl';
+
+const COPIA_CUMPLEANOS = () =>
+  [process.env.EMAIL_SECRETARIA || 'secretaria@gdcayquina.cl',
+   process.env.EMAIL_TESORERIA || 'tesoreria@gdcayquina.cl'].join(', ');
+
+// persona: { nombres, apellido_paterno, email }. Devuelve false si el correo no está
+// configurado, falta la clave de presidencia@, o la persona no tiene email.
+function enviarSaludoCumpleanos(persona) {
+  if (!emailConfigurado() || !persona.email) return Promise.resolve(false);
+
+  const clavePresidencia = process.env.EMAIL_PRESIDENCIA_PASS;
+  if (!clavePresidencia) {
+    console.warn('[Cumpleaños] Falta EMAIL_PRESIDENCIA_PASS: no se envía desde presidencia@');
+    return Promise.resolve(false);
+  }
+
+  const primerNombre = String(persona.nombres || '').trim().split(/\s+/)[0] || 'integrante';
+
+  const cuerpo = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #222; font-size: 15px; line-height: 1.6;">
+      <table role="presentation" width="100%" style="border-collapse: collapse; margin-bottom: 12px;">
+        <tr>
+          <td style="width: 90px; vertical-align: middle;">
+            <img src="cid:logo-gdc" alt="GDC" width="72" style="display: block; border-radius: 50%;">
+          </td>
+          <td style="vertical-align: middle; font-size: 26px;">🎂 🌷</td>
+        </tr>
+      </table>
+      <p style="font-size: 20px; font-weight: bold; color: #2b1608; margin: 0 0 12px;">
+        🎂 ¡Feliz cumpleaños, ${escaparHtml(primerNombre)} 🌷
+      </p>
+      <p>En este día tan especial, quienes formamos parte de la <strong>Directiva de la Gran Diablada
+        Calameña</strong> queremos hacerte llegar nuestros más sinceros deseos de felicidad, salud y
+        muchas bendiciones.</p>
+      <p>Que la <strong>Virgen de Ayquina</strong> te acompañe y guíe siempre tu camino, llenando tu vida
+        de alegrías y lindos momentos. Gracias por ser parte de esta gran familia y por compartir con
+        nosotros la fe y la hermosa promesa a nuestra madre de Ayquina.</p>
+      <p>Esperamos que disfrutes mucho tu día, rodeado del cariño de tu familia y de quienes te quieren.</p>
+      <p style="margin-top: 20px;">Con mucho cariño,<br><strong>Directiva</strong><br>Gran Diablada Calameña</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="color: #888; font-size: 12px;">Saludo enviado automáticamente por la agrupación.</p>
+    </div>
+  `;
+
+  return enviarCorreo({
+    remitente: `"Directiva Gran Diablada Calameña" <${DIRECCION_PRESIDENCIA()}>`,
+    auth: { user: DIRECCION_PRESIDENCIA(), pass: clavePresidencia },
+    destinatario: persona.email,
+    cc: COPIA_CUMPLEANOS(),
+    asunto: `¡Feliz cumpleaños, ${primerNombre}! 🎂`,
+    cuerpo,
+    adjuntos: [adjuntoLogo()]
+  }).then(() => true);
+}
+
 module.exports = {
   notificarAusentesEvento,
+  enviarSaludoCumpleanos,
   enviarEnlaceRecuperacion,
   enviarCartaJustificacion,
   enviarPostulacionBloque,

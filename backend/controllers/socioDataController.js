@@ -76,6 +76,22 @@ exports.miFinanzas = (req, res) => {
 };
 
 // =====================================
+// MIS CUOTAS VENCIDAS: aviso del Portal al iniciar sesión y al reconectar
+// =====================================
+exports.misCuotasVencidas = (req, res) => {
+  conInicioTemporada(res, 'Error al obtener cuotas vencidas', (desde) => {
+    socioDataModel.obtenerCuotasVencidas(req.socio.persona_id, desde, (err, cuotas) => {
+      if (err) {
+        console.error('Error obteniendo cuotas vencidas del socio:', err);
+        return res.status(500).json({ mensaje: 'Error al obtener cuotas vencidas' });
+      }
+      const total = cuotas.reduce((suma, c) => suma + Number(c.saldo), 0);
+      res.json({ total, cuotas });
+    });
+  });
+};
+
+// =====================================
 // MI ASISTENCIA
 // =====================================
 exports.miAsistencia = (req, res) => {

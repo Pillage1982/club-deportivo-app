@@ -79,6 +79,8 @@ app.use('/ingresos', require('./routes/ingresoRoutes'));
 app.use('/justificaciones', require('./routes/justificacionRoutes'));
 app.use('/solicitudes-ingreso', require('./routes/solicitudIngresoRoutes'));
 app.use('/cartas-permiso', require('./routes/cartaPermisoRoutes'));
+// Tareas programadas disparadas por un cron externo (token CRON_TOKEN), sin sesión.
+app.use('/tareas', require('./routes/tareasRoutes'));
 // Ambos bajo /socio-auth (no /socio): el frontend del socio vive en la carpeta
 // /socio/ servida como estático (ver abajo) — si la API usara el prefijo /socio
 // colisionaría con esa ruta y el Service Worker cachearía mal el HTML/JS estático
