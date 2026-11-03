@@ -119,10 +119,12 @@ function revisarCumpleanos(ficha) {
   localStorage.setItem('socio_cumple_saludado', claveHoy);
 
   const primerNombre = String(ficha.nombres || '').trim().split(/\s+/)[0] || 'integrante';
-  document.getElementById('titulo_cumpleanos').textContent = `¡Feliz cumpleaños, ${primerNombre}!`;
+  document.getElementById('titulo_cumpleanos').textContent = `¡Feliz cumpleaños, ${primerNombre}! 🌷`;
   document.getElementById('cumple_mensaje').innerHTML =
-    'La <strong>Gran Diablada Calameña</strong> te desea un día maravilloso. ' +
-    '¡Gracias por ser parte de esta promesa! 🎉🎈';
+    'Quienes formamos parte de la <strong>Directiva de la Gran Diablada Calameña</strong> ' +
+    'te deseamos un día lleno de felicidad, salud y bendiciones. ' +
+    'Que la <strong>Virgen de Ayquina</strong> guíe siempre tu camino.' +
+    '<br><br>¡Gracias por ser parte de esta gran familia! 🎉🎈';
 
   // Tiene prioridad hoy: no mostramos el aviso de pagos vencidos sobre el saludo,
   // y si alcanzó a abrirse (carrera entre ambas consultas), lo cerramos.
