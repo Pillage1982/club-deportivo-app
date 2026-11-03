@@ -13,13 +13,32 @@ function tokenValido(req) {
 
 // GET /tareas/cumpleanos?token=... → envía el saludo a los cumpleañeros de hoy
 // (hora de Chile) y marca cada envío para no repetirlo.
+// Con &simular=1 solo devuelve a quién se enviaría, sin enviar ni marcar nada:
+// sirve para verificar en dev (BD real pero desactualizada) sin mandar correos.
 exports.enviarCumpleanos = async (req, res) => {
   if (!tokenValido(req)) {
     return res.status(403).json({ mensaje: 'No autorizado' });
   }
 
+  const simular = req.query.simular === '1' || req.query.simular === 'true';
+  const hoy = new Date().toISOString().substring(0, 10);
+
   try {
     const cumpleaneros = await cumpleanosModel.obtenerCumpleanerosHoy();
+
+    if (simular) {
+      return res.json({
+        simulacion: true,
+        fecha: hoy,
+        candidatos: cumpleaneros.length,
+        destinatarios: cumpleaneros.map(p => ({
+          id: p.id,
+          nombre: `${p.nombres} ${p.apellido_paterno || ''}`.trim(),
+          email: p.email
+        }))
+      });
+    }
+
     let enviados = 0;
     const errores = [];
 
@@ -37,7 +56,7 @@ exports.enviarCumpleanos = async (req, res) => {
     }
 
     res.json({
-      fecha: new Date().toISOString().substring(0, 10),
+      fecha: hoy,
       candidatos: cumpleaneros.length,
       enviados,
       errores
