@@ -51,7 +51,7 @@ exports.enviarCumpleanos = async (req, res) => {
         }
       } catch (err) {
         console.error('[Cumpleaños] Error enviando saludo a persona', persona.id, err);
-        errores.push(persona.id);
+        errores.push({ id: persona.id, error: err && err.message ? err.message : String(err) });
       }
     }
 
