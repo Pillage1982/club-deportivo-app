@@ -20,8 +20,10 @@ function emailConfigurado() {
 // Sin EMAIL_HOST se mantiene Gmail (comportamiento original). Con EMAIL_HOST se
 // usa ese SMTP, p. ej. los buzones @gdcayquina.cl de Hostinger:
 // EMAIL_HOST=smtp.hostinger.com, EMAIL_PORT=465.
-function crearTransporter() {
-  const auth = {
+// authOverride: credenciales { user, pass } de otro buzón (p. ej. presidencia@) para
+// que el correo salga realmente desde esa dirección; sin él usa EMAIL_USER/EMAIL_PASS.
+function crearTransporter(authOverride) {
+  const auth = authOverride || {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   };
@@ -39,13 +41,13 @@ function crearTransporter() {
   return nodemailer.createTransport({ service: 'gmail', auth });
 }
 
-function enviarCorreo({ destinatario, asunto, cuerpo, cc, replyTo, adjuntos, remitente }) {
+function enviarCorreo({ destinatario, asunto, cuerpo, cc, replyTo, adjuntos, remitente, auth }) {
   if (!emailConfigurado()) {
     console.warn('[Email] No configurado. Correo no enviado a:', destinatario);
     return Promise.resolve();
   }
 
-  return crearTransporter().sendMail({
+  return crearTransporter(auth).sendMail({
     from: remitente || `"Gran Diablada Calameña" <${process.env.EMAIL_USER}>`,
     to: destinatario,
     cc: cc || undefined,
@@ -772,20 +774,26 @@ function notificarResolucionCartaPermiso({ carta, aprobada, pdf }) {
 // =====================================
 // SALUDO DE CUMPLEAÑOS
 // =====================================
-// Remitente presidencia@ (debe ser el buzón autenticado por el SMTP o un alias
-// permitido; si no, el servidor podría rechazar el "from"). Copia a secretaría y
+// El correo sale desde presidencia@ de verdad: se autentica con el buzón presidencia@
+// (su propia clave en EMAIL_PRESIDENCIA_PASS), porque el SMTP de Hostinger rechaza
+// enviar "como" una dirección que no sea la cuenta autenticada. Copia a secretaría y
 // tesorería: reciben un correo por cada cumpleañero del día.
-const REMITENTE_CUMPLEANOS = () =>
-  `"Directiva Gran Diablada Calameña" <${process.env.EMAIL_PRESIDENCIA || 'presidencia@gdcayquina.cl'}>`;
+const DIRECCION_PRESIDENCIA = () => process.env.EMAIL_PRESIDENCIA || 'presidencia@gdcayquina.cl';
 
 const COPIA_CUMPLEANOS = () =>
   [process.env.EMAIL_SECRETARIA || 'secretaria@gdcayquina.cl',
    process.env.EMAIL_TESORERIA || 'tesoreria@gdcayquina.cl'].join(', ');
 
-// persona: { nombres, apellido_paterno, email }. Devuelve false si el correo no
-// está configurado o la persona no tiene email.
+// persona: { nombres, apellido_paterno, email }. Devuelve false si el correo no está
+// configurado, falta la clave de presidencia@, o la persona no tiene email.
 function enviarSaludoCumpleanos(persona) {
   if (!emailConfigurado() || !persona.email) return Promise.resolve(false);
+
+  const clavePresidencia = process.env.EMAIL_PRESIDENCIA_PASS;
+  if (!clavePresidencia) {
+    console.warn('[Cumpleaños] Falta EMAIL_PRESIDENCIA_PASS: no se envía desde presidencia@');
+    return Promise.resolve(false);
+  }
 
   const primerNombre = String(persona.nombres || '').trim().split(/\s+/)[0] || 'integrante';
 
@@ -813,7 +821,8 @@ function enviarSaludoCumpleanos(persona) {
   `;
 
   return enviarCorreo({
-    remitente: REMITENTE_CUMPLEANOS(),
+    remitente: `"Directiva Gran Diablada Calameña" <${DIRECCION_PRESIDENCIA()}>`,
+    auth: { user: DIRECCION_PRESIDENCIA(), pass: clavePresidencia },
     destinatario: persona.email,
     cc: COPIA_CUMPLEANOS(),
     asunto: `¡Feliz cumpleaños, ${primerNombre}! 🎂`,
