@@ -387,3 +387,78 @@ body {
   color: #aaa;
   font-style: italic;
 }
+
+/* ===== Saludo de cumpleaños ===== */
+.cumple-modal .modal-content {
+  border: none;
+  border-radius: 18px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.cumple-cabecera {
+  position: relative;
+  overflow: hidden;
+  padding: 30px 20px 24px;
+  background: linear-gradient(135deg, #050505, #2b1608, #f47a22);
+  color: #fff;
+}
+
+.cumple-torta {
+  display: block;
+  font-size: 3.2rem;
+  line-height: 1;
+  margin-bottom: 8px;
+  animation: cumple-rebote 1.6s ease-in-out infinite;
+}
+
+@keyframes cumple-rebote {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+
+.cumple-titulo {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.cumple-cuerpo {
+  padding: 20px 22px 4px;
+  color: #333;
+}
+
+.cumple-cuerpo p {
+  margin-bottom: 0;
+  line-height: 1.5;
+}
+
+/* Confeti que cae dentro de la cabecera */
+.cumple-confeti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cumple-confeti i {
+  position: absolute;
+  top: -16px;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0.95;
+  animation: cumple-confeti-caida linear infinite;
+}
+
+@keyframes cumple-confeti-caida {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(190px) rotate(560deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cumple-torta { animation: none; }
+  .cumple-confeti { display: none; }
+}

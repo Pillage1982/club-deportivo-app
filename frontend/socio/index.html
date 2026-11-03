@@ -25,7 +25,7 @@
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-  <link rel="stylesheet" href="css/socio.css?v=110">
+  <link rel="stylesheet" href="css/socio.css?v=112">
 
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 </head>
@@ -522,9 +522,29 @@
     </div>
   </div>
 
+  <!-- Saludo de cumpleaños: una vez al día si hoy coincide con la fecha de nacimiento (main.js) -->
+  <div class="modal fade cumple-modal" id="modal_cumpleanos" tabindex="-1" aria-labelledby="titulo_cumpleanos" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="cumple-cabecera">
+          <div class="cumple-confeti" id="cumple_confeti" aria-hidden="true"></div>
+          <button type="button" class="btn-close btn-close-white position-absolute end-0 top-0 m-2" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          <span class="cumple-torta" aria-hidden="true">🎂</span>
+          <h5 class="cumple-titulo" id="titulo_cumpleanos">¡Feliz cumpleaños!</h5>
+        </div>
+        <div class="cumple-cuerpo modal-body">
+          <p id="cumple_mensaje"></p>
+        </div>
+        <div class="modal-footer border-0 justify-content-center pt-0 pb-3">
+          <button type="button" class="btn btn-gdc px-4" data-bs-dismiss="modal">¡Gracias! 🎉</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="js/api.js?v=111"></script>
   <script src="js/documentos.js?v=111"></script>
-  <script src="js/main.js?v=111"></script>
+  <script src="js/main.js?v=112"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
