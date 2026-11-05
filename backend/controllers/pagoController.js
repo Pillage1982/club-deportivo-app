@@ -13,7 +13,7 @@ const cuotaModel   = require('../models/cuotaModel');
 const puntajeModel = require('../models/puntajeModel');
 const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
 const { calcularPuntosCuota, fechaPuntajeCuota, recalcularAsistenciasPersona } = require('../utils/puntajeCuotas');
-const { periodosCuotasTemporadaVigente, esPeriodoTemporadaVigente, esPagoAnualInicioCiclo } = require('../utils/estatutoGdcRules');
+const { periodosCuotasTemporadaVigente, esPeriodoTemporadaVigente, esPagoAnualInicioCiclo, ventanaPagoAnualAbierta } = require('../utils/estatutoGdcRules');
 
 // Solo borra archivos subidos desde el panel (uploads/comprobantes). Si el pago usaba
 // un comprobante enviado por el socio (uploads/comprobantes_deposito), ese archivo
@@ -318,6 +318,15 @@ exports.crearAnual = (req, res) => {
   const errorValidacion = validarPago(req.body);
   if (errorValidacion) {
     return res.status(400).json({ mensaje: errorValidacion });
+  }
+
+  // El pago anual (bono de inicio de ciclo, art. 9.3) solo se habilita hasta el mes
+  // de inicio de la temporada de cuotas (octubre). Fuera de ese plazo las cuotas se
+  // registran como pago normal, marcando los meses a mano.
+  if (!ventanaPagoAnualAbierta()) {
+    return res.status(400).json({
+      mensaje: 'El pago anual solo está disponible en octubre, al inicio de la temporada. Registre las cuotas como pago normal (puede marcar varios meses en un solo pago).'
+    });
   }
 
   // Con comprobante adjunto la petición llega como FormData: cuota_ids viene como JSON

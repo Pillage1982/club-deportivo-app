@@ -47,6 +47,7 @@ window.onload = () => {
   configurarFiltrosPagos();
   configurarSelectorCuotaPago();
   configurarBuscadorPersonaPago();
+  actualizarTipoPago(); // oculta la casilla de pago anual fuera de su ventana (octubre)
   configurarAdjuntarComprobantePago();
   configurarFiltrosDepositos();
   configurarFiltrosCuotas();
