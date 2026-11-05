@@ -150,11 +150,14 @@ function renderizarTablaGastos(gastos) {
       <td>${formatearMonto(gasto.monto)}</td>
       <td>${gasto.responsable ? escaparHtml(gasto.responsable) : '—'}</td>
       <td class="text-nowrap">
+        <button type="button" class="btn btn-sm btn-outline-success" title="Comprobante de egreso" onclick="verComprobanteEgreso(${gasto.id})">
+          <i class="bi bi-receipt"></i>
+        </button>
         ${gasto.comprobante_path
-          ? `<button type="button" class="btn btn-sm btn-outline-primary" title="Ver comprobante" onclick="verComprobanteGasto(${gasto.id})">
+          ? `<button type="button" class="btn btn-sm btn-outline-primary ms-1" title="Ver comprobante adjunto" onclick="verComprobanteGasto(${gasto.id})">
                <i class="bi bi-file-earmark-text"></i>
              </button>`
-          : '<span class="text-muted small">Sin comprobante</span>'
+          : '<span class="text-muted small ms-1">Sin adjunto</span>'
         }
         <button type="button" class="btn btn-sm btn-outline-danger ms-1" title="Eliminar" onclick="eliminarGasto(${gasto.id})">
           <i class="bi bi-trash"></i>
@@ -202,6 +205,27 @@ function verComprobanteGasto(id) {
     })
     .catch(err => {
       mostrarAlerta(obtenerMensajeError(err, 'No se pudo obtener el comprobante'), 'danger');
+    });
+}
+
+// Comprobante de egreso (documento interno): se genera en el backend y se abre en
+// una pestaña nueva para ver/imprimir/descargar.
+function verComprobanteEgreso(id) {
+  fetch(`${API_URL}/gastos/${id}/egreso`, { headers: getAuthHeaders(), cache: 'no-store' })
+    .then(async res => {
+      if (!res.ok) {
+        const data = await leerRespuestaJson(res);
+        throw new Error(data.mensaje || 'No se pudo generar el comprobante de egreso');
+      }
+      return res.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    })
+    .catch(err => {
+      mostrarAlerta(obtenerMensajeError(err, 'No se pudo generar el comprobante de egreso'), 'danger');
     });
 }
 

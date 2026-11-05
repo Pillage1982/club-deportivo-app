@@ -29,6 +29,13 @@ router.post(
 );
 
 router.get(
+  '/:id/egreso',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.comprobanteEgreso
+);
+
+router.get(
   '/:id/comprobante',
   authMiddleware,
   roleMiddleware('admin', 'tesorero'),

@@ -4,6 +4,7 @@ const { rutaUpload, enviarArchivoSubido } = require('../config/uploads');
 const fs = require('fs');
 const gastoModel = require('../models/gastoModel');
 const uploadComprobante = require('../middleware/uploadComprobante');
+const { generarPdfComprobanteEgreso, nombreArchivoEgreso } = require('../services/comprobanteEgresoPdf');
 
 function textoValido(valor, minimo = 3) {
   if (typeof valor !== 'string') return false;
@@ -116,6 +117,26 @@ exports.eliminar = (req, res) => {
 
       res.json({ mensaje: 'Gasto eliminado' });
     });
+  });
+};
+
+// Comprobante de egreso (documento interno de control): se genera al vuelo desde el
+// registro del gasto. ?descargar=1 lo entrega como adjunto; si no, inline para verlo.
+exports.comprobanteEgreso = (req, res) => {
+  gastoModel.obtenerGastoPorId(req.params.id, async (err, gasto) => {
+    if (err) return res.status(500).json({ mensaje: 'Error al buscar el gasto' });
+    if (!gasto) return res.status(404).json({ mensaje: 'Gasto no encontrado' });
+
+    try {
+      const pdf = await generarPdfComprobanteEgreso(gasto);
+      const disposicion = req.query.descargar ? 'attachment' : 'inline';
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `${disposicion}; filename="${nombreArchivoEgreso(gasto)}"`);
+      res.send(pdf);
+    } catch (e) {
+      console.error('[Comprobante egreso] No se pudo generar, gasto', gasto.id, e);
+      res.status(500).json({ mensaje: 'No se pudo generar el comprobante de egreso' });
+    }
   });
 };
 
