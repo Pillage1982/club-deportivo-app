@@ -27,31 +27,30 @@ function etiquetaTipoPago(pago) {
   return pago.detalle ? `${tipo} — ${pago.detalle}` : tipo;
 }
 
-// Ventana en que tiene sentido ofrecer el pago anual (art. 9.3): hasta el mes de
-// inicio del ciclo de cuotas de la temporada vigente (octubre). Desde noviembre la
-// casilla queda oculta y reaparece sola el próximo octubre. Espeja
-// ventanaPagoAnualAbierta() de backend/utils/estatutoGdcRules.js (hora de Chile).
-function ventanaPagoAnualAbierta(fecha = new Date()) {
-  const [anio, mes] = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Santiago', year: 'numeric', month: '2-digit'
-  }).format(fecha).split('-').map(Number);
-  const anioInicio = mes >= 10 ? anio : anio - 1; // primer periodo = octubre de anioInicio
-  return anio < anioInicio || (anio === anioInicio && mes <= 10);
+// El pago anual queda reservado al rol admin exacto (y soporte): no tesorero ni los
+// directores que heredan de admin. Espeja controller.soloAdmin del backend.
+function puedeUsarPagoAnual() {
+  try {
+    const usuario = JSON.parse(localStorage.getItem('usuario')) || {};
+    return usuario.rol === 'admin' || Boolean(usuario.es_soporte);
+  } catch {
+    return false;
+  }
 }
 
 // Con un pago extra no aplica vincular cuota ni pago anual: se ocultan. El pago
-// anual además solo se ofrece dentro de su ventana (octubre).
+// anual además solo lo ve el administrador.
 function actualizarTipoPago() {
   const tipo = document.getElementById('pago_tipo')?.value || 'cuota';
   const esCuota = tipo === 'cuota';
-  const anualDisponible = esCuota && ventanaPagoAnualAbierta();
+  const anualDisponible = esCuota && puedeUsarPagoAnual();
 
   document.getElementById('pago_cuota_grupo')?.classList.toggle('d-none', !esCuota);
   document.getElementById('pago_anual_grupo')?.classList.toggle('d-none', !anualDisponible);
 
   if (!esCuota) marcarCuotasPago(false);
 
-  // Fuera de la ventana (o con pago extra) la casilla no debe quedar activa.
+  // Sin permiso (o con pago extra) la casilla no debe quedar activa.
   if (!anualDisponible) {
     const check = document.getElementById('pago_anual_check');
     if (check?.checked) {

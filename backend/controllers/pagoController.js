@@ -13,7 +13,16 @@ const cuotaModel   = require('../models/cuotaModel');
 const puntajeModel = require('../models/puntajeModel');
 const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
 const { calcularPuntosCuota, fechaPuntajeCuota, recalcularAsistenciasPersona } = require('../utils/puntajeCuotas');
-const { periodosCuotasTemporadaVigente, esPeriodoTemporadaVigente, esPagoAnualInicioCiclo, ventanaPagoAnualAbierta } = require('../utils/estatutoGdcRules');
+const { periodosCuotasTemporadaVigente, esPeriodoTemporadaVigente, esPagoAnualInicioCiclo } = require('../utils/estatutoGdcRules');
+const { esSoporte } = require('../config/roles');
+
+// Solo el rol admin exacto (no secretaria ni directores, que heredan de admin) y la
+// cuenta de soporte: el pago anual queda reservado a la administración.
+exports.soloAdmin = (req, res, next) => {
+  const u = req.usuario || {};
+  if (u.rol === 'admin' || esSoporte(u.usuario)) return next();
+  return res.status(403).json({ mensaje: 'Solo el administrador puede registrar pagos anuales' });
+};
 
 // Solo borra archivos subidos desde el panel (uploads/comprobantes). Si el pago usaba
 // un comprobante enviado por el socio (uploads/comprobantes_deposito), ese archivo
@@ -318,15 +327,6 @@ exports.crearAnual = (req, res) => {
   const errorValidacion = validarPago(req.body);
   if (errorValidacion) {
     return res.status(400).json({ mensaje: errorValidacion });
-  }
-
-  // El pago anual (bono de inicio de ciclo, art. 9.3) solo se habilita hasta el mes
-  // de inicio de la temporada de cuotas (octubre). Fuera de ese plazo las cuotas se
-  // registran como pago normal, marcando los meses a mano.
-  if (!ventanaPagoAnualAbierta()) {
-    return res.status(400).json({
-      mensaje: 'El pago anual solo está disponible en octubre, al inicio de la temporada. Registre las cuotas como pago normal (puede marcar varios meses en un solo pago).'
-    });
   }
 
   // Con comprobante adjunto la petición llega como FormData: cuota_ids viene como JSON
