@@ -13,7 +13,20 @@ const cuotaModel   = require('../models/cuotaModel');
 const puntajeModel = require('../models/puntajeModel');
 const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
 const { calcularPuntosCuota, fechaPuntajeCuota, recalcularAsistenciasPersona } = require('../utils/puntajeCuotas');
-const { periodosCuotasTemporadaVigente, esPeriodoTemporadaVigente, esPagoAnualInicioCiclo } = require('../utils/estatutoGdcRules');
+const { periodosCuotasTemporadaVigente, esPeriodoTemporadaVigente, esPagoAnualInicioCiclo, ventanaPagoAnualAbierta } = require('../utils/estatutoGdcRules');
+const { esSoporte } = require('../config/roles');
+
+// Pago anual: el rol admin exacto (y la cuenta de soporte) lo registra todo el año;
+// los demás roles (tesorero, secretaria, directores) solo dentro de la ventana de
+// inicio de temporada (hasta el 31/10). Fuera de eso, 403.
+exports.permitePagoAnual = (req, res, next) => {
+  const u = req.usuario || {};
+  const esAdmin = u.rol === 'admin' || esSoporte(u.usuario);
+  if (esAdmin || ventanaPagoAnualAbierta()) return next();
+  return res.status(403).json({
+    mensaje: 'Fuera de octubre el pago anual solo lo puede registrar el administrador. Registre las cuotas como pago normal (puede marcar varios meses en un solo pago).'
+  });
+};
 
 // Solo borra archivos subidos desde el panel (uploads/comprobantes). Si el pago usaba
 // un comprobante enviado por el socio (uploads/comprobantes_deposito), ese archivo

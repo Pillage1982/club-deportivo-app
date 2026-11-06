@@ -4,6 +4,7 @@ const { rutaUpload, enviarArchivoSubido } = require('../config/uploads');
 const fs = require('fs');
 const gastoModel = require('../models/gastoModel');
 const uploadComprobante = require('../middleware/uploadComprobante');
+const { generarPdfComprobanteEgreso, nombreArchivoEgreso } = require('../services/comprobanteEgresoPdf');
 
 function textoValido(valor, minimo = 3) {
   if (typeof valor !== 'string') return false;
@@ -74,13 +75,28 @@ exports.crear = async (req, res) => {
     }
   }
 
+  const limpiar = (valor, max) => {
+    const texto = (valor == null ? '' : String(valor)).trim();
+    return texto ? texto.substring(0, max) : null;
+  };
+  const enLista = (valor, permitidos) => (permitidos.includes(valor) ? valor : null);
+
   const data = {
     descripcion: req.body.descripcion.trim(),
     categoria: req.body.categoria.trim(),
     monto: Number(req.body.monto),
     fecha: req.body.fecha,
     responsable: req.body.responsable ? req.body.responsable.trim() : null,
-    comprobante_path: req.file ? `comprobantes/${req.file.filename}` : null
+    comprobante_path: req.file ? `comprobantes/${req.file.filename}` : null,
+    // Campos del comprobante de egreso (todos opcionales)
+    beneficiario_rut: limpiar(req.body.beneficiario_rut, 20),
+    beneficiario_contacto: limpiar(req.body.beneficiario_contacto, 150),
+    actividad_asociada: limpiar(req.body.actividad_asociada, 200),
+    forma_pago: enLista(req.body.forma_pago, ['efectivo', 'transferencia', 'cheque']),
+    forma_pago_detalle: limpiar(req.body.forma_pago_detalle, 100),
+    respaldo_tipo: enLista(req.body.respaldo_tipo, ['boleta', 'factura', 'honorarios', 'sin_documento']),
+    respaldo_numero: limpiar(req.body.respaldo_numero, 60),
+    observaciones: limpiar(req.body.observaciones, 300)
   };
 
   gastoModel.crearGasto(data, (err) => {
@@ -116,6 +132,26 @@ exports.eliminar = (req, res) => {
 
       res.json({ mensaje: 'Gasto eliminado' });
     });
+  });
+};
+
+// Comprobante de egreso (documento interno de control): se genera al vuelo desde el
+// registro del gasto. ?descargar=1 lo entrega como adjunto; si no, inline para verlo.
+exports.comprobanteEgreso = (req, res) => {
+  gastoModel.obtenerGastoPorId(req.params.id, async (err, gasto) => {
+    if (err) return res.status(500).json({ mensaje: 'Error al buscar el gasto' });
+    if (!gasto) return res.status(404).json({ mensaje: 'Gasto no encontrado' });
+
+    try {
+      const pdf = await generarPdfComprobanteEgreso(gasto);
+      const disposicion = req.query.descargar ? 'attachment' : 'inline';
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `${disposicion}; filename="${nombreArchivoEgreso(gasto)}"`);
+      res.send(pdf);
+    } catch (e) {
+      console.error('[Comprobante egreso] No se pudo generar, gasto', gasto.id, e);
+      res.status(500).json({ mensaje: 'No se pudo generar el comprobante de egreso' });
+    }
   });
 };
 

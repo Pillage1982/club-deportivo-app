@@ -232,6 +232,28 @@ async function asegurarTablaGastos() {
   `);
 }
 
+// Campos extra del gasto para el comprobante de egreso (formato GDC): beneficiario,
+// actividad asociada, forma de pago y documento de respaldo. Todos opcionales; los
+// gastos anteriores quedan con estos campos en NULL.
+async function asegurarCamposGastos() {
+  const cols = await columnasExistentes('gastos');
+  const nuevas = [
+    ['beneficiario_rut', 'VARCHAR(20) NULL'],
+    ['beneficiario_contacto', 'VARCHAR(150) NULL'],
+    ['actividad_asociada', 'VARCHAR(200) NULL'],
+    ['forma_pago', 'VARCHAR(20) NULL'],
+    ['forma_pago_detalle', 'VARCHAR(100) NULL'],
+    ['respaldo_tipo', 'VARCHAR(20) NULL'],
+    ['respaldo_numero', 'VARCHAR(60) NULL'],
+    ['observaciones', 'VARCHAR(300) NULL']
+  ];
+  for (const [nombre, tipo] of nuevas) {
+    if (!cols.has(nombre)) {
+      await ejecutar(`ALTER TABLE gastos ADD COLUMN ${nombre} ${tipo}`);
+    }
+  }
+}
+
 // Ingresos de terceros: dinero que entra al club sin venir de la cuota o multa
 // de un integrante (donaciones, premios, proyectos adjudicados). Por eso no
 // tiene persona_id y no afecta la deuda ni el puntaje de ningún socio.
@@ -774,6 +796,7 @@ async function ejecutarMigraciones() {
   await eliminarBonificacionPagoAnual();
   await ajustarPagoAnualInicioCiclo();
   await asegurarTablaGastos();
+  await asegurarCamposGastos();
   await asegurarTablaIngresos();
   await asegurarTablasFormaciones();
   await asegurarTablaSociosAuth();

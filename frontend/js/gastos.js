@@ -52,6 +52,21 @@ function crearGasto() {
   if (responsable) formData.append('responsable', responsable);
   if (archivo) formData.append('comprobante', archivo);
 
+  // Campos del comprobante de egreso (opcionales)
+  [
+    ['beneficiario_rut', 'gasto_beneficiario_rut'],
+    ['beneficiario_contacto', 'gasto_beneficiario_contacto'],
+    ['actividad_asociada', 'gasto_actividad'],
+    ['forma_pago', 'gasto_forma_pago'],
+    ['forma_pago_detalle', 'gasto_forma_pago_detalle'],
+    ['respaldo_tipo', 'gasto_respaldo_tipo'],
+    ['respaldo_numero', 'gasto_respaldo_numero'],
+    ['observaciones', 'gasto_observaciones']
+  ].forEach(([campo, id]) => {
+    const valor = document.getElementById(id)?.value.trim();
+    if (valor) formData.append(campo, valor);
+  });
+
   const estadoBoton = bloquearBoton('btn_guardar_gasto', 'Guardando...');
   if (!estadoBoton) return;
 
@@ -70,12 +85,13 @@ function crearGasto() {
     .then(data => {
       mostrarAlerta(data.mensaje, 'success');
 
-      document.getElementById('gasto_descripcion').value = '';
-      document.getElementById('gasto_categoria').value   = '';
-      document.getElementById('gasto_monto').value        = '';
-      document.getElementById('gasto_fecha').value        = '';
-      document.getElementById('gasto_responsable').value  = '';
-      document.getElementById('gasto_comprobante').value  = '';
+      [
+        'gasto_descripcion', 'gasto_categoria', 'gasto_monto', 'gasto_fecha',
+        'gasto_responsable', 'gasto_comprobante', 'gasto_beneficiario_rut',
+        'gasto_beneficiario_contacto', 'gasto_actividad', 'gasto_forma_pago',
+        'gasto_forma_pago_detalle', 'gasto_respaldo_tipo', 'gasto_respaldo_numero',
+        'gasto_observaciones'
+      ].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
 
       cargarTablaGastos();
       cargarDashboard();
@@ -150,11 +166,14 @@ function renderizarTablaGastos(gastos) {
       <td>${formatearMonto(gasto.monto)}</td>
       <td>${gasto.responsable ? escaparHtml(gasto.responsable) : '—'}</td>
       <td class="text-nowrap">
+        <button type="button" class="btn btn-sm btn-outline-success" title="Comprobante de egreso" onclick="verComprobanteEgreso(${gasto.id})">
+          <i class="bi bi-receipt"></i>
+        </button>
         ${gasto.comprobante_path
-          ? `<button type="button" class="btn btn-sm btn-outline-primary" title="Ver comprobante" onclick="verComprobanteGasto(${gasto.id})">
+          ? `<button type="button" class="btn btn-sm btn-outline-primary ms-1" title="Ver comprobante adjunto" onclick="verComprobanteGasto(${gasto.id})">
                <i class="bi bi-file-earmark-text"></i>
              </button>`
-          : '<span class="text-muted small">Sin comprobante</span>'
+          : '<span class="text-muted small ms-1">Sin adjunto</span>'
         }
         <button type="button" class="btn btn-sm btn-outline-danger ms-1" title="Eliminar" onclick="eliminarGasto(${gasto.id})">
           <i class="bi bi-trash"></i>
@@ -202,6 +221,27 @@ function verComprobanteGasto(id) {
     })
     .catch(err => {
       mostrarAlerta(obtenerMensajeError(err, 'No se pudo obtener el comprobante'), 'danger');
+    });
+}
+
+// Comprobante de egreso (documento interno): se genera en el backend y se abre en
+// una pestaña nueva para ver/imprimir/descargar.
+function verComprobanteEgreso(id) {
+  fetch(`${API_URL}/gastos/${id}/egreso`, { headers: getAuthHeaders(), cache: 'no-store' })
+    .then(async res => {
+      if (!res.ok) {
+        const data = await leerRespuestaJson(res);
+        throw new Error(data.mensaje || 'No se pudo generar el comprobante de egreso');
+      }
+      return res.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    })
+    .catch(err => {
+      mostrarAlerta(obtenerMensajeError(err, 'No se pudo generar el comprobante de egreso'), 'danger');
     });
 }
 

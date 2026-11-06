@@ -175,6 +175,18 @@ function esPagoAnualInicioCiclo(periodosPagados, periodosTemporada, fechaHoy) {
   return anioHoy < primerPeriodo.anio || (anioHoy === primerPeriodo.anio && mesHoy <= primerPeriodo.mes);
 }
 
+// Ventana en que el pago anual está abierto para los roles que no son admin (art.
+// 9.3): hasta el mes de inicio del ciclo de cuotas de la temporada vigente (octubre).
+// Desde noviembre queda cerrada para ellos y se reabre sola el próximo octubre, sin
+// tocar código. Evaluada en hora de Chile (como periodosCuotasTemporadaVigente).
+function ventanaPagoAnualAbierta(fecha = new Date()) {
+  const [anioHoy, mesHoy] = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Santiago', year: 'numeric', month: '2-digit'
+  }).format(fecha).split('-').map(Number);
+  const [primerPeriodo] = periodosCuotasTemporadaVigente(fecha);
+  return anioHoy < primerPeriodo.anio || (anioHoy === primerPeriodo.anio && mesHoy <= primerPeriodo.mes);
+}
+
 const PONDERACION_BLOQUES = Object.freeze({
   'naupas - chinas naupas (satanas)': 100,
   'huari (luciferes)': 90,
@@ -205,5 +217,6 @@ module.exports = {
   PERIODOS_CUOTAS_2026_2027,
   periodosCuotasTemporadaVigente,
   esPeriodoTemporadaVigente,
-  esPagoAnualInicioCiclo
+  esPagoAnualInicioCiclo,
+  ventanaPagoAnualAbierta
 };
