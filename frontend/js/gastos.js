@@ -52,6 +52,21 @@ function crearGasto() {
   if (responsable) formData.append('responsable', responsable);
   if (archivo) formData.append('comprobante', archivo);
 
+  // Campos del comprobante de egreso (opcionales)
+  [
+    ['beneficiario_rut', 'gasto_beneficiario_rut'],
+    ['beneficiario_contacto', 'gasto_beneficiario_contacto'],
+    ['actividad_asociada', 'gasto_actividad'],
+    ['forma_pago', 'gasto_forma_pago'],
+    ['forma_pago_detalle', 'gasto_forma_pago_detalle'],
+    ['respaldo_tipo', 'gasto_respaldo_tipo'],
+    ['respaldo_numero', 'gasto_respaldo_numero'],
+    ['observaciones', 'gasto_observaciones']
+  ].forEach(([campo, id]) => {
+    const valor = document.getElementById(id)?.value.trim();
+    if (valor) formData.append(campo, valor);
+  });
+
   const estadoBoton = bloquearBoton('btn_guardar_gasto', 'Guardando...');
   if (!estadoBoton) return;
 
@@ -70,12 +85,13 @@ function crearGasto() {
     .then(data => {
       mostrarAlerta(data.mensaje, 'success');
 
-      document.getElementById('gasto_descripcion').value = '';
-      document.getElementById('gasto_categoria').value   = '';
-      document.getElementById('gasto_monto').value        = '';
-      document.getElementById('gasto_fecha').value        = '';
-      document.getElementById('gasto_responsable').value  = '';
-      document.getElementById('gasto_comprobante').value  = '';
+      [
+        'gasto_descripcion', 'gasto_categoria', 'gasto_monto', 'gasto_fecha',
+        'gasto_responsable', 'gasto_comprobante', 'gasto_beneficiario_rut',
+        'gasto_beneficiario_contacto', 'gasto_actividad', 'gasto_forma_pago',
+        'gasto_forma_pago_detalle', 'gasto_respaldo_tipo', 'gasto_respaldo_numero',
+        'gasto_observaciones'
+      ].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
 
       cargarTablaGastos();
       cargarDashboard();

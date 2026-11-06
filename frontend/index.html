@@ -1593,14 +1593,63 @@
                   <input type="date" id="gasto_fecha" class="form-control">
                 </div>
                 <div class="col-md-4 mb-3">
-                  <label class="form-label">Responsable <small class="text-muted">(opcional)</small></label>
-                  <input type="text" id="gasto_responsable" class="form-control" placeholder="Quién autorizó/realizó el gasto">
+                  <label class="form-label">Beneficiario / Responsable <small class="text-muted">(opcional)</small></label>
+                  <input type="text" id="gasto_responsable" class="form-control" placeholder="A quién se le paga (Páguese a)">
                 </div>
                 <div class="col-md-4 mb-3">
                   <label class="form-label">Comprobante <small class="text-muted">(boleta/factura, opcional)</small></label>
                   <input type="file" id="gasto_comprobante" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
                 </div>
               </div>
+
+              <hr class="my-2">
+              <p class="text-muted small mb-3">Datos para el <strong>comprobante de egreso</strong> (todos opcionales; si se dejan en blanco, quedan para completar a mano en el PDF).</p>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">RUT del beneficiario</label>
+                  <input type="text" id="gasto_beneficiario_rut" class="form-control" placeholder="Ej: 12.345.678-9">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Teléfono / correo del beneficiario</label>
+                  <input type="text" id="gasto_beneficiario_contacto" class="form-control" placeholder="Contacto del beneficiario">
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Actividad o evento asociado</label>
+                  <input type="text" id="gasto_actividad" class="form-control" placeholder="Ej: Fiesta de Ayquina 2026">
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">Forma de pago</label>
+                  <select id="gasto_forma_pago" class="form-select">
+                    <option value="">—</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="cheque">Cheque</option>
+                  </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">N° operación / cheque / banco</label>
+                  <input type="text" id="gasto_forma_pago_detalle" class="form-control" placeholder="Detalle de la forma de pago">
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">Documento de respaldo</label>
+                  <select id="gasto_respaldo_tipo" class="form-select">
+                    <option value="">—</option>
+                    <option value="boleta">Boleta</option>
+                    <option value="factura">Factura</option>
+                    <option value="honorarios">Boleta de honorarios</option>
+                    <option value="sin_documento">Sin documento</option>
+                  </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">N° del documento</label>
+                  <input type="text" id="gasto_respaldo_numero" class="form-control" placeholder="N° boleta/factura">
+                </div>
+                <div class="col-md-12 mb-3">
+                  <label class="form-label">Observaciones</label>
+                  <textarea id="gasto_observaciones" class="form-control" rows="2" placeholder="Notas o justificación (ej: pago sin documento de respaldo)"></textarea>
+                </div>
+              </div>
+
               <button type="button" id="btn_guardar_gasto" class="btn btn-success w-100" onclick="crearGasto()">
                 Guardar Gasto
               </button>

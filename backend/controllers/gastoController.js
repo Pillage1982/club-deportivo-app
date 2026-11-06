@@ -75,13 +75,28 @@ exports.crear = async (req, res) => {
     }
   }
 
+  const limpiar = (valor, max) => {
+    const texto = (valor == null ? '' : String(valor)).trim();
+    return texto ? texto.substring(0, max) : null;
+  };
+  const enLista = (valor, permitidos) => (permitidos.includes(valor) ? valor : null);
+
   const data = {
     descripcion: req.body.descripcion.trim(),
     categoria: req.body.categoria.trim(),
     monto: Number(req.body.monto),
     fecha: req.body.fecha,
     responsable: req.body.responsable ? req.body.responsable.trim() : null,
-    comprobante_path: req.file ? `comprobantes/${req.file.filename}` : null
+    comprobante_path: req.file ? `comprobantes/${req.file.filename}` : null,
+    // Campos del comprobante de egreso (todos opcionales)
+    beneficiario_rut: limpiar(req.body.beneficiario_rut, 20),
+    beneficiario_contacto: limpiar(req.body.beneficiario_contacto, 150),
+    actividad_asociada: limpiar(req.body.actividad_asociada, 200),
+    forma_pago: enLista(req.body.forma_pago, ['efectivo', 'transferencia', 'cheque']),
+    forma_pago_detalle: limpiar(req.body.forma_pago_detalle, 100),
+    respaldo_tipo: enLista(req.body.respaldo_tipo, ['boleta', 'factura', 'honorarios', 'sin_documento']),
+    respaldo_numero: limpiar(req.body.respaldo_numero, 60),
+    observaciones: limpiar(req.body.observaciones, 300)
   };
 
   gastoModel.crearGasto(data, (err) => {
