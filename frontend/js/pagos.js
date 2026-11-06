@@ -27,9 +27,8 @@ function etiquetaTipoPago(pago) {
   return pago.detalle ? `${tipo} — ${pago.detalle}` : tipo;
 }
 
-// El pago anual queda reservado al rol admin exacto (y soporte): no tesorero ni los
-// directores que heredan de admin. Espeja controller.soloAdmin del backend.
-function puedeUsarPagoAnual() {
+// El rol admin exacto (y la cuenta de soporte) usa el pago anual todo el año.
+function esAdminPagoAnual() {
   try {
     const usuario = JSON.parse(localStorage.getItem('usuario')) || {};
     return usuario.rol === 'admin' || Boolean(usuario.es_soporte);
@@ -38,8 +37,24 @@ function puedeUsarPagoAnual() {
   }
 }
 
+// Ventana para los roles que no son admin: hasta el mes de inicio del ciclo de cuotas
+// de la temporada vigente (octubre). Espeja ventanaPagoAnualAbierta() de
+// backend/utils/estatutoGdcRules.js (hora de Chile).
+function ventanaPagoAnualAbierta(fecha = new Date()) {
+  const [anio, mes] = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Santiago', year: 'numeric', month: '2-digit'
+  }).format(fecha).split('-').map(Number);
+  const anioInicio = mes >= 10 ? anio : anio - 1; // primer periodo = octubre de anioInicio
+  return anio < anioInicio || (anio === anioInicio && mes <= 10);
+}
+
+// Pago anual: admin todo el año; los demás roles solo dentro de la ventana (octubre).
+function puedeUsarPagoAnual() {
+  return esAdminPagoAnual() || ventanaPagoAnualAbierta();
+}
+
 // Con un pago extra no aplica vincular cuota ni pago anual: se ocultan. El pago
-// anual además solo lo ve el administrador.
+// anual además solo lo ve el admin (todo el año) o el resto dentro de la ventana.
 function actualizarTipoPago() {
   const tipo = document.getElementById('pago_tipo')?.value || 'cuota';
   const esCuota = tipo === 'cuota';

@@ -60,13 +60,13 @@ router.post(
   controller.crear
 );
 
-// El pago anual queda reservado al rol admin exacto (y soporte): no tesorero ni
-// directores que heredan de admin.
+// Pago anual: admin exacto (y soporte) todo el año; los demás roles solo dentro de
+// la ventana de inicio de temporada (hasta el 31/10), según controller.permitePagoAnual.
 router.post(
   '/anual',
   authMiddleware,
   roleMiddleware('admin', 'tesorero'),
-  controller.soloAdmin,
+  controller.permitePagoAnual,
   recibirComprobante,
   controller.crearAnual
 );

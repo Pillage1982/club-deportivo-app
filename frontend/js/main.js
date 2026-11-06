@@ -47,7 +47,7 @@ window.onload = () => {
   configurarFiltrosPagos();
   configurarSelectorCuotaPago();
   configurarBuscadorPersonaPago();
-  actualizarTipoPago(); // oculta la casilla de pago anual salvo para el rol admin
+  actualizarTipoPago(); // oculta la casilla de pago anual (admin todo el año; resto solo en octubre)
   configurarAdjuntarComprobantePago();
   configurarFiltrosDepositos();
   configurarFiltrosCuotas();
