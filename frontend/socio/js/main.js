@@ -312,9 +312,11 @@ function badgeEstadoCuota(estado) {
 function cargarAsistenciaYPuntaje() {
   Promise.all([
     fetch(`${API_URL}/socio-auth/mi-puntaje`, { headers: getAuthHeadersSocio() }).then(r => r.json()),
-    fetch(`${API_URL}/socio-auth/mi-asistencia`, { headers: getAuthHeadersSocio() }).then(r => r.json())
+    fetch(`${API_URL}/socio-auth/mi-asistencia`, { headers: getAuthHeadersSocio() }).then(r => r.json()),
+    fetch(`${API_URL}/socio-auth/mi-ficha`, { headers: getAuthHeadersSocio() }).then(r => r.json())
   ])
-    .then(([puntaje, asistencias]) => {
+    .then(([puntaje, asistencias, ficha]) => {
+      prepararQrAsistencia(ficha);
       mostrarTemporada(puntaje.temporada_desde);
 
       document.getElementById('puntaje_desglose').innerHTML = `
@@ -355,4 +357,70 @@ function badgeEstadoAsistencia(estado) {
   };
   const etiqueta = String(estado || '').replace(/_/g, ' ');
   return `<span class="badge ${mapa[estado] || 'bg-secondary'}">${escaparHtml(etiqueta)}</span>`;
+}
+
+// =====================================
+// MI CÓDIGO QR (toma de asistencia) — solo integrantes activos
+// El QR solo contiene el RUT del integrante; el lector de asistencia lo lee
+// igual que el QR de la cédula física.
+// =====================================
+let qrAsistenciaDatos = null;
+
+// Muestra el botón "Mi código QR" solo si el integrante está activo
+// (en receso o inactivo no toma asistencia).
+function prepararQrAsistencia(ficha) {
+  const btn = document.getElementById('btn_qr_asistencia');
+  if (!btn) return;
+
+  if (ficha && ficha.estado === 'activo') {
+    qrAsistenciaDatos = {
+      rut: ficha.rut,
+      nombre: `${ficha.nombres || ''} ${ficha.apellido_paterno || ''} ${ficha.apellido_materno || ''}`.trim()
+    };
+    btn.classList.remove('d-none');
+  } else {
+    qrAsistenciaDatos = null;
+    btn.classList.add('d-none');
+  }
+}
+
+function abrirQrAsistencia() {
+  if (!qrAsistenciaDatos) return;
+
+  const modalEl = document.getElementById('modal_qr_asistencia');
+  bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  pintarQrAsistencia(qrAsistenciaDatos);
+}
+
+function pintarQrAsistencia(datos) {
+  const rutQr = formatearRutQr(datos.rut);
+  document.getElementById('qr_asistencia_nombre').textContent = datos.nombre || '';
+  document.getElementById('qr_asistencia_rut').textContent = rutQr;
+
+  const canvas = document.getElementById('qr_asistencia_canvas');
+
+  // Respaldo si la librería no cargó (ej. sin conexión): mostramos el RUT en grande.
+  if (typeof QRCode === 'undefined' || !canvas) {
+    const cont = document.getElementById('qr_asistencia_contenido');
+    if (cont) {
+      cont.innerHTML = `<div class="fs-2 fw-bold py-4">${escaparHtml(rutQr)}</div>`;
+    }
+    document.getElementById('qr_asistencia_rut').textContent =
+      'No se pudo dibujar el código. Muestra tu cédula o dicta tu RUT.';
+    return;
+  }
+
+  QRCode.toCanvas(
+    canvas,
+    rutQr,
+    { width: 256, margin: 2, color: { dark: '#3b0a10', light: '#ffffff' } },
+    err => { if (err) console.error('Error generando el QR:', err); }
+  );
+}
+
+// Devuelve el RUT como "cuerpo-dv" (sin puntos), formato que el lector reconoce.
+function formatearRutQr(rut) {
+  const limpio = String(rut || '').replace(/[.\-\s]/g, '').toUpperCase();
+  if (limpio.length < 2) return String(rut || '');
+  return `${limpio.slice(0, -1)}-${limpio.slice(-1)}`;
 }
