@@ -397,25 +397,25 @@ function pintarQrAsistencia(datos) {
   document.getElementById('qr_asistencia_nombre').textContent = datos.nombre || '';
   document.getElementById('qr_asistencia_rut').textContent = rutQr;
 
-  const canvas = document.getElementById('qr_asistencia_canvas');
+  const box = document.getElementById('qr_asistencia_box');
 
   // Respaldo si la librería no cargó (ej. sin conexión): mostramos el RUT en grande.
-  if (typeof QRCode === 'undefined' || !canvas) {
-    const cont = document.getElementById('qr_asistencia_contenido');
-    if (cont) {
-      cont.innerHTML = `<div class="fs-2 fw-bold py-4">${escaparHtml(rutQr)}</div>`;
-    }
+  if (typeof QRCode === 'undefined' || !box) {
+    if (box) box.innerHTML = `<div class="fs-2 fw-bold py-4">${escaparHtml(rutQr)}</div>`;
     document.getElementById('qr_asistencia_rut').textContent =
       'No se pudo dibujar el código. Muestra tu cédula o dicta tu RUT.';
     return;
   }
 
-  QRCode.toCanvas(
-    canvas,
-    rutQr,
-    { width: 256, margin: 2, color: { dark: '#3b0a10', light: '#ffffff' } },
-    err => { if (err) console.error('Error generando el QR:', err); }
-  );
+  box.innerHTML = '';
+  new QRCode(box, {
+    text: rutQr,
+    width: 240,
+    height: 240,
+    colorDark: '#3b0a10',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
 }
 
 // Devuelve el RUT como "cuerpo-dv" (sin puntos), formato que el lector reconoce.

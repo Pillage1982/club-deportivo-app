@@ -565,7 +565,7 @@
         <div class="modal-body text-center">
           <p class="text-muted small mb-3">Muéstralo a quien toma la asistencia para que lo escanee.</p>
           <div id="qr_asistencia_contenido" class="d-flex justify-content-center mb-3">
-            <canvas id="qr_asistencia_canvas" width="256" height="256"></canvas>
+            <div id="qr_asistencia_box"></div>
           </div>
           <div class="fw-semibold" id="qr_asistencia_nombre">—</div>
           <div class="text-muted" id="qr_asistencia_rut">—</div>
@@ -574,10 +574,10 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script src="js/qrcode.min.js?v=1"></script>
   <script src="js/api.js?v=111"></script>
   <script src="js/documentos.js?v=111"></script>
-  <script src="js/main.js?v=114"></script>
+  <script src="js/main.js?v=115"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
