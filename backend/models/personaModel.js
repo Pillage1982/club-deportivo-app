@@ -88,6 +88,24 @@ exports.obtenerPersonaPorId = (id, callback) => {
   );
 };
 
+// Fila completa para la edición: se usa para comparar qué cambió y validar solo
+// esos campos. Las fechas vienen como 'AAAA-MM-DD' para comparar como texto.
+exports.obtenerPersonaParaEdicion = (id, callback) => {
+  db.query(
+    `SELECT
+       rut, nombres, apellido_paterno, apellido_materno, bloque, sexo,
+       direccion, email, telefono,
+       DATE_FORMAT(fecha_nacimiento, '%Y-%m-%d') AS fecha_nacimiento,
+       DATE_FORMAT(fecha_ingreso, '%Y-%m-%d')    AS fecha_ingreso,
+       nombre_apoderado, telefono_apoderado, rut_apoderado, observacion,
+       bautizo, comunion, confirmacion,
+       COALESCE(estado, 'activo') AS estado, es_honorario
+     FROM personas WHERE id = ? LIMIT 1`,
+    [id],
+    (err, results) => callback(err, results ? results[0] : null)
+  );
+};
+
 exports.crearPersona = (
   data,
   callback

@@ -4,6 +4,10 @@
 // =====================================
 
 let personaEditando = null;
+// Registro original cargado al editar: permite validar SOLO los campos que
+// realmente se cambiaron, para que un dato viejo faltante (telefono/fecha) no
+// bloquee corregir, por ejemplo, el nombre de un integrante migrado.
+let personaOriginal = null;
 let personasTabla = [];
 
 // =====================================
@@ -136,7 +140,10 @@ function cargarPersonas() {
   // VALIDACIONES FRONTEND PERSONAS
   // =====================================
 
-const errorValidacion = validarPersonaFrontend(data);
+const errorValidacion = validarPersonaFrontend(
+  data,
+  personaEditando ? personaOriginal : null
+);
 
 if (errorValidacion) {
   mostrarAlerta(errorValidacion, 'warning');
@@ -197,6 +204,7 @@ if (respuestaPersona) {
 }
 
     personaEditando = null;
+    personaOriginal = null;
 
     document.getElementById(
       'btn_guardar_persona'
@@ -427,7 +435,7 @@ function renderizarTablaPersonas(personas) {
         <td class="td-acciones text-nowrap" data-label="Acciones">
           <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
             <button type="button" class="btn btn-outline-warning" title="Editar" aria-label="Editar"
-              onclick='editarPersona(${JSON.stringify(persona)})'>&#9998;</button>
+              onclick="editarPersona(${persona.id})">&#9998;</button>
             <button type="button" class="btn btn-outline-danger" title="Eliminar" aria-label="Eliminar"
               onclick='eliminarPersona(${persona.id})'>&times;</button>
           </div>
@@ -593,10 +601,21 @@ function configurarTablaRetirados() {
 // EDITAR PERSONAS
 // =====================================
 
-function editarPersona(persona) {
+function editarPersona(id) {
+
+  // Se busca la persona en la lista ya cargada (antes se pasaba el objeto
+  // completo serializado dentro del onclick, lo que rompía el botón de editar
+  // cuando algún dato tenía una comilla simple, p. ej. una dirección con
+  // "O'Higgins"). Ahora el HTML solo lleva el id.
+  const persona = personasTabla.find(p => String(p.id) === String(id));
+  if (!persona) {
+    mostrarAlerta('No se encontró el integrante a editar', 'warning');
+    return;
+  }
 
   // Activa modo edición persona
   personaEditando = persona.id;
+  personaOriginal = persona;
 
   document.getElementById('rut').value =
     persona.rut || '';
@@ -884,39 +903,59 @@ function validarFechaNacimientoFrontend(fecha) {
   return nacimiento <= hoy;
 }
 
-function validarPersonaFrontend(data) {
-  if (!validarRutFrontend(data.rut)) {
+// En edición (original presente) solo se valida un campo si realmente cambió
+// respecto al registro cargado. Así un dato antiguo faltante o mal formateado
+// (telefono/fecha de integrantes migrados) no impide corregir otros campos.
+// En alta (original null) se valida todo.
+function validarPersonaFrontend(data, original) {
+  const sinCambio = campo => {
+    if (!original) return false;
+    let a = data[campo];
+    let b = original[campo];
+    if (campo === 'fecha_nacimiento') {
+      a = String(a == null ? '' : a).substring(0, 10);
+      b = String(b == null ? '' : b).substring(0, 10);
+    }
+    return String(a == null ? '' : a).trim() === String(b == null ? '' : b).trim();
+  };
+
+  if (!sinCambio('rut') && !validarRutFrontend(data.rut)) {
     return 'Ingrese un RUT chileno válido';
   }
 
-  if (!validarNombreFrontend(data.nombres)) {
+  if (!sinCambio('nombres') && !validarNombreFrontend(data.nombres)) {
     return 'Ingrese nombres válidos';
   }
 
-  if (!validarNombreFrontend(data.apellido_paterno)) {
+  if (!sinCambio('apellido_paterno') && !validarNombreFrontend(data.apellido_paterno)) {
     return 'Ingrese un apellido paterno válido';
   }
 
   if (
+    !sinCambio('apellido_materno') &&
     data.apellido_materno &&
     !validarNombreFrontend(data.apellido_materno)
   ) {
     return 'Ingrese un apellido materno válido';
   }
 
-  if (!validarEmailFrontend(data.email)) {
+  if (!sinCambio('email') && !validarEmailFrontend(data.email)) {
     return 'Ingrese un email válido';
   }
 
-  if (!validarTelefonoFrontend(data.telefono)) {
+  if (!sinCambio('telefono') && !validarTelefonoFrontend(data.telefono)) {
     return 'Ingrese un celular válido (ej. +56912345678)';
   }
 
-  if (data.telefono_apoderado && !validarTelefonoFrontend(data.telefono_apoderado)) {
+  if (
+    !sinCambio('telefono_apoderado') &&
+    data.telefono_apoderado &&
+    !validarTelefonoFrontend(data.telefono_apoderado)
+  ) {
     return 'Ingrese un celular de apoderado válido (ej. +56912345678)';
   }
 
-  if (!validarFechaNacimientoFrontend(data.fecha_nacimiento)) {
+  if (!sinCambio('fecha_nacimiento') && !validarFechaNacimientoFrontend(data.fecha_nacimiento)) {
     return 'Ingrese una fecha de nacimiento válida';
   }
 

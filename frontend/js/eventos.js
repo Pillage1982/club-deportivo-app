@@ -433,7 +433,7 @@ function renderizarTablaEventos(eventos) {
           <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
             ${!finalizado ? `
               <button type="button" class="btn btn-outline-warning" title="Editar" aria-label="Editar"
-                onclick='editarEvento(${JSON.stringify(evento)})'>&#9998;</button>
+                onclick="editarEvento(${evento.id})">&#9998;</button>
               <button type="button" class="btn btn-outline-secondary" title="Finalizar" aria-label="Finalizar"
                 onclick='cerrarEvento(${evento.id})'>&#10003;</button>
             ` : ''}
@@ -477,7 +477,16 @@ function configurarFiltrosEventos() {
 // EDITAR EVENTOS
 // =====================================
 
-function editarEvento(evento) {
+function editarEvento(id) {
+
+  // Se busca la actividad en la lista ya cargada; antes se incrustaba el objeto
+  // completo en el onclick, lo que rompía el botón de editar si algún texto
+  // tenía una comilla simple. Ahora el HTML solo lleva el id.
+  const evento = eventosCargados.find(e => String(e.id) === String(id));
+  if (!evento) {
+    mostrarAlerta('No se encontró la actividad a editar', 'warning');
+    return;
+  }
 
   // Activa modo edición evento
   eventoEditando = evento.id;

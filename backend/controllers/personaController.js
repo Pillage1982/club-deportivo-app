@@ -67,44 +67,54 @@ function normalizarPersona(data) {
   };
 }
 
-function validarPersona(data) {
+// En edición se pasa `original` (la fila guardada): solo se validan los campos
+// que realmente cambiaron, para que un dato antiguo faltante o mal formateado
+// (telefono/fecha de integrantes migrados) no impida corregir, p. ej., el nombre.
+// En alta `original` es null y se valida todo. La comparación se hace contra el
+// original normalizado igual que `data`, para no marcar como "cambiado" un valor
+// que solo difiere en formato.
+function validarPersona(data, original) {
+  const o = original ? normalizarPersona(original) : null;
+  const norm = v => String(v == null ? '' : v);
+  const cambio = campo => !o || norm(data[campo]) !== norm(o[campo]);
+
   if (!['activo', 'receso'].includes(data.estado)) {
     return 'Seleccione un estado de integrante valido';
   }
 
-  if (!validarRut(data.rut)) {
+  if (cambio('rut') && !validarRut(data.rut)) {
     return 'Ingrese un RUT chileno válido';
   }
 
-  if (!validarNombre(data.nombres)) {
+  if (cambio('nombres') && !validarNombre(data.nombres)) {
     return 'Ingrese nombres válidos';
   }
 
-  if (!validarNombre(data.apellido_paterno)) {
+  if (cambio('apellido_paterno') && !validarNombre(data.apellido_paterno)) {
     return 'Ingrese un apellido paterno válido';
   }
 
-  if (data.apellido_materno && !validarNombre(data.apellido_materno)) {
+  if (cambio('apellido_materno') && data.apellido_materno && !validarNombre(data.apellido_materno)) {
     return 'Ingrese un apellido materno válido';
   }
 
-  if (!validarEmail(data.email)) {
+  if (cambio('email') && !validarEmail(data.email)) {
     return 'Ingrese un email válido';
   }
 
-  if (!esCelularNormalizado(data.telefono)) {
+  if (cambio('telefono') && !esCelularNormalizado(data.telefono)) {
     return 'Ingrese un celular válido (ej. +56912345678)';
   }
 
-  if (data.telefono_apoderado && !esCelularNormalizado(data.telefono_apoderado)) {
+  if (cambio('telefono_apoderado') && data.telefono_apoderado && !esCelularNormalizado(data.telefono_apoderado)) {
     return 'Ingrese un celular de apoderado válido (ej. +56912345678)';
   }
 
-  if (!validarFechaNacimiento(data.fecha_nacimiento)) {
+  if (cambio('fecha_nacimiento') && !validarFechaNacimiento(data.fecha_nacimiento)) {
     return 'Ingrese una fecha de nacimiento válida';
   }
 
-  if (data.rut_apoderado && !validarRut(data.rut_apoderado)) {
+  if (cambio('rut_apoderado') && data.rut_apoderado && !validarRut(data.rut_apoderado)) {
     return 'Ingrese un RUT de apoderado válido';
   }
 
@@ -301,15 +311,26 @@ exports.reintegrar = (req, res) => {
 exports.actualizar = (req, res) => {
 
   const data = normalizarPersona(req.body);
-const errorValidacion = validarPersona(data);
 
-if (errorValidacion) {
-  return res.status(400).json({
-    mensaje: errorValidacion
-  });
-}
+  personaModel.obtenerPersonaParaEdicion(req.params.id, (errOriginal, original) => {
+    if (errOriginal) {
+      console.error('Error obteniendo integrante para editar:', errOriginal);
+      return res.status(500).json({ mensaje: 'Error al actualizar integrante' });
+    }
 
-  personaModel.actualizarPersona(
+    if (!original) {
+      return res.status(404).json({ mensaje: 'Integrante no encontrado' });
+    }
+
+    const errorValidacion = validarPersona(data, original);
+
+    if (errorValidacion) {
+      return res.status(400).json({
+        mensaje: errorValidacion
+      });
+    }
+
+    personaModel.actualizarPersona(
 
     req.params.id,
 
@@ -336,6 +357,8 @@ if (errorValidacion) {
 
     }
 
-  );
+    );
+
+  });
 
 };
