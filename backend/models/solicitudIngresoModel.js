@@ -3,6 +3,21 @@
 // Aprobar crea el integrante (o reactiva uno dado de baja) con esos datos; el resto
 // lo completa él en su primer ingreso al Portal.
 const db = require('../config/db');
+const { normalizarCelular, limpiarTexto } = require('../utils/validacionesPersona');
+
+// La ficha pública copia lo que tipeó el postulante tal cual; el panel, en cambio,
+// guarda el celular como +569XXXXXXXX y el email en minúsculas. Si no se normaliza
+// aquí, el integrante nace con datos que la validación del panel rechaza y no se
+// puede editar (ni para corregirle el nombre). Mismo criterio que
+// personaController.normalizarTelefono.
+function telefonoNormalizado(valor) {
+  if (valor === null || valor === undefined || String(valor).trim() === '') return valor;
+  return normalizarCelular(valor) || limpiarTexto(valor);
+}
+function emailNormalizado(valor) {
+  if (valor === null || valor === undefined) return valor;
+  return String(valor).trim().toLowerCase() || null;
+}
 
 function ejecutar(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -139,8 +154,8 @@ exports.aprobarSolicitud = ({ id, bloque, observacion, usuarioId }) =>
         const direccion = [s.direccion, s.ciudad].filter(Boolean).join(', ') || null;
         const valores = [
           s.rut, s.nombres, s.apellido_paterno, s.apellido_materno,
-          bloque || null, s.email, s.telefono, s.fecha_nacimiento,
-          s.nombre_apoderado, s.telefono_apoderado, s.rut_apoderado,
+          bloque || null, emailNormalizado(s.email), telefonoNormalizado(s.telefono), s.fecha_nacimiento,
+          s.nombre_apoderado, telefonoNormalizado(s.telefono_apoderado), s.rut_apoderado,
           direccion, Number(s.bautizo) ? 1 : 0, Number(s.comunion) ? 1 : 0, Number(s.confirmacion) ? 1 : 0
         ];
         let personaId;
