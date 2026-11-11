@@ -214,7 +214,7 @@
         <button type="button" class="socio-card socio-doc-opcion mb-2" onclick="abrirFormularioComprobante()">
           <i class="bi bi-receipt"></i>
           <span>
-            <strong>Enviar comprobante de depósito</strong>
+            <strong>Enviar comprobante de pago</strong>
             <small>Foto o PDF a tesorería</small>
           </span>
           <i class="bi bi-chevron-right ms-auto"></i>
@@ -387,7 +387,7 @@
         <button type="button" class="btn btn-link px-0 mb-2" onclick="volverMenuDocumentos()">
           <i class="bi bi-arrow-left"></i> Volver
         </button>
-        <h5 class="mb-1">Enviar comprobante de depósito</h5>
+        <h5 class="mb-1">Enviar comprobante de pago</h5>
         <p class="text-muted small mb-3">
           Llega al correo de tesorería con tus datos. Tu pago se registra cuando tesorería
           lo confirma en la cuenta.
@@ -395,10 +395,36 @@
 
         <form id="form_comprobante" class="socio-card mb-3" novalidate>
           <div class="mb-3">
-            <label for="comp_monto" class="form-label">Monto depositado</label>
+            <label for="comp_banco" class="form-label">Banco</label>
+            <select id="comp_banco" class="form-select" onchange="toggleBancoOtro()">
+              <option value="">Elige el banco…</option>
+              <option>BancoEstado</option>
+              <option>Banco de Chile</option>
+              <option>Santander</option>
+              <option>BCI</option>
+              <option>Scotiabank</option>
+              <option>Banco Falabella</option>
+              <option>Banco BICE</option>
+              <option>Banco Itaú</option>
+              <option>Banco Security</option>
+              <option>Banco Ripley</option>
+              <option>Banco Consorcio</option>
+              <option>Banco Internacional</option>
+              <option>Coopeuch</option>
+              <option value="Otro">Otro…</option>
+            </select>
+            <input type="text" id="comp_banco_otro" class="form-control mt-2 d-none" maxlength="60" placeholder="Nombre del banco">
+          </div>
+          <div class="mb-3">
+            <label for="comp_numero" class="form-label">N° de transacción</label>
+            <input type="text" id="comp_numero" class="form-control" maxlength="60" placeholder="El que aparece en el comprobante">
+            <div class="form-text">Sirve para no registrar dos veces la misma transferencia.</div>
+          </div>
+          <div class="mb-3">
+            <label for="comp_monto" class="form-label">Monto total transferido</label>
             <div class="input-group">
               <span class="input-group-text">$</span>
-              <input type="text" id="comp_monto" class="form-control" inputmode="numeric" maxlength="11" placeholder="Ej: 12.000">
+              <input type="text" id="comp_monto" class="form-control" inputmode="numeric" maxlength="11" placeholder="Ej: 120.000" oninput="actualizarSaldoReparto()">
             </div>
           </div>
           <div class="mb-3">
@@ -406,7 +432,20 @@
             <input type="date" id="comp_fecha" class="form-control">
           </div>
           <div class="mb-3">
-            <label for="comp_concepto" class="form-label">¿Qué estás pagando? <span class="text-muted">(opcional)</span></label>
+            <label class="form-label mb-1">¿A quién cubre este pago?</label>
+            <div id="comp_reparto_lista"></div>
+            <div class="d-flex flex-wrap gap-2 mt-2">
+              <button type="button" class="btn btn-outline-secondary btn-sm" id="btn_add_menor" onclick="agregarMenorReparto()">
+                <i class="bi bi-person-plus me-1"></i>Menor a cargo
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="agregarOtroReparto()">
+                <i class="bi bi-person-plus me-1"></i>Otro integrante (RUT)
+              </button>
+            </div>
+            <div id="comp_saldo" class="form-text mt-2"></div>
+          </div>
+          <div class="mb-3">
+            <label for="comp_concepto" class="form-label">Comentario <span class="text-muted">(opcional)</span></label>
             <input type="text" id="comp_concepto" class="form-control" maxlength="200" placeholder="Ej: cuotas de octubre y noviembre">
           </div>
           <div class="mb-1">
@@ -576,7 +615,7 @@
 
   <script src="js/qrcode.min.js?v=1"></script>
   <script src="js/api.js?v=111"></script>
-  <script src="js/documentos.js?v=111"></script>
+  <script src="js/documentos.js?v=116"></script>
   <script src="js/main.js?v=115"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>

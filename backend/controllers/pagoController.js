@@ -12,6 +12,7 @@ const personaModel = require('../models/personaModel');
 const cuotaModel   = require('../models/cuotaModel');
 const puntajeModel = require('../models/puntajeModel');
 const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
+const comprobanteAsignacionModel = require('../models/comprobanteAsignacionModel');
 const { calcularPuntosCuota, fechaPuntajeCuota, recalcularAsistenciasPersona } = require('../utils/puntajeCuotas');
 const { periodosCuotasTemporadaVigente, esPeriodoTemporadaVigente, esPagoAnualInicioCiclo, ventanaPagoAnualAbierta } = require('../utils/estatutoGdcRules');
 const { esSoporte } = require('../config/roles');
@@ -583,6 +584,114 @@ exports.descargarDeposito = (req, res) => {
       enviarArchivoComprobante(res, deposito.adjunto_path);
     })
     .catch(error => responderError(res, error, 'Error al buscar el comprobante'));
+};
+
+// =====================================
+// REPARTO DE COMPROBANTES (Etapa 7): revisar y confirmar las asignaciones
+// =====================================
+
+exports.listarAsignacionesComprobante = (req, res) => {
+  comprobanteAsignacionModel.listarPorComprobante(Number(req.params.id))
+    .then(filas => res.json(filas))
+    .catch(error => responderError(res, error, 'No se pudieron obtener las asignaciones'));
+};
+
+exports.aprobarAsignacion = async (req, res) => {
+  const id = Number(req.params.id);
+  const autorizarFuturo = req.body && (req.body.autorizar_futuro === true || req.body.autorizar_futuro === 'true');
+  try {
+    const asignacion = await comprobanteAsignacionModel.obtenerPorId(id);
+    if (!asignacion) return res.status(404).json({ mensaje: 'Asignación no encontrada' });
+    if (asignacion.pago_id) return res.status(409).json({ mensaje: 'Esta asignación ya tiene un pago registrado' });
+    if (asignacion.estado !== 'pendiente_revision') return res.status(409).json({ mensaje: 'Esta asignación no está en revisión' });
+    await comprobanteAsignacionModel.aprobar(id, req.usuario.id);
+    if (autorizarFuturo) {
+      await comprobanteAsignacionModel.autorizarPagador(asignacion.comprobante_persona_id, asignacion.integrante_id, req.usuario.id);
+    }
+    res.json({ mensaje: 'Asignación aprobada' + (autorizarFuturo ? ' y pagador autorizado para pagos futuros' : '') });
+  } catch (err) {
+    console.error('Error aprobando asignación:', err);
+    res.status(500).json({ mensaje: 'No se pudo aprobar la asignación' });
+  }
+};
+
+exports.rechazarAsignacion = async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    const asignacion = await comprobanteAsignacionModel.obtenerPorId(id);
+    if (!asignacion) return res.status(404).json({ mensaje: 'Asignación no encontrada' });
+    if (asignacion.pago_id) return res.status(409).json({ mensaje: 'Esta asignación ya tiene un pago registrado' });
+    await comprobanteAsignacionModel.rechazar(id, req.usuario.id);
+    res.json({ mensaje: 'Asignación rechazada' });
+  } catch (err) {
+    console.error('Error rechazando asignación:', err);
+    res.status(500).json({ mensaje: 'No se pudo rechazar la asignación' });
+  }
+};
+
+// Por cada asignación automatica/aprobada sin pago, crea un pago para ese beneficiario
+// aplicado a sus cuotas más antiguas (igual que un "pago sin meses marcados"); el
+// sobrante queda a favor. Las que siguen en revisión se saltan hasta aprobarlas.
+function confirmarAsignacionPromise(asignacion, comprobante) {
+  return new Promise((resolve, reject) => {
+    cuotaModel.obtenerCuotasPendientesPorPersona(asignacion.integrante_id, (errC, cuotas) => {
+      if (errC) return reject(errC);
+      const reparto = repartirMontoEnCuotas(cuotas || [], Number(asignacion.monto_asignado));
+      const data = {
+        persona_id: asignacion.integrante_id,
+        monto_total: Number(asignacion.monto_asignado),
+        metodo: 'transferencia',
+        tipo_pago: 'cuota',
+        detalle: comprobante.concepto || null,
+        comprobante_path: comprobante.adjunto_path
+      };
+      pagoModel.crearPagoConDetalles(data, reparto.detalles, (errP, resultado) => {
+        if (errP) return reject(errP);
+        comprobanteAsignacionModel.marcarConPago(asignacion.id, resultado.pagoId)
+          .then(() => {
+            if (reparto.pagadas.length) {
+              procesarPuntajeCuotasAnual(Number(asignacion.integrante_id), reparto.pagadas);
+              recalcularAsistenciasPersona(Number(asignacion.integrante_id));
+            }
+            resolve(resultado.pagoId);
+          })
+          .catch(reject);
+      });
+    });
+  });
+}
+
+exports.confirmarReparto = async (req, res) => {
+  const comprobanteId = Number(req.params.id);
+  try {
+    const comprobante = await comprobanteDepositoModel.obtenerPorId(comprobanteId);
+    if (!comprobante) return res.status(404).json({ mensaje: 'Comprobante no encontrado' });
+    const asignaciones = await comprobanteAsignacionModel.listarPorComprobante(comprobanteId);
+    const confirmables = asignaciones.filter(a => !a.pago_id && (a.estado === 'automatica' || a.estado === 'aprobada'));
+    const pendientes = asignaciones.filter(a => a.estado === 'pendiente_revision');
+    if (!confirmables.length) {
+      return res.status(400).json({
+        mensaje: pendientes.length
+          ? 'Primero aprueba (o rechaza) las asignaciones en revisión.'
+          : 'No hay asignaciones por confirmar.'
+      });
+    }
+    // Secuencial: cada pago es su propia transacción; si uno falla, los anteriores ya
+    // quedaron y re-confirmar solo procesa los que aún no tienen pago.
+    let hechos = 0;
+    for (const a of confirmables) {
+      await confirmarAsignacionPromise(a, comprobante);
+      hechos++;
+    }
+    res.json({
+      mensaje: `${hechos} pago(s) registrado(s)` + (pendientes.length ? `; quedan ${pendientes.length} en revisión.` : '.'),
+      confirmadas: hechos,
+      pendientes: pendientes.length
+    });
+  } catch (err) {
+    console.error('Error confirmando reparto:', err);
+    res.status(500).json({ mensaje: 'No se pudo confirmar el reparto' });
+  }
 };
 
 exports.descargarComprobante = (req, res) => {

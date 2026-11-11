@@ -93,6 +93,33 @@ router.get(
   controller.descargarDeposito
 );
 
+// Reparto de un comprobante: ver sus asignaciones, aprobar/rechazar y confirmar
+// (crea un pago por beneficiario aplicado a sus cuotas más antiguas).
+router.get(
+  '/depositos/:id/asignaciones',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.listarAsignacionesComprobante
+);
+router.post(
+  '/depositos/asignaciones/:id/aprobar',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.aprobarAsignacion
+);
+router.post(
+  '/depositos/asignaciones/:id/rechazar',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.rechazarAsignacion
+);
+router.post(
+  '/depositos/:id/confirmar',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.confirmarReparto
+);
+
 router.get(
   '/:id/comprobante',
   authMiddleware,

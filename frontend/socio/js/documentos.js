@@ -580,6 +580,17 @@ function copiarDatoCuenta(clave) {
 // =====================================
 // COMPROBANTE DE DEPÓSITO → TESORERÍA
 // =====================================
+// Reparto del comprobante: a quién cubre el pago. Cada fila guarda su monto en el
+// propio objeto para no perderlo al re-renderizar.
+let repartoRows = [];
+let repartoSeq = 0;
+
+function compEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]
+  ));
+}
+
 function abrirFormularioComprobante() {
   if (!datosDocumentos) return;
   document.getElementById('docs_respuesta').innerHTML = '';
@@ -587,22 +598,142 @@ function abrirFormularioComprobante() {
   const fecha = document.getElementById('comp_fecha');
   fecha.max = hoyIso();
   if (!fecha.value) fecha.value = hoyIso();
+
+  document.getElementById('comp_banco').value = '';
+  const bancoOtro = document.getElementById('comp_banco_otro');
+  bancoOtro.classList.add('d-none');
+  bancoOtro.value = '';
+
+  // El reparto empieza con el propio socio (caso más común: paga solo lo suyo).
+  const p = datosDocumentos.persona || {};
+  const nombre = `${p.nombres || ''} ${p.apellido_paterno || ''}`.trim() || 'Yo';
+  repartoRows = [{ key: 'r' + (++repartoSeq), tipo: 'yo', integrante_id: null, rut: p.rut || '', nombre, monto: '' }];
+  renderReparto();
+
+  const menores = datosDocumentos.menores_a_cargo || [];
+  document.getElementById('btn_add_menor').disabled = menores.length === 0;
+
   mostrarVistaDocumentos('docs_form_comprobante');
 }
 
+function toggleBancoOtro() {
+  const otro = document.getElementById('comp_banco').value === 'Otro';
+  const inp = document.getElementById('comp_banco_otro');
+  inp.classList.toggle('d-none', !otro);
+  if (!otro) inp.value = '';
+}
+
+function renderReparto() {
+  const cont = document.getElementById('comp_reparto_lista');
+  if (!repartoRows.length) {
+    cont.innerHTML = '<p class="text-muted small mb-0">Agrega al menos a una persona que cubra este pago.</p>';
+  } else {
+    cont.innerHTML = repartoRows.map(r => {
+      const quien = r.tipo === 'otro'
+        ? `<input type="text" class="form-control form-control-sm" maxlength="12" placeholder="RUT del integrante" value="${compEsc(r.rut)}" oninput="setRutReparto('${r.key}', this.value)">`
+        : `<span class="small">${compEsc(r.nombre)}${r.tipo === 'yo' ? ' <span class="text-muted">(yo)</span>' : ' <span class="text-muted">(a cargo)</span>'}</span>`;
+      return `
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="flex-grow-1" style="min-width:0">${quien}</div>
+          <div class="input-group input-group-sm" style="width:132px">
+            <span class="input-group-text">$</span>
+            <input type="text" class="form-control" inputmode="numeric" maxlength="11" value="${compEsc(r.monto)}" oninput="setMontoReparto('${r.key}', this.value)">
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="quitarReparto('${r.key}')" aria-label="Quitar"><i class="bi bi-x-lg"></i></button>
+        </div>`;
+    }).join('');
+  }
+  actualizarSaldoReparto();
+}
+
+function setMontoReparto(key, val) {
+  const r = repartoRows.find(x => x.key === key);
+  if (r) { r.monto = val; actualizarSaldoReparto(); }
+}
+
+function setRutReparto(key, val) {
+  const r = repartoRows.find(x => x.key === key);
+  if (r) r.rut = val;
+}
+
+function quitarReparto(key) {
+  repartoRows = repartoRows.filter(r => r.key !== key);
+  renderReparto();
+}
+
+function agregarMenorReparto() {
+  const menores = (datosDocumentos && datosDocumentos.menores_a_cargo) || [];
+  const yaId = new Set(repartoRows.filter(r => r.integrante_id).map(r => String(r.integrante_id)));
+  const siguiente = menores.find(m => !yaId.has(String(m.id)));
+  if (!siguiente) {
+    document.getElementById('comp_respuesta').innerHTML = alertaDocumentos(
+      'info',
+      menores.length
+        ? 'Ya agregaste a todos tus menores a cargo.'
+        : 'No tienes menores a cargo registrados. Usa “Otro integrante (RUT)”.'
+    );
+    return;
+  }
+  const nombre = `${siguiente.nombres} ${siguiente.apellido_paterno}`.trim();
+  repartoRows.push({ key: 'r' + (++repartoSeq), tipo: 'menor', integrante_id: siguiente.id, rut: '', nombre, monto: '' });
+  renderReparto();
+}
+
+function agregarOtroReparto() {
+  repartoRows.push({ key: 'r' + (++repartoSeq), tipo: 'otro', integrante_id: null, rut: '', nombre: '', monto: '' });
+  renderReparto();
+}
+
+function montoDe(valor) {
+  return Number(String(valor).replace(/\D/g, '')) || 0;
+}
+
+function actualizarSaldoReparto() {
+  const total = montoDe(document.getElementById('comp_monto').value);
+  const repartido = repartoRows.reduce((s, r) => s + montoDe(r.monto), 0);
+  const saldo = total - repartido;
+  const fmt = n => '$' + (n || 0).toLocaleString('es-CL');
+  const el = document.getElementById('comp_saldo');
+  if (saldo < 0) {
+    el.className = 'form-text mt-2 text-danger';
+    el.textContent = `Te pasaste por ${fmt(-saldo)}: el reparto supera el monto transferido.`;
+  } else {
+    el.className = 'form-text mt-2 text-muted';
+    el.textContent = `Repartido ${fmt(repartido)} de ${fmt(total)} · saldo ${fmt(saldo)}.`;
+  }
+}
+
 function leerFormularioComprobante() {
+  const bancoSel = document.getElementById('comp_banco').value;
+  const banco = bancoSel === 'Otro' ? document.getElementById('comp_banco_otro').value.trim() : bancoSel;
   return {
-    monto: Number(document.getElementById('comp_monto').value.replace(/\D/g, '')),
+    banco,
+    numero: document.getElementById('comp_numero').value.trim(),
+    monto_total: montoDe(document.getElementById('comp_monto').value),
     fecha: document.getElementById('comp_fecha').value,
     concepto: document.getElementById('comp_concepto').value.trim(),
-    archivo: document.getElementById('comp_archivo').files[0] || null
+    archivo: document.getElementById('comp_archivo').files[0] || null,
+    reparto: repartoRows
+      .map(r => ({
+        integrante_id: r.integrante_id || undefined,
+        rut: (!r.integrante_id && r.rut) ? r.rut.trim() : undefined,
+        monto: montoDe(r.monto)
+      }))
+      .filter(r => r.monto > 0 && (r.integrante_id || r.rut))
   };
 }
 
 function validarComprobante(f) {
-  if (!f.monto || f.monto < 100) return 'Indica el monto depositado';
+  if (!f.banco) return 'Indica el banco de la transferencia';
+  if (!f.numero) return 'Indica el número de transacción';
+  if (!f.monto_total || f.monto_total < 100) return 'Indica el monto total transferido';
   if (!f.fecha) return 'Indica la fecha del depósito';
   if (f.fecha > hoyIso()) return 'La fecha del depósito no puede ser futura';
+  const faltaRut = repartoRows.some(r => montoDe(r.monto) > 0 && !r.integrante_id && !String(r.rut || '').trim());
+  if (faltaRut) return 'Falta el RUT de un integrante del reparto';
+  if (!f.reparto.length) return 'Indica a quién cubre este pago (al menos una persona con monto)';
+  const suma = f.reparto.reduce((s, r) => s + r.monto, 0);
+  if (suma > f.monto_total) return 'La suma del reparto supera el monto transferido';
   if (!f.archivo) return 'Adjunta la foto o el PDF del comprobante';
   if (f.archivo.size > 5 * 1024 * 1024) return 'El archivo supera los 5 MB';
   return null;
@@ -619,9 +750,12 @@ function enviarComprobante() {
   }
 
   const datos = new FormData();
-  datos.append('monto', f.monto);
+  datos.append('banco', f.banco);
+  datos.append('numero_transaccion', f.numero);
+  datos.append('monto_total', f.monto_total);
   datos.append('fecha_deposito', f.fecha);
   if (f.concepto) datos.append('concepto', f.concepto);
+  datos.append('reparto', JSON.stringify(f.reparto));
   datos.append('comprobante', f.archivo);
 
   const boton = document.getElementById('btn_enviar_comprobante');

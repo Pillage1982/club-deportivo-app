@@ -5,8 +5,10 @@
 // nunca del formulario. Las cartas quedan guardadas aunque el correo falle.
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const justificacionModel = require('../models/justificacionModel');
 const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
+const comprobanteAsignacionModel = require('../models/comprobanteAsignacionModel');
 const puntajeModel = require('../models/puntajeModel');
 const solicitudIngresoModel = require('../models/solicitudIngresoModel');
 const cartaPermisoModel = require('../models/cartaPermisoModel');
@@ -47,6 +49,44 @@ function descartarArchivo(req) {
   if (req.file) fs.unlink(req.file.path, () => {});
 }
 
+// SHA-256 del archivo subido (anti-duplicados determinista, sin IA).
+function hashArchivo(ruta) {
+  return new Promise((resolve, reject) => {
+    const h = crypto.createHash('sha256');
+    const stream = fs.createReadStream(ruta);
+    stream.on('error', reject);
+    stream.on('data', d => h.update(d));
+    stream.on('end', () => resolve(h.digest('hex')));
+  });
+}
+
+// Edad en años cumplidos a la fecha 'hoy' (ambas 'YYYY-MM-DD').
+function esMenorDeEdad(fechaNac, hoy) {
+  if (!fechaNac) return false;
+  const [ay, am, ad] = fechaNac.split('-').map(Number);
+  const [hy, hm, hd] = hoy.split('-').map(Number);
+  let edad = hy - ay;
+  if (hm < am || (hm === am && hd < ad)) edad--;
+  return edad < 18;
+}
+
+// Estado de permiso de una asignación (sección 4.3 del diseño):
+//   - el propio socio                              -> automatica
+//   - un menor cuyo apoderado_id es el socio       -> automatica
+//   - un par (pagador, beneficiario) ya autorizado -> automatica
+//   - cualquier otro integrante                    -> pendiente_revision
+async function calcularPermiso(pagadorId, beneficiario, hoy) {
+  if (Number(beneficiario.id) === Number(pagadorId)) return 'automatica';
+  if (beneficiario.apoderado_id && Number(beneficiario.apoderado_id) === Number(pagadorId)
+      && esMenorDeEdad(beneficiario.fecha_nacimiento, hoy)) {
+    return 'automatica';
+  }
+  if (await comprobanteAsignacionModel.pagadorAutorizado(pagadorId, beneficiario.id)) {
+    return 'automatica';
+  }
+  return 'pendiente_revision';
+}
+
 // =====================================
 // DATOS PARA LOS FORMULARIOS
 // =====================================
@@ -56,7 +96,7 @@ exports.datosFormularios = async (req, res) => {
   try {
     // "Mis envíos" muestra solo la temporada vigente
     const desde = await puntajeModel.obtenerInicioTemporadaVigente();
-    const [persona, eventos, bloques, justificaciones, postulaciones, comprobantes, debeIntegracion, cartasPermiso, integrantesActivos] = await Promise.all([
+    const [persona, eventos, bloques, justificaciones, postulaciones, comprobantes, debeIntegracion, cartasPermiso, integrantesActivos, menoresACargo] = await Promise.all([
       justificacionModel.obtenerDatosCarta(personaId),
       justificacionModel.listarEventosJustificables(personaId),
       justificacionModel.listarBloques(),
@@ -65,7 +105,8 @@ exports.datosFormularios = async (req, res) => {
       comprobanteDepositoModel.listarSocio(personaId, desde),
       solicitudIngresoModel.debeCuotaIntegracion(personaId),
       cartaPermisoModel.listarSocio(personaId, desde),
-      cartaPermisoModel.contarIntegrantesActivos()
+      cartaPermisoModel.contarIntegrantesActivos(),
+      comprobanteAsignacionModel.menoresACargo(personaId)
     ]);
 
     if (!persona) {
@@ -91,6 +132,7 @@ exports.datosFormularios = async (req, res) => {
       justificaciones,
       postulaciones,
       comprobantes,
+      menores_a_cargo: menoresACargo,
       cuenta_deposito: cuentaDeposito,
       cuota_integracion: debeIntegracion ? { monto: cuotaIntegracion.monto } : null,
       cartas_permiso: cartasPermiso,
@@ -320,20 +362,63 @@ exports.enviarComprobante = async (req, res) => {
   const personaId = req.socio.persona_id;
   const body = req.body || {};
 
-  const monto = Number(String(body.monto ?? '').replace(/\D/g, ''));
+  const banco = textoLimpio(body.banco, 60);
+  const numeroTransaccion = textoLimpio(body.numero_transaccion, 60);
+  const montoTotal = Number(String(body.monto_total ?? '').replace(/\D/g, ''));
   const fechaDeposito = String(body.fecha_deposito || '');
   const concepto = textoLimpio(body.concepto, 200) || null;
 
   if (!req.file) {
     return res.status(400).json({ mensaje: 'Adjunta la foto o el PDF del comprobante' });
   }
-  if (!Number.isInteger(monto) || monto < 100 || monto > 10000000) {
+  if (!banco) {
     descartarArchivo(req);
-    return res.status(400).json({ mensaje: 'Indica el monto depositado' });
+    return res.status(400).json({ mensaje: 'Indica el banco de la transferencia' });
+  }
+  if (!numeroTransaccion) {
+    descartarArchivo(req);
+    return res.status(400).json({ mensaje: 'Indica el número de transacción' });
+  }
+  if (!Number.isInteger(montoTotal) || montoTotal < 100 || montoTotal > 10000000) {
+    descartarArchivo(req);
+    return res.status(400).json({ mensaje: 'Indica el monto total transferido' });
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaDeposito) || fechaDeposito > hoyChile() || fechaDeposito < '2025-01-01') {
     descartarArchivo(req);
     return res.status(400).json({ mensaje: 'Indica una fecha de depósito válida (no puede ser futura)' });
+  }
+
+  // Reparto: a quién cubre el pago. [{ integrante_id?, rut?, monto }].
+  let reparto;
+  try {
+    reparto = typeof body.reparto === 'string' ? JSON.parse(body.reparto) : body.reparto;
+  } catch (e) {
+    reparto = null;
+  }
+  if (!Array.isArray(reparto) || reparto.length === 0) {
+    descartarArchivo(req);
+    return res.status(400).json({ mensaje: 'Indica a quién cubre este pago' });
+  }
+  const items = [];
+  let sumaReparto = 0;
+  for (const r of reparto) {
+    const monto = Number(String(r.monto ?? '').replace(/\D/g, ''));
+    const integranteId = r.integrante_id ? Number(r.integrante_id) : null;
+    const rut = r.rut ? String(r.rut).trim() : null;
+    if (!integranteId && !rut) {
+      descartarArchivo(req);
+      return res.status(400).json({ mensaje: 'Falta identificar a un beneficiario del reparto' });
+    }
+    if (!Number.isInteger(monto) || monto < 1) {
+      descartarArchivo(req);
+      return res.status(400).json({ mensaje: 'Cada beneficiario debe tener un monto válido' });
+    }
+    items.push({ integranteId, rut, monto });
+    sumaReparto += monto;
+  }
+  if (sumaReparto > montoTotal) {
+    descartarArchivo(req);
+    return res.status(400).json({ mensaje: 'La suma del reparto supera el monto transferido' });
   }
 
   try {
@@ -350,13 +435,65 @@ exports.enviarComprobante = async (req, res) => {
       return res.status(404).json({ mensaje: 'Integrante no encontrado' });
     }
 
-    const folio = await comprobanteDepositoModel.crear({
-      persona_id: personaId,
-      monto,
-      fecha_deposito: fechaDeposito,
-      concepto,
-      adjunto_path: `comprobantes_deposito/${req.file.filename}`
-    });
+    // Resolver beneficiarios (sin repetir) y calcular el permiso de cada uno.
+    const hoy = hoyChile();
+    const vistos = new Set();
+    const asignaciones = [];
+    for (const it of items) {
+      const beneficiario = await comprobanteAsignacionModel.obtenerIntegrante({ id: it.integranteId, rut: it.rut });
+      if (!beneficiario) {
+        descartarArchivo(req);
+        return res.status(400).json({ mensaje: `No se encontró el integrante${it.rut ? ' con RUT ' + it.rut : ''}` });
+      }
+      if (vistos.has(beneficiario.id)) {
+        descartarArchivo(req);
+        return res.status(400).json({ mensaje: 'No repitas al mismo integrante en el reparto' });
+      }
+      vistos.add(beneficiario.id);
+      const estado = await calcularPermiso(personaId, beneficiario, hoy);
+      asignaciones.push({
+        integrante_id: beneficiario.id,
+        monto_asignado: it.monto,
+        estado,
+        nombre: `${beneficiario.nombres} ${beneficiario.apellido_paterno}`.trim()
+      });
+    }
+
+    // Anti-duplicados: hash del archivo o banco + nº de transacción.
+    const hash = await hashArchivo(req.file.path);
+    const dup = await comprobanteDepositoModel.buscarDuplicado(hash, banco, numeroTransaccion);
+    if (dup) {
+      descartarArchivo(req);
+      const fecha = String(dup.creado_en).substring(0, 10);
+      return res.status(409).json({
+        duplicado: true,
+        mensaje: Number(dup.persona_id) === Number(personaId)
+          ? `Ya registraste este comprobante el ${fecha}. No hace falta reenviarlo.`
+          : `Este comprobante ya fue registrado por ${dup.nombres} ${dup.apellido_paterno} el ${fecha}.`
+      });
+    }
+
+    let creado;
+    try {
+      creado = await comprobanteDepositoModel.crearConReparto({
+        persona_id: personaId,
+        banco,
+        numero_transaccion: numeroTransaccion,
+        monto_total: montoTotal,
+        fecha_deposito: fechaDeposito,
+        concepto,
+        adjunto_path: `comprobantes_deposito/${req.file.filename}`,
+        hash_archivo: hash
+      }, asignaciones);
+    } catch (errCrear) {
+      if (errCrear && errCrear.code === 'ER_DUP_ENTRY') {
+        descartarArchivo(req);
+        return res.status(409).json({ duplicado: true, mensaje: 'Este comprobante ya fue registrado.' });
+      }
+      throw errCrear;
+    }
+
+    const folio = creado.comprobanteId;
     const creadoEn = await comprobanteDepositoModel.obtenerFechaCreacion(folio);
 
     let correoEnviado = false;
@@ -365,7 +502,7 @@ exports.enviarComprobante = async (req, res) => {
         folio,
         creadoEn,
         persona,
-        monto,
+        monto: montoTotal,
         fechaDeposito,
         concepto,
         adjunto: {
@@ -378,12 +515,16 @@ exports.enviarComprobante = async (req, res) => {
       console.error('[Email] Error enviando comprobante de depósito, folio', folio, errCorreo);
     }
 
+    const enRevision = asignaciones.filter(a => a.estado === 'pendiente_revision').length;
     res.status(201).json({
       folio,
       correoEnviado,
-      mensaje: correoEnviado
-        ? `Comprobante enviado a tesorería. Folio Nº ${emailService.formatearFolio(folio)}.`
-        : `Comprobante registrado con folio Nº ${emailService.formatearFolio(folio)}, pero el correo a tesorería no pudo enviarse. Avisa a tesorería.`
+      saldo_restante: montoTotal - sumaReparto,
+      asignaciones: asignaciones.map(a => ({ nombre: a.nombre, monto: a.monto_asignado, estado: a.estado })),
+      mensaje: `Comprobante enviado a tesorería. Folio Nº ${emailService.formatearFolio(folio)}.`
+        + (enRevision
+          ? ` ${enRevision} ${enRevision === 1 ? 'asignación queda' : 'asignaciones quedan'} en revisión de tesorería.`
+          : '')
     });
   } catch (err) {
     descartarArchivo(req);

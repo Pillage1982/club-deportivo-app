@@ -25,6 +25,16 @@ async function columnasExistentes(tabla) {
   return set;
 }
 
+// ¿Existe ya un índice con ese nombre en la tabla? (para ADD UNIQUE KEY idempotente)
+async function indiceExiste(tabla, indice) {
+  const filas = await ejecutar(
+    `SELECT 1 FROM INFORMATION_SCHEMA.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ? LIMIT 1`,
+    [tabla, indice]
+  );
+  return filas.length > 0;
+}
+
 async function asegurarEstadoIntegrantes(colsPersonas) {
   if (!colsPersonas.has('estado')) {
     await ejecutar(`
@@ -103,6 +113,9 @@ async function asegurarCamposPersonas(colsPersonas) {
     { nombre: 'es_honorario',      sql: "ADD COLUMN es_honorario TINYINT(1) NOT NULL DEFAULT 0" },
     // Campos de la ficha de inscripción GDC (planilla "Nuevos 2027")
     { nombre: 'rut_apoderado',     sql: "ADD COLUMN rut_apoderado VARCHAR(20) NULL AFTER telefono_apoderado" },
+    // Vínculo apoderado -> integrante (para el reparto de comprobantes). Se puebla a mano en el panel;
+    // el texto nombre/rut/telefono_apoderado se conserva para quien no sea integrante.
+    { nombre: 'apoderado_id',      sql: "ADD COLUMN apoderado_id BIGINT NULL AFTER rut_apoderado, ADD CONSTRAINT fk_persona_apoderado FOREIGN KEY (apoderado_id) REFERENCES personas(id) ON DELETE SET NULL" },
     { nombre: 'observacion',       sql: "ADD COLUMN observacion VARCHAR(255) NULL" },
     { nombre: 'bautizo',           sql: "ADD COLUMN bautizo TINYINT(1) NOT NULL DEFAULT 0" },
     { nombre: 'comunion',          sql: "ADD COLUMN comunion TINYINT(1) NOT NULL DEFAULT 0" },
@@ -604,6 +617,70 @@ async function asegurarTablasDocumentosSocio() {
   if (!colsComprobantes.has('pago_id')) {
     await ejecutar('ALTER TABLE comprobantes_deposito ADD COLUMN pago_id BIGINT NULL');
   }
+
+  // --- Anti-duplicados + reparto (comprobantes de pago) ---
+  // banco es NOT NULL DEFAULT '' a propósito: un UNIQUE permite varios NULL, así que con
+  // banco NULL el duplicado no se detectaría. numero_transaccion y hash_archivo quedan NULL
+  // en las filas históricas, por eso los UNIQUE no las bloquean (NULL = distinto en un UNIQUE).
+  const nuevasComprobante = [
+    { nombre: 'banco',              sql: "ADD COLUMN banco VARCHAR(60) NOT NULL DEFAULT '' AFTER persona_id" },
+    { nombre: 'numero_transaccion', sql: "ADD COLUMN numero_transaccion VARCHAR(60) NULL AFTER banco" },
+    { nombre: 'monto_total',        sql: "ADD COLUMN monto_total INT NULL AFTER monto" },
+    { nombre: 'hash_archivo',       sql: "ADD COLUMN hash_archivo CHAR(64) NULL AFTER adjunto_path" }
+  ];
+  for (const col of nuevasComprobante) {
+    if (!colsComprobantes.has(col.nombre)) {
+      await ejecutar(`ALTER TABLE comprobantes_deposito ${col.sql}`);
+    }
+  }
+  // Filas históricas: el total es su propio monto (todavía no tienen reparto).
+  await ejecutar('UPDATE comprobantes_deposito SET monto_total = monto WHERE monto_total IS NULL');
+  // Índices anti-duplicados (idempotentes).
+  if (!(await indiceExiste('comprobantes_deposito', 'uq_comprobante_hash'))) {
+    await ejecutar('ALTER TABLE comprobantes_deposito ADD UNIQUE KEY uq_comprobante_hash (hash_archivo)');
+  }
+  if (!(await indiceExiste('comprobantes_deposito', 'uq_comprobante_banco_numero'))) {
+    await ejecutar('ALTER TABLE comprobantes_deposito ADD UNIQUE KEY uq_comprobante_banco_numero (banco, numero_transaccion)');
+  }
+
+  // Reparto del comprobante entre uno o varios integrantes (1 comprobante -> N asignaciones).
+  // cuota_id NULL: el socio indica beneficiario + monto; la cuota la fija tesorería al confirmar.
+  // pago_id: el pago creado para ese beneficiario al confirmar (NULL mientras no se confirma).
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS comprobante_asignaciones (
+      id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+      comprobante_id BIGINT NOT NULL,
+      integrante_id  BIGINT NOT NULL,
+      monto_asignado INT NOT NULL,
+      cuota_id       BIGINT NULL,
+      estado         ENUM('automatica','pendiente_revision','aprobada','rechazada') NOT NULL DEFAULT 'pendiente_revision',
+      revisado_por   INT NULL,
+      revisado_en    DATETIME NULL,
+      pago_id        BIGINT NULL,
+      creado_en      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_comprobante_integrante (comprobante_id, integrante_id),
+      KEY idx_asignacion_integrante (integrante_id),
+      KEY idx_asignacion_estado (estado),
+      CONSTRAINT fk_asignacion_comprobante FOREIGN KEY (comprobante_id) REFERENCES comprobantes_deposito(id) ON DELETE CASCADE,
+      CONSTRAINT fk_asignacion_integrante FOREIGN KEY (integrante_id) REFERENCES personas(id) ON DELETE CASCADE,
+      CONSTRAINT fk_asignacion_cuota FOREIGN KEY (cuota_id) REFERENCES cuotas(id) ON DELETE SET NULL
+    )
+  `);
+
+  // Permisos entre integrantes: el tesorero autoriza a un pagador a pagar por un
+  // beneficiario; a partir de ahí ese reparto queda 'automatica' (no requiere revisión).
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS pagadores_autorizados (
+      id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+      pagador_id      BIGINT NOT NULL,
+      beneficiario_id BIGINT NOT NULL,
+      autorizado_por  INT NULL,
+      creado_en       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_pagador_beneficiario (pagador_id, beneficiario_id),
+      CONSTRAINT fk_pagador_autorizado     FOREIGN KEY (pagador_id)      REFERENCES personas(id) ON DELETE CASCADE,
+      CONSTRAINT fk_beneficiario_autorizado FOREIGN KEY (beneficiario_id) REFERENCES personas(id) ON DELETE CASCADE
+    )
+  `);
 }
 
 // Solicitudes "Súmate a la promesa" del sitio gdcayquina.cl: datos básicos del

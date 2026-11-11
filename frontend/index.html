@@ -1829,6 +1829,28 @@
     </div>
   </div>
 
+  <!-- Modal: Reparto de un comprobante (asignaciones) -->
+  <div class="modal fade" id="modal_reparto_deposito" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-people me-2"></i>Reparto del comprobante</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-2">A quién cubre este pago. Al confirmar se crea un pago por beneficiario, aplicado a sus cuotas más antiguas.</p>
+          <div id="reparto_deposito_cuerpo"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <button type="button" class="btn btn-success" id="btn_confirmar_reparto" onclick="confirmarRepartoDeposito()">
+            <i class="bi bi-check2-circle me-1"></i>Confirmar reparto
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Revisar justificación -->
   <div class="modal fade" id="modal_revisar_justificacion" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">

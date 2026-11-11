@@ -850,6 +850,8 @@ function renderizarTablaDepositos(depositos) {
       <td class="text-nowrap">
         <button type="button" class="btn btn-sm btn-outline-primary" title="Ver comprobante" aria-label="Ver comprobante"
           onclick="verComprobanteDeposito(${Number(d.id)})"><i class="bi bi-file-earmark-text"></i></button>
+        <button type="button" class="btn btn-sm btn-outline-secondary ms-1" title="Reparto" aria-label="Reparto"
+          onclick="verRepartoDeposito(${Number(d.id)})"><i class="bi bi-people"></i></button>
         ${d.pago_id ? '' : `<button type="button" class="btn btn-sm btn-success ms-1" onclick="registrarPagoDesdeDeposito(${Number(d.id)})">
           Registrar pago</button>`}
       </td>
@@ -864,6 +866,109 @@ function configurarFiltrosDepositos() {
     el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change',
       () => renderizarTablaDepositos(filtrarDepositos(depositosCargados)));
   });
+}
+
+// =====================================
+// REPARTO DE UN COMPROBANTE (Etapa 7)
+// =====================================
+let repartoDepositoActualId = null;
+
+function verRepartoDeposito(id) {
+  repartoDepositoActualId = id;
+  document.getElementById('reparto_deposito_cuerpo').innerHTML = '<p class="text-muted small mb-0">Cargando…</p>';
+  document.getElementById('btn_confirmar_reparto').disabled = true;
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('modal_reparto_deposito')).show();
+  cargarRepartoDeposito(id);
+}
+
+function cargarRepartoDeposito(id) {
+  fetch(`${API_URL}/pagos/depositos/${id}/asignaciones`, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(filas => renderRepartoDeposito(Array.isArray(filas) ? filas : []))
+    .catch(() => {
+      document.getElementById('reparto_deposito_cuerpo').innerHTML =
+        '<p class="text-danger small mb-0">No se pudo cargar el reparto.</p>';
+    });
+}
+
+function etiquetaEstadoAsignacion(estado, pagoId) {
+  if (pagoId) return '<span class="badge bg-success">Pagada</span>';
+  return ({
+    automatica: '<span class="badge bg-info text-dark">Automática</span>',
+    aprobada: '<span class="badge bg-primary">Aprobada</span>',
+    pendiente_revision: '<span class="badge bg-warning text-dark">En revisión</span>',
+    rechazada: '<span class="badge bg-secondary">Rechazada</span>'
+  })[estado] || escaparHtml(estado);
+}
+
+function renderRepartoDeposito(filas) {
+  const cuerpo = document.getElementById('reparto_deposito_cuerpo');
+  const btnConfirmar = document.getElementById('btn_confirmar_reparto');
+
+  if (!filas.length) {
+    cuerpo.innerHTML = '<p class="text-muted small mb-0">Este comprobante no tiene reparto.</p>';
+    btnConfirmar.disabled = true;
+    return;
+  }
+
+  const hayConfirmables = filas.some(f => !f.pago_id && (f.estado === 'automatica' || f.estado === 'aprobada'));
+  btnConfirmar.disabled = !hayConfirmables;
+
+  cuerpo.innerHTML = filas.map(f => {
+    const nombre = escaparHtml(`${f.nombres} ${f.apellido_paterno} ${f.apellido_materno || ''}`.trim());
+    const enRevision = !f.pago_id && f.estado === 'pendiente_revision';
+    const acciones = enRevision ? `
+      <div class="mt-2 d-flex flex-wrap gap-2 align-items-center">
+        <div class="form-check me-2">
+          <input class="form-check-input" type="checkbox" id="autfut_${Number(f.id)}">
+          <label class="form-check-label small" for="autfut_${Number(f.id)}">Autorizar pagos futuros</label>
+        </div>
+        <button type="button" class="btn btn-sm btn-primary" onclick="aprobarAsignacionReparto(${Number(f.id)})">Aprobar</button>
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="rechazarAsignacionReparto(${Number(f.id)})">Rechazar</button>
+      </div>` : '';
+    return `
+      <div class="border rounded p-2 mb-2">
+        <div class="d-flex justify-content-between align-items-center gap-2">
+          <strong>${nombre}</strong>
+          <span class="text-nowrap">${formatearMonto(f.monto_asignado)} ${etiquetaEstadoAsignacion(f.estado, f.pago_id)}</span>
+        </div>
+        ${acciones}
+      </div>`;
+  }).join('');
+}
+
+function aprobarAsignacionReparto(id) {
+  const chk = document.getElementById(`autfut_${id}`);
+  fetch(`${API_URL}/pagos/depositos/asignaciones/${id}/aprobar`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ autorizar_futuro: chk ? chk.checked : false })
+  })
+    .then(async res => { const d = await res.json().catch(() => ({})); if (!res.ok) throw new Error(d.mensaje || 'No se pudo aprobar'); return d; })
+    .then(d => { mostrarAlerta(d.mensaje || 'Asignación aprobada', 'success'); cargarRepartoDeposito(repartoDepositoActualId); })
+    .catch(err => mostrarAlerta(err.message, 'danger'));
+}
+
+function rechazarAsignacionReparto(id) {
+  fetch(`${API_URL}/pagos/depositos/asignaciones/${id}/rechazar`, { method: 'POST', headers: getAuthHeaders() })
+    .then(async res => { const d = await res.json().catch(() => ({})); if (!res.ok) throw new Error(d.mensaje || 'No se pudo rechazar'); return d; })
+    .then(d => { mostrarAlerta(d.mensaje || 'Asignación rechazada', 'success'); cargarRepartoDeposito(repartoDepositoActualId); })
+    .catch(err => mostrarAlerta(err.message, 'danger'));
+}
+
+function confirmarRepartoDeposito() {
+  if (!repartoDepositoActualId) return;
+  const btn = document.getElementById('btn_confirmar_reparto');
+  btn.disabled = true;
+  fetch(`${API_URL}/pagos/depositos/${repartoDepositoActualId}/confirmar`, { method: 'POST', headers: getAuthHeaders() })
+    .then(async res => { const d = await res.json().catch(() => ({})); if (!res.ok) throw new Error(d.mensaje || 'No se pudo confirmar'); return d; })
+    .then(d => {
+      bootstrap.Modal.getInstance(document.getElementById('modal_reparto_deposito'))?.hide();
+      mostrarAlerta(d.mensaje || 'Reparto confirmado', 'success');
+      cargarTablaDepositos();
+      if (typeof cargarTablaPagos === 'function') cargarTablaPagos();
+    })
+    .catch(err => { mostrarAlerta(err.message, 'danger'); btn.disabled = false; });
 }
 
 function aplicarFiltrosPagos() {
