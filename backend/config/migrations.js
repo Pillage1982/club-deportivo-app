@@ -666,6 +666,21 @@ async function asegurarTablasDocumentosSocio() {
       CONSTRAINT fk_asignacion_cuota FOREIGN KEY (cuota_id) REFERENCES cuotas(id) ON DELETE SET NULL
     )
   `);
+
+  // Permisos entre integrantes: el tesorero autoriza a un pagador a pagar por un
+  // beneficiario; a partir de ahí ese reparto queda 'automatica' (no requiere revisión).
+  await ejecutar(`
+    CREATE TABLE IF NOT EXISTS pagadores_autorizados (
+      id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+      pagador_id      BIGINT NOT NULL,
+      beneficiario_id BIGINT NOT NULL,
+      autorizado_por  INT NULL,
+      creado_en       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_pagador_beneficiario (pagador_id, beneficiario_id),
+      CONSTRAINT fk_pagador_autorizado     FOREIGN KEY (pagador_id)      REFERENCES personas(id) ON DELETE CASCADE,
+      CONSTRAINT fk_beneficiario_autorizado FOREIGN KEY (beneficiario_id) REFERENCES personas(id) ON DELETE CASCADE
+    )
+  `);
 }
 
 // Solicitudes "Súmate a la promesa" del sitio gdcayquina.cl: datos básicos del
