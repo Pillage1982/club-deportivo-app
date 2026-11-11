@@ -798,6 +798,21 @@ function registrarPagoDesdeDeposito(id) {
   irAFormulario('#subtab_form_pago');
 }
 
+// Un depósito necesita acción de tesorería si tiene reparto con asignaciones por
+// confirmar o en revisión; o (sin reparto, caso legado) aún no tiene pago vinculado.
+function depositoPendiente(d) {
+  const total = Number(d.total_asignaciones || 0);
+  if (total > 0) return Number(d.por_confirmar || 0) > 0 || Number(d.en_revision || 0) > 0;
+  return !d.pago_id;
+}
+
+function estadoBadgeDeposito(d) {
+  if (!depositoPendiente(d)) return '<span class="badge bg-success">Registrado</span>';
+  if (Number(d.en_revision || 0) > 0) return '<span class="badge bg-warning text-dark">En revisión</span>';
+  if (Number(d.por_confirmar || 0) > 0) return '<span class="badge bg-warning text-dark">Por confirmar</span>';
+  return '<span class="badge bg-warning text-dark">Pendiente</span>';
+}
+
 function cargarTablaDepositos() {
   fetch(`${API_URL}/pagos/depositos`, { headers: getAuthHeaders() })
     .then(res => res.json())
@@ -805,7 +820,7 @@ function cargarTablaDepositos() {
       if (!Array.isArray(data)) return;
       depositosCargados = data;
 
-      const pendientes = data.filter(d => !d.pago_id).length;
+      const pendientes = data.filter(depositoPendiente).length;
       const badge = document.getElementById('badge_depositos');
       if (badge) {
         badge.textContent = pendientes;
@@ -823,7 +838,7 @@ function filtrarDepositos(depositos) {
 
   return depositos.filter(d => {
     const nombre = normalizarTextoPago([d.nombres, d.apellido_paterno, d.apellido_materno].join(' '));
-    const coincideEstado = !estado || (estado === 'pendiente' ? !d.pago_id : Boolean(d.pago_id));
+    const coincideEstado = !estado || (estado === 'pendiente' ? depositoPendiente(d) : !depositoPendiente(d));
     return (!busqueda || nombre.includes(busqueda)) && coincideEstado;
   });
 }
@@ -844,16 +859,15 @@ function renderizarTablaDepositos(depositos) {
       <td>${formatearMonto(d.monto)}</td>
       <td>${formatearFecha(d.fecha_deposito)}</td>
       <td>${d.concepto ? escaparHtml(d.concepto) : '—'}</td>
-      <td>${d.pago_id
-        ? '<span class="badge bg-success">Registrado</span>'
-        : '<span class="badge bg-warning text-dark">Pendiente</span>'}</td>
+      <td>${estadoBadgeDeposito(d)}</td>
       <td class="text-nowrap">
         <button type="button" class="btn btn-sm btn-outline-primary" title="Ver comprobante" aria-label="Ver comprobante"
           onclick="verComprobanteDeposito(${Number(d.id)})"><i class="bi bi-file-earmark-text"></i></button>
-        <button type="button" class="btn btn-sm btn-outline-secondary ms-1" title="Reparto" aria-label="Reparto"
-          onclick="verRepartoDeposito(${Number(d.id)})"><i class="bi bi-people"></i></button>
-        ${d.pago_id ? '' : `<button type="button" class="btn btn-sm btn-success ms-1" onclick="registrarPagoDesdeDeposito(${Number(d.id)})">
-          Registrar pago</button>`}
+        ${Number(d.total_asignaciones || 0) > 0
+          ? `<button type="button" class="btn btn-sm btn-outline-secondary ms-1" title="Reparto" aria-label="Reparto"
+               onclick="verRepartoDeposito(${Number(d.id)})"><i class="bi bi-people"></i></button>`
+          : (d.pago_id ? '' : `<button type="button" class="btn btn-sm btn-success ms-1" onclick="registrarPagoDesdeDeposito(${Number(d.id)})">
+               Registrar pago</button>`)}
       </td>
     </tr>
   `).join('');

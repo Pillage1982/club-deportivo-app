@@ -113,7 +113,14 @@ exports.listarPanel = () =>
   ejecutar(`
     SELECT cd.id, cd.persona_id, cd.monto, cd.fecha_deposito, cd.concepto,
            cd.creado_en, cd.pago_id,
-           p.nombres, p.apellido_paterno, p.apellido_materno
+           p.nombres, p.apellido_paterno, p.apellido_materno,
+           (SELECT COUNT(*) FROM comprobante_asignaciones a
+              WHERE a.comprobante_id = cd.id) AS total_asignaciones,
+           (SELECT COUNT(*) FROM comprobante_asignaciones a
+              WHERE a.comprobante_id = cd.id AND a.estado = 'pendiente_revision') AS en_revision,
+           (SELECT COUNT(*) FROM comprobante_asignaciones a
+              WHERE a.comprobante_id = cd.id AND a.pago_id IS NULL
+                AND a.estado IN ('automatica','aprobada')) AS por_confirmar
     FROM comprobantes_deposito cd
     JOIN personas p ON p.id = cd.persona_id
     ORDER BY (cd.pago_id IS NULL) DESC, cd.creado_en DESC
