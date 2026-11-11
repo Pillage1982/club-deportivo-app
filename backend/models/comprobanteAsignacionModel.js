@@ -54,3 +54,45 @@ exports.listarPorComprobante = comprobanteId =>
     WHERE a.comprobante_id = ?
     ORDER BY a.id
   `, [comprobanteId]);
+
+// Una asignación con datos de su comprobante (para aprobar / rechazar / confirmar).
+exports.obtenerPorId = id =>
+  ejecutar(`
+    SELECT a.id, a.comprobante_id, a.integrante_id, a.monto_asignado, a.estado, a.pago_id,
+           cd.persona_id AS comprobante_persona_id, cd.adjunto_path, cd.concepto
+    FROM comprobante_asignaciones a
+    JOIN comprobantes_deposito cd ON cd.id = a.comprobante_id
+    WHERE a.id = ?
+  `, [id]).then(rows => rows[0] || null);
+
+// Aprobar una asignación en revisión (solo si aún no tiene pago).
+exports.aprobar = (id, revisadoPor) =>
+  ejecutar(
+    `UPDATE comprobante_asignaciones
+       SET estado='aprobada', revisado_por=?, revisado_en=NOW()
+     WHERE id=? AND estado='pendiente_revision' AND pago_id IS NULL`,
+    [revisadoPor, id]
+  );
+
+// Rechazar una asignación (mientras no tenga pago).
+exports.rechazar = (id, revisadoPor) =>
+  ejecutar(
+    `UPDATE comprobante_asignaciones
+       SET estado='rechazada', revisado_por=?, revisado_en=NOW()
+     WHERE id=? AND pago_id IS NULL`,
+    [revisadoPor, id]
+  );
+
+// Al confirmar: vincular el pago creado para ese beneficiario.
+exports.marcarConPago = (id, pagoId) =>
+  ejecutar(
+    `UPDATE comprobante_asignaciones SET pago_id=?, estado='aprobada', revisado_en=NOW() WHERE id=?`,
+    [pagoId, id]
+  );
+
+// El tesorero autoriza a un pagador a pagar por un beneficiario (pagos futuros = automatica).
+exports.autorizarPagador = (pagadorId, beneficiarioId, autorizadoPor) =>
+  ejecutar(
+    `INSERT IGNORE INTO pagadores_autorizados (pagador_id, beneficiario_id, autorizado_por) VALUES (?, ?, ?)`,
+    [pagadorId, beneficiarioId, autorizadoPor]
+  );

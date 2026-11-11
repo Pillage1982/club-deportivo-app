@@ -128,7 +128,7 @@ exports.listarPendientesPersona = personaId =>
   `, [personaId]);
 
 exports.obtenerPorId = id =>
-  ejecutar('SELECT id, persona_id, adjunto_path, pago_id FROM comprobantes_deposito WHERE id = ?', [id])
+  ejecutar('SELECT id, persona_id, adjunto_path, pago_id, concepto, monto_total FROM comprobantes_deposito WHERE id = ?', [id])
     .then(rows => rows[0] || null);
 
 // Solo vincula si sigue pendiente: evita que dos pagos usen el mismo comprobante.
