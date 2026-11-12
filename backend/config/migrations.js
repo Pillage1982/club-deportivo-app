@@ -465,6 +465,13 @@ async function asegurarCamposPagos() {
   if (!cols.has('comprobante_path')) {
     await ejecutar('ALTER TABLE pagos ADD COLUMN comprobante_path VARCHAR(255) NULL');
   }
+  // Fecha real en que el integrante hizo el pago (la del comprobante / la declarada
+  // en el Portal). Base del PUNTAJE de cuota, para que el desfase entre pagar y que
+  // tesorería acepte el pago no convierta un pago oportuno/anticipado en tardío.
+  // NULL = usar `fecha`. NO afecta la caja/Finanzas (esas siguen con `fecha`).
+  if (!cols.has('fecha_pago_real')) {
+    await ejecutar('ALTER TABLE pagos ADD COLUMN fecha_pago_real DATE NULL AFTER fecha');
+  }
 }
 
 async function consolidarTiposCuota() {

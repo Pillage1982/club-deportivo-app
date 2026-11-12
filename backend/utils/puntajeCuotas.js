@@ -5,9 +5,30 @@ const puntajeModel = require('../models/puntajeModel');
 const NOMBRES_MES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-// 'YYYY-MM-DD' en hora de Chile.
+// 'YYYY-MM-DD' en hora de Chile. Si `fecha` ya es una fecha de calendario
+// ('YYYY-MM-DD…', p. ej. la del comprobante que declara el integrante), se usa tal
+// cual, sin convertir zona horaria (evita que una fecha de fin de mes retroceda un
+// día al interpretarla como UTC).
 function fechaChile(fecha = new Date()) {
+  if (typeof fecha === 'string') {
+    const m = fecha.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (m) return m[1];
+  }
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Santiago' }).format(fecha);
+}
+
+// Normaliza la fecha real del pago que llega del formulario (la del comprobante):
+// 'YYYY-MM-DD', nunca en el futuro ni absurda. Si falta o es inválida, usa hoy
+// (hora de Chile). Es la base del PUNTAJE de cuota, no de la caja (pagos.fecha).
+function normalizarFechaPago(valor) {
+  const hoy = fechaChile();
+  if (typeof valor !== 'string') return hoy;
+  const m = valor.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (!m) return hoy;
+  const fecha = m[1];
+  if (fecha > hoy) return hoy;          // un pago no se hace "mañana"
+  if (fecha < '2015-01-01') return hoy; // fecha absurda
+  return fecha;
 }
 
 // Puntos de una cuota según cuándo se pagó (`fechaPago`, por defecto hoy):
@@ -47,5 +68,6 @@ function recalcularAsistenciasPersona(personaId) {
 module.exports = {
   calcularPuntosCuota,
   fechaPuntajeCuota,
+  normalizarFechaPago,
   recalcularAsistenciasPersona
 };

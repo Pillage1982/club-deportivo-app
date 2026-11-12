@@ -53,6 +53,20 @@ function puedeUsarPagoAnual() {
   return esAdminPagoAnual() || ventanaPagoAnualAbierta();
 }
 
+// Hoy en hora de Chile como 'YYYY-MM-DD' (para el valor por defecto del campo de fecha).
+function fechaHoyChileISO() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Santiago', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date());
+}
+
+// El campo "Fecha del pago" parte en hoy; el tesorero lo cambia a la fecha del
+// comprobante cuando corresponde (afecta el puntaje, no la caja).
+function inicializarFechaPago(forzar = false) {
+  const campo = document.getElementById('pago_fecha');
+  if (campo && (forzar || !campo.value)) campo.value = fechaHoyChileISO();
+}
+
 // Con un pago extra no aplica vincular cuota ni pago anual: se ocultan. El pago
 // anual además solo lo ve el admin (todo el año) o el resto dentro de la ventana.
 function actualizarTipoPago() {
@@ -76,6 +90,8 @@ function actualizarTipoPago() {
 
   const ayuda = document.getElementById('pago_detalle_ayuda');
   if (ayuda) ayuda.textContent = tipo === 'otro' ? '(obligatorio)' : '(opcional)';
+
+  inicializarFechaPago();
 }
 
 function editarPago(pago) {
@@ -368,6 +384,8 @@ function crearPago() {
   if (detalle) data.append('detalle', detalle);
   const cuotaIds = tipoPago === 'cuota' ? cuotasMarcadasPago().map(c => Number(c.value)) : [];
   if (cuotaIds.length) data.append('cuota_ids', JSON.stringify(cuotaIds));
+  const fechaPago = document.getElementById('pago_fecha')?.value;
+  if (fechaPago) data.append('fecha_pago', fechaPago);
   const archivo = document.getElementById('pago_comprobante')?.files[0];
   if (archivo) data.append('comprobante', archivo);
   const depositoId = document.getElementById('pago_deposito_id')?.value;
@@ -416,6 +434,7 @@ function crearPago() {
       document.getElementById('pago_tipo').value    = 'cuota';
       document.getElementById('pago_detalle').value = '';
       document.getElementById('pago_comprobante').value = '';
+      inicializarFechaPago(true);
       limpiarDepositosPago();
       actualizarTipoPago();
       document.getElementById('pago_monto').readOnly = false;
@@ -449,6 +468,8 @@ function guardarPagoAnual(personaId, montoTotal, metodo) {
   data.append('monto_total', montoTotal);
   data.append('metodo', metodo);
   data.append('cuota_ids', JSON.stringify(cuotasPendientesParaAnual.map(c => c.id)));
+  const fechaPago = document.getElementById('pago_fecha')?.value;
+  if (fechaPago) data.append('fecha_pago', fechaPago);
   const archivo = document.getElementById('pago_comprobante')?.files[0];
   if (archivo) data.append('comprobante', archivo);
   const depositoId = document.getElementById('pago_deposito_id')?.value;
@@ -476,6 +497,7 @@ function guardarPagoAnual(personaId, montoTotal, metodo) {
       document.getElementById('pago_metodo').value = 'efectivo';
       document.getElementById('pago_detalle').value = '';
       document.getElementById('pago_comprobante').value = '';
+      inicializarFechaPago(true);
       limpiarDepositosPago();
       const check = document.getElementById('pago_anual_check');
       if (check) {
@@ -583,7 +605,14 @@ function renderizarTablaPagos(pagos) {
                onclick="verComprobantePago(${Number(pago.id)})"><i class="bi bi-file-earmark-text"></i></button>`
           : `<button type="button" class="btn btn-sm btn-outline-secondary me-1" title="Adjuntar comprobante" aria-label="Adjuntar comprobante"
                onclick="elegirComprobantePago(${Number(pago.id)})"><i class="bi bi-paperclip"></i></button>`}
-        ${pago.referencia_externa || Number(pago.tiene_detalle) ? '<span class="badge bg-secondary">Histórico vinculado</span>' : `
+        ${pago.referencia_externa || Number(pago.tiene_detalle) ? `
+        <span class="d-inline-flex align-items-center gap-1">
+          ${Number(pago.tiene_detalle) && pago.tipo_pago === 'cuota' && !pago.referencia_externa
+            ? `<button type="button" class="btn btn-sm btn-outline-info" title="Corregir fecha del pago (recalcula el puntaje)" aria-label="Corregir fecha del pago"
+                 onclick='corregirFechaPagoPrompt(${Number(pago.id)}, ${JSON.stringify(String(pago.fecha_pago_real || pago.fecha || '').slice(0, 10))})'><i class="bi bi-calendar-check"></i></button>`
+            : ''}
+          <span class="badge bg-secondary">Histórico vinculado</span>
+        </span>` : `
         <div class="btn-group btn-group-sm" role="group" aria-label="Acciones">
           <button type="button" class="btn btn-outline-warning" title="Editar" aria-label="Editar"
             onclick='editarPago(pagosCargados.find(p => p.id === ${Number(pago.id)}))'>&#9998;</button>
@@ -593,6 +622,45 @@ function renderizarTablaPagos(pagos) {
       </td>
     </tr>
   `).join('');
+}
+
+// Abre el modal para corregir la fecha real de un pago de cuota (recalcula el puntaje).
+function corregirFechaPagoPrompt(id, fechaActual) {
+  document.getElementById('corregir_fecha_pago_id').value = id;
+  const input = document.getElementById('corregir_fecha_pago_input');
+  input.value = /^\d{4}-\d{2}-\d{2}$/.test(fechaActual) ? fechaActual : fechaHoyChileISO();
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCorregirFechaPago')).show();
+}
+
+function guardarCorreccionFechaPago() {
+  const id = document.getElementById('corregir_fecha_pago_id').value;
+  const fecha = document.getElementById('corregir_fecha_pago_input').value;
+  if (!id || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    mostrarAlerta('Ingrese una fecha válida', 'warning');
+    return;
+  }
+  const estado = bloquearBoton('btn_corregir_fecha_pago', 'Guardando...');
+  if (!estado) return;
+
+  fetch(`${API_URL}/pagos/${id}/fecha-pago`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ fecha_pago: fecha })
+  })
+    .then(async res => {
+      const r = await leerRespuestaJson(res);
+      if (!res.ok) throw new Error(r.mensaje || 'No se pudo corregir la fecha del pago');
+      return r;
+    })
+    .then(r => {
+      mostrarAlerta(r.mensaje, 'success');
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCorregirFechaPago')).hide();
+      cargarTablaPagos();
+      cargarDashboard();
+      cargarGraficos();
+    })
+    .catch(err => mostrarAlerta(obtenerMensajeError(err, 'No se pudo corregir la fecha del pago'), 'danger'))
+    .finally(() => restaurarBoton(estado, 'Guardar y recalcular'));
 }
 
 function verComprobantePago(id) {
@@ -735,6 +803,7 @@ function cargarDepositosPago(personaId, seleccionarId = null) {
         const opt = document.createElement('option');
         opt.value = d.id;
         opt.dataset.monto = d.monto;
+        opt.dataset.fecha = String(d.fecha_deposito || '').slice(0, 10);
         opt.textContent = `Folio ${d.id} — ${formatearMonto(d.monto)}, depositado ${formatearFecha(d.fecha_deposito)}${d.concepto ? ` (${d.concepto})` : ''}`;
         select.appendChild(opt);
       });
@@ -770,6 +839,16 @@ function actualizarDepositoPago() {
   const monto = document.getElementById('pago_monto');
   if (usaDeposito && monto && !monto.value && !monto.readOnly && opcion?.dataset.monto) {
     monto.value = opcion.dataset.monto;
+  }
+
+  // La fecha del depósito que declaró el integrante es la fecha real del pago.
+  const fecha = document.getElementById('pago_fecha');
+  if (fecha) {
+    if (usaDeposito && /^\d{4}-\d{2}-\d{2}$/.test(opcion?.dataset.fecha || '')) {
+      fecha.value = opcion.dataset.fecha;
+    } else if (!usaDeposito) {
+      inicializarFechaPago(true);
+    }
   }
 }
 

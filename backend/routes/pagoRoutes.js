@@ -137,6 +137,15 @@ router.post(
   controller.adjuntarComprobante
 );
 
+// Corregir solo la fecha real del pago (recalcula el puntaje; no toca la caja ni los
+// montos). Sirve para los pagos vinculados a cuotas, que no admiten PUT.
+router.patch(
+  '/:id/fecha-pago',
+  authMiddleware,
+  roleMiddleware('admin', 'tesorero'),
+  controller.corregirFechaPago
+);
+
 router.put(
   '/:id',
   authMiddleware,

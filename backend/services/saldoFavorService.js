@@ -68,7 +68,8 @@ exports.aplicarSaldosAFavor = ({ personaId = null, simular = false } = {}) =>
         if (errTx) { cerrar(errTx); return reject(errTx); }
         try {
           const saldos = await consultar(conexion, `
-            SELECT pa.id AS pago_id, pa.persona_id, pa.fecha,
+            SELECT pa.id AS pago_id, pa.persona_id,
+                   COALESCE(pa.fecha_pago_real, pa.fecha) AS fecha,
                    pa.monto_total - COALESCE(SUM(d.monto_pagado), 0) AS sobrante
             FROM pagos pa
             LEFT JOIN pago_detalle d ON d.pago_id = pa.id
