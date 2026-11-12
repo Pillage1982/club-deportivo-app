@@ -957,77 +957,6 @@
         <div class="tab-pane fade" id="subtab_finanzas" role="tabpanel">
           <div id="modulo_finanzas">
 
-            <div class="mb-3 d-flex flex-wrap gap-2">
-              <button type="button" id="btn_generar_cuotas" class="btn btn-success" onclick="generarCuotasMensuales()" data-config-text="etiquetas.botones.generarCuotas">
-                Generar cuotas del mes
-              </button>
-              <button type="button" id="btn_generar_temporada" class="btn btn-outline-success" onclick="generarCuotasTemporada()">
-                Generar cuotas de toda la temporada
-              </button>
-              <button type="button" id="btn_aplicar_saldos" class="btn btn-outline-primary" onclick="aplicarSaldosAFavor()"
-                title="Aplica la parte de pagos de cuota que quedó a favor del integrante a sus cuotas pendientes más antiguas">
-                Aplicar saldos a favor
-              </button>
-            </div>
-
-            <div class="row g-2 mb-3">
-              <div class="col-md-4">
-                <label for="buscar_cuotas" class="form-label">Buscar Integrante</label>
-                <input type="search" id="buscar_cuotas" class="form-control" placeholder="Buscar por nombre">
-              </div>
-              <div class="col-md-2">
-                <label for="filtro_cuota_estado" class="form-label">Estado</label>
-                <select id="filtro_cuota_estado" class="form-select">
-                  <option value="">Todos</option>
-                  <option value="pendiente">Pendiente</option>
-                  <option value="pagado">Pagado</option>
-                  <option value="vencido">Vencido</option>
-                  <option value="abono">Con abono</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label for="filtro_cuota_mes" class="form-label">Mes</label>
-                <select id="filtro_cuota_mes" class="form-select">
-                  <option value="">Todos</option>
-                  <option value="1">Enero</option>
-                  <option value="2">Febrero</option>
-                  <option value="3">Marzo</option>
-                  <option value="4">Abril</option>
-                  <option value="5">Mayo</option>
-                  <option value="6">Junio</option>
-                  <option value="7">Julio</option>
-                  <option value="8">Agosto</option>
-                  <option value="9">Septiembre</option>
-                  <option value="10">Octubre</option>
-                  <option value="11">Noviembre</option>
-                  <option value="12">Diciembre</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label for="filtro_cuota_anio" class="form-label">Año</label>
-                <input type="number" id="filtro_cuota_anio" class="form-control" placeholder="2025">
-              </div>
-              <div class="col-md-2 d-flex align-items-end">
-                <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosCuotas()">Limpiar</button>
-              </div>
-            </div>
-
-            <div id="tabla_cuotas_wrapper" class="table-responsive tabla-scroll mb-4">
-              <table class="table table-hover align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th>Integrante</th>
-                    <th>Monto</th>
-                    <th>Mes</th>
-                    <th>Año</th>
-                    <th>Vencimiento</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody id="tabla_cuotas"></tbody>
-              </table>
-            </div>
-
             <div class="row g-2 mb-3">
               <div class="col-md-5">
                 <label for="buscar_finanzas" class="form-label">Buscar Integrante</label>
@@ -1058,7 +987,7 @@
               </div>
             </div>
 
-            <div id="tabla_finanzas_wrapper" class="table-responsive tabla-scroll">
+            <div id="tabla_finanzas_wrapper" class="table-responsive tabla-scroll mb-4">
               <table class="table table-bordered mb-0">
                 <thead class="table-dark">
                   <tr>
@@ -1073,6 +1002,51 @@
                 <tbody id="tabla_finanzas"></tbody>
               </table>
             </div>
+
+            <div class="mb-3 d-flex flex-wrap gap-2">
+              <button type="button" id="btn_generar_cuotas" class="btn btn-success" onclick="generarCuotasMensuales()" data-config-text="etiquetas.botones.generarCuotas">
+                Generar cuotas del mes
+              </button>
+              <button type="button" id="btn_generar_temporada" class="btn btn-outline-success" onclick="generarCuotasTemporada()">
+                Generar cuotas de toda la temporada
+              </button>
+              <button type="button" id="btn_aplicar_saldos" class="btn btn-outline-primary" onclick="aplicarSaldosAFavor()"
+                title="Aplica la parte de pagos de cuota que quedó a favor del integrante a sus cuotas pendientes más antiguas">
+                Aplicar saldos a favor
+              </button>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-md-4">
+                <label for="buscar_cuotas" class="form-label">Buscar Integrante</label>
+                <input type="search" id="buscar_cuotas" class="form-control" placeholder="Buscar por nombre">
+              </div>
+              <div class="col-md-3">
+                <label for="filtro_cuota_bloque" class="form-label">Bloque</label>
+                <select id="filtro_cuota_bloque" class="form-select">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label for="filtro_cuota_estado" class="form-label">Estado</label>
+                <select id="filtro_cuota_estado" class="form-select">
+                  <option value="">Todos</option>
+                  <option value="pagado">Con pagados</option>
+                  <option value="pendiente">Con pendientes</option>
+                  <option value="vencido">Con vencidos</option>
+                  <option value="abono">Con abonos</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label for="filtro_cuota_temporada" class="form-label">Temporada</label>
+                <select id="filtro_cuota_temporada" class="form-select"></select>
+              </div>
+              <div class="col-md-1 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosCuotas()">Limpiar</button>
+              </div>
+            </div>
+
+            <div id="matriz_cuotas_wrapper" class="planilla-cuotas"></div>
 
           </div>
         </div>

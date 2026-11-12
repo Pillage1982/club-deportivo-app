@@ -261,6 +261,7 @@ exports.obtenerCuotas = (callback) => {
       p.nombres,
       p.apellido_paterno,
       p.apellido_materno,
+      p.bloque,
       c.monto,
       c.mes,
       c.anio,
@@ -277,7 +278,7 @@ exports.obtenerCuotas = (callback) => {
     LEFT JOIN pago_detalle d
     ON d.tipo='cuota' AND d.referencia_id=c.id
 
-    GROUP BY c.id,c.persona_id,p.nombres,p.apellido_paterno,p.apellido_materno,
+    GROUP BY c.id,c.persona_id,p.nombres,p.apellido_paterno,p.apellido_materno,p.bloque,
       c.monto,c.mes,c.anio,c.fecha_vencimiento,c.estado
 
     ORDER BY
