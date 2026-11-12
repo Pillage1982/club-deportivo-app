@@ -1330,3 +1330,169 @@ body.sin-eliminar [onclick*="eliminarIngreso"] {
   background-color: #6f42c1;
   border-color: #6f42c1;
 }
+
+/* ===================================================================
+   Planilla de Cuotas (matriz mensual, estética de hoja de cálculo).
+   Look claro deliberado: tarjeta blanca tipo Excel sobre el panel.
+   =================================================================== */
+.planilla-cuotas {
+  --pc-grid: #d5d8dc;
+  --pc-head-bg: #eef0f2;
+  --pc-head-ink: #53585f;
+  --pc-excel: #217346;
+  --pc-ink: #1f2328;
+  --pc-row-alt: #fbfcfd;
+  --pc-block-bg: #e9edf3;
+  --pc-block-ink: #2c3e63;
+  --pc-ok-bg: #cdebd6;   --pc-ok-ink: #12623a;
+  --pc-pend-bg: #fdeeb0; --pc-pend-ink: #7a5a00;
+  --pc-venc-bg: #f6c9cc; --pc-venc-ink: #9a1c1c;
+  --pc-abono-bg: #cfe0fb;--pc-abono-ink: #1b4ea8;
+  --pc-fut-bg: #f1f2f4;  --pc-fut-ink: #b2b8bf;
+  --pc-tot-bg: #eaf4ee;  --pc-tot-ink: #15663a;
+  border: 1px solid #c3c7cc;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.planilla-cuotas .pc-scroll {
+  overflow: auto;
+  max-height: 68vh;
+  background: #fff;
+}
+.planilla-cuotas .pc-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-size: 13px;
+  color: var(--pc-ink);
+  font-variant-numeric: tabular-nums;
+}
+.planilla-cuotas .pc-table th,
+.planilla-cuotas .pc-table td {
+  border-right: 1px solid var(--pc-grid);
+  border-bottom: 1px solid var(--pc-grid);
+  white-space: nowrap;
+}
+/* fila de letras de columna (A, B, C...) */
+.planilla-cuotas .pc-cols th {
+  background: var(--pc-head-bg);
+  color: var(--pc-head-ink);
+  font-weight: 600;
+  height: 21px;
+  text-align: center;
+  font-size: 10.5px;
+  letter-spacing: .04em;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+/* fila de títulos (meses) */
+.planilla-cuotas .pc-titles th {
+  background: #e6e9ec;
+  color: var(--pc-ink);
+  font-weight: 600;
+  padding: 7px 6px;
+  text-align: center;
+  position: sticky;
+  top: 21px;
+  z-index: 5;
+}
+.planilla-cuotas .pc-anio {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 500;
+  color: #8a9099;
+}
+/* columnas congeladas: número de fila + nombre */
+.planilla-cuotas .pc-rownum {
+  background: var(--pc-head-bg);
+  color: var(--pc-head-ink);
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 600;
+  width: 32px;
+  min-width: 32px;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+}
+.planilla-cuotas .pc-colname {
+  position: sticky;
+  left: 32px;
+  z-index: 3;
+  background: #fff;
+  min-width: 220px;
+  text-align: left;
+  font-weight: 600;
+  color: #17407a;
+  padding: 6px 10px;
+}
+.planilla-cuotas tbody tr:nth-child(even) .pc-colname { background: var(--pc-row-alt); }
+/* esquinas (intersección congelada) */
+.planilla-cuotas .pc-cTL  { position: sticky; left: 0;    top: 0;    z-index: 7; background: var(--pc-head-bg); width: 32px; }
+.planilla-cuotas .pc-cNAME{ position: sticky;            top: 0;    z-index: 6; background: var(--pc-head-bg); }
+.planilla-cuotas .pc-cTL2 { position: sticky; left: 0;    top: 21px; z-index: 7; background: #e6e9ec; }
+.planilla-cuotas .pc-cNAME2{ position: sticky; left: 32px; top: 21px; z-index: 7; background: #e6e9ec; text-align: left; padding-left: 10px; }
+.planilla-cuotas .pc-cNAME { position: sticky; left: 32px; top: 0; z-index: 6; background: var(--pc-head-bg); }
+
+.planilla-cuotas tbody td { padding: 6px 8px; }
+.planilla-cuotas tbody tr:nth-child(even) td { background: var(--pc-row-alt); }
+
+/* separador de bloque (como la pestaña Integrantes) */
+.planilla-cuotas tr.pc-block td {
+  background: var(--pc-block-bg);
+  color: var(--pc-block-ink);
+  font-weight: 700;
+  padding: 5px 10px;
+  position: sticky;
+  left: 0;
+  font-size: 12.5px;
+}
+/* celdas de mes */
+.planilla-cuotas td.pc-mc {
+  text-align: center;
+  font-weight: 700;
+  width: 46px;
+  min-width: 46px;
+  font-size: 14px;
+  line-height: 1;
+}
+.planilla-cuotas .pc-ok,    .planilla-cuotas tbody tr:nth-child(even) td.pc-ok    { background: var(--pc-ok-bg);    color: var(--pc-ok-ink); }
+.planilla-cuotas .pc-pend,  .planilla-cuotas tbody tr:nth-child(even) td.pc-pend  { background: var(--pc-pend-bg);  color: var(--pc-pend-ink); }
+.planilla-cuotas .pc-venc,  .planilla-cuotas tbody tr:nth-child(even) td.pc-venc  { background: var(--pc-venc-bg);  color: var(--pc-venc-ink); }
+.planilla-cuotas .pc-abono, .planilla-cuotas tbody tr:nth-child(even) td.pc-abono { background: var(--pc-abono-bg); color: var(--pc-abono-ink); }
+.planilla-cuotas .pc-fut,   .planilla-cuotas tbody tr:nth-child(even) td.pc-fut   { background: var(--pc-fut-bg);   color: var(--pc-fut-ink); }
+
+.planilla-cuotas td.pc-deuda { text-align: right; font-weight: 600; padding-right: 10px; }
+.planilla-cuotas .pc-d-si { color: #9a1c1c; }
+.planilla-cuotas .pc-d-no { color: #12623a; }
+
+/* fila de totales fija abajo */
+.planilla-cuotas tfoot td {
+  position: sticky;
+  bottom: 0;
+  background: var(--pc-tot-bg);
+  color: var(--pc-tot-ink);
+  font-weight: 700;
+  border-top: 2px solid var(--pc-excel);
+  z-index: 4;
+  text-align: right;
+  font-size: 11.5px;
+  padding: 7px 6px;
+}
+.planilla-cuotas tfoot td.pc-tlabel {
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  text-align: left;
+  padding-left: 10px;
+}
+.planilla-cuotas .pc-empty {
+  padding: 22px;
+  text-align: center;
+  color: #6b7280;
+}
+@media (max-width: 575px) {
+  .planilla-cuotas .pc-colname { min-width: 150px; }
+}
