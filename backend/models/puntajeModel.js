@@ -233,6 +233,15 @@ exports.insertarPuntaje = (data) =>
     VALUES (?, ?, ?, ?, ?, ?)
   `, [data.persona_id, data.asistencia_id, data.evento_id, data.puntos, data.detalle, data.fecha]);
 
+// Borra el puntaje de las cuotas indicadas (sus filas con cuota_id). Se usa antes de
+// recalcular con la fecha real corregida: insertarPuntajeCuota es INSERT IGNORE (no
+// sobrescribe) y, si el pago pasó a tardío, la cuota debe quedar sin puntaje.
+exports.eliminarPuntajesCuotas = (cuotaIds) => {
+  if (!Array.isArray(cuotaIds) || !cuotaIds.length) return Promise.resolve();
+  const marcadores = cuotaIds.map(() => '?').join(', ');
+  return ejecutar(`DELETE FROM puntajes WHERE cuota_id IN (${marcadores})`, cuotaIds);
+};
+
 exports.insertarPuntajeCuota = (data) =>
   ejecutar(`
     INSERT IGNORE INTO puntajes

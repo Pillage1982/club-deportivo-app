@@ -1533,6 +1533,15 @@
                   </select>
                 </div>
               </div>
+              <div class="row" id="pago_fecha_grupo">
+                <div class="col-md-6 mb-3">
+                  <label for="pago_fecha" class="form-label">Fecha del pago
+                    <small class="text-muted">(la del comprobante)</small>
+                  </label>
+                  <input type="date" id="pago_fecha" class="form-control">
+                  <small class="text-muted">Determina el puntaje (anticipado/oportuno/tardío), no la caja. Si el comprobante se envió a fin de mes y se acepta después, use la fecha real del comprobante para no perder el puntaje.</small>
+                </div>
+              </div>
               <div class="mb-3" id="pago_cuota_grupo">
                 <label class="form-label">Meses que se pagan
                   <small class="text-muted">(marque las cuotas que cubre este pago; si no marca ninguna, se aplica a las cuotas pendientes más antiguas)</small>
@@ -1823,6 +1832,33 @@
           <div id="lista_depositos_adjuntar" class="list-group mb-3"></div>
           <button type="button" class="btn btn-outline-secondary w-100" onclick="subirArchivoComprobantePago()">
             <i class="bi bi-upload me-1"></i> Subir otro archivo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Corregir fecha real del pago (recalcula el puntaje, no toca la caja) -->
+  <div class="modal fade" id="modalCorregirFechaPago" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-calendar-check me-2"></i>Corregir fecha del pago</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-2">
+            Fecha real del pago (la del comprobante / en que el integrante pagó). Recalcula el puntaje
+            (anticipado / oportuno / tardío) de las cuotas que cubrió este pago. <strong>No cambia la caja ni los montos.</strong>
+          </p>
+          <label for="corregir_fecha_pago_input" class="form-label">Fecha del pago</label>
+          <input type="date" id="corregir_fecha_pago_input" class="form-control">
+          <input type="hidden" id="corregir_fecha_pago_id">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btn_corregir_fecha_pago" onclick="guardarCorreccionFechaPago()">
+            <i class="bi bi-check2-circle me-1"></i>Guardar y recalcular
           </button>
         </div>
       </div>

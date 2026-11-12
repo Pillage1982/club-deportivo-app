@@ -32,6 +32,7 @@ exports.obtenerPagos = (
       pa.monto_total,
       pa.metodo,
       pa.fecha,
+      pa.fecha_pago_real,
       COALESCE(pa.fecha_precision, 'exacta') AS fecha_precision,
       pa.referencia_externa,
       pa.tipo_pago,
@@ -51,6 +52,33 @@ exports.obtenerPagos = (
     callback
   );
 
+};
+
+// Corrige SOLO la fecha real del pago (base del puntaje), sin tocar monto, método
+// ni los meses vinculados. No afecta la caja (pagos.fecha se mantiene).
+exports.actualizarFechaPagoReal = (pagoId, fecha, callback) => {
+  db.query('UPDATE pagos SET fecha_pago_real = ? WHERE id = ?', [fecha, pagoId], callback);
+};
+
+// Cuotas que este pago marcó como pagadas (para recalcular su puntaje con la fecha
+// real corregida). Devuelve también persona_id y tipo_pago del pago.
+exports.obtenerCuotasCubiertas = (pagoId, callback) => {
+  db.query('SELECT persona_id, tipo_pago FROM pagos WHERE id = ?', [pagoId], (err, pagos) => {
+    if (err) return callback(err);
+    if (!pagos.length) return callback(null, null);
+    db.query(
+      `SELECT c.id, c.mes, c.anio
+         FROM pago_detalle d
+         JOIN cuotas c ON c.id = d.referencia_id
+        WHERE d.pago_id = ? AND d.tipo = 'cuota' AND c.estado = 'pagado'
+        ORDER BY c.anio, c.mes`,
+      [pagoId],
+      (err2, cuotas) => {
+        if (err2) return callback(err2);
+        callback(null, { persona_id: pagos[0].persona_id, tipo_pago: pagos[0].tipo_pago, cuotas });
+      }
+    );
+  });
 };
 
 // =====================================
@@ -77,8 +105,8 @@ exports.crearPagoConDetalles = (data, detalles, callback) => {
       if (errTx) { cerrar(errTx); return callback(errTx); }
 
       conexion.query(
-        'INSERT INTO pagos (persona_id, monto_total, metodo, tipo_pago, detalle, comprobante_path) VALUES (?, ?, ?, ?, ?, ?)',
-        [data.persona_id, data.monto_total, data.metodo, data.tipo_pago || 'cuota', data.detalle || null, data.comprobante_path || null],
+        'INSERT INTO pagos (persona_id, monto_total, metodo, tipo_pago, detalle, comprobante_path, fecha_pago_real) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [data.persona_id, data.monto_total, data.metodo, data.tipo_pago || 'cuota', data.detalle || null, data.comprobante_path || null, data.fecha_pago_real || null],
         (errPago, resultPago) => {
           if (errPago) return fallar(errPago);
           const pagoId = resultPago.insertId;

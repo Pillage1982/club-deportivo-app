@@ -13,7 +13,7 @@ const cuotaModel   = require('../models/cuotaModel');
 const puntajeModel = require('../models/puntajeModel');
 const comprobanteDepositoModel = require('../models/comprobanteDepositoModel');
 const comprobanteAsignacionModel = require('../models/comprobanteAsignacionModel');
-const { calcularPuntosCuota, fechaPuntajeCuota, recalcularAsistenciasPersona } = require('../utils/puntajeCuotas');
+const { calcularPuntosCuota, fechaPuntajeCuota, normalizarFechaPago, recalcularAsistenciasPersona } = require('../utils/puntajeCuotas');
 const { periodosCuotasTemporadaVigente, esPeriodoTemporadaVigente, esPagoAnualInicioCiclo, ventanaPagoAnualAbierta } = require('../utils/estatutoGdcRules');
 const { esSoporte } = require('../config/roles');
 
@@ -85,14 +85,16 @@ function vincularDeposito(depositoId, pagoId) {
     .catch(e => console.error('Error vinculando comprobante de depósito:', e));
 }
 
-function procesarPuntajeCuota(persona_id, cuota_id) {
+// `fechaReal`: fecha en que el integrante hizo el pago (la del comprobante). Decide
+// anticipado/oportuno/tardío, en vez del día en que tesorería acepta el pago.
+function procesarPuntajeCuota(persona_id, cuota_id, fechaReal) {
   cuotaModel.obtenerCuotaPorId(cuota_id, (err, cuota) => {
     if (err || !cuota) return;
-    const resultado = calcularPuntosCuota(cuota.mes, cuota.anio);
+    const resultado = calcularPuntosCuota(cuota.mes, cuota.anio, fechaReal);
     if (!resultado) return;
     puntajeModel.insertarPuntajeCuota({
       persona_id, cuota_id, puntos: resultado.puntos,
-      detalle: resultado.detalle, fecha: fechaPuntajeCuota(cuota)
+      detalle: resultado.detalle, fecha: fechaPuntajeCuota(cuota, fechaReal)
     }).catch(e => console.error('Error puntaje cuota:', e));
   });
 }
@@ -101,18 +103,21 @@ function procesarPuntajeCuota(persona_id, cuota_id) {
 // de la temporada y ocurre antes o durante el mes de inicio del ciclo, aplica el
 // escenario (a) del art. 9.3 -bono de anticipado en las 10, incluida la de inicio-.
 // Si no, cada cuota recibe su puntaje individual normal (igual que un pago suelto).
-function procesarPuntajeCuotasAnual(persona_id, cuotas) {
+function procesarPuntajeCuotasAnual(persona_id, cuotas, fechaReal) {
+  // Fecha del pago a mediodía para comparar año/mes sin que la zona horaria la
+  // corra a otro día/mes (esPagoAnualInicioCiclo usa getFullYear/getMonth locales).
+  const fechaPagoDate = fechaReal ? new Date(`${fechaReal}T12:00:00`) : new Date();
   const periodosPagados = cuotas.map(c => ({ mes: Number(c.mes), anio: Number(c.anio) }));
-  const esAnualInicio = esPagoAnualInicioCiclo(periodosPagados, periodosCuotasTemporadaVigente(), new Date());
+  const esAnualInicio = esPagoAnualInicioCiclo(periodosPagados, periodosCuotasTemporadaVigente(fechaPagoDate), fechaPagoDate);
 
   cuotas.forEach(cuota => {
     const resultado = esAnualInicio
       ? { puntos: 20, detalle: 'Cuota pagada anticipadamente (art. 9.3, pago anual al inicio)' }
-      : calcularPuntosCuota(Number(cuota.mes), Number(cuota.anio));
+      : calcularPuntosCuota(Number(cuota.mes), Number(cuota.anio), fechaReal);
     if (!resultado) return;
     puntajeModel.insertarPuntajeCuota({
       persona_id, cuota_id: cuota.id, puntos: resultado.puntos,
-      detalle: resultado.detalle, fecha: fechaPuntajeCuota(cuota)
+      detalle: resultado.detalle, fecha: fechaPuntajeCuota(cuota, fechaReal)
     }).catch(e => console.error('Error puntaje cuota anual:', e));
   });
 }
@@ -172,6 +177,9 @@ function validarPago(body) {
     });
   }
 
+  // Fecha real del pago (la del comprobante): base del puntaje de cuota, no de la caja.
+  req.body.fecha_pago_real = normalizarFechaPago(req.body.fecha_pago);
+
   personaModel.obtenerPersonaPorId(Number(req.body.persona_id), (errPersona, persona) => {
     if (errPersona || !persona) {
       return res.status(400).json({ mensaje: 'Integrante no encontrado' });
@@ -203,7 +211,7 @@ function validarPago(body) {
         vincularDeposito(depositoId, resultado.pagoId);
         if (!cuota) return res.json({ mensaje: 'Pago registrado' });
         if (!completa) return res.json({ mensaje: `Pago parcial registrado. Saldo pendiente: $${Number(cuota.saldo)-Number(req.body.monto_total)}` });
-        procesarPuntajeCuota(Number(req.body.persona_id), cuota.id);
+        procesarPuntajeCuota(Number(req.body.persona_id), cuota.id, req.body.fecha_pago_real);
         recalcularAsistenciasPersona(Number(req.body.persona_id));
         res.json({ mensaje: 'Pago registrado y cuota marcada como pagada' });
       });
@@ -275,7 +283,7 @@ function guardarPagoRepartido(req, res, persona, cuotas) {
       if (errPago) return res.status(500).json({ mensaje: 'No se pudo registrar el pago' });
       vincularDeposito(depositoId, resultado.pagoId);
       if (reparto.pagadas.length) {
-        procesarPuntajeCuotasAnual(Number(persona.id), reparto.pagadas);
+        procesarPuntajeCuotasAnual(Number(persona.id), reparto.pagadas, req.body.fecha_pago_real);
         recalcularAsistenciasPersona(Number(persona.id));
       }
       res.json({ mensaje: mensajeReparto(reparto) });
@@ -334,6 +342,10 @@ exports.crearAnual = (req, res) => {
     return res.status(400).json({ mensaje: errorValidacion });
   }
 
+  // Fecha real del pago (la del comprobante, de puño y letra en los anuales en
+  // efectivo fuera de plazo): decide el bono de pago anual al inicio de temporada.
+  req.body.fecha_pago_real = normalizarFechaPago(req.body.fecha_pago);
+
   // Con comprobante adjunto la petición llega como FormData: cuota_ids viene como JSON
   const cuotaIds = leerIdsCuotas({ cuota_ids: req.body.cuota_ids });
 
@@ -390,7 +402,7 @@ exports.crearAnual = (req, res) => {
           return res.status(500).json({ mensaje: 'No se pudo registrar el pago anual' });
         }
         vincularDeposito(depositoId, resultado.pagoId);
-        procesarPuntajeCuotasAnual(Number(req.body.persona_id), cuotas);
+        procesarPuntajeCuotasAnual(Number(req.body.persona_id), cuotas, req.body.fecha_pago_real);
         recalcularAsistenciasPersona(Number(req.body.persona_id));
         res.json({ mensaje: `Pago anual registrado: ${cuotas.length} cuota(s) marcadas como pagadas` });
       });
@@ -438,6 +450,59 @@ exports.obtenerReporteCuotas = (req, res) => {
       .then(inicio => puntajeModel.obtenerPuntosCuotasPorPersona(inicio))
       .then(puntosCuotas => res.json({ pagosPorMes, puntosCuotas }))
       .catch(() => res.status(500).json({ mensaje: 'No se pudieron obtener los puntos de cuotas' }));
+  });
+};
+
+// =====================================
+// CORREGIR FECHA REAL DEL PAGO (solo puntaje, no la caja)
+// =====================================
+// Para pagos vinculados a cuotas (que no se pueden editar por PUT): cambia únicamente
+// la fecha real del pago y recalcula el puntaje de las cuotas que cubrió. Útil para
+// pagos aceptados con desfase o pagos en efectivo con fecha de puño y letra.
+exports.corregirFechaPago = (req, res) => {
+  const pagoId = Number(req.params.id);
+  if (!Number.isInteger(pagoId) || pagoId <= 0) {
+    return res.status(400).json({ mensaje: 'Pago inválido' });
+  }
+  const fechaReal = normalizarFechaPago(req.body.fecha_pago);
+
+  pagoModel.obtenerCuotasCubiertas(pagoId, (err, info) => {
+    if (err) return res.status(500).json({ mensaje: 'No se pudo verificar el pago' });
+    if (!info) return res.status(404).json({ mensaje: 'Pago no encontrado' });
+    if (info.tipo_pago !== 'cuota' || !info.cuotas.length) {
+      return res.status(409).json({ mensaje: 'Solo los pagos de cuota con meses cubiertos tienen una fecha que afecte el puntaje' });
+    }
+
+    // La corrección de fecha solo aplica de la temporada 2026-2027 en adelante; la
+    // data migrada 2025-2026 (temporada que arranca en 2025) no se toca. El año de
+    // inicio de la temporada de una cuota es su año si el mes es >= octubre, si no el
+    // anterior. Se recalculan solo las cuotas aplicables (una cuota 2025-2026 atrasada
+    // dentro de un pago nuevo queda intacta).
+    const esTemporadaCorregible = c =>
+      (Number(c.mes) >= 10 ? Number(c.anio) : Number(c.anio) - 1) >= 2026;
+    const cuotasAplicables = info.cuotas.filter(esTemporadaCorregible);
+    if (!cuotasAplicables.length) {
+      return res.status(409).json({ mensaje: 'La corrección de fecha solo aplica a pagos de la temporada 2026-2027 en adelante' });
+    }
+
+    pagoModel.actualizarFechaPagoReal(pagoId, fechaReal, (errU) => {
+      if (errU) return res.status(500).json({ mensaje: 'No se pudo actualizar la fecha del pago' });
+
+      const cuotaIds = cuotasAplicables.map(c => c.id);
+      // Borrar el puntaje anterior y recalcular con la fecha real (incluye el bono
+      // anual de 200 si cubre la temporada completa al inicio).
+      puntajeModel.eliminarPuntajesCuotas(cuotaIds)
+        .then(() => {
+          if (cuotasAplicables.length >= 2) {
+            procesarPuntajeCuotasAnual(Number(info.persona_id), cuotasAplicables, fechaReal);
+          } else {
+            procesarPuntajeCuota(Number(info.persona_id), cuotasAplicables[0].id, fechaReal);
+          }
+          recalcularAsistenciasPersona(Number(info.persona_id));
+          res.json({ mensaje: 'Fecha del pago actualizada y puntaje recalculado' });
+        })
+        .catch(() => res.status(500).json({ mensaje: 'No se pudo recalcular el puntaje' }));
+    });
   });
 };
 
