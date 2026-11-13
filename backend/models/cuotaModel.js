@@ -180,6 +180,31 @@ exports.generarMensualidadesPersona = (data, callback) => {
   ], callback);
 };
 
+// Re-tarifa las cuotas de mensualidad NO pagadas de la temporada que empieza en
+// `anioInicio` (oct→jul) de un integrante, usando la MISMA regla que la generación
+// (generarMensualidadMasiva): 50% para socios y menores de 12, valor completo el
+// resto. Se usa al cambiar el bloque de un integrante (p. ej. pasarlo a "Socios")
+// cuando sus cuotas ya estaban generadas con la tarifa anterior. Solo toca las no
+// pagadas y no duplica ni borra nada. `result.changedRows` = cuotas reajustadas.
+exports.retarifarCuotasPendientesTemporada = (persona_id, anioInicio, callback) => {
+  const query = `
+    UPDATE cuotas c
+    JOIN personas p ON p.id = c.persona_id
+    JOIN tipos_cuotas t ON t.id = c.tipo_cuota_id AND t.nombre = 'Mensualidad'
+    SET c.monto = CASE
+      WHEN (p.fecha_nacimiento IS NOT NULL AND TIMESTAMPDIFF(YEAR, p.fecha_nacimiento, c.fecha_vencimiento) < 12)
+        OR LOWER(TRIM(p.bloque)) IN (${marcadoresSocioReducido})
+      THEN ROUND(t.monto_base / 2)
+      ELSE t.monto_base
+    END
+    WHERE c.persona_id = ?
+      AND c.estado <> 'pagado'
+      AND COALESCE(p.es_honorario, 0) = 0
+      AND ( (c.mes >= 10 AND c.anio = ?) OR (c.mes <= 7 AND c.anio = ?) )
+  `;
+  db.query(query, [...CATEGORIAS_SOCIO_REDUCIDO, persona_id, anioInicio, anioInicio + 1], callback);
+};
+
 // =====================================
 // OBTENER CUOTAS PENDIENTES POR PERSONA
 // =====================================
