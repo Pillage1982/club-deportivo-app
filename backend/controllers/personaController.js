@@ -351,8 +351,26 @@ exports.actualizar = (req, res) => {
   });
 }
 
-      res.json({
-        mensaje: 'Integrante actualizado correctamente'
+      // Si cambió el bloque (p. ej. se pasó a "Socios"), re-tarifa sus cuotas
+      // pendientes de la temporada vigente para que tomen la tarifa correcta.
+      const bloqueAntes = (original.bloque || '').trim().toLowerCase();
+      const bloqueAhora = (data.bloque || '').trim().toLowerCase();
+      if (bloqueAntes === bloqueAhora) {
+        return res.json({ mensaje: 'Integrante actualizado correctamente' });
+      }
+
+      const anioInicio = periodosCuotasTemporadaVigente()[0].anio;
+      cuotaModel.retarifarCuotasPendientesTemporada(req.params.id, anioInicio, (errRt, resultRt) => {
+        if (errRt) {
+          console.error('Error re-tarifando cuotas tras cambio de bloque:', errRt);
+          return res.json({ mensaje: 'Integrante actualizado correctamente (no se pudieron reajustar sus cuotas pendientes; revíselas en Finanzas)' });
+        }
+        const n = resultRt && resultRt.changedRows ? resultRt.changedRows : 0;
+        res.json({
+          mensaje: n > 0
+            ? `Integrante actualizado. Se reajustaron ${n} cuota(s) pendiente(s) de la temporada a la tarifa de su nuevo bloque.`
+            : 'Integrante actualizado correctamente'
+        });
       });
 
     }
